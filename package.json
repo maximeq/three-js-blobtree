@@ -1,0 +1,19 @@
+{
+  "name": "three-js-blobtree",
+  "version": "1.0.0",
+  "description": "Library to handle implicit surfaces in THREE.JS using a blobtree.",
+  "main": "src/blobtree.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "three-full": "^11.3.2"
+  },
+  "devDependencies": {},
+  "files": [
+    "dist/*"
+  ],
+  "author": "Maxime Quiblier <maximequiblier@gmail.com>",
+  "license": "MIT",
+  "hash": "cbb66061ffd05bc5f6673756895b3f6f03e7202a"
+}

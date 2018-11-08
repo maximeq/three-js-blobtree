@@ -1,0 +1,8 @@
+syntax: glob
+
+node_modules/
+examples/*/*.obj
+*.orig
+*npm-debug.log
+*.lock
+**.lock
