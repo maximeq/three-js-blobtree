@@ -12,7 +12,7 @@ root.addChild(
     new Blobtree.ScalisPoint(
         new Blobtree.ScalisVertex(
             new THREE.Vector3(0,0,0),
-            2
+            10
         ),
         Blobtree.ScalisPrimitive.DIST,
         1.0,
