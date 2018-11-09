@@ -6,7 +6,7 @@ const GeometryToOBJ = require('./lib/GeometryToOBJ.js');
 const THREE = require("three-full/builds/Three.cjs.js");
 const Blobtree = require('../../');
 
-var root = new Blobtree.Root();
+var root = new Blobtree.RootNode();
 
 root.addChild(
     new Blobtree.ScalisPoint(

@@ -1,6 +1,7 @@
 "use strict";
 
 const THREE = require("three-full/builds/Three.cjs.js");
+const Types = require("./Types.js");
 const ScalisPrimitive = require("./ScalisPrimitive.js");
 const ScalisVertex = require("./ScalisVertex.js");
 const Material = require("./Material.js");
@@ -8,12 +9,6 @@ const EvalTags = require("./EvalTags.js");
 const ScalisMath = require("./ScalisMath.js");
 const AreaScalisPoint = require("./Areas/AreaScalisPoint.js");
 const ScalisPointAcc = require("./accuracies/ScalisPointAcc.js");
-
-/**
- *  A unique identifier for the ScalisPoint type.
- *  @const {string}
- */
-var typeScalisPoint = "scalisPoint";
 
 /**
  *  @constructor
@@ -35,16 +30,18 @@ var ScalisPoint = function(vertex, volType, density, mat) {
     this.density     = density;
     this.materials.push(mat);
 
-    this.type        = typeScalisPoint;
+    this.type        = ScalisPoint.type;
 
     // Temporary for eval
+    // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
     this.v_to_p =  new THREE.Vector3();
 };
 
 ScalisPoint.prototype = Object.create(ScalisPrimitive.prototype);
 ScalisPoint.prototype.constructor = ScalisPoint;
 
-ScalisPoint.type = typeScalisPoint;
+ScalisPoint.type = "ScalisPoint";
+Types.register(ScalisPoint.type, ScalisPoint);
 
 ScalisPoint.prototype.toJSON = function() {
     var res = ScalisPrimitive.prototype.toJSON.call(this);

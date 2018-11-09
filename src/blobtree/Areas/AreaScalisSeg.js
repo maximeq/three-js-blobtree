@@ -7,7 +7,7 @@ const ScalisSegmentAcc = require("../accuracies/ScalisSegmentAcc.js");
 
 /**
  *  Bounding area for the segment.
- *  It is the same for Mech and Orga primitives since the support of the convolution
+ *  It is the same for DIST and CONVOL primitives since the support of the convolution
  *  kernel is the same as the support for the distance field.
  *  The resulting volume is a clipped cone with spherical extremities, wich is
  *  actually the support of the primitive.

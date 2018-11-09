@@ -1,6 +1,7 @@
 syntax: glob
 
 node_modules/
+doc/*
 examples/*/*.obj
 *.orig
 *npm-debug.log

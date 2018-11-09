@@ -4,12 +4,15 @@
   "description": "Library to handle implicit surfaces in THREE.JS using a blobtree.",
   "main": "src/blobtree.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "make-doc": "node make-doc.js"
   },
   "dependencies": {
     "three-full": "^11.3.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "jsdoc-api": "^4.0.3"
+  },
   "files": [
     "dist/*"
   ],

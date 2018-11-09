@@ -132,16 +132,15 @@ Box2Acc.prototype.getMinCorner = function(){
 /**
  *  Class for a dual marching cube using 2 sliding arrays.
  *  @param {Object} params Parameters and option for this polygonizer.
- *         .detailRatio : the blobtree defines some needed accuracies for polygonizing.
- *                        However, if you want more details, you can set this to less than 1.
- *                        Note that this is limited to 0.01, whiwh will already increase your model complexity by a 10 000 factor.
- *         .convergence : add newton convergence steps to position each vertex.
- *                        this is a JSON Object containing
- *                          ratio : a ratio of a the marching cube grid size defining the wanted geometrical accuracy. Must be lower than 1, default is 0.01
- *                          step : the maximum number of newton steps, default is 10.
- *                        The newton process will stop either when the threshold of ratio*cube_size is matched, or the number of steps allowed has been reached.
- *         TODO .dichotomy   : add dichotomy steps to position each vertex. Usually using convergence is better, except if the implicit
- *                        field is such that congerging is not possible (for example, null gradients on large areas)
+ *  @param {number} params.detailRatio The blobtree defines some needed accuracies for polygonizing.
+ *                                     However, if you want more details, you can set this to less than 1.
+ *                                     Note that this is limited to 0.01, which will already increase your model complexity by a 10 000 factor.
+ *  @param {Object} params.convergence Add newton convergence steps to position each vertex.
+ *  @param {number} params.convergence.ratio A ratio of a the marching cube grid size defining the wanted geometrical accuracy. Must be lower than 1, default is 0.01
+ *  @param {number} params.convergence.step The maximum number of newton steps, default is 10.
+ *                                            The newton process will stop either when the threshold of ratio*cube_size is matched, or the number of steps allowed has been reached.
+ *  @param {number} params.dichotomy NOT YET IMPLEMENTED Add dichotomy steps to position each vertex. Usually using convergence is better, except if the implicit
+ *                                   field is such that congerging is not possible (for example, null gradients on large areas)
  *  @constructor
  */
 var SlidingMarchingCubes = function(blobtree, params) {

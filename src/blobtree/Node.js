@@ -1,11 +1,7 @@
 'use strict';
 
 const Element = require('./Element.js');
-
-/**
- *  @type {string}
- */
-var nodeType = "blobtreeNode";
+const Types = require("./Types.js");
 
 /**
  *  This class implements an abstract Node class for implicit blobtree.
@@ -16,7 +12,7 @@ var Node = function ()
 {
     Element.call(this);
 
-    this.type = nodeType;
+    this.type = Node.type;
 
     /** @type {Array.<!Element>} */
     this.children = [];
@@ -25,7 +21,8 @@ var Node = function ()
 Node.prototype = Object.create(Element.prototype);
 Node.prototype.constructor = Node;
 
-Node.type = nodeType;
+Node.type = "Node";
+Types.register(Node.type, Node);
 
 Node.prototype.toJSON = function(){
     var res = Element.prototype.toJSON.call(this);
@@ -37,7 +34,7 @@ Node.prototype.toJSON = function(){
 };
 
 /**
- *  [Abstract Method]
+ *  @abstract
  *  Prepare the node and all its children for evaluation.
  *  That means setup all necessary elements for an incoming call to eval.
  *  Important note: For now, a node is considered prepared for eval if and only

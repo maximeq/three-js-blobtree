@@ -155,7 +155,7 @@ Material.prototype.weightedMean = function(m_arr,v_arr, n)
  *  @param {Object} json_data Data in Json, see Material.prototype.getJSON
  *  @return {Material}
  */
-Material.buildFromJSON = function(json_data){
+Material.fromJSON = function(json){
     return new Material(
         new THREE.Color(parseInt(json_data.c, 16)),
         json_data.r,
@@ -188,6 +188,9 @@ Material.prototype.getJSON = (function()
 // Other static functions
 /**
  *  Compare arrays of materials.
+ *
+ *  @deprecated
+ *
  *  @param {Array.<Material>} arr1
  *  @param {Array.<Material>} arr2
  *  @param {Array.<Material>=} arr3
@@ -197,6 +200,9 @@ Material.prototype.getJSON = (function()
  *  @return {boolean} true if and only if all arguments are arrays of the same length and containing the same material values.
  */
 Material.areEqualsArrays = function(arr1, arr2, arr3, arr4, arr5){
+
+    console.warn("Material.areEqualsArrays is deprecated, please use your own comparison function using Material.equals.");
+
     var res = true;
     // check for nullity
     for (var i = 1; i < arguments.length; i++) {

@@ -1,9 +1,11 @@
 var Blobtree = {};
 
+Blobtree.Types    = require("./blobtree/Types.js");
+
 Blobtree.Element    = require("./blobtree/Element.js");
 Blobtree.Node       = require("./blobtree/Node.js");
 Blobtree.RicciNode  = require("./blobtree/RicciNode.js");
-Blobtree.Root       = require("./blobtree/Root.js");
+Blobtree.RootNode   = require("./blobtree/RootNode.js");
 Blobtree.Primitive  = require("./blobtree/Primitive.js");
 Blobtree.ScalisPrimitive    = require("./blobtree/ScalisPrimitive.js");
 Blobtree.ScalisPoint        = require("./blobtree/ScalisPoint.js");

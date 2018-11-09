@@ -44,7 +44,7 @@ Area.prototype.contains = function(p)
 };
 
 /**
- *  [Abstract]
+ *  @abstract
  *  Return the minimum accuracy needed in the intersection of the sphere and the area.
  *         This function is a generic function used in both getNiceAcc and getRawAcc.
  *
@@ -67,7 +67,7 @@ Area.prototype.getAcc = function(sphere, factor)
 };
 
 /**
- *  [Abstract]
+ *  @abstract
  *  Convenience function, just call getAcc with Nice Accuracy parameters.
  *  @param {!{radius:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
  *  @return {number} The Nice accuracy needed in the intersection zone
@@ -77,7 +77,7 @@ Area.prototype.getNiceAcc = function(sphere)
     throw "Error : getNiceAcc is abstract, should have been overwritten";
 };
 /**
- *  [Abstract]
+ *  @abstract
  *  Convenience function, just call getAcc with Current Accuracy parameters.
  *  @param {!{radius:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
  *  @return {number} The Current accuracy needed in the intersection zone
@@ -88,7 +88,7 @@ Area.prototype.getCurrAcc = function(sphere)
 };
 
 /**
- *  [Abstract]
+ *  @abstract
  *  Convenience function, just call getAcc with Raw Accuracy parameters.
  *  @param {!{radius:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
  *  @return {number} The raw accuracy needed in the intersection zone
@@ -99,7 +99,7 @@ Area.prototype.getRawAcc = function(sphere)
 };
 
 /**
- *  [Abstract]
+ *  @abstract
  *  @return {number} the minimum accuracy needed in the whole area
  */
 Area.prototype.getMinAcc = function()
@@ -107,7 +107,7 @@ Area.prototype.getMinAcc = function()
     throw "Error : getRawAcc is abstract, should have been overwritten";
 };
 /**
- *  [Abstract]
+ *  @abstract
  *  @return {number} the minimum raw accuracy needed in the whole area
  */
 Area.prototype.getMinRawAcc = function()

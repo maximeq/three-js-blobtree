@@ -8,7 +8,7 @@ const ScalisTriangleAcc = require("../accuracies/ScalisTriangleAcc.js");
 
 /**
  *  Bounding area for the triangle.
- *  It is the same for Mech and Orga primitives since the support of the convolution
+ *  It is the same for DIST and CONVOL primitives since the support of the convolution
  *  kernel is the same as the support for the distance field.
  *
  *  The Area must be able to return accuracy needed in a given zone (Sphere fr now,

@@ -1,14 +1,19 @@
 'use strict';
 
+
+/**
+ *  @global ScalisMath Contains some maths constant and functions for Scalis primitives.
+ *          We use CompactPolynomial6 with 2.0 as Scale. Those parameters will be used by main primitives.
+ *  @type {Object}
+ *  @property {number} KS Kernel Scale
+ *  @property {number} KS2 Kernel Scale Squared
+ *  @property {number} KIS2 Kernel Inverse Scale Squared
+ *  @property {} Poly6Eval
+ */
 var ScalisMath = {};
 
-// We use CompactPolynomial4 with 2.0 as Scale.
-// Those parameters will be used by main primitives*
-/** @const {number} Kernel Scale */
 ScalisMath.KS = 2.0;
-/** @const {number} Kernel Scale Squared */
 ScalisMath.KS2 = 4.0;
-/** @const {number} Kernel Inverse Scale Squared */
 ScalisMath.KIS2 = 1/(ScalisMath.KS*ScalisMath.KS);
 /**
  *  Compact Polynomial of degree 6 evaluation function
@@ -41,6 +46,7 @@ ScalisMath.Poly6EvalSq = function(r2)
         return 0.0;
     }
 };
+
 /**
  *  Compute the iso value at a given distance for a given polynomial degree
  *  and scale in 0 dimension (point)
@@ -66,6 +72,7 @@ ScalisMath.GetIsoValueAtDistanceGeom0D = function(degree, scale, dist)
         return 0.0;
     }
 };
+
 /** @const {number} Normalization Factor for polynomial 4 in 0 dimension */
 ScalisMath.Poly4NF0D = 1.0/ScalisMath.GetIsoValueAtDistanceGeom0D(4,ScalisMath.KS,1.0);
 /** @const {number} Normalization Factor for polynomial 4 in 0 dimension */

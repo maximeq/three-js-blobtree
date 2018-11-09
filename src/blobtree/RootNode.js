@@ -1,31 +1,19 @@
-/**
- *
- *  Root class
- *
- *  This class implements a a Root node class for implicit tree.
- *  The Root is the only node to be its own parent.
- *
- *
- */
 "use strict";
 
+const Types = require("./Types.js");
 const RicciNode = require("./RicciNode.js");
 
 /**
- *  @type {string}
- */
-var rootNodeType = "blobtreeRootNode";
-
-/**
- *  The Root of any blobtree. Does behave computationaly like a RicciNode.
+ *  The root of any implicit blobtree. Does behave computationaly like a RicciNode with n = 64.
+ *  The RootNode is the only node to be its own parent.
  *  @constructor
  *  @extends RicciNode
  */
-var Root = function() {
-    // Default Root is a riccinode with ricci_n = 64 (almost a max)
+var RootNode = function() {
+    // Default RootNode is a riccinode with ricci_n = 64 (almost a max)
     RicciNode.call(this, 64);
 
-    this.type = rootNodeType;
+    this.type = RootNode.type;
 
     this.valid_aabb = true;
 
@@ -41,32 +29,40 @@ var Root = function() {
 
 };
 
-Root.prototype = Object.create(RicciNode.prototype);
-Root.prototype.constructor = Root;
+RootNode.prototype = Object.create(RicciNode.prototype);
+RootNode.prototype.constructor = RootNode;
 
-Root.type = rootNodeType;
+RootNode.type = "RootNode";
+Types.register(RootNode.type, RootNode);
 
-Root.prototype.toJSON = function(){
+RootNode.prototype.toJSON = function(){
     var res = RicciNode.prototype.toJSON.call(this);
     res.iso = this.iso_value;
     return res;
 };
+RootNode.fromJSON = function(json){
+    var res = new RootNode(json.ricci);
+    for(var i=0; i<json.children.length; ++i){
+        res.addChild(Types.fromJSON(json.children[i]));
+    }
+    return res;
+};
 
-Root.prototype.getIsoValue = function() {
+RootNode.prototype.getIsoValue = function() {
     return this.iso_value;
 };
-Root.prototype.setIsoValue = function(v) {
+RootNode.prototype.setIsoValue = function(v) {
     this.iso_value = v;
 };
-Root.prototype.getNeutralValue = function() {
+RootNode.prototype.getNeutralValue = function() {
     return this.neutral_value;
 };
-Root.prototype.setNeutralValue = function(v) {
+RootNode.prototype.setNeutralValue = function(v) {
     this.neutral_value = v;
 };
 
 // [Abstract] see Node.invalidAABB
-Root.prototype.invalidAABB = function() {
+RootNode.prototype.invalidAABB = function() {
     this.valid_aabb = false;
 };
 
@@ -76,7 +72,7 @@ Root.prototype.invalidAABB = function() {
  *  For example, this is very useful for evaluation optim
  *  @param {THREE.Box3} aabb
  */
-Root.prototype.internalTrim = function(aabb)
+RootNode.prototype.internalTrim = function(aabb)
 {
     if( !(this.trimmed.length === 0 && this.trim_parents.length === 0) ){
         throw "Error : you should not call internal trim if you have not untrimmed before. Call untrim or use externalTrim";
@@ -91,14 +87,14 @@ Root.prototype.internalTrim = function(aabb)
  *  @param {Array.<Element>} trimmed Array of trimmed Elements
  *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
  */
-Root.prototype.externalTrim = function(aabb, trimmed, parents){
+RootNode.prototype.externalTrim = function(aabb, trimmed, parents){
     this.trim(aabb, trimmed, parents);
 };
 
 /**
  *  Reset the full blobtree
  */
-Root.prototype.internalUntrim = function(){
+RootNode.prototype.internalUntrim = function(){
     this.untrim(this.trimmed, this.trim_parents);
     this.trimmed.length = 0;
     this.trim_parents.length = 0;
@@ -110,7 +106,7 @@ Root.prototype.internalUntrim = function(){
  *  @param {Array.<Element>} trimmed Array of trimmed Elements
  *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
  */
-Root.prototype.untrim = function(trimmed, parents){
+RootNode.prototype.untrim = function(trimmed, parents){
     if( !(trimmed.length === parents.length) ){
         throw "Error : trimmed and parents arrays should have the same length";
     }
@@ -123,8 +119,8 @@ Root.prototype.untrim = function(trimmed, parents){
  *  Tell if the blobtree is empty
  *  @return true if blobtree is empty
  */
-Root.prototype.isEmpty = function(){
+RootNode.prototype.isEmpty = function(){
     return this.children.length == 0;
 };
 
-module.exports = Root;
+module.exports = RootNode;

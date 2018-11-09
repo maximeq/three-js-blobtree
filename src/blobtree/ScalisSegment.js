@@ -1,6 +1,7 @@
 "use strict";
 
 const THREE = require("three-full/builds/Three.cjs.js");
+const Types = require("./Types.js");
 const ScalisPrimitive = require("./ScalisPrimitive.js");
 const ScalisVertex = require("./ScalisVertex.js");
 const Material = require("./Material.js");
@@ -8,13 +9,6 @@ const EvalTags = require("./EvalTags.js");
 const ScalisMath = require("./ScalisMath.js");
 const AreaScalisSeg = require("./Areas/AreaScalisSeg.js");
 const ScalisSegmentAcc = require("./accuracies/ScalisSegmentAcc.js");
-
-
-/**
- *  A unique identifier for the ScalisSegment type.
- *  @const {string}
- */
-var typeScalisSegment = "scalisSegment";
 
 /**
  *  Implicit segment class in the blobtree.
@@ -24,12 +18,12 @@ var typeScalisSegment = "scalisSegment";
  *
  *  @param {!ScalisVertex} v0 First vertex for the segment
  *  @param {!ScalisVertex} v1 Second vertex for the segment
- *  @param {string} volType Volume type, can be ScalisPrimitive.CONVOL
+ *  @param {!string} volType Volume type, can be ScalisPrimitive.CONVOL
  *                 (homothetic convolution surfaces, Zanni and al), or
  *                 ScalisPrimitive.DIST (classic weighted distance field)
  *  @param {number} density Density is another constant to modulate the implicit
- *                  field. Used only for Mech voltype.
- *  @param {!Array.<!Material>} mats Material for this primitive.
+ *                  field. Used only for DIST voltype.
+ *  @param {!Array.<Material>} mats Material for this primitive.
  *                                   Use [Material.defaultMaterial.clone(), Material.defaultMaterial.clone()] by default.
  *
  */
@@ -44,16 +38,17 @@ var ScalisSegment = function(v0, v1, volType, density, mats) {
     this.density     = density;
     this.materials   = mats;
 
-    this.type        = typeScalisSegment;
+    this.type        = ScalisSegment.type;
 
     // Temporary for eval
-    // EvalOrga
+    // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
+    // CONVOL
     this.clipped_l1 = 1.0;
     this.clipped_l2 = 0.0;
     this.vector = new THREE.Vector3();
     this.cycle  = new THREE.Vector3();
     this.proj   = new THREE.Vector3();
-    // EvalMech
+    // DIST
     this.ev_eps = {v:0};
     this.p_eps = new THREE.Vector3();
     // helper attributes
@@ -89,10 +84,11 @@ var ScalisSegment = function(v0, v1, volType, density, mats) {
     this.computeHelpVariables();
 };
 
-ScalisSegment.type = typeScalisSegment;
-
 ScalisSegment.prototype = Object.create(ScalisPrimitive.prototype);
 ScalisSegment.constructor = ScalisSegment;
+
+ScalisSegment.type = "ScalisSegment";
+Types.register(ScalisSegment.type, ScalisSegment);
 
 ScalisSegment.prototype.toJSON = function() {
     var res = ScalisPrimitive.prototype.toJSON.call(this);
@@ -206,7 +202,7 @@ ScalisSegment.prototype.computeHelpVariables = function() {
     this.maxboundSq = this.maxbound*this.maxbound;
 
     // Speed up var for cylinder bounding
-    // Used only in evalOrga
+    // Used only in evalConvol
     this.cyl_bd0 = Math.min(-bound_supp0, this.length-bound_supp1);
     this.cyl_bd1 = Math.max(this.length+bound_supp1, bound_supp0);
 
@@ -236,24 +232,24 @@ ScalisSegment.prototype.computeHelpVariables = function() {
 ScalisSegment.prototype.value = function(p,req,res) {
     switch(this.volType){
     case ScalisPrimitive.DIST:
-        this.evalMech(p,req,res);
+        this.evalDist(p,req,res);
         break;
     case ScalisPrimitive.CONVOL:
-        this.evalOrga(p,req,res);
+        this.evalConvol(p,req,res);
         break;
     default:
-        console.log("Unknown volType, use Orga");
+        throw "Unknown volType, cannot evaluate.";
         break;
     }
 };
 
 ///////////////////////////////////////////////////////////////////////////
-// Mechanic Evaluation functions and auxiliaary functions
+// Distance Evaluation functions and auxiliaary functions
 // Note : for the mech primitive we use a CompactPolynomial6 kernel.
 //        TODO : the orga should use the same for better smoothness
 
 /**
- *  value function for Mech volume type (distance field).
+ *  value function for Distance volume type (distance field).
  *  Compute the value and/or gradient and/or material
  *  of the primitive at position p in space. return computations in res (see below)
  *
@@ -265,7 +261,7 @@ ScalisSegment.prototype.value = function(p,req,res) {
  *              res = {v: value, m: material, g: gradient}
  *              res.v/m/g should exist if wanted and be allocated already.
  */
-ScalisSegment.prototype.evalMech = function(p, req, res) {
+ScalisSegment.prototype.evalDist = function(p, req, res) {
 
     var p0_to_p = this.vector;
     p0_to_p.subVectors(p,this.v[0].getPos());
@@ -309,17 +305,17 @@ ScalisSegment.prototype.evalMech = function(p, req, res) {
         var d_over_eps = this.density/epsilon;
         this.p_eps.copy(p);
         this.p_eps.x += epsilon;
-        this.evalMech(this.p_eps, EvalTags.Value, this.ev_eps);
+        this.evalDist(this.p_eps, EvalTags.Value, this.ev_eps);
         res.g.x = d_over_eps*(this.ev_eps.v-res.v);
         this.p_eps.x -= epsilon;
 
         this.p_eps.y += epsilon;
-        this.evalMech(this.p_eps, EvalTags.Value, this.ev_eps);
+        this.evalDist(this.p_eps, EvalTags.Value, this.ev_eps);
         res.g.y = d_over_eps*(this.ev_eps.v-res.v);
         this.p_eps.y -= epsilon;
 
         this.p_eps.z += epsilon;
-        this.evalMech(this.p_eps, EvalTags.Value, this.ev_eps);
+        this.evalDist(this.p_eps, EvalTags.Value, this.ev_eps);
         res.g.z = d_over_eps*(this.ev_eps.v-res.v);
     }
 };
@@ -392,9 +388,9 @@ ScalisSegment.prototype.heuristicStepWithin = function() {
 };
 
 ///////////////////////////////////////////////////////////////////////////
-// Organic Evaluation functions and auxiliaary functions
+// Convolution Evaluation functions and auxiliaary functions
 /**
- *  value function for Orga volume type (Homothetic convolution).
+ *  value function for Convol volume type (Homothetic convolution).
  *  Compute the value and/or gradient and/or material
  *  of the primitive at position p in space. return computations in res (see below)
  *
@@ -406,7 +402,7 @@ ScalisSegment.prototype.heuristicStepWithin = function() {
  *              res = {v: value, m: material, g: gradient}
  *              res.v/m/g should exist if wanted and be allocated already.
  */
-ScalisSegment.prototype.evalOrga = function(p, req, res) {
+ScalisSegment.prototype.evalConvol = function(p, req, res) {
     if(!this.valid_aabb){
         throw "Error : prepareForEval should have been called";
     }

@@ -1,10 +1,8 @@
 'use strict';
 
 const Element = require("./Element.js");
+const Types = require("./Types.js");
 const EvalTags = require("./EvalTags.js");
-
-/** @const {string} */
-var primitiveType = "primitive";
 
 /**
  *  Represent a blobtree primitive.
@@ -14,7 +12,7 @@ var primitiveType = "primitive";
  */
 var Primitive = function() {
     Element.call(this);
-    this.type       = primitiveType;
+    this.type       = Primitive.type;
 
     /** @type {!Array.<!Material>} */
     this.materials = [];
@@ -23,7 +21,8 @@ var Primitive = function() {
 Primitive.prototype = Object.create(Element.prototype);
 Primitive.prototype.constructor = Primitive;
 
-Primitive.type = primitiveType;
+Primitive.type = "Primitive";
+Types.register(Primitive.type, Primitive);
 
 Primitive.prototype.toJSON= function(mats) {
     var res = Element.prototype.toJSON.call(this);
@@ -32,7 +31,7 @@ Primitive.prototype.toJSON= function(mats) {
         res.materials.push(this.materials[i].toJSON());
     }
     return res;
-}
+};
 
 /**
 *  @param {Array.<!Material>} mats Array of materials to set. they will be copied to the primitive materials
@@ -89,7 +88,7 @@ Primitive.prototype.computeAABB = function() {
 };
 
 /**
- *  [Abstract]
+ *  @abstract
  *  Destroy the current primitive and remove it from the blobtree (basically
  *  clean up the links between blobtree elements).
  */
@@ -100,7 +99,7 @@ Primitive.prototype.destroy = function() {
 };
 
 /**
- *  [Abstract]
+ *  @abstract
  *  Compute the value and/or gradient and/or material
  *  of the primitive at position p in space. return computations in res (see below)
  *
@@ -129,7 +128,7 @@ Primitive.prototype.computeHelpVariables = function() {
 }; // to override
 
 /**
- *  [Abstract]
+ *  @abstract
  *  Prepare the primitive for a call to value.
  *  Important note: For now, a primitive is considered prepared for eval if and only
  *                  if its bounding box is valid (valid_aabb is true).

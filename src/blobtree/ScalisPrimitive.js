@@ -1,10 +1,8 @@
 'use strict';
 
+const Types = require("./Types.js");
 const Primitive = require("./Primitive.js");
 const EvalTags = require("./EvalTags.js");
-
-/** @const {string} */
-var scalisPrimitiveType = "scalisPrimitive";
 
 /**
  *  Represent an implicit primitive respecting the SCALIS model developped by Cedrric Zanni
@@ -14,12 +12,14 @@ var scalisPrimitiveType = "scalisPrimitive";
  */
 var ScalisPrimitive = function() {
     Primitive.call(this);
-    this.type    = scalisPrimitiveType;
+    this.type    = ScalisPrimitive.type;
 
     // Type of volume (convolution or distance funtion)
     this.volType = ScalisPrimitive.DIST;
 
-    /** @type {!Array.<!ScalisVertex>} */
+    /** @type {!Array.<!ScalisVertex>}
+     *  @private
+     */
     this.v = []; // vertex array
 };
 
@@ -29,7 +29,8 @@ ScalisPrimitive.CONVOL = "convol";
 ScalisPrimitive.prototype = Object.create(Primitive.prototype);
 ScalisPrimitive.prototype.constructor = ScalisPrimitive;
 
-ScalisPrimitive.type = scalisPrimitiveType;
+ScalisPrimitive.type = "ScalisPrimitive";
+Types.register(ScalisPrimitive.type, ScalisPrimitive);
 
 ScalisPrimitive.prototype.toJSON= function() {
     var res = Primitive.prototype.toJSON.call(this);
@@ -42,7 +43,7 @@ ScalisPrimitive.prototype.toJSON= function() {
 };
 
 /**
- *  [Abstract] Specify if the voltype can be changed
+ *  @abstract Specify if the voltype can be changed
  *  @return {boolean} True if and only if the VolType can be changed.
  */
 ScalisPrimitive.prototype.mutableVolType = function() {

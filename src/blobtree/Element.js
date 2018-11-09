@@ -1,11 +1,9 @@
 'use strict';
 
 const THREE = require("three-full/builds/Three.cjs.js");
+const Types = require("./Types.js");
 
 var elementIds = 0;
-
-/** @const {string} */
-var elementType = "element";
 
 /**
  *  A superclass for Node and Primitive in the blobtree.
@@ -18,7 +16,7 @@ var Element = function () {
     this.aabb = new THREE.Box3();
     this.valid_aabb = false;
 
-    this.type = elementType;
+    this.type = Element.type;
 
     /** @type {Blobtree.Node} */
     this.parentNode = null;
@@ -26,11 +24,17 @@ var Element = function () {
 
 Element.prototype.constructor = Element;
 
-Element.type = elementType;
+Element.type = "Element";
+Types.register(Element.type, Element);
 
+/**
+ *  @abstract
+ *  Return a Javscript Object respecting JSON convention.
+ *  All classes must
+ */
 Element.prototype.toJSON = function(){
     return {
-        type:this.type
+        type:this.getType()
     };
 };
 
@@ -48,17 +52,17 @@ Element.prototype.getType = function() {
 };
 
 /**
- *  [Abstract]
  *  Perform precomputation that will help to reduce future processing time,
  *  especially on calls to value.
  *  @protected
+ *  @abstract
  */
 Element.prototype.computeHelpVariables = function() {
     this.computeAABB();
 };
 
 /**
- *  [Abstract]
+ *  @abstract
  *  Compute the Axis Aligned Bounding Box (AABB) for the current primitive.
  *  By default, the AABB returned is the unionns of all vertices AABB (This is
  *  good for almost all basic primitives).
@@ -77,7 +81,7 @@ Element.prototype.getAABB = function() {
 };
 
 /**
- *  [Abstract]
+ *  @abstract
  *  Prepare the element for a call to value.
  *  Important note: For now, a primitive is considered prepared for eval if and only
  *                  if its bounding box is valid (valid_aabb is true).
@@ -90,7 +94,7 @@ Element.prototype.prepareForEval = function() {
 };
 
 /**
- *  [Abstract]
+ *  @abstract
  *  Get the Area object.
  *  Area objects do provide methods useful when rasterizing, raytracing or polygonizing
  *  the area (intersections with other areas, minimum level of detail needed to
@@ -103,7 +107,7 @@ Element.prototype.getAreas = function() {
 };
 
 /**
- *  [Abstract]
+ *  @abstract
  *  This function is called when a point is outside of the potential influence of a primitive/node.
  *  @return {number} The next step length to do with respect to this primitive/node
  */
@@ -113,7 +117,7 @@ Element.prototype.distanceTo = function(p) {
 };
 
 /**
- *  [Abstract]
+ *  @abstract
  *  This function is called when a point is within the potential influence of a primitive/node.
  *  @return {number} The next step length to do with respect to this primitive/node.
  */

@@ -1,15 +1,11 @@
 "use strict";
 
 const THREE = require("three-full/builds/Three.cjs.js");
+const Types = require("./Types.js");
 const Node = require("./Node.js");
 const EvalTags = require("./EvalTags.js");
 const Convergence = require("../utils/Convergence.js");
 const Material = require("./Material.js");
-
-/**
- *  @type {string}
- */
-var ricciNodeType = "blobtreeRicciNode";
 
 /**
  *  This class implement a n-ary blend node which use a Ricci Blend.
@@ -23,7 +19,7 @@ var RicciNode = function (ricci_n) {
 
     Node.call(this);
 
-    this.type = ricciNodeType;
+    this.type = RicciNode.type;
 
     this.ricci_n = ricci_n;
 
@@ -38,7 +34,8 @@ var RicciNode = function (ricci_n) {
 RicciNode.prototype = Object.create( Node.prototype );
 RicciNode.prototype.constructor = RicciNode;
 
-RicciNode.type = ricciNodeType;
+RicciNode.type = "RicciNode";
+Types.register(RicciNode.type, RicciNode);
 
 RicciNode.prototype.toJSON = function(){
     var res = Node.prototype.toJSON.call(this);
@@ -46,10 +43,13 @@ RicciNode.prototype.toJSON = function(){
 
     return res;
 };
-
-// see JSONLoader
-// RicciNode.fromJSON = function(json)
-
+RicciNode.fromJSON = function(json){
+    var res = new RicciNode(json.ricci);
+    for(var i=0; i<json.children.length; ++i){
+        res.addChild(Types.fromJSON(json.children[i]));
+    }
+    return res;
+};
 
 // [Abstract] see Node for a complete description
 RicciNode.prototype.prepareForEval = function()

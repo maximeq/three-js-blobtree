@@ -1,6 +1,7 @@
 'use strict';
 
 const THREE = require("three-full/builds/Three.cjs.js");
+const Types = require("./Types.js");
 const ScalisPrimitive = require("./ScalisPrimitive.js");
 const ScalisVertex = require("./ScalisVertex.js");
 const Material = require("./Material.js");
@@ -10,17 +11,12 @@ const TriangleUtils = require("../utils/TriangleUtils.js");
 const AreaScalisTri = require("./Areas/AreaScalisTri.js");
 const ScalisTriangleAcc = require("./accuracies/ScalisTriangleAcc.js");
 
- /**
- *  A unique identifier for the Triangle type.
- *  @const {string}
- */
-var typeScalisTriangle = "scalistriangle";
-
-/** @const {number} For the simpsons numerical integration */
+// Number of sample in the Simpsons integration.
 var sampleNumber = 10;
 
 /**
- *  This class implements a Triangle primitive.
+ *  This class implements a ScalisTriangle primitive.
+ *  CONVOL Evaluation is not exact so we use simpsons numerical integration.
  *
  *  @constructor
  *  @param {!Array.<!ScalisVertex>} v the 3 vertices for the triangle
@@ -28,18 +24,20 @@ var sampleNumber = 10;
  *  @param {!Array.<!Material>} mats the triangle materials per vertices
  *  @extends ScalisPrimitive
  */
-var Triangle = function(v, volType, mats) {
+var ScalisTriangle = function(v, volType, mats) {
     // Calling parent class initialize function
     ScalisPrimitive.call(this);
 
     this.volType = volType;
     this.materials     = mats !== null? mats : [Material.defaultMaterial.clone(), Material.defaultMaterial.clone(), Material.defaultMaterial.clone()];
-    this.type = typeScalisTriangle;
+    this.type = ScalisTriangle.type;
 
     this.v = v;
     this.min_thick = Math.min(this.v[0].getThickness(), this.v[1].getThickness(), this.v[2].getThickness());
     this.max_thick = Math.max(this.v[0].getThickness(), this.v[1].getThickness(), this.v[2].getThickness());
+
     // Temporary for eval
+    // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
     this.res_gseg = {};
     this.tmp_res_gseg = {};
     this.ev_eps = {v:0};
@@ -80,16 +78,17 @@ var Triangle = function(v, volType, mats) {
 };
 
 // inherits from Primitive
-Triangle.prototype = Object.create(ScalisPrimitive.prototype);
-Triangle.prototype.constructor = Triangle;
+ScalisTriangle.prototype = Object.create(ScalisPrimitive.prototype);
+ScalisTriangle.prototype.constructor = ScalisTriangle;
 
-Triangle.type = typeScalisTriangle;
+ScalisTriangle.type = "ScalisTriangle";
+Types.register(ScalisTriangle.type, ScalisTriangle);
 
-Triangle.prototype.toJSON = function() {
+ScalisTriangle.prototype.toJSON = function() {
     var res = ScalisPrimitive.prototype.toJSON.call(this);
     return res;
 };
-Triangle.fromJSON = function(json){
+ScalisTriangle.fromJSON = function(json){
     var v = [
         ScalisVertex.fromJSON(json.v[0]),
         ScalisVertex.fromJSON(json.v[1]),
@@ -100,11 +99,11 @@ Triangle.fromJSON = function(json){
         Material.fromJSON(json.materials[1]),
         Material.fromJSON(json.materials[2])
     ];
-    return new Triangle(v, json.volType, m);
+    return new ScalisTriangle(v, json.volType, m);
 };
 
 // [Abstract] See Primitive.prepareForEval for more details
-Triangle.prototype.prepareForEval = function() {
+ScalisTriangle.prototype.prepareForEval = function() {
     var res = {del_obj:[], new_areas:[]};
     if(!this.valid_aabb)
     {
@@ -117,7 +116,7 @@ Triangle.prototype.prepareForEval = function() {
 
 
 // [Abstract] See Primtive.getArea for more details
-Triangle.prototype.getAreas = function() {
+ScalisTriangle.prototype.getAreas = function() {
     if(!this.valid_aabb){
         console.log("ERROR : Cannot get area of invalid primitive");
         return [];
@@ -155,19 +154,19 @@ Triangle.prototype.getAreas = function() {
 };
 
 // [Abstract] See Primitive.computeHelpVariables for more details
-Triangle.prototype.computeHelpVariables = function() {
+ScalisTriangle.prototype.computeHelpVariables = function() {
     TriangleUtils.computeVectorsDirs(this);
     // Compute the AABB from the union of the BBox of the vertices
     this.computeAABB();
 };
 
 // [Abstract] See ScalisPrimitive.mutableVolType for more details
-Triangle.prototype.mutableVolType = function() {
+ScalisTriangle.prototype.mutableVolType = function() {
     return true;
 };
 
 // [Abstract] See Primitive.setVolType for more details
-Triangle.prototype.setVolType = function(vt)
+ScalisTriangle.prototype.setVolType = function(vt)
 {
     if( !(vt == ScalisPrimitive.CONVOL || vt == ScalisPrimitive.DIST) ){
         throw "ERROR : volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST";
@@ -180,7 +179,7 @@ Triangle.prototype.setVolType = function(vt)
 };
 
 // [Abstract] See Primitive.getVolType for more details
-Triangle.prototype.getVolType = function()
+ScalisTriangle.prototype.getVolType = function()
 {
     return this.volType;
 };
@@ -195,12 +194,12 @@ Triangle.prototype.getVolType = function()
  *  Agency: Softhis
  *  http://www.softhis.com
  */
-Triangle.prototype.clamp = function (a,b,c){
+ScalisTriangle.prototype.clamp = function (a,b,c){
     return Math.max(b,Math.min(c,a));
 };
 
 // [Abstract] See Primitive.distanceTo for more details
-Triangle.prototype.distanceTo = (function() {
+ScalisTriangle.prototype.distanceTo = (function() {
     var p0p = new THREE.Vector3();
     var p1p = new THREE.Vector3();
     var p2p = new THREE.Vector3();
@@ -247,26 +246,26 @@ Triangle.prototype.distanceTo = (function() {
 })();
 
 // [Abstract] See Primitive.heuristicStepWithin for more details
-Triangle.prototype.heuristicStepWithin = function() {
+ScalisTriangle.prototype.heuristicStepWithin = function() {
     return this.weight_min/3;
 };
 
 // [Abstract] See Primitive.value for more details
-Triangle.prototype.value = function(p,req,res) {
+ScalisTriangle.prototype.value = function(p,req,res) {
     switch(this.volType){
         case ScalisPrimitive.DIST:
-            return this.evalMech(p,req,res);
+            return this.evalDist(p,req,res);
         case ScalisPrimitive.CONVOL:
             // for now rings are just evaluated as distance surface
-            return this.evalOrga(p,req,res);
+            return this.evalConvol(p,req,res);
         default:
-            console.log("Unknown volType, use Orga");
+            throw "Unknown volType, use Orga";
         break;
     }
 };
 
 /**
- *  value function for Mech volume type (distance field).
+ *  value function for Distance volume type (distance field).
  *  Compute the value and/or gradient and/or material
  *  of the primitive at position p in space. return computations in res (see below)
  *
@@ -279,7 +278,7 @@ Triangle.prototype.value = function(p,req,res) {
  *              res.v/m/g should exist if wanted and be allocated already.
  */
 // jshint maxstatements:150
-Triangle.prototype.evalMech = function(p, req, res)
+ScalisTriangle.prototype.evalDist = function(p, req, res)
 {
 /*
     // bounding box check (could/should be done in the node ?)
@@ -493,17 +492,17 @@ Triangle.prototype.evalMech = function(p, req, res)
             var epsilon = 0.00001;
             this.p_eps.copy(p);
             this.p_eps.x += epsilon;
-            this.evalMech(this.p_eps, EvalTags.Value, this.ev_eps);
+            this.evalDist(this.p_eps, EvalTags.Value, this.ev_eps);
             res.g.x = (this.ev_eps.v-res.v)/epsilon;
             this.p_eps.x -= epsilon;
 
             this.p_eps.y += epsilon;
-            this.evalMech(this.p_eps, EvalTags.Value, this.ev_eps);
+            this.evalDist(this.p_eps, EvalTags.Value, this.ev_eps);
             res.g.y = (this.ev_eps.v-res.v)/epsilon;
             this.p_eps.y -= epsilon;
 
             this.p_eps.z += epsilon;
-            this.evalMech(this.p_eps, EvalTags.Value, this.ev_eps);
+            this.evalDist(this.p_eps, EvalTags.Value, this.ev_eps);
             res.g.z = (this.ev_eps.v-res.v)/epsilon;
         }
 /*
@@ -516,7 +515,7 @@ Triangle.prototype.evalMech = function(p, req, res)
 
 /**
  *
- *  Segment computations used in Mech triangle evaluation.
+ *  Segment computations used in Distance triangle evaluation.
  *
  *  @param {!THREE.Vector3} point Point where value is wanted, as a THREE.Vector3
  *  @param {!THREE.Vector3} p1 Segment first point, as a THREE.Vector3
@@ -528,7 +527,7 @@ Triangle.prototype.evalMech = function(p, req, res)
  *  @param {!Object} res {proj_to_p, weight_proj}
  *
  */
-Triangle.prototype.GenericSegmentComputation = function(
+ScalisTriangle.prototype.GenericSegmentComputation = function(
                                             point,
                                             p1,
                                             p1p2,
@@ -563,10 +562,10 @@ Triangle.prototype.GenericSegmentComputation = function(
 };
 
 ///////////////////////////////////////////////////////////////////////////
-// Organic Evaluation functions and auxiliaary functions
+// Convolution Evaluation functions and auxiliaary functions
 
 /**
- *  value function for Mech volume type (distance field).
+ *  value function for Distance volume type (distance field).
  *  Compute the value and/or gradient and/or material
  *  of the primitive at position p in space. return computations in res (see below)
  *
@@ -578,7 +577,7 @@ Triangle.prototype.GenericSegmentComputation = function(
  *              res = {v: value, m: material, g: gradient}
  *              res.v/m/g should exist if wanted and be allocated already.
  */
-Triangle.prototype.evalOrga = (function() {
+ScalisTriangle.prototype.evalConvol = (function() {
     var tmp_res = {v:0,m:new Material(null,null,null)};
     return function (p, req, res) {
         // Compute closest point (t parameter) on the triangle in "warped space" as well as clipping
@@ -639,7 +638,7 @@ Triangle.prototype.evalOrga = (function() {
             res.g = new THREE.Vector3();
         }
         if (req & EvalTags.Mat) {
-            this.evalMech(p, EvalTags.Mat, tmp_res);
+            this.evalDist(p, EvalTags.Mat, tmp_res);
             res.m.copy(tmp_res.m);
         }
     };
@@ -648,7 +647,7 @@ Triangle.prototype.evalOrga = (function() {
  *  @param {number} t
  *  @return {number} Warped value
  */
-Triangle.prototype.warpAbscissa = function (t) {
+ScalisTriangle.prototype.warpAbscissa = function (t) {
     // Compute approx of ln(d*l+1)/d
     var dt = t * this.unit_delta_weight;
     var inv_dtp2 = 1.0 / (dt + 2.0);
@@ -667,7 +666,7 @@ Triangle.prototype.warpAbscissa = function (t) {
  *  @param {number} t
  *  @return {number} Unwarped value
  */
-Triangle.prototype.unwarpAbscissa = function (t) {
+ScalisTriangle.prototype.unwarpAbscissa = function (t) {
     // Compute approx of (exp(d*l)-1)/d
     var dt = t * this.unit_delta_weight;
     return t * ( 1.0 + dt *( 1.0/2.0 + dt * ( 1.0/6.0 + dt * ( 1.0/24.0 + dt * ( 1.0/120.0 + dt * 1.0/720.0 ))))) ;
@@ -681,7 +680,7 @@ Triangle.prototype.unwarpAbscissa = function (t) {
  *                       implemented here, value must always be computed.
  *  @return {!Object} An object containing v the value
  */
-Triangle.prototype.computeLineIntegral = function (t, p, req) {
+ScalisTriangle.prototype.computeLineIntegral = function (t, p, req) {
 
     var weight = this.weight_min + t * this.unit_delta_weight;
     var p_1 = new THREE.Vector3();
@@ -714,7 +713,7 @@ Triangle.prototype.computeLineIntegral = function (t, p, req) {
  *
  *  @protected
  */
-Triangle.prototype.homotheticClippingSpecial = function(w, length, clipped)
+ScalisTriangle.prototype.homotheticClippingSpecial = function(w, length, clipped)
 {
     // we search solution t \in [0,1] such that at^2-2bt+c<=0
     var a = -w.z;
@@ -751,7 +750,7 @@ Triangle.prototype.homotheticClippingSpecial = function(w, length, clipped)
  *
  *  @protected
  */
-Triangle.prototype.consWeightEvalForSeg = function( p_1, w_1, unit_dir, length, point) {
+ScalisTriangle.prototype.consWeightEvalForSeg = function( p_1, w_1, unit_dir, length, point) {
     var res = {v:0};
     var p_min_to_point = new THREE.Vector3();
     p_min_to_point.subVectors( point, p_1 );
@@ -786,7 +785,7 @@ Triangle.prototype.consWeightEvalForSeg = function( p_1, w_1, unit_dir, length, 
  *
  *  @protected
  */
-Triangle.prototype.consWeightEvalGradForSeg = function( p_1, w_1, unit_dir, length, point) {
+ScalisTriangle.prototype.consWeightEvalGradForSeg = function( p_1, w_1, unit_dir, length, point) {
     var res = {v:0.0, g:new THREE.Vector3()};
 
     var p_min_to_point = new THREE.Vector3();
@@ -826,7 +825,7 @@ Triangle.prototype.consWeightEvalGradForSeg = function( p_1, w_1, unit_dir, leng
  *                           values are between 0.0 and length/weight_min
  *  @return {boolean} true if clipping occured
  */
-Triangle.prototype.ComputeTParam = function(point, clipped) {
+ScalisTriangle.prototype.ComputeTParam = function(point, clipped) {
     var p_min_to_point = new THREE.Vector3();
     p_min_to_point.subVectors( point, this.point_min );
 
@@ -851,7 +850,7 @@ Triangle.prototype.ComputeTParam = function(point, clipped) {
  *  @param {!THREE.Vector3} w Some coefficient, as a THREE.Vector3
  *  @return {number} the value
  */
-Triangle.prototype.homotheticCompactPolynomial_segment_F_i6_cste = function(l, w) {
+ScalisTriangle.prototype.homotheticCompactPolynomial_segment_F_i6_cste = function(l, w) {
     var t7068 = w.z;
     var t7078 = t7068 * l;
     var t7069 = w.y;
@@ -880,7 +879,7 @@ Triangle.prototype.homotheticCompactPolynomial_segment_F_i6_cste = function(l, w
  *  @param {!THREE.Vector3} w a THREE.Vector3
  *
  */
-Triangle.prototype.homotheticCompactPolynomial_segment_FGradF_i6_cste = function(l, w, res) {
+ScalisTriangle.prototype.homotheticCompactPolynomial_segment_FGradF_i6_cste = function(l, w, res) {
     var t7086 = w.z;
     var t7095 = t7086 * l;
     var t7087 = w.y;
@@ -902,4 +901,4 @@ Triangle.prototype.homotheticCompactPolynomial_segment_FGradF_i6_cste = function
     res.z = (t7087 * t7093 + t7080 / 0.6e1 - t7085 / 0.6e1) * t7084;
 };
 
-module.exports = Triangle;
+module.exports = ScalisTriangle;
