@@ -73,9 +73,17 @@ ScalisMath.GetIsoValueAtDistanceGeom0D = function(degree, scale, dist)
     }
 };
 
-/** @const {number} Normalization Factor for polynomial 4 in 0 dimension */
+/**
+ * @global
+ * @type {number} Normalization Factor for polynomial 4 in 0 dimension
+ * @const
+ */
 ScalisMath.Poly4NF0D = 1.0/ScalisMath.GetIsoValueAtDistanceGeom0D(4,ScalisMath.KS,1.0);
-/** @const {number} Normalization Factor for polynomial 4 in 0 dimension */
+/**
+ * @global
+ * @type {number} Normalization Factor for polynomial 6 in 0 dimension
+ * @const
+ */
 ScalisMath.Poly6NF0D = 1.0/ScalisMath.GetIsoValueAtDistanceGeom0D(6,ScalisMath.KS,1.0);
 
 /**
@@ -110,9 +118,17 @@ ScalisMath.GetIsoValueAtDistanceGeom1D = function (degree, scale, dist)
         return 0.0;
     }
 };
-/** @const {number} Normalization Factor for polynomial 4 in 1 dimensions */
+/**
+ * @global
+ * @type {number} Normalization Factor for polynomial 4 in 1 dimension
+ * @const
+ */
 ScalisMath.Poly4NF1D = 1.0/ScalisMath.GetIsoValueAtDistanceGeom1D(4,ScalisMath.KS,1.0);
-/** @const {number} Normalization Factor for polynomial 6 in 1 dimensions */
+/**
+ * @global
+ * @type {number} Normalization Factor for polynomial 6 in 1 dimension
+ * @const
+ */
 ScalisMath.Poly6NF1D = 1.0/ScalisMath.GetIsoValueAtDistanceGeom1D(6,ScalisMath.KS,1.0);
 
 /**
@@ -137,9 +153,17 @@ ScalisMath.GetIsoValueAtDistanceGeom2D = function (degree, scale, dist)
         return 0.0;
     }
 };
-/** @const {number} Normalization Factor for polynomial 4 in 2 dimensions */
+/**
+ * @global
+ * @type {number} Normalization Factor for polynomial 4 in 2 dimension
+ * @const
+ */
 ScalisMath.Poly4NF2D = 1.0/ScalisMath.GetIsoValueAtDistanceGeom2D(4,ScalisMath.KS,1.0);
-/** @const {number} Normalization Factor for polynomial 6 in 2 dimensions */
+/**
+ * @global
+ * @type {number} Normalization Factor for polynomial 6 in 2 dimension
+ * @const
+ */
 ScalisMath.Poly6NF2D = 1.0/ScalisMath.GetIsoValueAtDistanceGeom2D(6,ScalisMath.KS,1.0);
 
 module.exports = ScalisMath;
