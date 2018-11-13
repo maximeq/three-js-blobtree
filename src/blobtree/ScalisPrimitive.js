@@ -32,6 +32,10 @@ ScalisPrimitive.prototype.constructor = ScalisPrimitive;
 ScalisPrimitive.type = "ScalisPrimitive";
 Types.register(ScalisPrimitive.type, ScalisPrimitive);
 
+ScalisPrimitive.prototype.getType = function(){
+    return ScalisPrimitive.type;
+};
+
 ScalisPrimitive.prototype.toJSON= function() {
     var res = Primitive.prototype.toJSON.call(this);
     res.v = [];

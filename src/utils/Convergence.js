@@ -18,7 +18,7 @@ var Convergence = {};
 //      - 2 small steps may be too much, only 1 could be enough in most cases isn't it?
 // @todo write documentation to talk about failure cases.
 //
-// Variable used in function. This avoid to reallocate.
+// Variable used in function. This avoid reallocation.
     Convergence.last_mov_pt = new THREE.Vector3();
     Convergence.grad = new THREE.Vector3();
     Convergence.eval_res = {v:0, g:new THREE.Vector3(0,0,0)};

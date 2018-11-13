@@ -90,6 +90,10 @@ ScalisSegment.constructor = ScalisSegment;
 ScalisSegment.type = "ScalisSegment";
 Types.register(ScalisSegment.type, ScalisSegment);
 
+ScalisSegment.prototype.getType = function(){
+    return ScalisSegment.type;
+};
+
 ScalisSegment.prototype.toJSON = function() {
     var res = ScalisPrimitive.prototype.toJSON.call(this);
     res.density = this.density;
