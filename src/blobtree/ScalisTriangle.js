@@ -84,6 +84,10 @@ ScalisTriangle.prototype.constructor = ScalisTriangle;
 ScalisTriangle.type = "ScalisTriangle";
 Types.register(ScalisTriangle.type, ScalisTriangle);
 
+ScalisTriangle.prototype.getType = function(){
+    return ScalisTriangle.type;
+};
+
 ScalisTriangle.prototype.toJSON = function() {
     var res = ScalisPrimitive.prototype.toJSON.call(this);
     return res;

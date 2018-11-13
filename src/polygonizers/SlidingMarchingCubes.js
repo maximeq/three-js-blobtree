@@ -326,7 +326,7 @@ SlidingMarchingCubes.prototype.interpolateInBox = function(cx,cy,cz, x0,x1,y0,y1
     var ny = y1-y0;
 
     /*
-    this.computeFrontValInBox(cx,cy,cz, new THREE.Vector2(x0,y0), new THREE.Vector2(x1,y1));
+    this.computeFrontValAtBoxCorners(cx,cy,cz, new THREE.Vector2(x0,y0), new THREE.Vector2(x1,y1));
     var mask = this.computeBoxMask(new THREE.Vector2(x0,y0), new THREE.Vector2(x1,y1));
     if(!(mask === 0xf || mask === 0x0)){
         throw "Error bad mask when interpolating";
@@ -382,7 +382,7 @@ SlidingMarchingCubes.prototype.interpolateInBox = function(cx,cy,cz, x0,x1,y0,y1
  *  @param {number} cz Coordinate x of bottom left corner of the front array
  *
  *  @param {number} x X position in the array
- *  @param {number} y Yposition in the array
+ *  @param {number} y Y position in the array
  *
  *  @private
  */
@@ -412,6 +412,21 @@ SlidingMarchingCubes.prototype.computeFrontValAtClosure = (function(){
 })();
 
 /**
+ *  Compute corner values in the front buffer in 2D box defined by min,max
+ *  @param {number} cx X coordinate of the front buffer corner
+ *  @param {number} cy Y coordinate of the front buffer corner
+ *  @param {number} cz Z coordinate of the front buffer corner
+ *  @param {!THREE.Vector2} min 2D box min
+ *  @param {!THREE.Vector2} max 2D box max
+ */
+SlidingMarchingCubes.prototype.computeFrontValAtBoxCorners = function(cx,cy,cz, min, max){
+    this.computeFrontValAt(cx,cy,cz, min.x, min.y);
+    this.computeFrontValAt(cx,cy,cz, min.x, max.y);
+    this.computeFrontValAt(cx,cy,cz, max.x, min.y);
+    this.computeFrontValAt(cx,cy,cz, max.x, max.y);
+};
+
+/**
  *  Compute all values in the front buffer in 2D box defined by min,max
  *  @param {number} cx X coordinate of the front buffer corner
  *  @param {number} cy Y coordinate of the front buffer corner
@@ -420,10 +435,11 @@ SlidingMarchingCubes.prototype.computeFrontValAtClosure = (function(){
  *  @param {!THREE.Vector2} max 2D box max
  */
 SlidingMarchingCubes.prototype.computeFrontValInBox = function(cx,cy,cz, min, max){
-    this.computeFrontValAt(cx,cy,cz, min.x, min.y);
-    this.computeFrontValAt(cx,cy,cz, min.x, max.y);
-    this.computeFrontValAt(cx,cy,cz, max.x, min.y);
-    this.computeFrontValAt(cx,cy,cz, max.x, max.y);
+    for(var xx = min.x; xx<=max.x; ++xx){
+        for(var yy = min.y; yy<=max.y; ++yy){
+            this.computeFrontValAt(cx,cy,cz, xx, yy);
+        }
+    }
 };
 
 /**
@@ -479,7 +495,7 @@ SlidingMarchingCubes.prototype.checkZeroBox = function(min, max){
  *  @param {number} cy Y coordinate of the front buffer corner
  *  @param {number} cz Z coordinate of the front buffer corner
  *  @param {!Array.<!Box2Acc>} boxes2D 2D boxes intersecting box. Used to compute accuracy for split boxes.
- *  @param {!Box2Acc} box The 2D box in wich we compute values
+ *  @param {!Box2Acc} box The 2D box in which we compute values
  */
 SlidingMarchingCubes.prototype.recursiveBoxComputation = function(cx,cy,cz, box, boxes2D){
     // split the current box in 2 boxes in the largest dimension
@@ -537,8 +553,18 @@ SlidingMarchingCubes.prototype.recursiveBoxComputation = function(cx,cy,cz, box,
     for(var i=0; i<boxes2D.length; ++i){
         for(var k=0; k<new_boxes.length;++k){
             if(new_boxes[k].intersectsBox(boxes2D[i])){
-                new_boxes[k].setRawAcc(Math.min(new_boxes[k].getRawAcc(), boxes2D[i].getRawAcc()));
-                new_boxes[k].setNiceAcc(Math.min(new_boxes[k].getNiceAcc(), boxes2D[i].getNiceAcc()));
+                new_boxes[k].setRawAcc(
+                    Math.min(
+                        new_boxes[k].getRawAcc(),
+                        boxes2D[i].getRawAcc()
+                        )
+                );
+                new_boxes[k].setNiceAcc(
+                    Math.min(
+                        new_boxes[k].getNiceAcc(),
+                        boxes2D[i].getNiceAcc()
+                    )
+                );
                 boxes2D_rec[k].push(boxes2D[i]);
             }
         }
@@ -562,11 +588,17 @@ SlidingMarchingCubes.prototype.recursiveBoxComputation = function(cx,cy,cz, box,
                     // all points are inside, since we reached raw, we can interpolate
                     // Note when all values are very close to 0, it's useless to interpolate, setting 0 can do.
                     this.interpolateInBox(cx,cy,cz, b.min.x, b.max.x, b.min.y, b.max.y);
+
+                    // OR just compute all values.
+                    // this.computeFrontValInBox(cx,cy,cz,b.min,b.max);
                 }else{
                     //Surface is crossed, must go down to the nice
                     if(bsize.x<=b.getNiceAcc() && bsize.y<=b.getNiceAcc()){
                         // We are under nice acc, just interpolate
                         this.interpolateInBox(cx,cy,cz, b.min.x, b.max.x, b.min.y, b.max.y);
+
+                        // OR just compute all values.
+                        // this.computeFrontValInBox(cx,cy,cz,b.min,b.max);
                     }else{
                         this.recursiveBoxComputation(cx,cy,cz, b, boxes2D_rec[k]);
                         //console.log("going down in " + b.toString());
@@ -613,7 +645,7 @@ SlidingMarchingCubes.prototype.computeFrontValues = function(cx,cy,cz)
 
         bigbox.intersect(new Box2Acc(new THREE.Vector2(0, 0), new THREE.Vector2(this.reso[0], this.reso[1]), bigbox.getNiceAcc(), bigbox.getRawAcc()));
 
-        this.computeFrontValInBox(cx,cy,cz, bigbox.min, bigbox.max);
+        this.computeFrontValAtBoxCorners(cx,cy,cz, bigbox.min, bigbox.max);
         this.recursiveBoxComputation(cx,cy,cz, bigbox, boxes2D);
 
         this.setFrontToZeroIfMinus();
@@ -793,7 +825,6 @@ SlidingMarchingCubes.prototype.compute = function(o_aabb, extended, progress) {
         this.dis_o_aabb.max.x = this.reso[0]-2 - Math.round((aabb.max.x-o_aabb.max.x)/this.min_acc);
         this.dis_o_aabb.max.y = this.reso[1]-2 - Math.round((aabb.max.y-o_aabb.max.y)/this.min_acc);
     }
-
     // Back values
     this.values_xy[0] = new Float32Array(this.reso[0]*this.reso[1]);
     // Front values
@@ -809,6 +840,7 @@ SlidingMarchingCubes.prototype.compute = function(o_aabb, extended, progress) {
     var percent = 0;
 
     for(var iz=0; iz<this.reso[2]-1; ++iz){
+
         // Switch the 2 arrays, and fill the one in front
         var switcher = this.values_xy[0];
         this.values_xy[0] = this.values_xy[1];
@@ -854,6 +886,7 @@ SlidingMarchingCubes.prototype.compute = function(o_aabb, extended, progress) {
             this.progress(percent);
         }
     }
+
 
     if(o_aabb){
         this.blobtree.untrim(aabb_trim, aabb_trim_parents);

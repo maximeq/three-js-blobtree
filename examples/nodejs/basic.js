@@ -20,7 +20,7 @@ root.addChild(
     )
 );
 
-var smc = new Blobtree.SlidingMarchingCubes(root);
+var smc = new Blobtree.SlidingMarchingCubes(root, {convergence:{}});
 
 var g = smc.compute();
 

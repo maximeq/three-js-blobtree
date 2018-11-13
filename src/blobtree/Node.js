@@ -24,6 +24,10 @@ Node.prototype.constructor = Node;
 Node.type = "Node";
 Types.register(Node.type, Node);
 
+Node.prototype.getType = function(){
+    return Node.type;
+};
+
 Node.prototype.toJSON = function(){
     var res = Element.prototype.toJSON.call(this);
     res.children = [];
@@ -162,7 +166,7 @@ Node.prototype.computeAABB = function() {
 // Abstract
 Node.prototype.getAreas = function() {
     if(!this.valid_aabb){
-        throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first.";
+        throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
     }
     var res = [];
     for (var i=0; i<this.children.length; i++) {

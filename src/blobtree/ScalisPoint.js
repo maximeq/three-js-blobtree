@@ -43,6 +43,10 @@ ScalisPoint.prototype.constructor = ScalisPoint;
 ScalisPoint.type = "ScalisPoint";
 Types.register(ScalisPoint.type, ScalisPoint);
 
+ScalisPoint.prototype.getType = function(){
+    return ScalisPoint.type;
+};
+
 ScalisPoint.prototype.toJSON = function() {
     var res = ScalisPrimitive.prototype.toJSON.call(this);
     res.density = this.density;
