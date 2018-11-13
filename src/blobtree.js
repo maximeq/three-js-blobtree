@@ -23,4 +23,13 @@ Blobtree.SlidingMarchingCubes = require("./polygonizers/SlidingMarchingCubes.js"
 
 Blobtree.JSONLoader = require("./blobtree/JSONLoader.js");
 
+/*
+try {
+    if( window ) {
+        window.Blobtree = Blobtree;
+    }
+}
+catch(e) {}
+*/
+
 module.exports = Blobtree;

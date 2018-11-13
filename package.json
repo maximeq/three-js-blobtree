@@ -13,18 +13,19 @@
     "three-full": "^11.3.2"
   },
   "devDependencies": {
-    "jsdoc-api": "^4.0.3",
-    "browserify": "^16.2.3",
-    "bundle-minify": "^1.0.0",
+    "rollup": "^0.67.1",
+    "eslint": "^4.11.0",
     "fs-extra": "^7.0.1",
-    "tinyify": "^2.4.3",
-    "eslint": "^4.11.0"
+    "jsdoc-api": "^4.0.3",
+    "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-node-resolve": "^3.4.0",
+    "rollup-plugin-terser": "^3.0.0"
   },
   "files": [
     "src/*",
     "dist/*"
   ],
-  "browser" : "./dist/browser/blobtree.js",
+  "browser": "./dist/browser/blobtree.js",
   "author": "Maxime Quiblier <maximequiblier@gmail.com>",
   "license": "MIT",
   "hash": "cbb66061ffd05bc5f6673756895b3f6f03e7202a"
