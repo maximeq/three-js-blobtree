@@ -208,5 +208,8 @@ RicciNode.prototype.setRicciN = function(n)
         this.invalidAABB();
     }
 };
+RicciNode.prototype.getRicciN = function(){
+    return this.ricci_n;
+};
 
 module.exports = RicciNode;

@@ -14,7 +14,7 @@ const THREE = require("three-full/builds/Three.cjs.js");
  */
 var Material = function (color, roughness, metalness) {
 
-    this.color = color ? color.clone() : new THREE.Color(0xaaaaaa);
+    this.color = new THREE.Color(color !== null && color !== undefined ? color : 0xaaaaaa);
     this.roughness = roughness ? roughness : 0;
     this.metalness = metalness ? metalness : 0;
 };
