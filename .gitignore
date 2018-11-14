@@ -7,5 +7,4 @@ examples/*/*.obj
 *npm-debug.log
 *.lock
 **.lock
-dist/*
 package-lock.json

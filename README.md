@@ -3,7 +3,7 @@ three-js-blobtree
 
 [![License][license-badge]][license-badge-url]
 
-#### Three.js Extension to manipulate Blobtrees and implicit surfaces ####
+### Three.js Extension to manipulate Blobtrees and implicit surfaces ###
 
 A library to manage implicit surfaces in THREE.JS applications using a Blobtree.
 
@@ -82,18 +82,18 @@ It can work with only THREE, but for convenience we rely on three-full.
 ##### Browser Dependencies #####
 In browser, only THREE is required.
 
-#### Main concepts ####
+### Main concepts ###
 This library implements a blobtree representation.
 A blobtree is a tree of implicit primitives generating a scalar field. Classic fields include distance fields, but other implicit functions can also be used.
 
 In this library, the standard convention is to consider the scalar field as a "mater density field".
 To respect this convention, all implicit fields should be such that the propagated value to the root evaluation always results in a value greater than 0. By default, the surface of interest is at value 1.0, but this can be changed in the Blobtree Root.
 
-# Documentation
+### Documentation ###
 A full jsdoc documentation can be build using npm.
 However, the best way to start is to read and play with the examples.
 
-# TODO
+### TODO ###
 
-## Dep to Three-full
+#### Dependency to three-full ####
 For now we ue common require method. We should probably use import syntax, so that it is possible to build a light bundle from those sources.
