@@ -61,7 +61,6 @@
             var smc = new Blobtree.SlidingMarchingCubes(
                 root,
                 {
-                    convergence:{},     // Active convergence of marching cubes points. Comment to trade quality for speed
                     detailRatio: 0.5    // Double resolution with respect to the primitives setup.
                 }
             );
@@ -70,7 +69,7 @@
             // geometry is kept as a global variable to be used in the following script.
             var geometry = smc.compute();
             geometry.computeBoundingBox();
-            var material = new THREE.MeshPhongMaterial( {vertexColors:THREE.VertexColors, wireframe:true} );
+            var material = new THREE.MeshPhongMaterial( {vertexColors:THREE.VertexColors} );
 
             var mesh = new THREE.Mesh( geometry, material );
         </script>

@@ -57,7 +57,7 @@ DistanceFunctor.prototype.value = function(d) {
  */
 DistanceFunctor.prototype.numericalGradient = function(d,epsilon){
     var eps = epsilon ? epsilon : 0.00001;
-    return (this.value(d+epsilon)-this.value(d-epsilon))/2*epsilon;
+    return (this.value(d+eps)-this.value(d-eps))/(2*eps);
 };
 
 /**

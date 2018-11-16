@@ -151,7 +151,13 @@ var SlidingMarchingCubes = function(blobtree, params) {
 
     this.detail_ratio = params.detailRatio ? Math.max(0.01, params.detailRatio) : 1.0;
 
-    this.convergence = params.convergence ? params.convergence : null;
+    if(params.convergence){
+        this.convergence = params.convergence;
+        this.convergence.ratio = this.convergence.ratio || 0.01;
+        this.convergence.step = this.convergence.step || 10;
+    }else{
+        this.convergence = null;
+    }
 
     /** @type {Int32Array} */
     this.reso = new Int32Array(3);
@@ -1095,14 +1101,15 @@ SlidingMarchingCubes.prototype.computeVertexClosure = (function() {
         // Note : it cost 15 to 20% performance lost
         //        and the result does not seem 15 et 20% better...
         if(this.convergence){
-            Convergence.safeNewton3D(this.blobtree,      // Scalar Field to eval
-                                          this.vertex,                  // 3D point where we start, must comply to THREE.Vector3 API
-                                          this.blobtree.getIsoValue(),               // iso value we are looking for
-                                          this.min_acc*(this.convergence.ratio || 0.000001) ,               // Geometrical limit to stop
-                                          this.convergence.step || 10,                           // limit of number of step
-                                          this.min_acc,                    // Bounding volume inside which we look for the iso, getting out will make the process stop.
-                                          conv_res                      // the resulting point
-                                           );
+            Convergence.safeNewton3D(
+                this.blobtree,      // Scalar Field to eval
+                this.vertex,                  // 3D point where we start, must comply to THREE.Vector3 API
+                this.blobtree.getIsoValue(),               // iso value we are looking for
+                this.min_acc*this.convergence.ratio ,               // Geometrical limit to stop
+                this.convergence.step,                           // limit of number of step
+                this.min_acc,                     // Bounding volume inside which we look for the iso, getting out will make the process stop.
+                conv_res                          // the resulting point
+            );
             this.vertex.copy(conv_res);
         }
 

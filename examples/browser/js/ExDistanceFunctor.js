@@ -66,6 +66,3 @@ ExDistanceFunctor.prototype.toJSON = function() {
     return json;
 };
 
-module.exports = ExDistanceFunctor;
-
-

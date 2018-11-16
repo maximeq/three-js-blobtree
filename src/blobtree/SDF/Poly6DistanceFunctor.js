@@ -62,7 +62,7 @@ Poly6DistanceFunctor.prototype.value = function(d) {
 Poly6DistanceFunctor.prototype.gradient = function(d){
     var ds = d/(2*this.scale) + 0.5;
     var res = (1-ds*ds);
-    res = -(6/(2*this.scale))*ds*res*res;
+    res = -(6/(2*this.scale))*ds*res*res/Poly6DistanceFunctor.evalStandard(0.5);
     return res;
 };
 

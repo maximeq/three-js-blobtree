@@ -134,8 +134,7 @@ ScalisPoint.prototype.value = function(p,req,res) {
             // Gradient computation is easy since the
             // gradient is radial. We use the analitical solution
             // to directionnal gradient (differential in this.v_to_p length)
-            var tmp2 = -this.density * thickness * ScalisMath.KIS2 * 6.0 *
-                tmp * tmp * ScalisMath.Poly6NF0D/(thickness*thickness*thickness);
+            var tmp2 = -this.density * ScalisMath.KIS2 * 6.0 * this.v_to_p.length() * tmp * tmp * ScalisMath.Poly6NF0D/(thickness*thickness);
             res.g.copy(this.v_to_p).normalize().multiplyScalar(tmp2);
         }
         if(req & EvalTags.Mat)  { res.m.copy(this.materials[0]); }

@@ -47,17 +47,17 @@ Convergence.safeNewton3D = function(    pot,              // Scalar Field to eva
             this.grad.copy(this.eval_res.g);
             if(this.grad.x !== 0.0 || this.grad.y !== 0.0 || this.grad.z !== 0.0 )
             {
-                var g_lsq = this.grad.lengthSq();
-                var step = (value-this.eval_res.v)/g_lsq;
+                var g_l = this.grad.length();
+                var step = (value-this.eval_res.v)/g_l;
                 if(step < epsilon && step > -epsilon)
                 {
                     if(step>0.0)
                     {
-                        step = epsilon/Math.sqrt(g_lsq);
+                        step = epsilon/g_l;
                     }
                     else
                     {
-                        step = -epsilon/Math.sqrt(g_lsq);
+                        step = -epsilon/g_l;
                     }
                     consecutive_small_steps++;
                 }
@@ -65,7 +65,7 @@ Convergence.safeNewton3D = function(    pot,              // Scalar Field to eva
                 {
                     consecutive_small_steps = 0;
                 }
-                this.grad.multiplyScalar(step);
+                this.grad.normalize().multiplyScalar(step);
                 res.add(this.grad);
 
                 // If the newton step took us out of the bounding volume, we have to stop
@@ -174,7 +174,7 @@ Convergence.safeNewton1D = function(
     if(epsilon<=0){
         throw "Error: epsilon <= 0, convergence will nuke your face or loop";
     }
-    if(starting_point_absc>=min_absc_inside && starting_point_absc<=max_absc_outside){
+    if(starting_point_absc<min_absc_inside || starting_point_absc>max_absc_outside){
         throw "Error : starting absc is not in boundaries";
     }
 

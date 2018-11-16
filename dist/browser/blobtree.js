@@ -78,8 +78,6 @@
         this.aabb = new Three_cjs.Box3();
         this.valid_aabb = false;
 
-        this.type = Element.type;
-
         /** @type {Blobtree.Node} */
         this.parentNode = null;
     };
@@ -110,7 +108,7 @@
      *  @return {string} Type of the element
      */
     Element.prototype.getType = function() {
-        return this.type;
+        return Element.type;
     };
 
     /**
@@ -198,9 +196,27 @@
      *  @param {THREE.Vector3} res.g Gradient.
      */
     Element.prototype.value = function(p,req,res) {
-        throw "ERROR : value is an abstract function, should be re-implemented in all primitives(error occured in " + this.type + " primitive)";
+        throw "ERROR : value is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
         return 0.0;
     };
+
+    Element.prototype.numericalGradient = (function(){
+        var tmp = {v:0};
+        var coord = ['x','y','z'];
+        return function(p,res, epsilon) {
+            var eps = epsilon || 0.00001;
+
+            for(var i=0; i<3; ++i){
+                p[coord[i]] = p[coord[i]]+eps;
+                this.value(p,EvalTags_1.Value,tmp);
+                res[coord[i]] = tmp.v;
+                p[coord[i]] = p[coord[i]]-2*eps;
+                this.value(p,EvalTags_1.Value,tmp);
+                res[coord[i]] = (res[coord[i]]-tmp.v)/(2*eps);
+                p[coord[i]] = p[coord[i]]+eps; // reset p
+            }
+        }
+    })();
 
     /**
      *  @abstract
@@ -221,7 +237,7 @@
      *  @return {number} The next step length to do with respect to this primitive/node
      */
     Element.prototype.distanceTo = function(p) {
-        throw "ERROR : distanceTo is a virtual function, should be re-implemented in all primitives(error occured in " + this.type + " primitive)";
+        throw "ERROR : distanceTo is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
         return 0.5;
     };
 
@@ -231,7 +247,7 @@
      *  @return {number} The next step length to do with respect to this primitive/node.
      */
     Element.prototype.heuristicStepWithin = function() {
-        throw "ERROR : heuristicStepWithin is a virtual function, should be re-implemented in all primitives(error occured in " + this.type + " primitive)";
+        throw "ERROR : heuristicStepWithin is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
         return 0.1;
     };
 
@@ -268,8 +284,6 @@
     var Node = function ()
     {
         Element_1.call(this);
-
-        this.type = Node.type;
 
         /** @type {Array.<!Element>} */
         this.children = [];
@@ -506,17 +520,17 @@
                 this.grad.copy(this.eval_res.g);
                 if(this.grad.x !== 0.0 || this.grad.y !== 0.0 || this.grad.z !== 0.0 )
                 {
-                    var g_lsq = this.grad.lengthSq();
-                    var step = (value-this.eval_res.v)/g_lsq;
+                    var g_l = this.grad.length();
+                    var step = (value-this.eval_res.v)/g_l;
                     if(step < epsilon && step > -epsilon)
                     {
                         if(step>0.0)
                         {
-                            step = epsilon/Math.sqrt(g_lsq);
+                            step = epsilon/g_l;
                         }
                         else
                         {
-                            step = -epsilon/Math.sqrt(g_lsq);
+                            step = -epsilon/g_l;
                         }
                         consecutive_small_steps++;
                     }
@@ -524,7 +538,7 @@
                     {
                         consecutive_small_steps = 0;
                     }
-                    this.grad.multiplyScalar(step);
+                    this.grad.normalize().multiplyScalar(step);
                     res.add(this.grad);
 
                     // If the newton step took us out of the bounding volume, we have to stop
@@ -633,7 +647,7 @@
         if(epsilon<=0){
             throw "Error: epsilon <= 0, convergence will nuke your face or loop";
         }
-        if(starting_point_absc>=min_absc_inside && starting_point_absc<=max_absc_outside){
+        if(starting_point_absc<min_absc_inside || starting_point_absc>max_absc_outside){
             throw "Error : starting absc is not in boundaries";
         }
 
@@ -1013,8 +1027,6 @@
 
         Node_1.call(this);
 
-        this.type = RicciNode.type;
-
         this.ricci_n = ricci_n;
 
         if(children){
@@ -1215,8 +1227,6 @@
     var RootNode = function() {
         // Default RootNode is a riccinode with ricci_n = 64 (almost a max)
         RicciNode_1.call(this, 64);
-
-        this.type = RootNode.type;
 
         this.valid_aabb = true;
 
@@ -1579,8 +1589,6 @@
 
         Node_1.call(this);
 
-        this.type = DifferenceNode.type;
-
         this.addChild(node0);
         this.addChild(node1);
 
@@ -1722,8 +1730,6 @@
 
         Node_1.call(this);
 
-        this.type = MinNode.type;
-
         if(children){
             var self = this;
             children.forEach(function(c){
@@ -1836,7 +1842,6 @@
      */
     var Primitive = function() {
         Element_1.call(this);
-        this.type       = Primitive.type;
 
         /** @type {!Array.<!Material>} */
         this.materials = [];
@@ -1897,13 +1902,13 @@
 
     // Abstract
     Primitive.prototype.getAreas = function() {
-        throw "ERROR : getAreas is an abstract function, should be re-implemented in all primitives(error occured in " + this.type + " primitive)";
+        throw "ERROR : getAreas is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
         return [];
     };
 
     // Abstract
     Primitive.prototype.computeHelpVariables = function() {
-        throw "ERROR : computeHelpVariables is a virtual function, should be re-implemented in all primitives(error occured in " + this.type + " primitive)";
+        throw "ERROR : computeHelpVariables is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
     }; // to override
 
     // [Abstract]
@@ -1921,7 +1926,6 @@
      */
     var ScalisPrimitive = function() {
         Primitive_1.call(this);
-        this.type    = ScalisPrimitive.type;
 
         // Type of volume (convolution or distance funtion)
         this.volType = ScalisPrimitive.DIST;
@@ -2622,8 +2626,6 @@
         this.density     = density;
         this.materials.push(mat);
 
-        this.type        = ScalisPoint.type;
-
         // Temporary for eval
         // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
         this.v_to_p =  new Three_cjs.Vector3();
@@ -2728,9 +2730,9 @@
                 // Gradient computation is easy since the
                 // gradient is radial. We use the analitical solution
                 // to directionnal gradient (differential in this.v_to_p length)
-                var tmp2 = -this.density * thickness * ScalisMath_1.KIS2 * 6.0 *
-                    tmp * tmp * ScalisMath_1.Poly6NF0D/(thickness*thickness*thickness);
+                var tmp2 = -this.density * ScalisMath_1.KIS2 * 6.0 * this.v_to_p.length() * tmp * tmp * ScalisMath_1.Poly6NF0D/(thickness*thickness);
                 res.g.copy(this.v_to_p).normalize().multiplyScalar(tmp2);
+                // this.numericalGradient(p,res.g);
             }
             if(req & EvalTags_1.Mat)  { res.m.copy(this.materials[0]); }
         }
@@ -3076,8 +3078,6 @@
         this.volType     = volType;
         this.density     = density;
         this.materials   = mats;
-
-        this.type        = ScalisSegment.type;
 
         // Temporary for eval
         // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
@@ -4519,7 +4519,6 @@
 
         this.volType = volType;
         this.materials     = mats !== null? mats : [Material_1.defaultMaterial.clone(), Material_1.defaultMaterial.clone(), Material_1.defaultMaterial.clone()];
-        this.type = ScalisTriangle.type;
 
         this.v = v;
         this.min_thick = Math.min(this.v[0].getThickness(), this.v[1].getThickness(), this.v[2].getThickness());
@@ -5408,7 +5407,7 @@
      *  @return {string} Type of the element
      */
     DistanceFunctor.prototype.getType = function() {
-        return this.type;
+        return DistanceFunctor.type;
     };
 
     /**
@@ -5446,7 +5445,8 @@
      *  @param {number} epsilon The numerica step for this gradient computation. Default to 0.00001.
      */
     DistanceFunctor.prototype.numericalGradient = function(d,epsilon){
-        return (this.value(d+epsilon)-this.value(d-epsilon))/2*epsilon;
+        var eps = epsilon ? epsilon : 0.00001;
+        return (this.value(d+eps)-this.value(d-eps))/(2*eps);
     };
 
     /**
@@ -5484,11 +5484,21 @@
 
     Poly6DistanceFunctor.type = "Poly6DistanceFunctor";
     Types_1.register(Poly6DistanceFunctor.type, Poly6DistanceFunctor);
+
     /**
      *  @return {string} Type of the element
      */
     Poly6DistanceFunctor.prototype.getType = function() {
-        return this.type;
+        return Poly6DistanceFunctor.type;
+    };
+
+    /**
+     *  @return {Object} Json description of this functor.
+     */
+    Poly6DistanceFunctor.prototype.toJSON = function() {
+        var json = Blobtree.DistanceFunctor.prototype.toJSON.call(this,c);
+        json.scale = this.scale;
+        return json;
     };
 
     // This is the standard 6 degree polynomial function used for implicit modeling.
@@ -5518,7 +5528,7 @@
     Poly6DistanceFunctor.prototype.gradient = function(d){
         var ds = d/(2*this.scale) + 0.5;
         var res = (1-ds*ds);
-        res = -(6/(2*this.scale))*ds*res*res;
+        res = -(6/(2*this.scale))*ds*res*res/Poly6DistanceFunctor.evalStandard(0.5);
         return res;
     };
 
@@ -5539,8 +5549,6 @@
     var SDFNode = function ()
     {
         Node_1.call(this);
-
-        this.type = SDFNode.type;
 
         // Default bounding box for a SDF is infinite.
         this.aabb.set(
@@ -5614,8 +5622,6 @@
     var SDFRootNode = function (f, material, child) {
 
         SDFNode_1.call(this);
-
-        this.type = SDFRootNode.type;
 
         this.f = f;
 
@@ -5727,8 +5733,6 @@
     var SDFPrimitive = function ()
     {
         Element_1.call(this);
-
-        this.type = SDFPrimitive.type;
 
         // Default bounding box for a SDF is infinite.
         this.aabb.set(
@@ -5965,8 +5969,6 @@
 
         this.p = p.clone();
         this.r = r;
-
-        this.type = SDFSphere.type;
     };
 
     SDFSphere.prototype = Object.create(SDFPrimitive_1.prototype);
@@ -6221,7 +6223,13 @@
 
         this.detail_ratio = params.detailRatio ? Math.max(0.01, params.detailRatio) : 1.0;
 
-        this.convergence = params.convergence ? params.convergence : null;
+        if(params.convergence){
+            this.convergence = params.convergence;
+            this.convergence.ratio = this.convergence.ratio || 0.01;
+            this.convergence.step = this.convergence.step || 10;
+        }else{
+            this.convergence = null;
+        }
 
         /** @type {Int32Array} */
         this.reso = new Int32Array(3);
@@ -7165,14 +7173,15 @@
             // Note : it cost 15 to 20% performance lost
             //        and the result does not seem 15 et 20% better...
             if(this.convergence){
-                Convergence_1.safeNewton3D(this.blobtree,      // Scalar Field to eval
-                                              this.vertex,                  // 3D point where we start, must comply to THREE.Vector3 API
-                                              this.blobtree.getIsoValue(),               // iso value we are looking for
-                                              this.min_acc*(this.convergence.ratio || 0.000001) ,               // Geometrical limit to stop
-                                              this.convergence.step || 10,                           // limit of number of step
-                                              this.min_acc,                    // Bounding volume inside which we look for the iso, getting out will make the process stop.
-                                              conv_res                      // the resulting point
-                                               );
+                Convergence_1.safeNewton3D(
+                    this.blobtree,      // Scalar Field to eval
+                    this.vertex,                  // 3D point where we start, must comply to THREE.Vector3 API
+                    this.blobtree.getIsoValue(),               // iso value we are looking for
+                    this.min_acc*this.convergence.ratio ,               // Geometrical limit to stop
+                    this.convergence.step,                           // limit of number of step
+                    this.min_acc,                     // Bounding volume inside which we look for the iso, getting out will make the process stop.
+                    conv_res                          // the resulting point
+                );
                 this.vertex.copy(conv_res);
             }
 
@@ -7221,49 +7230,49 @@
         console.warn("Blobtree library is currently made for THREE revision 96. Using any other revision may lead to unexpected behavior.");
     }
 
-    var Blobtree = {};
-    Blobtree.version = "1.0.0";
+    var Blobtree$1 = {};
+    Blobtree$1.version = "1.0.0";
 
-    Blobtree.Types              = Types_1;
+    Blobtree$1.Types              = Types_1;
 
-    Blobtree.Element            = Element_1;
-    Blobtree.Node               = Node_1;
-    Blobtree.RootNode           = RootNode_1;
+    Blobtree$1.Element            = Element_1;
+    Blobtree$1.Node               = Node_1;
+    Blobtree$1.RootNode           = RootNode_1;
 
-    Blobtree.RicciNode          = RicciNode_1;
-    Blobtree.DifferenceNode     = DifferenceNode_1;
-    Blobtree.MinNode            = MinNode_1;
+    Blobtree$1.RicciNode          = RicciNode_1;
+    Blobtree$1.DifferenceNode     = DifferenceNode_1;
+    Blobtree$1.MinNode            = MinNode_1;
 
-    Blobtree.Primitive          = Primitive_1;
+    Blobtree$1.Primitive          = Primitive_1;
 
-    Blobtree.ScalisPrimitive    = ScalisPrimitive_1;
-    Blobtree.ScalisPoint        = ScalisPoint_1;
-    Blobtree.ScalisSegment      = ScalisSegment_1;
-    Blobtree.ScalisTriangle     = ScalisTriangle_1;
-    Blobtree.ScalisVertex       = ScalisVertex_1;
+    Blobtree$1.ScalisPrimitive    = ScalisPrimitive_1;
+    Blobtree$1.ScalisPoint        = ScalisPoint_1;
+    Blobtree$1.ScalisSegment      = ScalisSegment_1;
+    Blobtree$1.ScalisTriangle     = ScalisTriangle_1;
+    Blobtree$1.ScalisVertex       = ScalisVertex_1;
 
-    Blobtree.DistanceFunctor   = DistanceFunctor_1;
-    Blobtree.Poly6DistanceFunctor = Poly6DistanceFunctor_1;
+    Blobtree$1.DistanceFunctor   = DistanceFunctor_1;
+    Blobtree$1.Poly6DistanceFunctor = Poly6DistanceFunctor_1;
 
-    Blobtree.SDFRootNode       = SDFRootNode_1;
-    Blobtree.SDFPrimitive      = SDFPrimitive_1;
-    Blobtree.SDFSphere         = SDFSphere_1;
+    Blobtree$1.SDFRootNode       = SDFRootNode_1;
+    Blobtree$1.SDFPrimitive      = SDFPrimitive_1;
+    Blobtree$1.SDFSphere         = SDFSphere_1;
 
-    Blobtree.ScalisPrimitive    = ScalisPrimitive_1;
+    Blobtree$1.ScalisPrimitive    = ScalisPrimitive_1;
 
-    Blobtree.Material           = Material_1;
+    Blobtree$1.Material           = Material_1;
 
-    Blobtree.Area               = Area_1;
-    Blobtree.AreaScalisPoint    = AreaScalisPoint_1;
-    Blobtree.AreaScalisSeg      = AreaScalisSeg_1;
-    Blobtree.AreaScalisTri      = AreaScalisTri_1;
+    Blobtree$1.Area               = Area_1;
+    Blobtree$1.AreaScalisPoint    = AreaScalisPoint_1;
+    Blobtree$1.AreaScalisSeg      = AreaScalisSeg_1;
+    Blobtree$1.AreaScalisTri      = AreaScalisTri_1;
 
-    Blobtree.EvalTags           = EvalTags_1;
+    Blobtree$1.EvalTags           = EvalTags_1;
 
-    Blobtree.SlidingMarchingCubes = SlidingMarchingCubes_1;
+    Blobtree$1.SlidingMarchingCubes = SlidingMarchingCubes_1;
 
     // Deprecated
-    Blobtree.JSONLoader         = JSONLoader_1;
+    Blobtree$1.JSONLoader         = JSONLoader_1;
 
     /*
     try {
@@ -7274,7 +7283,7 @@
     catch(e) {}
     */
 
-    var blobtree = Blobtree;
+    var blobtree = Blobtree$1;
 
     return blobtree;
 

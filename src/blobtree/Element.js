@@ -139,6 +139,24 @@ Element.prototype.value = function(p,req,res) {
     return 0.0;
 };
 
+Element.prototype.numericalGradient = (function(){
+    var tmp = {v:0};
+    var coord = ['x','y','z'];
+    return function(p,res, epsilon) {
+        var eps = epsilon || 0.00001;
+
+        for(var i=0; i<3; ++i){
+            p[coord[i]] = p[coord[i]]+eps;
+            this.value(p,EvalTags.Value,tmp);
+            res[coord[i]] = tmp.v;
+            p[coord[i]] = p[coord[i]]-2*eps;
+            this.value(p,EvalTags.Value,tmp);
+            res[coord[i]] = (res[coord[i]]-tmp.v)/(2*eps);
+            p[coord[i]] = p[coord[i]]+eps; // reset p
+        }
+    }
+})();
+
 /**
  *  @abstract
  *  Get the Area object.

@@ -33,7 +33,9 @@
 
     <body>
         <div id="info">
-            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Basic example
+            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Test Newton convergence in Sliding Marching Cube
+            <hr>
+            <span>Red mesh vertices are positioned using linear interpolation, Green mesh vertices use Newton Convergence.</span>
         </div>
 
         <script src="../../node_modules/three-full/builds/Three.iife.js"></script>
@@ -42,15 +44,16 @@
             var THREE = THREE || Three;
         </script>
         <script src="../../dist/browser/blobtree.js"></script>
+        <script src="./js/ExDistanceFunctor.js"></script>
         <script>
 
+
             var root = new Blobtree.RootNode();
-
-
-
+    /*
             root.addChild(
                 new Blobtree.SDFRootNode(
                     new Blobtree.Poly6DistanceFunctor(4.0),
+                    // new ExDistanceFunctor(4.0),
                     new Blobtree.Material('#ffcd41'),
                     new Blobtree.SDFSphere(
                         new THREE.Vector3(0,0,0),
@@ -58,17 +61,40 @@
                     )
                 )
             );
+        */
 
-            root.prepareForEval();
-            var res = {v:0};
-            root.value(new THREE.Vector3(5,0,0), Blobtree.EvalTags.Value, res);
-            console.log(" Value : " + res.v);
+            var ricci_node = new Blobtree.RicciNode(
+                1,
+                [
+                    new Blobtree.ScalisPoint(
+                        new Blobtree.ScalisVertex(
+                            new THREE.Vector3(-8,0,0),
+                            12
+                        ),
+                        Blobtree.ScalisPrimitive.DIST,
+                        1.0,
+                        new Blobtree.Material('#dd4f43')
+                    ),
+                    new Blobtree.ScalisPoint(
+                        new Blobtree.ScalisVertex(
+                            new THREE.Vector3(8,0,0),
+                            12
+                        ),
+                        Blobtree.ScalisPrimitive.DIST,
+                        1.0,
+                        new Blobtree.Material('#ffcd41')
+                    )
+                ]
+            );
+            root.addChild(ricci_node);
 
             var smc = new Blobtree.SlidingMarchingCubes(
                 root,
                 {
-                    convergence:{},     // Active convergence of marching cubes points. Comment to trade quality for speed
-                                        // Note : for Poly6DistanceFunctor, a
+                    convergence:{
+                        ratio:0.001,
+                        step:10
+                    },
                     detailRatio: 1    // Double resolution with respect to the primitives setup.
                 }
             );
@@ -79,32 +105,31 @@
             geometry.computeBoundingBox();
             var material = new THREE.MeshPhongMaterial( {vertexColors:THREE.VertexColors, wireframe:true} );
 
-            var geometry = smc.compute();
-            geometry.computeBoundingBox();
-
-            var mesh = new THREE.Mesh( geometry, material );
-
-            // debug
             var smc2 = new Blobtree.SlidingMarchingCubes(
                 root,
                 {
-                    //convergence:{},     // Active convergence of marching cubes points. Comment to trade quality for speed
-                                        // Note : for Poly6DistanceFunctor, a
                     detailRatio: 1    // Double resolution with respect to the primitives setup.
                 }
             );
 
-            var geometry2 = smc2.compute();
-            geometry2.computeBoundingBox();
+            var geometry_nocv = smc2.compute();
+            geometry_nocv.computeBoundingBox();
 
             mesh = new THREE.Object3D();
             mesh.add(
                 new THREE.Mesh( geometry, new THREE.MeshPhongMaterial( {color:"#00ff00", wireframe:true} ) )
             );
             mesh.add(
-                new THREE.Mesh( geometry2, new THREE.MeshPhongMaterial( {color:"#ff0000", wireframe:true} ) )
-            )
-
+                new THREE.Mesh( geometry_nocv, new THREE.MeshPhongMaterial( {color:"#ff0000", wireframe:true} ) )
+            );
+            /*
+            var m = new THREE.Mesh( geometry, new THREE.MeshPhongMaterial( {color:"#00ff00"} ) );
+            m.position.set(20,0,0);
+            mesh.add(m);
+            m = new THREE.Mesh( geometry_nocv, new THREE.MeshPhongMaterial( {color:"#ff0000"} ) );
+            m.position.set(-20,0,0);
+            mesh.add(m);
+            */
 
         </script>
         <!-- Main script containing THREE.js setup for the page -->
