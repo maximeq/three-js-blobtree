@@ -11,17 +11,30 @@ Blobtree.Types              = require("./blobtree/Types.js");
 
 Blobtree.Element            = require("./blobtree/Element.js");
 Blobtree.Node               = require("./blobtree/Node.js");
+Blobtree.RootNode           = require("./blobtree/RootNode.js");
+
 Blobtree.RicciNode          = require("./blobtree/RicciNode.js");
 Blobtree.DifferenceNode     = require("./blobtree/DifferenceNode.js");
 Blobtree.MinNode            = require("./blobtree/MinNode.js");
-Blobtree.RootNode           = require("./blobtree/RootNode.js");
+
 Blobtree.Primitive          = require("./blobtree/Primitive.js");
+
 Blobtree.ScalisPrimitive    = require("./blobtree/ScalisPrimitive.js");
 Blobtree.ScalisPoint        = require("./blobtree/ScalisPoint.js");
 Blobtree.ScalisSegment      = require("./blobtree/ScalisSegment.js");
 Blobtree.ScalisTriangle     = require("./blobtree/ScalisTriangle.js");
-Blobtree.Material           = require("./blobtree/Material.js");
 Blobtree.ScalisVertex       = require("./blobtree/ScalisVertex.js");
+
+Blobtree.DistanceFunctor   = require("./blobtree/SDF/DistanceFunctor.js");
+Blobtree.Poly6DistanceFunctor = require("./blobtree/SDF/Poly6DistanceFunctor.js");
+
+Blobtree.SDFRootNode       = require("./blobtree/SDF/SDFRootNode.js");
+Blobtree.SDFPrimitive      = require("./blobtree/SDF/SDFPrimitive.js");
+Blobtree.SDFSphere         = require("./blobtree/SDF/SDFSphere.js");
+
+Blobtree.ScalisPrimitive    = require("./blobtree/ScalisPrimitive.js");
+
+Blobtree.Material           = require("./blobtree/Material.js");
 
 Blobtree.Area               = require("./blobtree/Areas/Area.js");
 Blobtree.AreaScalisPoint    = require("./blobtree/Areas/AreaScalisPoint.js");

@@ -2,6 +2,7 @@
 
 const THREE = require("three-full/builds/Three.cjs.js");
 const Types = require("./Types.js");
+const EvalTags = require("./EvalTags.js");
 
 var elementIds = 0;
 
@@ -15,8 +16,6 @@ var Element = function () {
 
     this.aabb = new THREE.Box3();
     this.valid_aabb = false;
-
-    this.type = Element.type;
 
     /** @type {Blobtree.Node} */
     this.parentNode = null;
@@ -48,7 +47,7 @@ Element.prototype.getParentNode = function() {
  *  @return {string} Type of the element
  */
 Element.prototype.getType = function() {
-    return this.type;
+    return Element.type;
 };
 
 /**
@@ -81,6 +80,33 @@ Element.prototype.getAABB = function() {
 };
 
 /**
+ *  @return {boolean} True if the current aabb is valid, ie it does
+ *  correspond to the internal primitive parameters.
+ */
+Element.prototype.isValidAABB = function() {
+    return this.valid_aabb;
+};
+
+/**
+ *  Invalid the bounding boxes recursively up to the root
+ */
+Element.prototype.invalidAABB = function()
+{
+    this.valid_aabb = false;
+    if(this.parentNode !== null && this.parentNode.isValidAABB()){
+        this.parentNode.invalidAABB();
+    }
+};
+
+/**
+ *  Note : This function was made for Node to recursively invalidate
+ *  children AABB. Default is to invalidate only this AABB.
+ */
+Element.prototype.invalidAll = function() {
+    this.invalidAABB();
+};
+
+/**
  *  @abstract
  *  Prepare the element for a call to value.
  *  Important note: For now, a primitive is considered prepared for eval if and only
@@ -91,6 +117,26 @@ Element.prototype.prepareForEval = function() {
     var res = {del_obj:[], new_areas:[]};
     throw "ERROR : prepareForEval is a virtual function, should be re-implemented in all element(error occured in Element.js";
     return res;
+};
+
+/**
+ *  @abstract
+ *  Compute the value and/or gradient and/or material
+ *  of the element at position p in space. return computations in res (see below)
+ *
+ *  @param {!THREE.Vector3} p Point where we want to evaluate the primitive field
+ *  @param {EvalTags} req  Mask of required computation, see EvalTags constants
+ *                       Note : EvalTags.Grad, EvalTags.GradMat and EvalTags.Mat are not
+ *                       implemented here, value must always be computed.
+ *  @param {!Object} res Computed values will be stored here. Each values should exist and
+ *                       be allocated already.
+ *  @param {number} res.v Value
+ *  @param {Material} res.m Material
+ *  @param {THREE.Vector3} res.g Gradient.
+ */
+Element.prototype.value = function(p,req,res) {
+    throw "ERROR : value is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
+    return 0.0;
 };
 
 /**
@@ -112,7 +158,7 @@ Element.prototype.getAreas = function() {
  *  @return {number} The next step length to do with respect to this primitive/node
  */
 Element.prototype.distanceTo = function(p) {
-    throw "ERROR : distanceTo is a virtual function, should be re-implemented in all primitives(error occured in " + this.type + " primitive)";
+    throw "ERROR : distanceTo is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
     return 0.5;
 };
 
@@ -122,7 +168,7 @@ Element.prototype.distanceTo = function(p) {
  *  @return {number} The next step length to do with respect to this primitive/node.
  */
 Element.prototype.heuristicStepWithin = function() {
-    throw "ERROR : heuristicStepWithin is a virtual function, should be re-implemented in all primitives(error occured in " + this.type + " primitive)";
+    throw "ERROR : heuristicStepWithin is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
     return 0.1;
 };
 

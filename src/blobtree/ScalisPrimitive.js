@@ -12,7 +12,6 @@ const EvalTags = require("./EvalTags.js");
  */
 var ScalisPrimitive = function() {
     Primitive.call(this);
-    this.type    = ScalisPrimitive.type;
 
     // Type of volume (convolution or distance funtion)
     this.volType = ScalisPrimitive.DIST;

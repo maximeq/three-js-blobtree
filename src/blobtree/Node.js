@@ -12,8 +12,6 @@ var Node = function ()
 {
     Element.call(this);
 
-    this.type = Node.type;
-
     /** @type {Array.<!Element>} */
     this.children = [];
 };
@@ -49,26 +47,6 @@ Node.prototype.prepareForEval = function()
 {
     console.error("prepareForEval is a pure virtual function, should be reimplemented in every node class");
 };
-
-/**
- *  Invalid the bounding boxes recursively up to the root
- */
-Node.prototype.invalidAABB = function()
-{
-    this.valid_aabb = false;
-    if(this.parentNode !== null && this.parentNode.isValidAABB()){
-        this.parentNode.invalidAABB();
-    }
-};
-
-/**
- *  @return {boolean} True if the current aabb is valid, ie it does
- *  correspond to the internal primitive parameters.
- */
-Node.prototype.isValidAABB = function() {
-    return this.valid_aabb;
-};
-
 
 /**
  *  Invalid the bounding boxes recursively down for all children

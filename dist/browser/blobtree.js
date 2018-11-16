@@ -42,6 +42,29 @@
 
     var Types_1 = Types;
 
+    /**
+     *  Eval constants : Constants for eval functions in nodes and primitives.
+     *  Those are used as mask to know what is required among
+     *  value, gradient and material.
+     *  @enum {number}
+     */
+    var EvalTags$1 = {
+        Value         : 1 << 1,
+        Grad          : 1 << 2,
+        Mat           : 1 << 3,
+        NextStep      : 1 << 4,
+        NextStepX     : 1 << 5,
+        NextStepY     : 1 << 6,
+        NextStepZ     : 1 << 7,
+        NextStepOrtho : 1 << 5 | 1 << 6 | 1 << 7, // EvalTags.NextStepX | EvalTags.NextStepY | EvalTags.NextStepZ;
+        ValueGrad     : 1 << 1 | 1 << 2,          // EvalTags.Value | EvalTags.Grad,
+        ValueMat      : 1 << 1 | 1 << 3,          // EvalTags.Value | EvalTags.Mat,
+        GradMat       : 1 << 2 | 1 << 3,          // EvalTags.Grad  | EvalTags.Mat,
+        ValueGradMat  : 1 << 1 | 1 << 2 | 1 << 3  // EvalTags.Value | EvalTags.Grad | EvalTags.Mat
+    };
+
+    var EvalTags_1 = EvalTags$1;
+
     var elementIds = 0;
 
     /**
@@ -120,6 +143,33 @@
     };
 
     /**
+     *  @return {boolean} True if the current aabb is valid, ie it does
+     *  correspond to the internal primitive parameters.
+     */
+    Element.prototype.isValidAABB = function() {
+        return this.valid_aabb;
+    };
+
+    /**
+     *  Invalid the bounding boxes recursively up to the root
+     */
+    Element.prototype.invalidAABB = function()
+    {
+        this.valid_aabb = false;
+        if(this.parentNode !== null && this.parentNode.isValidAABB()){
+            this.parentNode.invalidAABB();
+        }
+    };
+
+    /**
+     *  Note : This function was made for Node to recursively invalidate
+     *  children AABB. Default is to invalidate only this AABB.
+     */
+    Element.prototype.invalidAll = function() {
+        this.invalidAABB();
+    };
+
+    /**
      *  @abstract
      *  Prepare the element for a call to value.
      *  Important note: For now, a primitive is considered prepared for eval if and only
@@ -130,6 +180,26 @@
         var res = {del_obj:[], new_areas:[]};
         throw "ERROR : prepareForEval is a virtual function, should be re-implemented in all element(error occured in Element.js";
         return res;
+    };
+
+    /**
+     *  @abstract
+     *  Compute the value and/or gradient and/or material
+     *  of the element at position p in space. return computations in res (see below)
+     *
+     *  @param {!THREE.Vector3} p Point where we want to evaluate the primitive field
+     *  @param {EvalTags} req  Mask of required computation, see EvalTags constants
+     *                       Note : EvalTags.Grad, EvalTags.GradMat and EvalTags.Mat are not
+     *                       implemented here, value must always be computed.
+     *  @param {!Object} res Computed values will be stored here. Each values should exist and
+     *                       be allocated already.
+     *  @param {number} res.v Value
+     *  @param {Material} res.m Material
+     *  @param {THREE.Vector3} res.g Gradient.
+     */
+    Element.prototype.value = function(p,req,res) {
+        throw "ERROR : value is an abstract function, should be re-implemented in all primitives(error occured in " + this.type + " primitive)";
+        return 0.0;
     };
 
     /**
@@ -236,26 +306,6 @@
     {
         console.error("prepareForEval is a pure virtual function, should be reimplemented in every node class");
     };
-
-    /**
-     *  Invalid the bounding boxes recursively up to the root
-     */
-    Node.prototype.invalidAABB = function()
-    {
-        this.valid_aabb = false;
-        if(this.parentNode !== null && this.parentNode.isValidAABB()){
-            this.parentNode.invalidAABB();
-        }
-    };
-
-    /**
-     *  @return {boolean} True if the current aabb is valid, ie it does
-     *  correspond to the internal primitive parameters.
-     */
-    Node.prototype.isValidAABB = function() {
-        return this.valid_aabb;
-    };
-
 
     /**
      *  Invalid the bounding boxes recursively down for all children
@@ -416,29 +466,6 @@
     };
 
     var Node_1 = Node;
-
-    /**
-     *  Eval constants : Constants for eval functions in nodes and primitives.
-     *  Those are used as mask to know what is required among
-     *  value, gradient and material.
-     *  @enum {number}
-     */
-    var EvalTags$1 = {
-        Value         : 1 << 1,
-        Grad          : 1 << 2,
-        Mat           : 1 << 3,
-        NextStep      : 1 << 4,
-        NextStepX     : 1 << 5,
-        NextStepY     : 1 << 6,
-        NextStepZ     : 1 << 7,
-        NextStepOrtho : 1 << 5 | 1 << 6 | 1 << 7, // EvalTags.NextStepX | EvalTags.NextStepY | EvalTags.NextStepZ;
-        ValueGrad     : 1 << 1 | 1 << 2,          // EvalTags.Value | EvalTags.Grad,
-        ValueMat      : 1 << 1 | 1 << 3,          // EvalTags.Value | EvalTags.Mat,
-        GradMat       : 1 << 2 | 1 << 3,          // EvalTags.Grad  | EvalTags.Mat,
-        ValueGradMat  : 1 << 1 | 1 << 2 | 1 << 3  // EvalTags.Value | EvalTags.Grad | EvalTags.Mat
-    };
-
-    var EvalTags_1 = EvalTags$1;
 
     var Convergence$1 = {};
 
@@ -1180,269 +1207,6 @@
     var RicciNode_1 = RicciNode;
 
     /**
-     *  This class implement a difference blending node.
-     *  The scalar field of the second child of this node will be substracted to the first node field.
-     *  The result is clamped to 0 to always keep a positive field value.
-     *  @constructor
-     *  @extends Node
-     *  @param {!Node} node0 The first node
-     *  @param {!Node} node1 The second node, its value will be substracted to the node 0 value.
-     *  @param {number} alpha Power of the second field : the greater alpha the sharper the difference. Default is 1, must be > 1.
-     */
-    var DifferenceNode = function (node0, node1, alpha) {
-
-        Node_1.call(this);
-
-        this.type = DifferenceNode.type;
-
-        this.addChild(node0);
-        this.addChild(node1);
-
-        this.alpha = alpha || 1;
-
-        // For now, this field value is clamped to 0
-        this.clamped = 0.0;
-
-        // Tmp vars to speed up computation (no reallocations)
-        this.tmp_res0 = {v:0, g:new Three_cjs.Vector3(0,0,0), m:new Material_1(null, null, null)};
-        this.tmp_res1 = {v:0, g:new Three_cjs.Vector3(0,0,0), m:new Material_1(null, null, null)};
-        this.tmp_v_arr = new Float32Array(2);
-        this.tmp_m_arr = [
-            null,
-            null
-        ];
-    };
-
-    DifferenceNode.prototype = Object.create( Node_1.prototype );
-    DifferenceNode.prototype.constructor = DifferenceNode;
-
-    DifferenceNode.type = "DifferenceNode";
-    Types_1.register(DifferenceNode.type, DifferenceNode);
-
-    DifferenceNode.prototype.toJSON = function(){
-        var res = Node_1.prototype.toJSON.call(this);
-        res.alpha = this.alpha;
-        return res;
-    };
-
-    DifferenceNode.fromJSON = function(json){
-        var res = new DifferenceNode();
-        this.children[0] = Types_1.fromJSON(json.children[0]);
-        this.children[1] = Types_1.fromJSON(json.children[1]);
-        return res;
-    };
-
-    // [Abstract] see Node for a complete description
-    DifferenceNode.prototype.prepareForEval = function()
-    {
-        if(!this.valid_aabb){
-            this.children[0].prepareForEval();
-            this.children[1].prepareForEval();
-            // Bounding box of this node is the same as the one of the positive children,
-            // Since negative values will be clamped to 0.
-            this.aabb.copy(this.children[0].getAABB());
-
-            this.valid_aabb = true;
-        }
-    };
-
-    // [Abstract] see Node for more details.
-    DifferenceNode.prototype.value = function(p,req,res)
-    {
-        var l = this.children.length;
-        var tmp0 = this.tmp_res0;
-        var tmp1 = this.tmp_res1;
-        var v_arr = this.tmp_v_arr;
-        var m_arr = this.tmp_m_arr;
-
-        // Init res
-        res.v = 0;
-        tmp1.v = 0;
-        if(req & EvalTags_1.Mat)  {
-            res.m.copy(Material_1.defaultMaterial);
-            tmp1.m.copy(Material_1.defaultMaterial);
-        }if(req & EvalTags_1.Grad) {
-            res.g.set(0,0,0);
-            tmp1.g.set(0,0,0);
-        }else if (req & EvalTags_1.NextStep) {
-            // that, is the max distance
-            // we want a value that loose any 'min'
-            res.step = 1000000000;
-        }
-
-        if(this.aabb.containsPoint(p)){
-            if( this.children[0].aabb.containsPoint(p) ) {
-                this.children[0].value(p,req,tmp0);
-                if( this.children[1].aabb.containsPoint(p) ) {
-                    this.children[1].value(p,req,tmp1);
-                }
-                if( tmp1.v === 0 ){
-                    res.v = tmp0.v;
-                    if(req & EvalTags_1.Grad){
-                        res.g.copy(tmp0.g);
-                    }
-                    if(req & EvalTags_1.Mat){
-                        res.m.copy(tmp0.m);
-                    }
-                }else{
-                    var v_pow = Math.pow(tmp1.v,this.alpha);
-                    res.v = Math.max(this.clamped,tmp0.v - tmp1.v*Math.pow(tmp1.v,this.alpha-1.0));
-                    if(req & EvalTags_1.Grad){
-                        if(res.v === this.clamped){
-                            res.g.set(0,0,0);
-                        }else{
-                            tmp1.g.multiplyScalar(v_pow);
-                            res.g.subVectors(tmp0.g, tmp1.g);
-                        }
-                    }
-                    if(req & EvalTags_1.Mat){
-                        v_arr[0] = tmp0.v;
-                        v_arr[1] = tmp1.v;
-                        m_arr[0] = tmp0.m;
-                        m_arr[1] = tmp1.m;
-                        res.m.weightedMean(m_arr,v_arr,2);
-                    }
-                }
-            }
-        }
-        else if (req & EvalTags_1.NextStep) {
-            // return distance to aabb such that next time we'll hit from within the aabbb
-            res.step = this.aabb.distanceToPoint(p) + 0.3;
-        }
-
-    };
-
-    // Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
-    DifferenceNode.prototype.trim = function(aabb, trimmed, parents)
-    {
-        // Trim remaining nodes
-        for (var i=0; i<this.children.length; i++) {
-            this.children[i].trim(aabb,trimmed,parents);
-        }
-    };
-
-    var DifferenceNode_1 = DifferenceNode;
-
-    /**
-     *  This class implement a Min node.
-     *  It will return the minimum value of the field of each primitive.
-     *  Return 0 in regioin were no primitive is present.
-     *  @constructor
-     *  @extends Node
-     *
-     *  @param {Array.<Node>} children The children to add to this node. Just a convenient parameter, you can do it manually using addChild.
-     */
-    var MinNode = function (children) {
-
-        Node_1.call(this);
-
-        this.type = MinNode.type;
-
-        if(children){
-            var self = this;
-            children.forEach(function(c){
-                self.addChild(c);
-            });
-        }
-
-        // Tmp vars to speed up computation (no reallocations)
-        this.tmp_res = {v:0, g:new Three_cjs.Vector3(0,0,0), m:new Material_1(null, null, null)};
-    };
-
-    MinNode.prototype = Object.create( Node_1.prototype );
-    MinNode.prototype.constructor = MinNode;
-
-    MinNode.type = "MinNode";
-    Types_1.register(MinNode.type, MinNode);
-
-    MinNode.prototype.getType = function(){
-        return MinNode.type;
-    };
-
-    MinNode.fromJSON = function(json){
-        var res = new MinNode();
-        for(var i=0; i<json.children.length; ++i){
-            res.addChild(Types_1.fromJSON(json.children[i]));
-        }
-        return res;
-    };
-
-    // [Abstract] see Node for a complete description
-    MinNode.prototype.prepareForEval = function()
-    {
-        if(!this.valid_aabb){
-            this.aabb = new Three_cjs.Box3();  // Create empty BBox
-            for(var i=0; i<this.children.length; ++i){
-                var c = this.children[i];
-                c.prepareForEval();
-                this.aabb.union(c.getAABB());     // new aabb is computed according to remaining children aabb
-            }
-
-            this.valid_aabb = true;
-        }
-    };
-
-    // [Abstract] see Node for more details.
-    MinNode.prototype.value = function(p,req,res)
-    {
-        // TODO : check that all bounding box of all children and subchildrens are valid
-        //        This enable not to do it in prim and limit the number of assert call (and string built)
-
-        var l = this.children.length;
-        var tmp = this.tmp_res;
-
-        // Init res
-        res.v = 0;
-        if(req & EvalTags_1.Mat)  {
-            res.m.copy(Material_1.defaultMaterial);
-        }if(req & EvalTags_1.Grad) {
-            res.g.set(0,0,0);
-        }else if (req & EvalTags_1.NextStep) {
-            // that, is the max distance
-            // we want a value that loose any 'min'
-            res.step = 1000000000;
-        }
-
-        if(this.aabb.containsPoint(p) && l !== 0){
-            res.v = Number.MAX_VALUE;
-            for(var i=0; i<l; ++i)
-            {
-                this.children[i].value(p,req,tmp);
-                this.countEval++;
-                if(tmp.v < res.v){
-                    res.v = tmp.v;
-                    if(req & EvalTags_1.Grad) {
-                        res.g.copy(tmp.g);
-                    }
-                    if(req & EvalTags_1.Mat){
-                        res.m.copy(tmp.m);
-                    }
-                    // within primitive potential
-                    if (req & (EvalTags_1.NextStep | EvalTags_1.NextStepOrtho )){
-                        throw "Not implemented";
-                    }
-                }
-                res.v = Math.min(res.v,tmp.v);
-            }
-        }
-        else if (req & EvalTags_1.NextStep) {
-            throw "Not implemented";
-        }
-
-    };
-
-    // Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
-    MinNode.prototype.trim = function(aabb, trimmed, parents)
-    {
-        // Trim remaining nodes
-        for (var i=0; i<this.children.length; i++) {
-            this.children[i].trim(aabb,trimmed,parents);
-        }
-    };
-
-    var MinNode_1 = MinNode;
-
-    /**
      *  The root of any implicit blobtree. Does behave computationaly like a RicciNode with n = 64.
      *  The RootNode is the only node to be its own parent.
      *  @constructor
@@ -1802,6 +1566,269 @@
     var RootNode_1 = RootNode;
 
     /**
+     *  This class implement a difference blending node.
+     *  The scalar field of the second child of this node will be substracted to the first node field.
+     *  The result is clamped to 0 to always keep a positive field value.
+     *  @constructor
+     *  @extends Node
+     *  @param {!Node} node0 The first node
+     *  @param {!Node} node1 The second node, its value will be substracted to the node 0 value.
+     *  @param {number} alpha Power of the second field : the greater alpha the sharper the difference. Default is 1, must be > 1.
+     */
+    var DifferenceNode = function (node0, node1, alpha) {
+
+        Node_1.call(this);
+
+        this.type = DifferenceNode.type;
+
+        this.addChild(node0);
+        this.addChild(node1);
+
+        this.alpha = alpha || 1;
+
+        // For now, this field value is clamped to 0
+        this.clamped = 0.0;
+
+        // Tmp vars to speed up computation (no reallocations)
+        this.tmp_res0 = {v:0, g:new Three_cjs.Vector3(0,0,0), m:new Material_1(null, null, null)};
+        this.tmp_res1 = {v:0, g:new Three_cjs.Vector3(0,0,0), m:new Material_1(null, null, null)};
+        this.tmp_v_arr = new Float32Array(2);
+        this.tmp_m_arr = [
+            null,
+            null
+        ];
+    };
+
+    DifferenceNode.prototype = Object.create( Node_1.prototype );
+    DifferenceNode.prototype.constructor = DifferenceNode;
+
+    DifferenceNode.type = "DifferenceNode";
+    Types_1.register(DifferenceNode.type, DifferenceNode);
+
+    DifferenceNode.prototype.toJSON = function(){
+        var res = Node_1.prototype.toJSON.call(this);
+        res.alpha = this.alpha;
+        return res;
+    };
+
+    DifferenceNode.fromJSON = function(json){
+        var res = new DifferenceNode();
+        this.children[0] = Types_1.fromJSON(json.children[0]);
+        this.children[1] = Types_1.fromJSON(json.children[1]);
+        return res;
+    };
+
+    // [Abstract] see Node for a complete description
+    DifferenceNode.prototype.prepareForEval = function()
+    {
+        if(!this.valid_aabb){
+            this.children[0].prepareForEval();
+            this.children[1].prepareForEval();
+            // Bounding box of this node is the same as the one of the positive children,
+            // Since negative values will be clamped to 0.
+            this.aabb.copy(this.children[0].getAABB());
+
+            this.valid_aabb = true;
+        }
+    };
+
+    // [Abstract] see Node for more details.
+    DifferenceNode.prototype.value = function(p,req,res)
+    {
+        var l = this.children.length;
+        var tmp0 = this.tmp_res0;
+        var tmp1 = this.tmp_res1;
+        var v_arr = this.tmp_v_arr;
+        var m_arr = this.tmp_m_arr;
+
+        // Init res
+        res.v = 0;
+        tmp1.v = 0;
+        if(req & EvalTags_1.Mat)  {
+            res.m.copy(Material_1.defaultMaterial);
+            tmp1.m.copy(Material_1.defaultMaterial);
+        }if(req & EvalTags_1.Grad) {
+            res.g.set(0,0,0);
+            tmp1.g.set(0,0,0);
+        }else if (req & EvalTags_1.NextStep) {
+            // that, is the max distance
+            // we want a value that loose any 'min'
+            res.step = 1000000000;
+        }
+
+        if(this.aabb.containsPoint(p)){
+            if( this.children[0].aabb.containsPoint(p) ) {
+                this.children[0].value(p,req,tmp0);
+                if( this.children[1].aabb.containsPoint(p) ) {
+                    this.children[1].value(p,req,tmp1);
+                }
+                if( tmp1.v === 0 ){
+                    res.v = tmp0.v;
+                    if(req & EvalTags_1.Grad){
+                        res.g.copy(tmp0.g);
+                    }
+                    if(req & EvalTags_1.Mat){
+                        res.m.copy(tmp0.m);
+                    }
+                }else{
+                    var v_pow = Math.pow(tmp1.v,this.alpha);
+                    res.v = Math.max(this.clamped,tmp0.v - tmp1.v*Math.pow(tmp1.v,this.alpha-1.0));
+                    if(req & EvalTags_1.Grad){
+                        if(res.v === this.clamped){
+                            res.g.set(0,0,0);
+                        }else{
+                            tmp1.g.multiplyScalar(v_pow);
+                            res.g.subVectors(tmp0.g, tmp1.g);
+                        }
+                    }
+                    if(req & EvalTags_1.Mat){
+                        v_arr[0] = tmp0.v;
+                        v_arr[1] = tmp1.v;
+                        m_arr[0] = tmp0.m;
+                        m_arr[1] = tmp1.m;
+                        res.m.weightedMean(m_arr,v_arr,2);
+                    }
+                }
+            }
+        }
+        else if (req & EvalTags_1.NextStep) {
+            // return distance to aabb such that next time we'll hit from within the aabbb
+            res.step = this.aabb.distanceToPoint(p) + 0.3;
+        }
+
+    };
+
+    // Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
+    DifferenceNode.prototype.trim = function(aabb, trimmed, parents)
+    {
+        // Trim remaining nodes
+        for (var i=0; i<this.children.length; i++) {
+            this.children[i].trim(aabb,trimmed,parents);
+        }
+    };
+
+    var DifferenceNode_1 = DifferenceNode;
+
+    /**
+     *  This class implement a Min node.
+     *  It will return the minimum value of the field of each primitive.
+     *  Return 0 in regioin were no primitive is present.
+     *  @constructor
+     *  @extends Node
+     *
+     *  @param {Array.<Node>} children The children to add to this node. Just a convenient parameter, you can do it manually using addChild.
+     */
+    var MinNode = function (children) {
+
+        Node_1.call(this);
+
+        this.type = MinNode.type;
+
+        if(children){
+            var self = this;
+            children.forEach(function(c){
+                self.addChild(c);
+            });
+        }
+
+        // Tmp vars to speed up computation (no reallocations)
+        this.tmp_res = {v:0, g:new Three_cjs.Vector3(0,0,0), m:new Material_1(null, null, null)};
+    };
+
+    MinNode.prototype = Object.create( Node_1.prototype );
+    MinNode.prototype.constructor = MinNode;
+
+    MinNode.type = "MinNode";
+    Types_1.register(MinNode.type, MinNode);
+
+    MinNode.prototype.getType = function(){
+        return MinNode.type;
+    };
+
+    MinNode.fromJSON = function(json){
+        var res = new MinNode();
+        for(var i=0; i<json.children.length; ++i){
+            res.addChild(Types_1.fromJSON(json.children[i]));
+        }
+        return res;
+    };
+
+    // [Abstract] see Node for a complete description
+    MinNode.prototype.prepareForEval = function()
+    {
+        if(!this.valid_aabb){
+            this.aabb = new Three_cjs.Box3();  // Create empty BBox
+            for(var i=0; i<this.children.length; ++i){
+                var c = this.children[i];
+                c.prepareForEval();
+                this.aabb.union(c.getAABB());     // new aabb is computed according to remaining children aabb
+            }
+
+            this.valid_aabb = true;
+        }
+    };
+
+    // [Abstract] see Node for more details.
+    MinNode.prototype.value = function(p,req,res)
+    {
+        // TODO : check that all bounding box of all children and subchildrens are valid
+        //        This enable not to do it in prim and limit the number of assert call (and string built)
+
+        var l = this.children.length;
+        var tmp = this.tmp_res;
+
+        // Init res
+        res.v = 0;
+        if(req & EvalTags_1.Mat)  {
+            res.m.copy(Material_1.defaultMaterial);
+        }if(req & EvalTags_1.Grad) {
+            res.g.set(0,0,0);
+        }else if (req & EvalTags_1.NextStep) {
+            // that, is the max distance
+            // we want a value that loose any 'min'
+            res.step = 1000000000;
+        }
+
+        if(this.aabb.containsPoint(p) && l !== 0){
+            res.v = Number.MAX_VALUE;
+            for(var i=0; i<l; ++i)
+            {
+                this.children[i].value(p,req,tmp);
+                this.countEval++;
+                if(tmp.v < res.v){
+                    res.v = tmp.v;
+                    if(req & EvalTags_1.Grad) {
+                        res.g.copy(tmp.g);
+                    }
+                    if(req & EvalTags_1.Mat){
+                        res.m.copy(tmp.m);
+                    }
+                    // within primitive potential
+                    if (req & (EvalTags_1.NextStep | EvalTags_1.NextStepOrtho )){
+                        throw "Not implemented";
+                    }
+                }
+                res.v = Math.min(res.v,tmp.v);
+            }
+        }
+        else if (req & EvalTags_1.NextStep) {
+            throw "Not implemented";
+        }
+
+    };
+
+    // Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
+    MinNode.prototype.trim = function(aabb, trimmed, parents)
+    {
+        // Trim remaining nodes
+        for (var i=0; i<this.children.length; i++) {
+            this.children[i].trim(aabb,trimmed,parents);
+        }
+    };
+
+    var MinNode_1 = MinNode;
+
+    /**
      *  Represent a blobtree primitive.
      *
      *  @constructor
@@ -1852,33 +1879,6 @@
          return this.materials;
     };
 
-    /**
-     *  Note : This function was made for Node to recursively invalidate
-     *  children AABB. Here there is only this AABB to invalidate.
-     */
-    Primitive.prototype.invalidAll = function() {
-        this.invalidAABB();
-    };
-
-    /**
-     *  Invalidate the current AABB, and recursively invalidate parents AABB.
-     *  this protected function MUST be called each times the primitive is modified.
-     */
-    Primitive.prototype.invalidAABB = function() {
-        this.valid_aabb = false;
-        if(this.parentNode !== null){
-            this.parentNode.invalidAABB();
-        }
-    };
-
-    /**
-     *  @return {boolean} True if the current aabb is valid, ie it does
-     *  correspond to the internal primitive parameters.
-     */
-    Primitive.prototype.isValidAABB = function() {
-        return this.valid_aabb;
-    };
-
     // Abstract : default AABB computation for primitive
     Primitive.prototype.computeAABB = function() {
         throw "Primitive.prototype.computeAABB  Must be reimplemented in all inherited class.";
@@ -1895,27 +1895,9 @@
         }
     };
 
-    /**
-     *  @abstract
-     *  Compute the value and/or gradient and/or material
-     *  of the primitive at position p in space. return computations in res (see below)
-     *
-     *  @param {!THREE.Vector3} p Point where we want to evaluate the primitive field
-     *  @param {EvalTags} req  Mask of required computation, see EvalTags constants
-     *                       Note : EvalTags.Grad, EvalTags.GradMat and EvalTags.Mat are not
-     *                       implemented here, value must always be computed.
-     *  @param {!Object} res  Computed values will be stored here :
-     *              res = {v: value, m: material, g: gradient}
-     *              res.v/m/g should exist if wanted and be allocated already.
-     */
-    Primitive.prototype.value = function(p,req,res) {
-        throw "ERROR : value is a virtual function, should be re-implemented in all primitives(error occured in " + this.type + " primitive)";
-        return 0.0;
-    };
-
     // Abstract
     Primitive.prototype.getAreas = function() {
-        throw "ERROR : getAreas is a virtual function, should be re-implemented in all primitives(error occured in " + this.type + " primitive)";
+        throw "ERROR : getAreas is an abstract function, should be re-implemented in all primitives(error occured in " + this.type + " primitive)";
         return [];
     };
 
@@ -1923,19 +1905,6 @@
     Primitive.prototype.computeHelpVariables = function() {
         throw "ERROR : computeHelpVariables is a virtual function, should be re-implemented in all primitives(error occured in " + this.type + " primitive)";
     }; // to override
-
-    /**
-     *  @abstract
-     *  Prepare the primitive for a call to value.
-     *  Important note: For now, a primitive is considered prepared for eval if and only
-     *                  if its bounding box is valid (valid_aabb is true).
-     *
-     */
-    Primitive.prototype.prepareForEval = function() {
-        var res = {del_obj:[], new_areas:[]};
-        throw "ERROR : prepareForEval is a virtual function, should be re-implemented in all primitives(error occured in " + this.type + " primitive)";
-        return res;
-    };
 
     // [Abstract]
     Primitive.prototype.count = function(cls){
@@ -2254,9 +2223,9 @@
      *  A scalis ScalisVertex. Basically a point and a wanted thickness.
      *  @constructor
      *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
-     *  @param {number} thickness Wanted thickness at this point
+     *  @param {number} thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
      */
-    var ScalisVertex = function(pos, thickness) {
+    var ScalisVertex$1 = function(pos, thickness) {
         this.pos       = pos;
         this.thickness = thickness;
 
@@ -2267,7 +2236,7 @@
         this.valid_aabb = false;
     };
 
-    ScalisVertex.prototype.toJSON = function() {
+    ScalisVertex$1.prototype.toJSON = function() {
         return {
             position:{
                 x:this.pos.x,
@@ -2277,15 +2246,15 @@
             thickness:this.thickness
         };
     };
-    ScalisVertex.fromJSON = function(json) {
-        return new ScalisVertex(new Three_cjs.Vector3(json.position.x,json.position.y,json.position.z), json.thickness);
+    ScalisVertex$1.fromJSON = function(json) {
+        return new ScalisVertex$1(new Three_cjs.Vector3(json.position.x,json.position.y,json.position.z), json.thickness);
     };
 
     /**
      *  Set a new position.
      *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
      */
-    ScalisVertex.prototype.setPos = function(pos) {
+    ScalisVertex$1.prototype.setPos = function(pos) {
         this.valid_aabb = false;
         this.pos = pos;
     };
@@ -2294,7 +2263,7 @@
      *  Set a new thickness
      *  @param {number} thickness The new thickness
      */
-    ScalisVertex.prototype.setThickness = function(thickness) {
+    ScalisVertex$1.prototype.setThickness = function(thickness) {
         this.valid_aabb = false;
         this.thickness = thickness;
     };
@@ -2304,7 +2273,7 @@
      *  @param {number} thickness The new thickness
      *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
      */
-    ScalisVertex.prototype.setAll = function(pos, thickness)
+    ScalisVertex$1.prototype.setAll = function(pos, thickness)
     {
         this.valid_aabb = false;
         this.pos = pos;
@@ -2315,7 +2284,7 @@
      *  Get the current position
      *  @return {!THREE.Vector3} Current position, as a THREE.Vector3
      */
-    ScalisVertex.prototype.getPos = function() {
+    ScalisVertex$1.prototype.getPos = function() {
         return this.pos;
     };
 
@@ -2323,7 +2292,7 @@
      *  Get the current Thickness
      *  @return {number} Current Thickness
      */
-    ScalisVertex.prototype.getThickness = function() {
+    ScalisVertex$1.prototype.getThickness = function() {
         return this.thickness;
     };
 
@@ -2331,7 +2300,7 @@
      *  Get the current AxisAlignedBoundingBox
      *  @return {THREE.Box3} The AABB of this vertex.
      */
-    ScalisVertex.prototype.getAABB = function() {
+    ScalisVertex$1.prototype.getAABB = function() {
         if (!this.valid_aabb) {
             this.computeAABB();
             this.valid_aabb = true;
@@ -2343,7 +2312,7 @@
      *  Compute the current AABB.
      *  @protected
      */
-    ScalisVertex.prototype.computeAABB = function() {
+    ScalisVertex$1.prototype.computeAABB = function() {
         var pos = this.getPos();
         var boundSupport = this.getThickness()*ScalisMath_1.KS;
         this.aabb.set(new Three_cjs.Vector3(
@@ -2363,11 +2332,11 @@
      *  Check equality between 2 vertices
      *  @return {boolean}
      */
-    ScalisVertex.prototype.equals = function(other) {
+    ScalisVertex$1.prototype.equals = function(other) {
         return this.pos.equals(other.pos) && this.thickness === other.thickness;
     };
 
-    var ScalisVertex_1 = ScalisVertex;
+    var ScalisVertex_1 = ScalisVertex$1;
 
     /**
      *  Bounding area for a primitive
@@ -2712,14 +2681,11 @@
 
     // [Abstract] see ScalisPrimitive.prepareForEval
     ScalisPoint.prototype.prepareForEval = function() {
-        var res = {del_obj:[], new_areas:[]};
         if(!this.valid_aabb)
         {
             this.computeHelpVariables();
             this.valid_aabb = true;
-            res.new_areas = this.getAreas();
         }
-        return res;
     };
 
     // [Abstract] see ScalisPrimitive.getArea
@@ -2764,9 +2730,7 @@
                 // to directionnal gradient (differential in this.v_to_p length)
                 var tmp2 = -this.density * thickness * ScalisMath_1.KIS2 * 6.0 *
                     tmp * tmp * ScalisMath_1.Poly6NF0D/(thickness*thickness*thickness);
-                res.g.set(tmp2*this.v_to_p.x,
-                          tmp2*this.v_to_p.y,
-                          tmp2*this.v_to_p.z);
+                res.g.copy(this.v_to_p).normalize().multiplyScalar(tmp2);
             }
             if(req & EvalTags_1.Mat)  { res.m.copy(this.materials[0]); }
         }
@@ -3222,12 +3186,10 @@
 
     // [Abstract] See Primitive.prepareForEval for more details
     ScalisSegment.prototype.prepareForEval = function() {
-        var res = {del_obj:[], new_areas:[]};
         if(!this.valid_aabb)
         {
             this.computeHelpVariables();
             this.valid_aabb = true;
-            res.new_areas = this.getAreas();
         }
         return res;
     };
@@ -4635,14 +4597,11 @@
 
     // [Abstract] See Primitive.prepareForEval for more details
     ScalisTriangle.prototype.prepareForEval = function() {
-        var res = {del_obj:[], new_areas:[]};
         if(!this.valid_aabb)
         {
             this.computeHelpVariables();
             this.valid_aabb = true;
-            res.new_areas = this.getAreas();
         }
-        return res;
     };
 
 
@@ -5433,6 +5392,691 @@
     };
 
     var ScalisTriangle_1 = ScalisTriangle;
+
+    /**
+     *  A superclass for Node and Primitive in the blobtree.
+     *  @constructor
+     */
+    var DistanceFunctor = function () {
+    };
+
+    DistanceFunctor.prototype.constructor = DistanceFunctor;
+
+    DistanceFunctor.type = "DistanceFunctor";
+    Types_1.register(DistanceFunctor.type, DistanceFunctor);
+    /**
+     *  @return {string} Type of the element
+     */
+    DistanceFunctor.prototype.getType = function() {
+        return this.type;
+    };
+
+    /**
+     *  @abstract
+     *  Return a Javscript Object respecting JSON convention.
+     */
+    DistanceFunctor.prototype.toJSON = function(){
+        return {
+            type:this.getType()
+        };
+    };
+    /**
+     *  @abstract
+     *  @param {Object} json Json description of the object
+     */
+    DistanceFunctor.prototype.fromJSON = function(json){
+        return Types_1.fromJSON(json);
+    };
+
+    /**
+     *  @param {number} d The distance to be considered.
+     *  @return {number} Scalar field value according to given distance d.
+     */
+    DistanceFunctor.prototype.value = function(d) {
+        throw "Error : not implemented. Must be reimplemented in children classes.";
+    };
+
+    DistanceFunctor.prototype.value = function(d) {
+        throw "Error : not implemented. Must be reimplemented in children classes.";
+    };
+
+    /**
+     *  Perform a numerical approximation of the gradient according to epsilon.
+     *  @param {number} d The distance to be considered.
+     *  @param {number} epsilon The numerica step for this gradient computation. Default to 0.00001.
+     */
+    DistanceFunctor.prototype.numericalGradient = function(d,epsilon){
+        return (this.value(d+epsilon)-this.value(d-epsilon))/2*epsilon;
+    };
+
+    /**
+     *  Compute the gradient. Should be reimplemented in most cases.
+     *  By default, this function return a numerical gradient with epsilon at 0.00001.
+     *  @return {number} One dimensional gradient at d.
+     *
+     */
+    DistanceFunctor.prototype.gradient = function(d){
+        return this.numericalGradient(d,0.00001);
+    };
+
+    /**
+     *  @return {number} Distance above which all values will be 0. Should be reimplemented and default to infinity.
+     *
+     */
+    DistanceFunctor.prototype.support = function(d){
+        return Infinity;
+    };
+
+
+    var DistanceFunctor_1 = DistanceFunctor;
+
+    /**
+     *  Specialised Distance Functor using a 6 degree polynomial function.
+     *  This is the function similar to the one used in SCALIS primitives.
+     *  @constructor
+     */
+    var Poly6DistanceFunctor = function (scale) {
+        this.scale = scale || 1.0;
+    };
+
+    Poly6DistanceFunctor.prototype = Object.create(DistanceFunctor_1.prototype);
+    Poly6DistanceFunctor.prototype.constructor = Poly6DistanceFunctor;
+
+    Poly6DistanceFunctor.type = "Poly6DistanceFunctor";
+    Types_1.register(Poly6DistanceFunctor.type, Poly6DistanceFunctor);
+    /**
+     *  @return {string} Type of the element
+     */
+    Poly6DistanceFunctor.prototype.getType = function() {
+        return this.type;
+    };
+
+    // This is the standard 6 degree polynomial function used for implicit modeling.
+    // At 0, its value is 1 with a zero derivative.
+    // at 1, its value is 0 with a zero derivative.
+    Poly6DistanceFunctor.evalStandard = function(d) {
+        if(d<0.0){
+            return 1.0;
+        }
+        var aux = 1.0-d*d;
+
+        if(aux > 0.0)
+        {
+            return aux*aux*aux;
+        }else{
+            return 0.0;
+        }
+    };
+    // [Abstract]
+    Poly6DistanceFunctor.prototype.value = function(d) {
+        var dp = d/(2*this.scale); // ensure the support fits the scale.
+        dp = dp + 0.5;
+        return Poly6DistanceFunctor.evalStandard(dp)/Poly6DistanceFunctor.evalStandard(0.5);
+    };
+
+    // [Abstract] Re-implementation is  optional, numerical computation can be used.
+    Poly6DistanceFunctor.prototype.gradient = function(d){
+        var ds = d/(2*this.scale) + 0.5;
+        var res = (1-ds*ds);
+        res = -(6/(2*this.scale))*ds*res*res;
+        return res;
+    };
+
+    // [Abstract]
+    Poly6DistanceFunctor.prototype.support = function(d){
+        return this.scale;
+    };
+
+    var Poly6DistanceFunctor_1 = Poly6DistanceFunctor;
+
+    /**
+     *  This class implements an abstract Node class for Signed Distance Field.
+     *  The considered primtive is at distance = 0.
+     *  Convention is : negative value inside the surface, positive value outside.
+     *  @constructor
+     *  @extends {Node}
+     */
+    var SDFNode = function ()
+    {
+        Node_1.call(this);
+
+        this.type = SDFNode.type;
+
+        // Default bounding box for a SDF is infinite.
+        this.aabb.set(
+            new THREE.Vector3( - Infinity, - Infinity, - Infinity ),
+            new THREE.Vector3( + Infinity, + Infinity, + Infinity )
+        );
+    };
+
+    SDFNode.prototype = Object.create(Node_1.prototype);
+    SDFNode.prototype.constructor = SDFNode;
+
+    SDFNode.type = "SDFNode";
+    Types_1.register(SDFNode.type, SDFNode);
+
+    SDFNode.prototype.getType = function(){
+        return SDFNode.type;
+    };
+
+    // Abstract
+    SDFNode.prototype.computeAABB = function() {
+        // Nothing to do, SDF have infinite bounding box
+    };
+
+    /**
+     *  Return the bounding box of the node for a given maximum distance.
+     *  Ie, the distance field is greater than d everywhere outside the returned box.
+     *  @param {number} d Distance
+     *  @abstract
+     */
+    SDFNode.prototype.computeDistanceAABB = function(d) {
+        throw "computeDistanceAABB is an abstract function of SDFNode. Please reimplement it in children classes.";
+    };
+
+    /**
+     *  SDF Field are infinite, so Areas do not make sens except for the SDFRoot, which will
+     *  usually apply a compact kernel to the distance field.
+     *  @abstract
+     */
+    SDFNode.prototype.getAreas = function() {
+        throw "No Areas for SDFNode, except for the SDFRootNode.";
+    };
+
+    /**
+     *  Since SDF Nodes are distance function, this function will return
+     *  an accurate distance to the surface.
+     *  @abstract
+     */
+    SDFNode.prototype.distanceTo = function(p) {
+        throw "distanceTo should be reimplemented in every children classes of SDFNode.";
+    };
+
+    // Abstract
+    SDFNode.prototype.heuristicStepWithin = function() {
+        throw "heuristicStepWithin may not make sens for all SDFNode, except for the SDFRootNode.";
+    };
+
+    var SDFNode_1 = SDFNode;
+
+    /**
+     *  This class implements a SDF Root Node, which is basically a Signed Distance Field
+     *  made of some noe combination, on which is applied a compact support function.
+     *  For now SDF nodes do not have materials. A unique material is defined in the SDFRootNode.
+     *
+     *  @constructor
+     *  @extends SDFNode
+     *
+     *  @param {DistanceFunctor} f The distance function to be applied to the distance field. It must
+     *                            respect the Blobtree convention, which is : positive everywhere, with a finite support.
+     *  @param {SDFNode} child The child containng the complete SDF. SDFRootNode can have only one child.
+     */
+    var SDFRootNode = function (f, material, child) {
+
+        SDFNode_1.call(this);
+
+        this.type = SDFRootNode.type;
+
+        this.f = f;
+
+        this.material = material ? material.clone() : new Material_1(null, null, null);
+
+        this.addChild(child);
+
+        // Tmp vars to speed up computation (no reallocations)
+        this.tmp_res = {v:0, g:new Three_cjs.Vector3(0,0,0)};
+    };
+
+    SDFRootNode.prototype = Object.create( SDFNode_1.prototype );
+    SDFRootNode.prototype.constructor = SDFRootNode;
+
+    SDFRootNode.type = "SDFRootNode";
+    Types_1.register(SDFRootNode.type, SDFRootNode);
+
+    SDFRootNode.prototype.getType = function(){
+        return SDFRootNode.type;
+    };
+
+    SDFRootNode.prototype.addChild = function(c){
+        if(this.children.length === 0){
+            SDFNode_1.prototype.addChild.call(this,c);
+        }else{
+            throw "Error : SDFRootNode can have only one child.";
+        }
+    };
+
+    SDFRootNode.prototype.toJSON = function(){
+        var res = SDFNode_1.prototype.toJSON.call(this);
+        res.f = this.f.toJSON();
+
+        return res;
+    };
+    SDFRootNode.fromJSON = function(json){
+        var res = new SDFRootNode(Types_1.fromJSON(res.f), Types_1.fromJSON(json.children[0]));
+        return res;
+    };
+
+    // [Abstract] see Node for a complete description
+    SDFRootNode.prototype.prepareForEval = function()
+    {
+        if(!this.valid_aabb){
+            this.aabb = new Three_cjs.Box3();  // Create empty BBox
+            for(var i=0; i<this.children.length; ++i){
+                var c = this.children[i];
+                c.prepareForEval();
+                this.aabb.union(
+                    c.computeDistanceAABB(this.f.support())
+                );     // new aabb is computed according to remaining children aabb
+            }
+
+            this.valid_aabb = true;
+        }
+    };
+
+    // [Abstract] see ScalisPrimitive.getArea
+    SDFRootNode.prototype.getAreas = function() {
+        if(!this.valid_aabb) {
+            throw "ERROR : Cannot get area of invalid node";
+        }else{
+            return this.children[0].getAreas(this.f.support());
+        }
+    };
+
+    // [Abstract] see Node for more details.
+    SDFRootNode.prototype.value = function(p,req,res)
+    {
+        var tmp = this.tmp_res;
+
+        // Init res
+        res.v = 0;
+        if(req & EvalTags_1.Mat)  {
+            res.m.copy(Material_1.defaultMaterial);
+        }if(req & EvalTags_1.Grad) {
+            res.g.set(0,0,0);
+        }else if (req & EvalTags_1.NextStep) {
+            // that, is the max distance
+            // we want a value that won't miss any 'min'
+            res.step = 1000000000;
+        }
+
+        if(this.aabb.containsPoint(p)){
+            this.children[0].value(p,req,tmp);
+
+            res.v = this.f.value(tmp.v);
+            if(req & EvalTags_1.Grad){
+                res.g.copy(tmp.g).multiplyScalar(this.f.gradient(res.v));
+            }
+            if(req && EvalTags_1.Mat){
+                res.m.copy(this.material);
+            }
+        }
+        else if (req & EvalTags_1.NextStep) {
+            // return distance to aabb such that next time we'll hit from within the aabbb
+            res.step = this.aabb.distanceToPoint(p) + 0.3;
+        }
+    };
+
+    var SDFRootNode_1 = SDFRootNode;
+
+    /**
+     *  This class implements an abstract primitve class for signed distance field.
+     *  SDFPrimitive subclasses must define a scalar field being the distance to a geometry.
+     *  @constructor
+     *  @extends {Element}
+     */
+    var SDFPrimitive = function ()
+    {
+        Element_1.call(this);
+
+        this.type = SDFPrimitive.type;
+
+        // Default bounding box for a SDF is infinite.
+        this.aabb.set(
+            new THREE.Vector3( - Infinity, - Infinity, - Infinity ),
+            new THREE.Vector3( + Infinity, + Infinity, + Infinity )
+        );
+    };
+
+    SDFPrimitive.prototype = Object.create(Element_1.prototype);
+    SDFPrimitive.prototype.constructor = SDFPrimitive;
+
+    SDFPrimitive.type = "SDFPrimitive";
+    Types_1.register(SDFPrimitive.type, SDFPrimitive);
+
+    SDFPrimitive.prototype.SDFPrimitive = function(){
+        return SDFPrimitive.type;
+    };
+
+    // Abstract
+    SDFPrimitive.prototype.computeAABB = function() {
+        // Nothing to do, SDF have infinite bounding box
+    };
+
+    /**
+     *  Return the bounding box of the node for a given maximum distance.
+     *  Ie, the distance field is greater than d everywhere outside the returned box.
+     *  @param {number} d Distance
+     *  @abstract
+     */
+    SDFPrimitive.prototype.computeDistanceAABB = function(d) {
+        throw "computeDistanceAABB is an abstract function of SDFPrimitive. Please reimplement it in children classes.";
+    };
+
+    /**
+     *  SDF Field are infinite, so Areas do not make sens.
+     */
+    SDFPrimitive.prototype.getAreas = function() {
+        throw "No Areas for SDFPrimitive.";
+    };
+
+    /**
+     *  Since SDF Nodes are distance function, this function will return
+     *  an accurate distance to the surface.
+     *  @abstract
+     */
+    SDFPrimitive.prototype.distanceTo = (function(){
+        var res = {v:0};
+        return function(p) {
+            this.value(p, EvalTags.Value, res);
+            return res.v;
+        };
+    })();
+
+    // Abstract
+    SDFPrimitive.prototype.heuristicStepWithin = function() {
+        throw "Not implemented";
+    };
+
+    var SDFPrimitive_1 = SDFPrimitive;
+
+    /**
+     * @global
+     * @type {Object} SphereAcc Contains the accuracies for Sphere areas.
+     * @property {number} nice Factor for the nice accuracy needed to represent the features nicely
+     * @property {number} raw Factor for the raw accuracy needed to represent the features roughly
+     * @property {number} curr Current accuracy factor, should be between SphereAcc.nice and SphereAcc.raw
+     */
+    var SphereAcc = {};
+
+    SphereAcc.nice = 0.3;
+    SphereAcc.raw = 1.0;
+    SphereAcc.curr = 0.3;
+
+    var SphereAcc_1 = SphereAcc;
+
+    /**
+     *  AreaSphere is a general representation of a spherical area.
+     *  Accuracies are set by default
+     *  See Primitive.getArea for more details.
+     *
+     *  @constructor
+     *  @extends {Area}
+     *
+     *  @param {!THREE.Vector3} p Point to locate the area
+     *  @param {number} r Radius of the area
+     *  @param {number} accFactor Accuracy factor. By default SphereArea will use global SphereAcc parameters. However, you can setup a accFactor.
+     *                            to change that. You will usually want to have accFactor between 0 (excluded) and 1. Default to 1.0.
+     *                            Be careful not to set it too small as it can increase the complexity of some algorithms up to the crashing point.
+     *
+     */
+    var AreaSphere = function(p,r, accFactor)
+    {
+        Area_1.call(this);
+
+        this.p = new Three_cjs.Vector3(p.x,p.y,p.z);
+        this.r = r;
+
+        this.accFactor = accFactor || 1.0;
+    };
+
+    AreaSphere.prototype = Object.create(Area_1.prototype);
+    AreaSphere.prototype.constructor = AreaSphere;
+
+    /**
+     *  Test intersection of the shape with a sphere
+     *  @return {boolean} true if the sphere and the area intersect
+     *
+     *  @param {!{r:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     */
+    AreaSphere.prototype.sphereIntersect = (function(){
+        var v = new Three_cjs.Vector3();
+        return function(sphere)
+        {
+            v.subVectors(sphere.center,this.p);
+            var tmp = sphere.radius+this.radius;
+            return v.lengthSq() < tmp*tmp;
+        };
+    })();
+
+    /**
+     *  Test if p is in the area.
+     *
+     *  @return {boolean} true if p is in th area, false otherwise.
+     *
+     *  @param {!Object} p A point in space, must comply to THREE.Vector3 API.
+     *
+     */
+    AreaSphere.prototype.contains = (function(){
+        var v = new Three_cjs.Vector3();
+        return function(p)
+        {
+            v.subVectors(p,this.p);
+            return v.lengthSq() < this.r*this.r;
+        };
+    })();
+
+    /**
+     *  Return the minimum accuracy needed in the intersection of the sphere and the area.
+     *         This function is a generic function used in both getNiceAcc and getRawAcc.
+     *
+     *  @return {number} the accuracy needed in the intersection zone
+     *
+     *  @param {!{r:number,c:!THREE.Vector3}}  sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {number}  factor  the ratio to determine the wanted accuracy.
+     */
+    AreaSphere.prototype.getAcc = function(sphere, factor)
+    {
+        return this.radius*factor;
+    };
+
+    /**
+     *  Convenience function, just call getAcc with Nice Accuracy parameters.
+     *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @return {number} The Nice accuracy needed in the intersection zone
+     */
+    AreaSphere.prototype.getNiceAcc = function(sphere)
+    {
+        return this.getAcc(sphere,SphereAcc_1.nice*this.accFactor);
+    };
+    /**
+     *  Convenience function, just call getAcc with Curr Accuracy parameters.
+     *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @return {number} The Curr accuracy needed in the intersection zone
+     */
+    AreaSphere.prototype.getCurrAcc = function(sphere)
+    {
+        return this.getAcc(sphere,SphereAcc_1.curr*this.accFactor);
+    };
+    /**
+     *  Convenience function, just call getAcc with Raw Accuracy parameters.
+     *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @return {number} The raw accuracy needed in the intersection zone
+     */
+    AreaSphere.prototype.getRawAcc = function(sphere)
+    {
+        return this.getAcc(sphere,SphereAcc_1.raw*this.accFactor);
+    };
+
+    /**
+     *  @return {number} the minimum accuracy needed for this primitive
+     */
+    AreaSphere.prototype.getMinAcc = function()
+    {
+        return SphereAcc_1.curr*this.r*this.accFactor;
+    };
+
+    /**
+     *  @return {number} the minimum raw accuracy needed for this primitive
+     */
+    AreaSphere.prototype.getMinRawAcc = function()
+    {
+        return SphereAcc_1.raw*this.r*this.accFactor;
+    };
+
+    /**
+     *  Return the minimum accuracy required at some point on the given axis.
+     *  The returned accuracy is the one you would need when stepping in the axis
+     *  direction when you are on the axis at coordinate t.
+     *  @param {string} axis x, y or z
+     *  @param {number} t Coordinate on the axis
+     *  @return {number} The step you can safely do in axis direction
+     */
+    AreaSphere.prototype.getAxisProjectionMinStep = function(axis,t){
+        var step = 100000000;
+        var diff = t-this.p[axis];
+        if(diff<-this.r){
+            step = Math.min(
+                step,
+                Math.max(
+                    Math.abs(diff+this.r),
+                    SphereAcc_1.curr*this.r*this.accFactor
+                )
+            );
+        }else if(diff<2*this.r){
+            step = Math.min(
+                step,
+                SphereAcc_1.curr*this.r*this.accFactor
+            );
+        }// else the area is behind us
+        return step;
+    };
+
+    var AreaSphere_1 = AreaSphere;
+
+    /**
+     *  @constructor
+     *  @extends SDFPrimitive
+     *
+     *  @param {THREE.Vector3} p Position (ie center) of the sphere
+     *  @param {number} r Radius of the sphere
+     */
+    var SDFSphere = function(p, r) {
+        SDFPrimitive_1.call(this);
+
+        this.p = p.clone();
+        this.r = r;
+
+        this.type = SDFSphere.type;
+    };
+
+    SDFSphere.prototype = Object.create(SDFPrimitive_1.prototype);
+    SDFSphere.prototype.constructor = SDFSphere;
+
+    SDFSphere.type = "SDFSphere";
+    Types_1.register(SDFSphere.type, SDFSphere);
+
+    SDFSphere.prototype.getType = function(){
+        return SDFSphere.type;
+    };
+
+    SDFSphere.prototype.toJSON = function() {
+        var res = SDFPrimitive_1.prototype.toJSON.call(this);
+        res.p = {
+            x:this.p.x,
+            y:this.p.y,
+            z:this.p.z
+        };
+        res.r = radius;
+        return res;
+    };
+    SDFSphere.fromJSON = function(json){
+        var v = ScalisVertex.fromJSON(json.v[0]);
+        return new SDFSphere(new Three_cjs.Vector3(json.p.x,json.p.y, json.p.z), json.r);
+    };
+
+    /**
+     *  @param {number} r The new radius
+     */
+    SDFSphere.prototype.setRadius = function(r) {
+        this.r = r;
+        this.invalidAABB();
+    };
+
+    /**
+     *  @return {number} Current radius
+     */
+    SDFSphere.prototype.getRadius = function() {
+        return this.r;
+    };
+
+    /**
+     *  @param {THREE.Vector3} p The new position (ie center)
+     */
+    SDFSphere.prototype.setPosition = function(p) {
+        this.p.copy(p);
+        this.invalidAABB();
+    };
+
+    /**
+     *  @return {THREE.Vector3} Current position (ie center)
+     */
+    SDFSphere.prototype.getPosition = function() {
+        return this.p;
+    };
+
+    // [Abstract]
+    SDFSphere.prototype.computeDistanceAABB = function(d) {
+        return new Three_cjs.Box3(
+            new Three_cjs.Vector3(-this.r-d,-this.r-d,-this.r-d),
+            new Three_cjs.Vector3(this.r+d,this.r+d,this.r+d)
+        );
+    };
+    // [Abstract]
+    SDFSphere.prototype.prepareForEval = function() {
+        if(!this.valid_aabb)
+        {
+            this.valid_aabb = true;
+        }
+    };
+
+    // [Abstract] see ScalisPrimitive.getArea
+    SDFSphere.prototype.getAreas = function(d) {
+        if(!this.valid_aabb) {
+            throw "ERROR : Cannot get area of invalid primitive";
+            return [];
+        }else{
+            return [{
+                aabb:this.computeDistanceAABB(d),
+                bv: new AreaSphere_1(
+                    this.p,
+                    this.r+d,
+                    this.r/(this.r+d) // Adjust accuray factor according to the radius and not the support.
+                ),
+                obj: this
+            }];
+        }
+    };
+
+    // [Abstract] see SDFPrimitive.value
+    SDFSphere.prototype.value = (function(){
+        var v = new Three_cjs.Vector3();
+
+        return function(p,req,res) {
+            if(!this.valid_aabb){
+                throw "Error : PrepareForEval should have been called";
+            }
+
+            v.subVectors(p,this.p);
+            var l = v.length();
+            res.v = l - this.r;
+            if(req & EvalTags_1.Grad)
+            {
+                res.g.copy(v).normalize();
+            }
+        };
+    })();
+
+    var SDFSphere_1 = SDFSphere;
 
     var Tables = {};
 
@@ -6573,34 +7217,53 @@
 
     var JSONLoader_1 = JSONLoader;
 
+    if(Three_cjs.REVISION !== 96){
+        console.warn("Blobtree library is currently made for THREE revision 96. Using any other revision may lead to unexpected behavior.");
+    }
+
     var Blobtree = {};
+    Blobtree.version = "1.0.0";
 
-    Blobtree.Types    = Types_1;
+    Blobtree.Types              = Types_1;
 
-    Blobtree.Element    = Element_1;
-    Blobtree.Node       = Node_1;
-    Blobtree.RicciNode  = RicciNode_1;
-    Blobtree.DifferenceNode  = DifferenceNode_1;
-    Blobtree.MinNode  = MinNode_1;
-    Blobtree.RootNode   = RootNode_1;
-    Blobtree.Primitive  = Primitive_1;
+    Blobtree.Element            = Element_1;
+    Blobtree.Node               = Node_1;
+    Blobtree.RootNode           = RootNode_1;
+
+    Blobtree.RicciNode          = RicciNode_1;
+    Blobtree.DifferenceNode     = DifferenceNode_1;
+    Blobtree.MinNode            = MinNode_1;
+
+    Blobtree.Primitive          = Primitive_1;
+
     Blobtree.ScalisPrimitive    = ScalisPrimitive_1;
     Blobtree.ScalisPoint        = ScalisPoint_1;
     Blobtree.ScalisSegment      = ScalisSegment_1;
     Blobtree.ScalisTriangle     = ScalisTriangle_1;
+    Blobtree.ScalisVertex       = ScalisVertex_1;
+
+    Blobtree.DistanceFunctor   = DistanceFunctor_1;
+    Blobtree.Poly6DistanceFunctor = Poly6DistanceFunctor_1;
+
+    Blobtree.SDFRootNode       = SDFRootNode_1;
+    Blobtree.SDFPrimitive      = SDFPrimitive_1;
+    Blobtree.SDFSphere         = SDFSphere_1;
+
+    Blobtree.ScalisPrimitive    = ScalisPrimitive_1;
+
     Blobtree.Material           = Material_1;
-    Blobtree.ScalisVertex             = ScalisVertex_1;
 
-    Blobtree.Area = Area_1;
-    Blobtree.AreaScalisPoint = AreaScalisPoint_1;
-    Blobtree.AreaScalisSeg = AreaScalisSeg_1;
-    Blobtree.AreaScalisTri = AreaScalisTri_1;
+    Blobtree.Area               = Area_1;
+    Blobtree.AreaScalisPoint    = AreaScalisPoint_1;
+    Blobtree.AreaScalisSeg      = AreaScalisSeg_1;
+    Blobtree.AreaScalisTri      = AreaScalisTri_1;
 
-    Blobtree.EvalTags = EvalTags_1;
+    Blobtree.EvalTags           = EvalTags_1;
 
     Blobtree.SlidingMarchingCubes = SlidingMarchingCubes_1;
 
-    Blobtree.JSONLoader = JSONLoader_1;
+    // Deprecated
+    Blobtree.JSONLoader         = JSONLoader_1;
 
     /*
     try {

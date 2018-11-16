@@ -21,8 +21,6 @@ var RicciNode = function (ricci_n, children) {
 
     Node.call(this);
 
-    this.type = RicciNode.type;
-
     this.ricci_n = ricci_n;
 
     if(children){

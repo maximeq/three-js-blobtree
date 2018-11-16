@@ -33,7 +33,7 @@
 
     <body>
         <div id="info">
-            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Basic example
+            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Scalar Distance Field Sphere
         </div>
 
         <script src="../../node_modules/three-full/builds/Three.iife.js"></script>
@@ -47,21 +47,24 @@
             var root = new Blobtree.RootNode();
 
             root.addChild(
-                new Blobtree.ScalisPoint(
-                    new Blobtree.ScalisVertex(
+                new Blobtree.SDFRootNode(
+                    new Blobtree.Poly6DistanceFunctor(4.0),
+                    new Blobtree.Material('#ffcd41'),
+                    new Blobtree.SDFSphere(
                         new THREE.Vector3(0,0,0),
                         5
-                    ),
-                    Blobtree.ScalisPrimitive.DIST,
-                    1.0,
-                    new Blobtree.Material('#dd4f43')
+                    )
                 )
             );
+
+            root.prepareForEval();
+            var res = {v:0};
+            root.value(new THREE.Vector3(5,0,0), Blobtree.EvalTags.Value, res);
+            console.log(" Value : " + res.v);
 
             var smc = new Blobtree.SlidingMarchingCubes(
                 root,
                 {
-                    convergence:{},     // Active convergence of marching cubes points. Comment to trade quality for speed
                     detailRatio: 0.5    // Double resolution with respect to the primitives setup.
                 }
             );
@@ -70,9 +73,13 @@
             // geometry is kept as a global variable to be used in the following script.
             var geometry = smc.compute();
             geometry.computeBoundingBox();
-            var material = new THREE.MeshPhongMaterial( {vertexColors:THREE.VertexColors, wireframe:true} );
+            var material = new THREE.MeshPhongMaterial( {vertexColors:THREE.VertexColors} );
+
+            var geometry = smc.compute();
+            geometry.computeBoundingBox();
 
             var mesh = new THREE.Mesh( geometry, material );
+
         </script>
         <!-- Main script containing THREE.js setup for the page -->
         <script src="./js/smc-main-script.js"></script>

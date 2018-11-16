@@ -10,7 +10,7 @@ var verticesIds = 0;
  *  A scalis ScalisVertex. Basically a point and a wanted thickness.
  *  @constructor
  *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
- *  @param {number} thickness Wanted thickness at this point
+ *  @param {number} thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
  */
 var ScalisVertex = function(pos, thickness) {
     this.pos       = pos;

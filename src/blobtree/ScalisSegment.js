@@ -38,8 +38,6 @@ var ScalisSegment = function(v0, v1, volType, density, mats) {
     this.density     = density;
     this.materials   = mats;
 
-    this.type        = ScalisSegment.type;
-
     // Temporary for eval
     // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
     // CONVOL
@@ -150,12 +148,10 @@ ScalisSegment.prototype.getVolType = function()
 
 // [Abstract] See Primitive.prepareForEval for more details
 ScalisSegment.prototype.prepareForEval = function() {
-    var res = {del_obj:[], new_areas:[]};
     if(!this.valid_aabb)
     {
         this.computeHelpVariables();
         this.valid_aabb = true;
-        res.new_areas = this.getAreas();
     }
     return res;
 };

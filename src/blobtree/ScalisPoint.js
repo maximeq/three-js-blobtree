@@ -30,8 +30,6 @@ var ScalisPoint = function(vertex, volType, density, mat) {
     this.density     = density;
     this.materials.push(mat);
 
-    this.type        = ScalisPoint.type;
-
     // Temporary for eval
     // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
     this.v_to_p =  new THREE.Vector3();
@@ -89,14 +87,11 @@ ScalisPoint.prototype.computeHelpVariables = function() {
 
 // [Abstract] see ScalisPrimitive.prepareForEval
 ScalisPoint.prototype.prepareForEval = function() {
-    var res = {del_obj:[], new_areas:[]};
     if(!this.valid_aabb)
     {
         this.computeHelpVariables();
         this.valid_aabb = true;
-        res.new_areas = this.getAreas();
     }
-    return res;
 };
 
 // [Abstract] see ScalisPrimitive.getArea
@@ -141,9 +136,7 @@ ScalisPoint.prototype.value = function(p,req,res) {
             // to directionnal gradient (differential in this.v_to_p length)
             var tmp2 = -this.density * thickness * ScalisMath.KIS2 * 6.0 *
                 tmp * tmp * ScalisMath.Poly6NF0D/(thickness*thickness*thickness);
-            res.g.set(tmp2*this.v_to_p.x,
-                      tmp2*this.v_to_p.y,
-                      tmp2*this.v_to_p.z);
+            res.g.copy(this.v_to_p).normalize().multiplyScalar(tmp2);
         }
         if(req & EvalTags.Mat)  { res.m.copy(this.materials[0]); }
     }

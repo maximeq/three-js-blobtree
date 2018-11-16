@@ -14,8 +14,6 @@ var RootNode = function() {
     // Default RootNode is a riccinode with ricci_n = 64 (almost a max)
     RicciNode.call(this, 64);
 
-    this.type = RootNode.type;
-
     this.valid_aabb = true;
 
     // Defauylt iso value, value where the surface is present

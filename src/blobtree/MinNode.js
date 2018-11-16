@@ -20,8 +20,6 @@ var MinNode = function (children) {
 
     Node.call(this);
 
-    this.type = MinNode.type;
-
     if(children){
         var self = this;
         children.forEach(function(c){

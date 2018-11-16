@@ -30,7 +30,6 @@ var ScalisTriangle = function(v, volType, mats) {
 
     this.volType = volType;
     this.materials     = mats !== null? mats : [Material.defaultMaterial.clone(), Material.defaultMaterial.clone(), Material.defaultMaterial.clone()];
-    this.type = ScalisTriangle.type;
 
     this.v = v;
     this.min_thick = Math.min(this.v[0].getThickness(), this.v[1].getThickness(), this.v[2].getThickness());
@@ -108,14 +107,11 @@ ScalisTriangle.fromJSON = function(json){
 
 // [Abstract] See Primitive.prepareForEval for more details
 ScalisTriangle.prototype.prepareForEval = function() {
-    var res = {del_obj:[], new_areas:[]};
     if(!this.valid_aabb)
     {
         this.computeHelpVariables();
         this.valid_aabb = true;
-        res.new_areas = this.getAreas();
     }
-    return res;
 };
 
 

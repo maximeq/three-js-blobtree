@@ -21,8 +21,6 @@ var DifferenceNode = function (node0, node1, alpha) {
 
     Node.call(this);
 
-    this.type = DifferenceNode.type;
-
     this.addChild(node0);
     this.addChild(node1)
 
