@@ -1,0 +1,3 @@
+- Create test for all analytical gradient using numercalGradient to compare the results.
+- Nodes for "blending" distances : ie use distance field combination to compute distance fields to the union, intersection, difference.
+  https://iquilezles.org/www/articles/distfunctions/distfunctions.htm
