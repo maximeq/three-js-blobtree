@@ -31,15 +31,20 @@ Blobtree.Poly6DistanceFunctor = require("./blobtree/SDF/Poly6DistanceFunctor.js"
 Blobtree.SDFRootNode       = require("./blobtree/SDF/SDFRootNode.js");
 Blobtree.SDFPrimitive      = require("./blobtree/SDF/SDFPrimitive.js");
 Blobtree.SDFSphere         = require("./blobtree/SDF/SDFSphere.js");
+Blobtree.SDFCapsule         = require("./blobtree/SDF/SDFCapsule.js");
 
 Blobtree.ScalisPrimitive    = require("./blobtree/ScalisPrimitive.js");
 
 Blobtree.Material           = require("./blobtree/Material.js");
 
+Blobtree.Accuracies               = require("./blobtree/accuracies/Accuracies.js");
+
 Blobtree.Area               = require("./blobtree/Areas/Area.js");
 Blobtree.AreaScalisPoint    = require("./blobtree/Areas/AreaScalisPoint.js");
 Blobtree.AreaScalisSeg      = require("./blobtree/Areas/AreaScalisSeg.js");
 Blobtree.AreaScalisTri      = require("./blobtree/Areas/AreaScalisTri.js");
+Blobtree.AreaSphere         = require("./blobtree/Areas/AreaSphere.js");
+Blobtree.AreaCapsule        = require("./blobtree/Areas/AreaCapsule.js");
 
 Blobtree.EvalTags           = require("./blobtree/EvalTags.js");
 

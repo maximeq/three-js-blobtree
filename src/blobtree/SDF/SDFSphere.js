@@ -37,7 +37,7 @@ SDFSphere.prototype.toJSON = function() {
         y:this.p.y,
         z:this.p.z
     };
-    res.r = radius;
+    res.r = this.r;
     return res;
 };
 SDFSphere.fromJSON = function(json){
@@ -78,8 +78,8 @@ SDFSphere.prototype.getPosition = function() {
 // [Abstract]
 SDFSphere.prototype.computeDistanceAABB = function(d) {
     return new THREE.Box3(
-        new THREE.Vector3(-this.r-d,-this.r-d,-this.r-d),
-        new THREE.Vector3(this.r+d,this.r+d,this.r+d)
+        this.p.clone().add(new THREE.Vector3(-this.r-d,-this.r-d,-this.r-d)),
+        this.p.clone().add(new THREE.Vector3(this.r+d,this.r+d,this.r+d))
     );
 };
 // [Abstract]
@@ -101,7 +101,7 @@ SDFSphere.prototype.getAreas = function(d) {
             bv: new AreaSphere(
                 this.p,
                 this.r+d,
-                this.r/(this.r+d) // Adjust accuray factor according to the radius and not the support.
+                this.r/(this.r+d) // Adjust accuray factor according to the radius and not only to the required d
             ),
             obj: this
         }];
@@ -122,7 +122,7 @@ SDFSphere.prototype.value = (function(){
         res.v = l - this.r;
         if(req & EvalTags.Grad)
         {
-            res.g.copy(v).normalize();
+            res.g.copy(v).multiplyScalar(1/l);
         }
     };
 })();

@@ -3,11 +3,10 @@
 const THREE = require("three-full/builds/Three.cjs.js");
 const ScalisMath = require("../ScalisMath.js");
 const Area = require("./Area.js");
-const SphereAcc = require("../accuracies/SphereAcc.js");
+const Accuracies = require("../accuracies/Accuracies.js");
 
 /**
  *  AreaSphere is a general representation of a spherical area.
- *  Accuracies are set by default
  *  See Primitive.getArea for more details.
  *
  *  @constructor
@@ -15,12 +14,12 @@ const SphereAcc = require("../accuracies/SphereAcc.js");
  *
  *  @param {!THREE.Vector3} p Point to locate the area
  *  @param {number} r Radius of the area
- *  @param {number} accFactor Accuracy factor. By default SphereArea will use global SphereAcc parameters. However, you can setup a accFactor.
+ *  @param {number} accFactor Accuracy factor. By default SphereArea will use global Accuracies parameters. However, you can setup a accFactor.
  *                            to change that. You will usually want to have accFactor between 0 (excluded) and 1. Default to 1.0.
  *                            Be careful not to set it too small as it can increase the complexity of some algorithms up to the crashing point.
  *
  */
-var AreaSphere = function(p,r, accFactor)
+var AreaSphere = function( p, r, accFactor )
 {
     Area.call(this);
 
@@ -87,7 +86,7 @@ AreaSphere.prototype.getAcc = function(sphere, factor)
  */
 AreaSphere.prototype.getNiceAcc = function(sphere)
 {
-    return this.getAcc(sphere,SphereAcc.nice*this.accFactor);
+    return this.getAcc(sphere,Accuracies.nice*this.accFactor);
 };
 /**
  *  Convenience function, just call getAcc with Curr Accuracy parameters.
@@ -96,7 +95,7 @@ AreaSphere.prototype.getNiceAcc = function(sphere)
  */
 AreaSphere.prototype.getCurrAcc = function(sphere)
 {
-    return this.getAcc(sphere,SphereAcc.curr*this.accFactor);
+    return this.getAcc(sphere,Accuracies.curr*this.accFactor);
 };
 /**
  *  Convenience function, just call getAcc with Raw Accuracy parameters.
@@ -105,7 +104,7 @@ AreaSphere.prototype.getCurrAcc = function(sphere)
  */
 AreaSphere.prototype.getRawAcc = function(sphere)
 {
-    return this.getAcc(sphere,SphereAcc.raw*this.accFactor);
+    return this.getAcc(sphere,Accuracies.raw*this.accFactor);
 };
 
 /**
@@ -113,7 +112,7 @@ AreaSphere.prototype.getRawAcc = function(sphere)
  */
 AreaSphere.prototype.getMinAcc = function()
 {
-    return SphereAcc.curr*this.r*this.accFactor;
+    return Accuracies.curr*this.r*this.accFactor;
 };
 
 /**
@@ -121,7 +120,7 @@ AreaSphere.prototype.getMinAcc = function()
  */
 AreaSphere.prototype.getMinRawAcc = function()
 {
-    return SphereAcc.raw*this.r*this.accFactor;
+    return Accuracies.raw*this.r*this.accFactor;
 };
 
 /**
@@ -140,13 +139,13 @@ AreaSphere.prototype.getAxisProjectionMinStep = function(axis,t){
             step,
             Math.max(
                 Math.abs(diff+this.r),
-                SphereAcc.curr*this.r*this.accFactor
+                Accuracies.curr*this.r*this.accFactor
             )
         );
     }else if(diff<2*this.r){
         step = Math.min(
             step,
-            SphereAcc.curr*this.r*this.accFactor
+            Accuracies.curr*this.r*this.accFactor
         );
     }// else the area is behind us
     return step;

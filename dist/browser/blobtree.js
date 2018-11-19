@@ -2461,18 +2461,23 @@
 
     /**
      * @global
-     * @type {Object} ScalisPointAcc Contains the accuracies for Scalis Points.
+     * @type {Object} Accuracies Contains the accuracies needed in Areas. Can be changed when importing blobtree.js.
+     *                For classic segments and sphere, we setteled for a raw accuracy being proportional to
+     *                the radii. 1/3 of the radius is considered nice, 1 radius is considered raw.
+     *                For new primitives, feel free to create your own accuracies factors depending on the features.
+     *
      * @property {number} nice Factor for the nice accuracy needed to represent the features nicely
      * @property {number} raw Factor for the raw accuracy needed to represent the features roughly
-     * @property {number} curr Current accuracy factor, should be between ScalisPointAcc.nice and ScalisPointAcc.raw
+     * @property {number} curr Current accuracy factor, should be between Accuracies.nice and Accuracies.raw.
+     *                         It will be the one used by rendering algorithms to decide to stop even if nice accuracy has not been reached.
      */
-    var ScalisPointAcc = {};
+    var Accuracies = {};
 
-    ScalisPointAcc.nice = 0.3;
-    ScalisPointAcc.raw = 1.0;
-    ScalisPointAcc.curr = 0.3;
+    Accuracies.nice = 0.3;
+    Accuracies.raw = 1.0;
+    Accuracies.curr = 0.3;
 
-    var ScalisPointAcc_1 = ScalisPointAcc;
+    var Accuracies_1 = Accuracies;
 
     /**
      *  AreaPoint represent the areas influenced by a ScalisPoint primitive.
@@ -2481,6 +2486,8 @@
      *  @constructor
      *  @extends {Area}
      *
+     *  @todo should be possible to replace with an AreaPoint
+
      *  @param {!THREE.Vector3} p Point to locate the area
      *  @param {number} thick Thickness
      */
@@ -2548,7 +2555,7 @@
      */
     AreaScalisPoint.prototype.getNiceAcc = function(sphere)
     {
-        return this.getAcc(sphere,ScalisPointAcc_1.nice);
+        return this.getAcc(sphere,Accuracies_1.nice);
     };
     /**
      *  Convenience function, just call getAcc with Curr Accuracy parameters.
@@ -2557,7 +2564,7 @@
      */
     AreaScalisPoint.prototype.getCurrAcc = function(sphere)
     {
-        return this.getAcc(sphere,ScalisPointAcc_1.curr);
+        return this.getAcc(sphere,Accuracies_1.curr);
     };
     /**
      *  Convenience function, just call getAcc with Raw Accuracy parameters.
@@ -2566,7 +2573,7 @@
      */
     AreaScalisPoint.prototype.getRawAcc = function(sphere)
     {
-        return this.getAcc(sphere,ScalisPointAcc_1.raw);
+        return this.getAcc(sphere,Accuracies_1.raw);
     };
 
     /**
@@ -2574,7 +2581,7 @@
      */
     AreaScalisPoint.prototype.getMinAcc = function()
     {
-        return ScalisPointAcc_1.curr*this.thick;
+        return Accuracies_1.curr*this.thick;
     };
 
     /**
@@ -2582,7 +2589,7 @@
      */
     AreaScalisPoint.prototype.getMinRawAcc = function()
     {
-        return ScalisPointAcc_1.raw*this.thick;
+        return Accuracies_1.raw*this.thick;
     };
 
        /**
@@ -2597,9 +2604,9 @@
         var step = 100000000;
         var diff = t-this.p[axis];
         if(diff<-2*this.thick){
-            step = Math.min(step,Math.max(Math.abs(diff+2*this.thick),ScalisPointAcc_1.curr*this.thick));
+            step = Math.min(step,Math.max(Math.abs(diff+2*this.thick),Accuracies_1.curr*this.thick));
         }else if(diff<2*this.thick){
-            step = Math.min(step,ScalisPointAcc_1.curr*this.thick);
+            step = Math.min(step,Accuracies_1.curr*this.thick);
         }// else the vertex is behind us
         return step;
     };
@@ -2732,7 +2739,6 @@
                 // to directionnal gradient (differential in this.v_to_p length)
                 var tmp2 = -this.density * ScalisMath_1.KIS2 * 6.0 * this.v_to_p.length() * tmp * tmp * ScalisMath_1.Poly6NF0D/(thickness*thickness);
                 res.g.copy(this.v_to_p).normalize().multiplyScalar(tmp2);
-                // this.numericalGradient(p,res.g);
             }
             if(req & EvalTags_1.Mat)  { res.m.copy(this.materials[0]); }
         }
@@ -2756,21 +2762,6 @@
     var ScalisPoint_1 = ScalisPoint;
 
     /**
-     * @global
-     * @type {Object} ScalisSegmentAcc Contains the accuracies for Scalis Points.
-     * @property {number} nice Factor for the nice accuracy needed to represent the features nicely
-     * @property {number} raw Factor for the raw accuracy needed to represent the features roughly
-     * @property {number} curr Current accuracy factor, should be between ScalisSegmentAcc.nice and ScalisSegmentAcc.raw
-     */
-    var ScalisSegmentAcc = {};
-
-    ScalisSegmentAcc.nice = 0.3;
-    ScalisSegmentAcc.raw = 1.0;
-    ScalisSegmentAcc.curr = 0.3;
-
-    var ScalisSegmentAcc_1 = ScalisSegmentAcc;
-
-    /**
      *  Bounding area for the segment.
      *  It is the same for DIST and CONVOL primitives since the support of the convolution
      *  kernel is the same as the support for the distance field.
@@ -2787,12 +2778,12 @@
      *  @param {!THREE.Vector3} p1     second point of the shape
      *  @param {number}  thick0 radius at p0
      *  @param {number}  thick1 radius at p1
-     *  @param {number}  length |p0p1| given for performance
-     *  @param {!THREE.Vector3} unit_dir p0p1 normalized, given for performance, as a THREE.Vector3
+     *
+     *  @todo should be possible to replace with an AreaCapsule
      *
      * @constructor
      */
-    var AreaScalisSeg = function(p0, p1, thick0, thick1, length, unit_dir)
+    var AreaScalisSeg = function(p0, p1, thick0, thick1)
     {
         Area_1.call(this);
 
@@ -2800,8 +2791,10 @@
         this.p1 = new Three_cjs.Vector3(p1.x,p1.y,p1.z);
         this.thick0 = thick0;
         this.thick1 = thick1;
-        this.length = length;
-        this.unit_dir = new Three_cjs.Vector3(unit_dir.x,unit_dir.y,unit_dir.z);
+
+        this.unit_dir = new Three_cjs.Vector3().subVectors(p2,p2);
+        this.length = this.unit_dir.length();
+        this.unit_dir.normalize();
 
         // tmp var for functions below
         this.vector = new Three_cjs.Vector3();
@@ -2972,21 +2965,21 @@
      */
     AreaScalisSeg.prototype.getNiceAcc = function(sphere)
     {
-        return this.getAcc(sphere,ScalisSegmentAcc_1.nice);
+        return this.getAcc(sphere,Accuracies_1.nice);
     };
     /**
      *  Sea documentation in parent class Area
      */
     AreaScalisSeg.prototype.getCurrAcc = function(sphere)
     {
-        return this.getAcc(sphere,ScalisSegmentAcc_1.curr);
+        return this.getAcc(sphere,Accuracies_1.curr);
     };
     /**
      *  Sea documentation in parent class Area
      */
     AreaScalisSeg.prototype.getRawAcc = function(sphere)
     {
-        return this.getAcc(sphere,ScalisSegmentAcc_1.raw);
+        return this.getAcc(sphere,Accuracies_1.raw);
     };
 
     /**
@@ -2994,18 +2987,18 @@
      */
     AreaScalisSeg.prototype.getMinAcc = function()
     {
-        return ScalisSegmentAcc_1.curr*Math.min(this.thick0, this.thick1);
+        return Accuracies_1.curr*Math.min(this.thick0, this.thick1);
     };
     /**
      *  Sea documentation in parent class Area
      */
     AreaScalisSeg.prototype.getMinRawAcc = function()
     {
-        return ScalisSegmentAcc_1.raw*Math.min(this.thick0, this.thick1);
+        return Accuracies_1.raw*Math.min(this.thick0, this.thick1);
     };
 
     /**
-     *  Return the minimum accuracy required at some point on the given axis, according to ScalisSegmentAcc.curr
+     *  Return the minimum accuracy required at some point on the given axis, according to Accuracies.curr
      *  The returned accuracy is the one you would need when stepping in the axis
      *  direction when you are on the axis at coordinate t.
      *  @param {string} axis x, y or z
@@ -3028,22 +3021,22 @@
 
         var diff = t-p0[axis];
         if(diff<-2*thick0){
-            step = Math.min(step,Math.max(Math.abs(diff+2*thick0),ScalisSegmentAcc_1.curr*thick0));
+            step = Math.min(step,Math.max(Math.abs(diff+2*thick0),Accuracies_1.curr*thick0));
         }else if(diff<2*thick0){
-            step = Math.min(step,ScalisSegmentAcc_1.curr*thick0);
+            step = Math.min(step,Accuracies_1.curr*thick0);
         }// else the vertex is behind us
         diff = t-p1[axis];
         if(diff<-2*thick1){
-            step = Math.min(step,Math.max(Math.abs(diff+2*thick1),ScalisSegmentAcc_1.curr*thick1));
+            step = Math.min(step,Math.max(Math.abs(diff+2*thick1),Accuracies_1.curr*thick1));
         }else if(diff<2*thick1){
-            step = Math.min(step,ScalisSegmentAcc_1.curr*thick1);
+            step = Math.min(step,Accuracies_1.curr*thick1);
         }// else the vertex is behind us
 
         var tbis = t-p0[axis];
         var axis_l = p1[axis]-p0[axis];
         if(tbis>0 && tbis<axis_l && axis_l!==0){
             // t is in p0p1
-            step = Math.min(step,ScalisSegmentAcc_1.curr*(thick0 + (tbis/axis_l)*(thick1 - thick0)));
+            step = Math.min(step,Accuracies_1.curr*(thick0 + (tbis/axis_l)*(thick1 - thick0)));
         }
 
         return step;
@@ -4085,21 +4078,6 @@
     var TriangleUtils_1 = TriangleUtils;
 
     /**
-     * @global
-     * @type {Object} ScalisTriangleAcc Contains the accuracies for Scalis Points.
-     * @property {number} nice Factor for the nice accuracy needed to represent the features nicely
-     * @property {number} raw Factor for the raw accuracy needed to represent the features roughly
-     * @property {number} curr Current accuracy factor, should be between ScalisTriangleAcc.nice and ScalisTriangleAcc.raw
-     */
-    var ScalisTriangleAcc = {};
-
-    ScalisTriangleAcc.nice = 0.3;
-    ScalisTriangleAcc.raw = 1.0;
-    ScalisTriangleAcc.curr = 0.3;
-
-    var ScalisTriangleAcc_1 = ScalisTriangleAcc;
-
-    /**
      *  Bounding area for the triangle.
      *  It is the same for DIST and CONVOL primitives since the support of the convolution
      *  kernel is the same as the support for the distance field.
@@ -4316,7 +4294,7 @@
      */
     AreaScalisTri.prototype.getAccSegment = function(sphere, segParams)
     {
-        var allReturn = {intersect:false, currAcc:ScalisTriangleAcc_1.nice*this.min_thick};
+        var allReturn = {intersect:false, currAcc:Accuracies_1.nice*this.min_thick};
         if (this.sphereIntersectSegment(sphere, segParams, 1)) {
             // Thales between two triangles that have the same angles gives us the dist of:
             // side A = sphere.r*this.abs_diff_thick/this.length;
@@ -4443,7 +4421,7 @@
      */
     AreaScalisTri.prototype.getNiceAcc = function(sphere)
     {
-        return this.getAcc(sphere,ScalisTriangleAcc_1.nice);
+        return this.getAcc(sphere,Accuracies_1.nice);
     };
     /**
      *  Convenience function, just call getAcc with Curr Accuracy parameters.
@@ -4452,7 +4430,7 @@
      */
     AreaScalisTri.prototype.getCurrAcc = function(sphere)
     {
-        return this.getAcc(sphere,ScalisTriangleAcc_1.curr);
+        return this.getAcc(sphere,Accuracies_1.curr);
     };
     /**
      *  Convenience function, just call getAcc with Raw Accuracy parameters.
@@ -4461,7 +4439,7 @@
      */
     AreaScalisTri.prototype.getRawAcc = function(sphere)
     {
-        return this.getAcc(sphere,ScalisScalisTriangleAcc.raw);
+        return this.getAcc(sphere,ScalisAccuracies.raw);
     };
 
     /**
@@ -4469,7 +4447,7 @@
      */
     AreaScalisTri.prototype.getMinAcc = function()
     {
-        return ScalisTriangleAcc_1.curr*this.min_thick;
+        return Accuracies_1.curr*this.min_thick;
     };
 
     /**
@@ -4477,7 +4455,7 @@
      */
     AreaScalisTri.prototype.getMinRawAcc = function()
     {
-        return ScalisScalisTriangleAcc.raw*this.min_thick;
+        return ScalisAccuracies.raw*this.min_thick;
     };
 
     /**
@@ -5794,23 +5772,7 @@
     var SDFPrimitive_1 = SDFPrimitive;
 
     /**
-     * @global
-     * @type {Object} SphereAcc Contains the accuracies for Sphere areas.
-     * @property {number} nice Factor for the nice accuracy needed to represent the features nicely
-     * @property {number} raw Factor for the raw accuracy needed to represent the features roughly
-     * @property {number} curr Current accuracy factor, should be between SphereAcc.nice and SphereAcc.raw
-     */
-    var SphereAcc = {};
-
-    SphereAcc.nice = 0.3;
-    SphereAcc.raw = 1.0;
-    SphereAcc.curr = 0.3;
-
-    var SphereAcc_1 = SphereAcc;
-
-    /**
      *  AreaSphere is a general representation of a spherical area.
-     *  Accuracies are set by default
      *  See Primitive.getArea for more details.
      *
      *  @constructor
@@ -5818,12 +5780,12 @@
      *
      *  @param {!THREE.Vector3} p Point to locate the area
      *  @param {number} r Radius of the area
-     *  @param {number} accFactor Accuracy factor. By default SphereArea will use global SphereAcc parameters. However, you can setup a accFactor.
+     *  @param {number} accFactor Accuracy factor. By default SphereArea will use global Accuracies parameters. However, you can setup a accFactor.
      *                            to change that. You will usually want to have accFactor between 0 (excluded) and 1. Default to 1.0.
      *                            Be careful not to set it too small as it can increase the complexity of some algorithms up to the crashing point.
      *
      */
-    var AreaSphere = function(p,r, accFactor)
+    var AreaSphere = function( p, r, accFactor )
     {
         Area_1.call(this);
 
@@ -5890,7 +5852,7 @@
      */
     AreaSphere.prototype.getNiceAcc = function(sphere)
     {
-        return this.getAcc(sphere,SphereAcc_1.nice*this.accFactor);
+        return this.getAcc(sphere,Accuracies_1.nice*this.accFactor);
     };
     /**
      *  Convenience function, just call getAcc with Curr Accuracy parameters.
@@ -5899,7 +5861,7 @@
      */
     AreaSphere.prototype.getCurrAcc = function(sphere)
     {
-        return this.getAcc(sphere,SphereAcc_1.curr*this.accFactor);
+        return this.getAcc(sphere,Accuracies_1.curr*this.accFactor);
     };
     /**
      *  Convenience function, just call getAcc with Raw Accuracy parameters.
@@ -5908,7 +5870,7 @@
      */
     AreaSphere.prototype.getRawAcc = function(sphere)
     {
-        return this.getAcc(sphere,SphereAcc_1.raw*this.accFactor);
+        return this.getAcc(sphere,Accuracies_1.raw*this.accFactor);
     };
 
     /**
@@ -5916,7 +5878,7 @@
      */
     AreaSphere.prototype.getMinAcc = function()
     {
-        return SphereAcc_1.curr*this.r*this.accFactor;
+        return Accuracies_1.curr*this.r*this.accFactor;
     };
 
     /**
@@ -5924,7 +5886,7 @@
      */
     AreaSphere.prototype.getMinRawAcc = function()
     {
-        return SphereAcc_1.raw*this.r*this.accFactor;
+        return Accuracies_1.raw*this.r*this.accFactor;
     };
 
     /**
@@ -5943,13 +5905,13 @@
                 step,
                 Math.max(
                     Math.abs(diff+this.r),
-                    SphereAcc_1.curr*this.r*this.accFactor
+                    Accuracies_1.curr*this.r*this.accFactor
                 )
             );
         }else if(diff<2*this.r){
             step = Math.min(
                 step,
-                SphereAcc_1.curr*this.r*this.accFactor
+                Accuracies_1.curr*this.r*this.accFactor
             );
         }// else the area is behind us
         return step;
@@ -5988,7 +5950,7 @@
             y:this.p.y,
             z:this.p.z
         };
-        res.r = radius;
+        res.r = this.r;
         return res;
     };
     SDFSphere.fromJSON = function(json){
@@ -6029,8 +5991,8 @@
     // [Abstract]
     SDFSphere.prototype.computeDistanceAABB = function(d) {
         return new Three_cjs.Box3(
-            new Three_cjs.Vector3(-this.r-d,-this.r-d,-this.r-d),
-            new Three_cjs.Vector3(this.r+d,this.r+d,this.r+d)
+            this.p.clone().add(new Three_cjs.Vector3(-this.r-d,-this.r-d,-this.r-d)),
+            this.p.clone().add(new Three_cjs.Vector3(this.r+d,this.r+d,this.r+d))
         );
     };
     // [Abstract]
@@ -6052,7 +6014,7 @@
                 bv: new AreaSphere_1(
                     this.p,
                     this.r+d,
-                    this.r/(this.r+d) // Adjust accuray factor according to the radius and not the support.
+                    this.r/(this.r+d) // Adjust accuray factor according to the radius and not only to the required d
                 ),
                 obj: this
             }];
@@ -6073,12 +6035,477 @@
             res.v = l - this.r;
             if(req & EvalTags_1.Grad)
             {
-                res.g.copy(v).normalize();
+                res.g.copy(v).multiplyScalar(1/l);
             }
         };
     })();
 
     var SDFSphere_1 = SDFSphere;
+
+    /**
+     *  General representation of a "Capsule" area, ie, 2 sphere connected by a cone.
+     *  You can find more on Capsule geometry here https://github.com/maximeq/three-js-capsule-geometry
+     *
+     *  @extends {Area}
+     *
+     *  @param {!THREE.Vector3} p1     First point of the shape
+     *  @param {!THREE.Vector3} p2     Second point of the shape
+     *  @param {number}  r1 radius at p1
+     *  @param {number}  r2 radius at p2
+     *  @param {number}  accFactor1 Apply an accuracy factor to the standard one, around p1. Default to 1.
+     *  @param {number}  accFactor2 Apply an accuracy factor to the standard one, around p2. Default to 1.
+     *
+     * @constructor
+     */
+    var AreaCapsule = function(p1, p2, r1, r2, accFactor1, accFactor2 )
+    {
+        Area_1.call(this);
+
+        this.p1 = p1.clone();
+        this.p2 = p2.clone();
+        this.r1 = r1;
+        this.r2 = r2;
+
+        this.accFactor1 = accFactor1 || 1.0;
+        this.accFactor2 = accFactor2 || 1.0;
+
+        this.unit_dir = new Three_cjs.Vector3().subVectors(p2,p1);
+        this.length = this.unit_dir.length();
+        this.unit_dir.normalize();
+
+        // tmp var for functions below
+        this.vector = new Three_cjs.Vector3();
+        this.p1_to_p = this.vector; // basically the same as above + smart name
+        this.p1_to_p_sqrnorm = 0;
+        this.x_p_2D = 0;
+        this.y_p_2D = 0;
+        this.y_p_2DSq = 0;
+        this.ortho_vec_x = this.r1 - this.r2; // direction orthogonal to the "line" getting from one weight to the other. Precomputed
+        this.ortho_vec_y = this.length;
+        this.p_proj_x = 0;
+        this.p_proj_y = 0;
+
+        this.abs_diff_thick = Math.abs(this.ortho_vec_x);
+    };
+
+    AreaCapsule.prototype = Object.create(Area_1.prototype);
+    AreaCapsule.prototype.constructor = AreaCapsule;
+
+    /**
+     *  Compute some of the tmp variables. Used to factorized other functions code.
+     *  @param {!THREE.Vector3} p A point as a THREE.Vector3
+     *
+     *  @protected
+     */
+    AreaCapsule.prototype.proj_computation = function(p)
+    {
+        this.p1_to_p = this.vector;
+        this.p1_to_p.subVectors(p, this.p1);
+        this.p1_to_p_sqrnorm = this.p1_to_p.lengthSq();
+        this.x_p_2D = this.p1_to_p.dot(this.unit_dir);
+        // pythagore inc.
+        this.y_p_2DSq = this.p1_to_p_sqrnorm - this.x_p_2D*this.x_p_2D;
+        this.y_p_2D = this.y_p_2DSq>0 ? Math.sqrt(this.y_p_2DSq) : 0; // because of rounded errors tmp can be <0 and this causes the next sqrt to return NaN...
+
+        var t = -this.y_p_2D/this.ortho_vec_y;
+        // P proj is the point at the intersection of:
+        //              - the local X axis (computation in the unit_dir basis)
+        //                  and
+        //              - the line defined by P and the vector orthogonal to the weight line
+        this.p_proj_x = this.x_p_2D + t*this.ortho_vec_x;
+        this.p_proj_y = 0.0;
+    };
+
+    /**
+     *  [Abstract]
+     *  @todo Check the Maths (Ask Cedric Zanni?)
+     */
+    AreaCapsule.prototype.sphereIntersect = function(sphere)
+    {
+        this.proj_computation(sphere.center);
+
+        if(this.p_proj_x<0.0){
+            return (Math.sqrt(this.p1_to_p_sqrnorm)-sphere.radius < this.r1);
+        }else{
+            if(this.p_proj_x>this.length)
+            {
+                this.vector.subVectors(sphere.center, this.p2);
+                return (Math.sqrt(this.vector.lengthSq())-sphere.radius < this.r2);
+            }else{
+                var sub1 = this.x_p_2D-this.p_proj_x;
+                //var sub2 = this.y_p_2D-this.p_proj_y; //this.p_proj_y is set at 0 by definition
+                //var dist = Math.sqrt(sub1*sub1 +this.y_p_2DSq);//sub2*sub2);
+                var dist = sub1*sub1 +this.y_p_2DSq;//sub2*sub2);
+                var tt = this.p_proj_x/this.length;
+                var inter_w = this.r1*(1.0-tt) + tt*this.r2;
+                var tmp = sphere.radius + inter_w;
+                //return (dist-sphere.radius < inter_w);
+                return (dist<tmp*tmp);
+            }
+        }
+    };
+
+    /**
+     *  Sea documentation in parent class Area
+     */
+    AreaCapsule.prototype.contains = function(p)
+    {
+        this.proj_computation(p);
+        // P proj is the point at the intersection of:
+        //              - the X axis
+        //                  and
+        //              - the line defined by P and the vector orthogonal to the weight line
+        if(this.p_proj_x<0.0){
+            // Proj is before the line segment beginning defined by P0: spherical containment
+            return this.p1_to_p_sqrnorm < this.r1*this.r1;
+        }else{
+            if(this.p_proj_x>this.length)
+            {
+                // Proj is after the line segment beginning defined by P1: spherical containment
+                this.vector.subVectors(p, this.p2);
+                return this.vector.lengthSq() < this.r2*this.r2;
+            }else{
+                // Proj is in between the line segment P1-P0: Linear kind of containment
+                var sub1 = this.x_p_2D-this.p_proj_x;
+                var sub2 = this.y_p_2D-this.p_proj_y;
+                var dist2 = sub1*sub1+sub2*sub2;
+                var tt = this.p_proj_x/this.length;
+                var inter_w = this.r1*(1.0-tt) + tt*this.r2;
+                return dist2 < inter_w*inter_w;
+            }
+        }
+    };
+
+    /**
+     *  Return the minimum accuracy needed in the intersection of the sphere and the area.
+     *         This function is a generic function used in both getNiceAcc and getRawAcc.
+     *
+     *  @return {number} the accuracy needed in the intersection zone
+     *
+     *  @param {!{r:number,c:!THREE.Vector3}}  sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {number}  factor  the ratio to determine the wanted accuracy.
+     *
+     *  @todo Check the Maths
+     */
+    AreaCapsule.prototype.getAcc = function(sphere, factor)
+    {
+        this.proj_computation(sphere.center);
+
+        // Thales between two triangles that have the same angles gives us the dist of:
+        // side A = sphere.radius*this.abs_diff_thick/this.length;
+        // Then pythagore this shit up as A² + sphere.radius² = delta²
+        // i.e delta² = (sphere.radius*this.abs_diff_thick/this.length)² + sphere.radius²
+        // <=> delta = sphere.radius*Math.sqrt(1+(this.abs_diff_thick/this.length)²);
+
+        var tmp = this.abs_diff_thick/this.length;
+        var half_delta = sphere.radius*Math.sqrt(1+tmp*tmp)*0.5;
+
+        // we check only the direction where the weight is minimum since
+        // we will return minimum accuracy needed in the area.
+        var absc = this.p_proj_x;
+        absc += this.r1 > this.r2 ? half_delta : -half_delta;
+
+        if(absc<0.0){
+            return this.r1*this.accFactor1*factor;
+        }else if(absc>this.length)
+        {
+            return this.r2*this.accFactor2*factor;
+        }else{
+
+            var tt = absc/this.length;
+            var inter_w = this.r1*this.accFactor1*(1.0-tt) + tt*this.r2*this.accFactor2;
+            return inter_w*factor;
+        }
+    };
+
+    /**
+     *  Convenience function, just call getAcc with Nice Accuracy parameters.
+     *  @param {!{r:number,c:!THREE.Vector3}}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @return {number} The Nice accuracy needed in the intersection zone
+     */
+    AreaCapsule.prototype.getNiceAcc = function(sphere)
+    {
+        return this.getAcc(sphere,Accuracies_1.nice);
+    };
+    /**
+     *  Convenience function, just call getAcc with Curr Accuracy parameters.
+     *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @return {number} The Curr accuracy needed in the intersection zone
+     */
+    AreaCapsule.prototype.getCurrAcc = function(sphere)
+    {
+        return this.getAcc(sphere,Accuracies_1.curr);
+    };
+    /**
+     *  Convenience function, just call getAcc with Raw Accuracy parameters.
+     *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @return {number} The raw accuracy needed in the intersection zone
+     */
+    AreaCapsule.prototype.getRawAcc = function(sphere)
+    {
+        return this.getAcc(sphere,Accuracies_1.raw);
+    };
+
+    /**
+     *  Sea documentation in parent class Area
+     */
+    AreaCapsule.prototype.getMinAcc = function()
+    {
+        return Accuracies_1.curr*Math.min(this.r1*this.accFactor1, this.r2*this.accFactor2);
+    };
+    /**
+     *  Sea documentation in parent class Area
+     */
+    AreaCapsule.prototype.getMinRawAcc = function()
+    {
+        return Accuracies_1.raw*Math.min(this.r1*this.accFactor1, this.r2*this.accFactor2);
+    };
+
+    /**
+     *  Return the minimum accuracy required at some point on the given axis, according to Accuracies.curr
+     *  The returned accuracy is the one you would need when stepping in the axis
+     *  direction when you are on the axis at coordinate t.
+     *  @param {string} axis x, y or z
+     *  @param {number} t Coordinate on the axis
+     *  @return {number} The step you can safely do in axis direction
+     */
+    AreaCapsule.prototype.getAxisProjectionMinStep = function(axis,t){
+        var step = Number.MAX_VALUE;
+        var p1 = this.p1[axis] < this.p2[axis] ? this.p1 : this.p2;
+        var p2, r1, r2;
+        if(p1 === this.p1){
+            p2 = this.p2;
+            r1 = this.r1*this.accFactor1;
+            r2 = this.r2*this.accFactor2;
+        }else{
+            p2 = this.p1;
+            r1 = this.r2;
+            r2 = this.r1*this.accFactor1;
+        }
+
+        var diff = t-p1[axis];
+        if(diff<-2*r1){
+            step = Math.min(step,Math.max(Math.abs(diff+2*r1),Accuracies_1.curr*r1));
+        }else if(diff<2*r1){
+            step = Math.min(step,Accuracies_1.curr*r1);
+        }// else the sphere is behind us
+        diff = t-p2[axis];
+        if(diff<-2*r2){
+            step = Math.min(step,Math.max(Math.abs(diff+2*r2),Accuracies_1.curr*r2));
+        }else if(diff<2*r2){
+            step = Math.min(step,Accuracies_1.curr*r2);
+        }// else the sphere is behind us
+
+        var tbis = t-p1[axis];
+        var axis_l = p2[axis]-p1[axis];
+        if(tbis>0 && tbis<axis_l && axis_l!==0){
+            // t is in p1p2
+            step = Math.min(step,Accuracies_1.curr*(r1 + (tbis/axis_l)*(r2 - r1)));
+        }
+
+        return step;
+    };
+
+    var AreaCapsule_1 = AreaCapsule;
+
+    /**
+     *  This primitive implements a distance field to an extanded "capsule geometry", which is actually a weighted segment.
+     *  You can find more on Capsule geometry here https://github.com/maximeq/three-js-capsule-geometry
+     *
+     *  @constructor
+     *  @extends SDFPrimitive
+     *
+     *  @param {THREE.Vector3} p1 Position of the first segment extremity
+     *  @param {THREE.Vector3} p2 Position of the second segment extremity
+     *  @param {number} r1 Radius of the sphere centered in p1
+     *  @param {number} r2 Radius of the sphere centered in p2
+     */
+    var SDFCapsule = function(p1, p2, r1, r2) {
+        SDFPrimitive_1.call(this);
+
+        this.p1 = p1.clone();
+        this.p2 = p2.clone();
+        this.r1 = r1;
+        this.r2 = r2;
+
+        // Helper for evaluation
+        this.r1 = this.r1;
+        this.rdiff = this.r2 - this.r1;
+        this.unit_dir = new Three_cjs.Vector3().subVectors(this.p2, this.p1);
+        this.lengthSq = this.unit_dir.lengthSq();
+        this.length = this.unit_dir.length();
+        this.unit_dir.normalize();
+    };
+
+    SDFCapsule.prototype = Object.create(SDFPrimitive_1.prototype);
+    SDFCapsule.prototype.constructor = SDFCapsule;
+
+    SDFCapsule.type = "SDFCapsule";
+    Types_1.register(SDFCapsule.type, SDFCapsule);
+
+    SDFCapsule.prototype.getType = function(){
+        return SDFCapsule.type;
+    };
+
+    SDFCapsule.prototype.toJSON = function() {
+        var res = SDFPrimitive_1.prototype.toJSON.call(this);
+        res.p1 = {
+            x:this.p1.x,
+            y:this.p1.y,
+            z:this.p1.z
+        };
+        res.r1 = this.r1;
+        res.p2 = {
+            x:this.p2.x,
+            y:this.p2.y,
+            z:this.p2.z
+        };
+        res.r2 = this.r2;
+        return res;
+    };
+    SDFCapsule.fromJSON = function(json){
+        var v = ScalisVertex.fromJSON(json.v[0]);
+        return new SDFCapsule(
+            new Three_cjs.Vector3(json.p1.x,json.p1.y, json.p1.z),
+            new Three_cjs.Vector3(json.p2.x,json.p2.y, json.p2.z),
+            json.r1,
+            json.r2
+        );
+    };
+
+    /**
+     *  @param {number} r1 The new radius at p1
+     */
+    SDFCapsule.prototype.setRadius1 = function(r1) {
+        this.r1 = r1;
+        this.invalidAABB();
+    };
+    /**
+     *  @param {number} r2 The new radius at p2
+     */
+    SDFCapsule.prototype.setRadius2 = function(r1) {
+        this.r1 = r1;
+        this.invalidAABB();
+    };
+
+    /**
+     *  @return {number} Current radius at p1
+     */
+    SDFCapsule.prototype.getRadius1 = function() {
+        return this.r1;
+    };
+    /**
+     *  @return {number} Current radius at p2
+     */
+    SDFCapsule.prototype.getRadius2 = function() {
+        return this.r2;
+    };
+
+    /**
+     *  @param {THREE.Vector3} p1 The new position of the first segment point.
+     */
+    SDFCapsule.prototype.setPosition1 = function(p1) {
+        this.p1.copy(p1);
+        this.invalidAABB();
+    };
+    /**
+     *  @param {THREE.Vector3} p2 The new position of the second segment point
+     */
+    SDFCapsule.prototype.setPosition2 = function(p2) {
+        this.p2.copy(p2);
+        this.invalidAABB();
+    };
+
+    /**
+     *  @return {THREE.Vector3} Current position of the first segment point
+     */
+    SDFCapsule.prototype.getPosition1 = function() {
+        return this.p1;
+    };
+    /**
+     *  @return {THREE.Vector3} Current position of the second segment point
+     */
+    SDFCapsule.prototype.getPosition2 = function() {
+        return this.p2;
+    };
+
+    // [Abstract]
+    SDFCapsule.prototype.computeDistanceAABB = function(d) {
+        var b1 = new Three_cjs.Box3(
+            this.p1.clone().add(new Three_cjs.Vector3(-this.r1-d,-this.r1-d,-this.r1-d)),
+            this.p1.clone().add(new Three_cjs.Vector3(this.r1+d,this.r1+d,this.r1+d))
+        );
+        var b2 = new Three_cjs.Box3(
+            this.p2.clone().add(new Three_cjs.Vector3(-this.r2-d,-this.r2-d,-this.r2-d)),
+            this.p2.clone().add(new Three_cjs.Vector3(this.r2+d,this.r2+d,this.r2+d))
+        );
+        return b1.union(b2);
+    };
+    // [Abstract]
+    SDFCapsule.prototype.prepareForEval = function() {
+        if(!this.valid_aabb)
+        {
+            this.valid_aabb = true;
+        }
+    };
+
+    // [Abstract] see ScalisPrimitive.getArea
+    SDFCapsule.prototype.getAreas = function(d) {
+        if(!this.valid_aabb) {
+            throw "ERROR : Cannot get area of invalid primitive";
+            return [];
+        }else{
+            return [{
+                aabb:this.computeDistanceAABB(d),
+                bv: new AreaCapsule_1(
+                    this.p1,
+                    this.p2,
+                    this.r1+d,
+                    this.r2+d,
+                    this.r1/(this.r1+d), // Adjust accuray factor according to the radius and not only to the required d
+                    this.r2/(this.r2+d)
+                ),
+                obj: this
+            }];
+        }
+    };
+
+    // [Abstract] see SDFPrimitive.value
+    SDFCapsule.prototype.value = (function(){
+        var v = new Three_cjs.Vector3();
+        var proj = new Three_cjs.Vector3();
+
+        return function(p,req,res) {
+            v.subVectors(p,this.p1);
+            var p1p_sqrl = v.lengthSq();
+
+            // In unit_dir basis, vector (this.r1-this.r2, this.length) is normal to the "weight line"
+            // We need a projection in this direction up to the segment line to know in which case we fall.
+
+            var x_p_2D = v.dot(this.unit_dir);
+            // pythagore inc.
+            var y_p_2D = Math.sqrt(
+                Math.max( // Necessary because of rounded errors, pyth result can be <0 and this causes sqrt to return NaN...
+                    0.0, p1p_sqrl - x_p_2D*x_p_2D // =  y_p_2D² by pythagore
+                )
+            );
+            var t = -y_p_2D/this.length;
+
+            var proj_x = x_p_2D + t*(this.r1 - this.r2);
+            // var proj_y = 0.0; // by construction
+
+            // Easy way to compute the distance now that we ave the projection on the segment
+            var a = Three_cjs._Math.clamp(proj_x/this.length,0,1.0);
+            proj.copy(this.p1).lerp(this.p2,a); // compute the actual 3D projection
+            var l = v.subVectors(p,proj).length();
+            res.v = l - (a*this.r2+(1.0-a)*this.r1);
+            if(req & EvalTags_1.Grad){
+                res.g.copy(v).divideScalar(l);
+            }
+        };
+    })();
+
+    var SDFCapsule_1 = SDFCapsule;
 
     var Tables = {};
 
@@ -7257,15 +7684,20 @@
     Blobtree$1.SDFRootNode       = SDFRootNode_1;
     Blobtree$1.SDFPrimitive      = SDFPrimitive_1;
     Blobtree$1.SDFSphere         = SDFSphere_1;
+    Blobtree$1.SDFCapsule         = SDFCapsule_1;
 
     Blobtree$1.ScalisPrimitive    = ScalisPrimitive_1;
 
     Blobtree$1.Material           = Material_1;
 
+    Blobtree$1.Accuracies               = Accuracies_1;
+
     Blobtree$1.Area               = Area_1;
     Blobtree$1.AreaScalisPoint    = AreaScalisPoint_1;
     Blobtree$1.AreaScalisSeg      = AreaScalisSeg_1;
     Blobtree$1.AreaScalisTri      = AreaScalisTri_1;
+    Blobtree$1.AreaSphere         = AreaSphere_1;
+    Blobtree$1.AreaCapsule        = AreaCapsule_1;
 
     Blobtree$1.EvalTags           = EvalTags_1;
 

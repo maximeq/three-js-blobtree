@@ -8,7 +8,7 @@ const Material = require("./Material.js");
 const EvalTags = require("./EvalTags.js");
 const ScalisMath = require("./ScalisMath.js");
 const AreaScalisPoint = require("./Areas/AreaScalisPoint.js");
-const ScalisPointAcc = require("./accuracies/ScalisPointAcc.js");
+const Accuracies = require("./accuracies/Accuracies.js");
 
 /**
  *  @constructor

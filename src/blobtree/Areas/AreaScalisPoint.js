@@ -3,7 +3,7 @@
 const THREE = require("three-full/builds/Three.cjs.js");
 const ScalisMath = require("../ScalisMath.js");
 const Area = require("./Area.js");
-const ScalisPointAcc = require("../accuracies/ScalisPointAcc.js");
+const Accuracies = require("../accuracies/Accuracies.js");
 
 /**
  *  AreaPoint represent the areas influenced by a ScalisPoint primitive.
@@ -12,6 +12,8 @@ const ScalisPointAcc = require("../accuracies/ScalisPointAcc.js");
  *  @constructor
  *  @extends {Area}
  *
+ *  @todo should be possible to replace with an AreaPoint
+
  *  @param {!THREE.Vector3} p Point to locate the area
  *  @param {number} thick Thickness
  */
@@ -79,7 +81,7 @@ AreaScalisPoint.prototype.getAcc = function(sphere, factor)
  */
 AreaScalisPoint.prototype.getNiceAcc = function(sphere)
 {
-    return this.getAcc(sphere,ScalisPointAcc.nice);
+    return this.getAcc(sphere,Accuracies.nice);
 };
 /**
  *  Convenience function, just call getAcc with Curr Accuracy parameters.
@@ -88,7 +90,7 @@ AreaScalisPoint.prototype.getNiceAcc = function(sphere)
  */
 AreaScalisPoint.prototype.getCurrAcc = function(sphere)
 {
-    return this.getAcc(sphere,ScalisPointAcc.curr);
+    return this.getAcc(sphere,Accuracies.curr);
 };
 /**
  *  Convenience function, just call getAcc with Raw Accuracy parameters.
@@ -97,7 +99,7 @@ AreaScalisPoint.prototype.getCurrAcc = function(sphere)
  */
 AreaScalisPoint.prototype.getRawAcc = function(sphere)
 {
-    return this.getAcc(sphere,ScalisPointAcc.raw);
+    return this.getAcc(sphere,Accuracies.raw);
 };
 
 /**
@@ -105,7 +107,7 @@ AreaScalisPoint.prototype.getRawAcc = function(sphere)
  */
 AreaScalisPoint.prototype.getMinAcc = function()
 {
-    return ScalisPointAcc.curr*this.thick;
+    return Accuracies.curr*this.thick;
 };
 
 /**
@@ -113,7 +115,7 @@ AreaScalisPoint.prototype.getMinAcc = function()
  */
 AreaScalisPoint.prototype.getMinRawAcc = function()
 {
-    return ScalisPointAcc.raw*this.thick;
+    return Accuracies.raw*this.thick;
 };
 
    /**
@@ -128,9 +130,9 @@ AreaScalisPoint.prototype.getAxisProjectionMinStep = function(axis,t){
     var step = 100000000;
     var diff = t-this.p[axis];
     if(diff<-2*this.thick){
-        step = Math.min(step,Math.max(Math.abs(diff+2*this.thick),ScalisPointAcc.curr*this.thick));
+        step = Math.min(step,Math.max(Math.abs(diff+2*this.thick),Accuracies.curr*this.thick));
     }else if(diff<2*this.thick){
-        step = Math.min(step,ScalisPointAcc.curr*this.thick);
+        step = Math.min(step,Accuracies.curr*this.thick);
     }// else the vertex is behind us
     return step;
 };

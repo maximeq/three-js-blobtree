@@ -8,7 +8,7 @@ const Material = require("./Material.js");
 const EvalTags = require("./EvalTags.js");
 const ScalisMath = require("./ScalisMath.js");
 const AreaScalisSeg = require("./Areas/AreaScalisSeg.js");
-const ScalisSegmentAcc = require("./accuracies/ScalisSegmentAcc.js");
+const Accuracies = require("./accuracies/Accuracies.js");
 
 /**
  *  Implicit segment class in the blobtree.

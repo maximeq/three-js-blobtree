@@ -3,7 +3,7 @@
 const THREE = require("three-full/builds/Three.cjs.js");
 const ScalisMath = require("../ScalisMath.js");
 const Area = require("./Area.js");
-const ScalisSegmentAcc = require("../accuracies/ScalisSegmentAcc.js");
+const Accuracies = require("../accuracies/Accuracies.js");
 
 /**
  *  Bounding area for the segment.
@@ -22,12 +22,12 @@ const ScalisSegmentAcc = require("../accuracies/ScalisSegmentAcc.js");
  *  @param {!THREE.Vector3} p1     second point of the shape
  *  @param {number}  thick0 radius at p0
  *  @param {number}  thick1 radius at p1
- *  @param {number}  length |p0p1| given for performance
- *  @param {!THREE.Vector3} unit_dir p0p1 normalized, given for performance, as a THREE.Vector3
+ *
+ *  @todo should be possible to replace with an AreaCapsule
  *
  * @constructor
  */
-var AreaScalisSeg = function(p0, p1, thick0, thick1, length, unit_dir)
+var AreaScalisSeg = function(p0, p1, thick0, thick1)
 {
     Area.call(this);
 
@@ -35,8 +35,10 @@ var AreaScalisSeg = function(p0, p1, thick0, thick1, length, unit_dir)
     this.p1 = new THREE.Vector3(p1.x,p1.y,p1.z);
     this.thick0 = thick0;
     this.thick1 = thick1;
-    this.length = length;
-    this.unit_dir = new THREE.Vector3(unit_dir.x,unit_dir.y,unit_dir.z);
+
+    this.unit_dir = new THREE.Vector3().subVectors(p2,p2);
+    this.length = this.unit_dir.length();
+    this.unit_dir.normalize();
 
     // tmp var for functions below
     this.vector = new THREE.Vector3();
@@ -207,21 +209,21 @@ AreaScalisSeg.prototype.getAcc = function(sphere, factor)
  */
 AreaScalisSeg.prototype.getNiceAcc = function(sphere)
 {
-    return this.getAcc(sphere,ScalisSegmentAcc.nice);
+    return this.getAcc(sphere,Accuracies.nice);
 };
 /**
  *  Sea documentation in parent class Area
  */
 AreaScalisSeg.prototype.getCurrAcc = function(sphere)
 {
-    return this.getAcc(sphere,ScalisSegmentAcc.curr);
+    return this.getAcc(sphere,Accuracies.curr);
 };
 /**
  *  Sea documentation in parent class Area
  */
 AreaScalisSeg.prototype.getRawAcc = function(sphere)
 {
-    return this.getAcc(sphere,ScalisSegmentAcc.raw);
+    return this.getAcc(sphere,Accuracies.raw);
 };
 
 /**
@@ -229,18 +231,18 @@ AreaScalisSeg.prototype.getRawAcc = function(sphere)
  */
 AreaScalisSeg.prototype.getMinAcc = function()
 {
-    return ScalisSegmentAcc.curr*Math.min(this.thick0, this.thick1);
+    return Accuracies.curr*Math.min(this.thick0, this.thick1);
 };
 /**
  *  Sea documentation in parent class Area
  */
 AreaScalisSeg.prototype.getMinRawAcc = function()
 {
-    return ScalisSegmentAcc.raw*Math.min(this.thick0, this.thick1);
+    return Accuracies.raw*Math.min(this.thick0, this.thick1);
 };
 
 /**
- *  Return the minimum accuracy required at some point on the given axis, according to ScalisSegmentAcc.curr
+ *  Return the minimum accuracy required at some point on the given axis, according to Accuracies.curr
  *  The returned accuracy is the one you would need when stepping in the axis
  *  direction when you are on the axis at coordinate t.
  *  @param {string} axis x, y or z
@@ -263,22 +265,22 @@ AreaScalisSeg.prototype.getAxisProjectionMinStep = function(axis,t){
 
     var diff = t-p0[axis];
     if(diff<-2*thick0){
-        step = Math.min(step,Math.max(Math.abs(diff+2*thick0),ScalisSegmentAcc.curr*thick0));
+        step = Math.min(step,Math.max(Math.abs(diff+2*thick0),Accuracies.curr*thick0));
     }else if(diff<2*thick0){
-        step = Math.min(step,ScalisSegmentAcc.curr*thick0);
+        step = Math.min(step,Accuracies.curr*thick0);
     }// else the vertex is behind us
     diff = t-p1[axis];
     if(diff<-2*thick1){
-        step = Math.min(step,Math.max(Math.abs(diff+2*thick1),ScalisSegmentAcc.curr*thick1));
+        step = Math.min(step,Math.max(Math.abs(diff+2*thick1),Accuracies.curr*thick1));
     }else if(diff<2*thick1){
-        step = Math.min(step,ScalisSegmentAcc.curr*thick1);
+        step = Math.min(step,Accuracies.curr*thick1);
     }// else the vertex is behind us
 
     var tbis = t-p0[axis];
     var axis_l = p1[axis]-p0[axis];
     if(tbis>0 && tbis<axis_l && axis_l!==0){
         // t is in p0p1
-        step = Math.min(step,ScalisSegmentAcc.curr*(thick0 + (tbis/axis_l)*(thick1 - thick0)));
+        step = Math.min(step,Accuracies.curr*(thick0 + (tbis/axis_l)*(thick1 - thick0)));
     }
 
     return step;

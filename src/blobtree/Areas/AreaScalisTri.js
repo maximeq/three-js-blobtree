@@ -4,7 +4,7 @@ const THREE = require("three-full/builds/Three.cjs.js");
 const ScalisMath = require("../ScalisMath.js");
 const Area = require("./Area.js");
 const TriangleUtils = require("../../utils/TriangleUtils.js");
-const ScalisTriangleAcc = require("../accuracies/ScalisTriangleAcc.js");
+const Accuracies = require("../accuracies/Accuracies.js");
 
 /**
  *  Bounding area for the triangle.
@@ -223,7 +223,7 @@ AreaScalisTri.prototype.contains = function(p)
  */
 AreaScalisTri.prototype.getAccSegment = function(sphere, segParams)
 {
-    var allReturn = {intersect:false, currAcc:ScalisTriangleAcc.nice*this.min_thick};
+    var allReturn = {intersect:false, currAcc:Accuracies.nice*this.min_thick};
     if (this.sphereIntersectSegment(sphere, segParams, 1)) {
         // Thales between two triangles that have the same angles gives us the dist of:
         // side A = sphere.r*this.abs_diff_thick/this.length;
@@ -350,7 +350,7 @@ AreaScalisTri.prototype.getAcc = function(sphere, factor) {
  */
 AreaScalisTri.prototype.getNiceAcc = function(sphere)
 {
-    return this.getAcc(sphere,ScalisTriangleAcc.nice);
+    return this.getAcc(sphere,Accuracies.nice);
 };
 /**
  *  Convenience function, just call getAcc with Curr Accuracy parameters.
@@ -359,7 +359,7 @@ AreaScalisTri.prototype.getNiceAcc = function(sphere)
  */
 AreaScalisTri.prototype.getCurrAcc = function(sphere)
 {
-    return this.getAcc(sphere,ScalisTriangleAcc.curr);
+    return this.getAcc(sphere,Accuracies.curr);
 };
 /**
  *  Convenience function, just call getAcc with Raw Accuracy parameters.
@@ -368,7 +368,7 @@ AreaScalisTri.prototype.getCurrAcc = function(sphere)
  */
 AreaScalisTri.prototype.getRawAcc = function(sphere)
 {
-    return this.getAcc(sphere,ScalisScalisTriangleAcc.raw);
+    return this.getAcc(sphere,ScalisAccuracies.raw);
 };
 
 /**
@@ -376,7 +376,7 @@ AreaScalisTri.prototype.getRawAcc = function(sphere)
  */
 AreaScalisTri.prototype.getMinAcc = function()
 {
-    return ScalisTriangleAcc.curr*this.min_thick;
+    return Accuracies.curr*this.min_thick;
 };
 
 /**
@@ -384,7 +384,7 @@ AreaScalisTri.prototype.getMinAcc = function()
  */
 AreaScalisTri.prototype.getMinRawAcc = function()
 {
-    return ScalisScalisTriangleAcc.raw*this.min_thick;
+    return ScalisAccuracies.raw*this.min_thick;
 };
 
 /**

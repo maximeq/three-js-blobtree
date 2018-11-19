@@ -9,7 +9,7 @@ const EvalTags = require("./EvalTags.js");
 const ScalisMath = require("./ScalisMath.js");
 const TriangleUtils = require("../utils/TriangleUtils.js");
 const AreaScalisTri = require("./Areas/AreaScalisTri.js");
-const ScalisTriangleAcc = require("./accuracies/ScalisTriangleAcc.js");
+const Accuracies = require("./accuracies/Accuracies.js");
 
 // Number of sample in the Simpsons integration.
 var sampleNumber = 10;
