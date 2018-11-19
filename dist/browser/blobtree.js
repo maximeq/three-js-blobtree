@@ -1613,6 +1613,16 @@
     DifferenceNode.type = "DifferenceNode";
     Types_1.register(DifferenceNode.type, DifferenceNode);
 
+    DifferenceNode.prototype.getAlpha = function(){
+        return this.alpha;
+    };
+    DifferenceNode.prototype.setAlpha = function(alpha){
+        if(this.alpha != alpha){
+            this.alpha = alpha;
+            this.invalidAABB();
+        }
+    };
+
     DifferenceNode.prototype.toJSON = function(){
         var res = Node_1.prototype.toJSON.call(this);
         res.alpha = this.alpha;

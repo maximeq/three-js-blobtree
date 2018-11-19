@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>Blobtree - Basic</title>
+        <title>Blobtree - Ricci</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
         <style>
@@ -33,10 +33,11 @@
 
     <body>
         <div id="info">
-            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Scalar Distance Field Capsule (weighted segment)
+            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Min Node example
         </div>
 
         <script src="../../node_modules/three-full/builds/Three.iife.js"></script>
+        <script src="./lib/dat.gui.min.js"></script>
         <script>
             // Alias to use Three-full as Three
             var THREE = THREE || Three;
@@ -45,26 +46,34 @@
         <script>
 
             var root = new Blobtree.RootNode();
-            var capsule = new Blobtree.SDFCapsule(
-                new THREE.Vector3(0,0,0),
-                new THREE.Vector3(10,10,0),
-                6,
-                3
+            var diff_node = new Blobtree.MinNode(
+                [
+                    new Blobtree.SDFRootNode(
+                        new Blobtree.Poly6DistanceFunctor(4.0),
+                        new Blobtree.Material('#ffcd41'),
+                        new Blobtree.SDFSphere(
+                            new THREE.Vector3(-8,0,0),
+                            12
+                        )
+                    ),
+                    new Blobtree.SDFRootNode(
+                        new Blobtree.Poly6DistanceFunctor(4.0),
+                        new Blobtree.Material('#dd4f43'),
+                        new Blobtree.SDFSphere(
+                            new THREE.Vector3(8,0,0),
+                            12
+                        )
+                    )
+                ]
             );
 
-            root.addChild(
-                new Blobtree.SDFRootNode(
-                    new Blobtree.Poly6DistanceFunctor(4.0),
-                    new Blobtree.Material('#4a8af4'),
-                    capsule
-                )
-            );
+            root.addChild(diff_node);
 
             var smc = new Blobtree.SlidingMarchingCubes(
                 root,
                 {
                     convergence:{},
-                    detailRatio: 0.5    // Double resolution with respect to the primitives setup.
+                    detailRatio: 0.25    // Double resolution with respect to the primitives setup.
                 }
             );
 

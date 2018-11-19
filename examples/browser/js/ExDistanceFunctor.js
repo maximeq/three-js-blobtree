@@ -58,11 +58,24 @@ ExDistanceFunctor.prototype.support = function(d){
 };
 
 
-// Optional : this function is used to save the current functor as a JSON object.
+/*****************************************************************************/
+/* Following methods are optional                                            */
+/*****************************************************************************/
+
+// Optionnal : this function is used to save the current functor as a JSON object.
 //            The resulting JSON can then be imported using Blobtree.Types.fromJSON()
 ExDistanceFunctor.prototype.toJSON = function() {
     var json = Blobtree.DistanceFunctor.prototype.toJSON.call(this,c);
     json.scale = this.scale;
     return json;
+};
+
+// Optionnal : this function computes the gradient (simple derivative) of the function.
+//             if not provided, a numerical approximation will be used.
+ExDistanceFunctor.prototype.gradient = function(d) {
+    var ds = d/(2*this.scale) + 0.5;
+    var res = (1-ds*ds);
+    res = -(6/(2*this.scale))*ds*res*res/Poly6DistanceFunctor.evalStandard(0.5);
+    return res;
 };
 

@@ -57,11 +57,6 @@
                 )
             );
 
-            root.prepareForEval();
-            var res = {v:0};
-            root.value(new THREE.Vector3(5,0,0), Blobtree.EvalTags.Value, res);
-            console.log(" Value : " + res.v);
-
             var smc = new Blobtree.SlidingMarchingCubes(
                 root,
                 {

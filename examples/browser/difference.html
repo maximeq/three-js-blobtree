@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>Blobtree - Basic</title>
+        <title>Blobtree - Ricci</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
         <style>
@@ -33,10 +33,11 @@
 
     <body>
         <div id="info">
-            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Scalar Distance Field Capsule (weighted segment)
+            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Diffence Node example (Warning : Alpha exponent is buggy)
         </div>
 
         <script src="../../node_modules/three-full/builds/Three.iife.js"></script>
+        <script src="./lib/dat.gui.min.js"></script>
         <script>
             // Alias to use Three-full as Three
             var THREE = THREE || Three;
@@ -45,26 +46,32 @@
         <script>
 
             var root = new Blobtree.RootNode();
-            var capsule = new Blobtree.SDFCapsule(
-                new THREE.Vector3(0,0,0),
-                new THREE.Vector3(10,10,0),
-                6,
-                3
-            );
-
-            root.addChild(
+            var diff_node = new Blobtree.DifferenceNode(
                 new Blobtree.SDFRootNode(
                     new Blobtree.Poly6DistanceFunctor(4.0),
-                    new Blobtree.Material('#4a8af4'),
-                    capsule
-                )
+                    new Blobtree.Material('#ffcd41'),
+                    new Blobtree.SDFSphere(
+                        new THREE.Vector3(-8,0,0),
+                        12
+                    )
+                ),
+                new Blobtree.SDFRootNode(
+                    new Blobtree.Poly6DistanceFunctor(4.0),
+                    new Blobtree.Material('#dd4f43'),
+                    new Blobtree.SDFSphere(
+                        new THREE.Vector3(8,0,0),
+                        12
+                    )
+                ),
+                1
             );
+
+            root.addChild(diff_node);
 
             var smc = new Blobtree.SlidingMarchingCubes(
                 root,
                 {
-                    convergence:{},
-                    detailRatio: 0.5    // Double resolution with respect to the primitives setup.
+                    detailRatio: 0.25    // Double resolution with respect to the primitives setup.
                 }
             );
 
@@ -75,6 +82,24 @@
             var material = new THREE.MeshPhongMaterial( {vertexColors:THREE.VertexColors} );
 
             var mesh = new THREE.Mesh( geometry, material );
+
+            // init GUI to change the Ricci parameter
+            var gui = new dat.GUI();
+
+			var DiffControls = function() {
+				this.alpha =  diff_node.getAlpha();
+			};
+
+			var diffControls = new DiffControls();
+			var diffFolder = gui.addFolder( 'Difference Control' );
+
+            // Limit range of Ricci N to 8 since the SMC accuracy is not sufficient to capture the detail when
+			diffFolder.add(diffControls, 'alpha' ).min(1).max(16).step(1).onChange(function() {
+				diff_node.setAlpha(diffControls.alpha);
+                mesh.geometry = smc.compute();
+			});
+
+			diffFolder.open();
 
         </script>
         <!-- Main script containing THREE.js setup for the page -->
