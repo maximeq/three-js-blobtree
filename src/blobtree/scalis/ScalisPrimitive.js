@@ -1,8 +1,8 @@
 'use strict';
 
-const Types = require("./Types.js");
-const Primitive = require("./Primitive.js");
-const EvalTags = require("./EvalTags.js");
+const Types = require("../Types.js");
+const Primitive = require("../Primitive.js");
+const EvalTags = require("../EvalTags.js");
 
 /**
  *  Represent an implicit primitive respecting the SCALIS model developped by Cedrric Zanni

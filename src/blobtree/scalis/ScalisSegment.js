@@ -1,14 +1,14 @@
 "use strict";
 
 const THREE = require("three-full/builds/Three.cjs.js");
-const Types = require("./Types.js");
+const Types = require("../Types.js");
+const Material = require("../Material.js");
+const EvalTags = require("../EvalTags.js");
 const ScalisPrimitive = require("./ScalisPrimitive.js");
 const ScalisVertex = require("./ScalisVertex.js");
-const Material = require("./Material.js");
-const EvalTags = require("./EvalTags.js");
 const ScalisMath = require("./ScalisMath.js");
-const AreaScalisSeg = require("./Areas/AreaScalisSeg.js");
-const Accuracies = require("./accuracies/Accuracies.js");
+const AreaScalisSeg = require("../areas/AreaScalisSeg.js");
+const Accuracies = require("../accuracies/Accuracies.js");
 
 /**
  *  Implicit segment class in the blobtree.

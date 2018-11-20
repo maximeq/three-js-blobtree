@@ -13,6 +13,7 @@
 var ScalisMath = {};
 
 ScalisMath.KS = 2.0;
+ScalisMath.KIS = 1/ScalisMath.KS;
 ScalisMath.KS2 = 4.0;
 ScalisMath.KIS2 = 1/(ScalisMath.KS*ScalisMath.KS);
 /**

@@ -2,4 +2,9 @@
 - Nodes for "blending" distances : ie use distance field combination to compute distance fields to the union, intersection, difference.
   https://iquilezles.org/www/articles/distfunctions/distfunctions.htm
 - Matrix transformation for distance fields.
+
+// Code cleaning
+- AreaScalisPoint is deprecated and has been replaced in ScalisPoint with AreaSphere.
+  Before definitely removing the code, it would be necessary to create a test which would compare
+  all results of the two classes with given parameters to check that it is the same.
 - Thickness in  SCALIS should be renamed radius, or be divided by 2... (bad naming)

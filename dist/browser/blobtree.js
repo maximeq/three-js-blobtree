@@ -2076,6 +2076,7 @@
     var ScalisMath = {};
 
     ScalisMath.KS = 2.0;
+    ScalisMath.KIS = 1/ScalisMath.KS;
     ScalisMath.KS2 = 4.0;
     ScalisMath.KIS2 = 1/(ScalisMath.KS*ScalisMath.KS);
     /**
@@ -2490,32 +2491,31 @@
     var Accuracies_1 = Accuracies;
 
     /**
-     *  AreaPoint represent the areas influenced by a ScalisPoint primitive.
+     *  AreaSphere is a general representation of a spherical area.
      *  See Primitive.getArea for more details.
      *
      *  @constructor
      *  @extends {Area}
      *
-     *  @todo should be possible to replace with an AreaPoint
-
      *  @param {!THREE.Vector3} p Point to locate the area
-     *  @param {number} thick Thickness
+     *  @param {number} r Radius of the area
+     *  @param {number} accFactor Accuracy factor. By default SphereArea will use global Accuracies parameters. However, you can setup a accFactor.
+     *                            to change that. You will usually want to have accFactor between 0 (excluded) and 1. Default to 1.0.
+     *                            Be careful not to set it too small as it can increase the complexity of some algorithms up to the crashing point.
+     *
      */
-    var AreaScalisPoint = function(p,thick)
+    var AreaSphere = function( p, r, accFactor )
     {
         Area_1.call(this);
 
         this.p = new Three_cjs.Vector3(p.x,p.y,p.z);
-        this.thick = thick;
+        this.r = r;
 
-        // tmp var
-        this.v_to_p = new Three_cjs.Vector3();
-
+        this.accFactor = accFactor || 1.0;
     };
 
-    AreaScalisPoint.prototype = Object.create(Area_1.prototype);
-    AreaScalisPoint.prototype.constructor = AreaScalisPoint;
-
+    AreaSphere.prototype = Object.create(Area_1.prototype);
+    AreaSphere.prototype.constructor = AreaSphere;
 
     /**
      *  Test intersection of the shape with a sphere
@@ -2523,12 +2523,15 @@
      *
      *  @param {!{r:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      */
-    AreaScalisPoint.prototype.sphereIntersect = function(sphere)
-    {
-        this.v_to_p.subVectors(sphere.center,this.p);
-        var tmp = sphere.radius+this.thick*ScalisMath_1.KS;
-        return this.v_to_p.lengthSq() < tmp*tmp;
-    };
+    AreaSphere.prototype.sphereIntersect = (function(){
+        var v = new Three_cjs.Vector3();
+        return function(sphere)
+        {
+            v.subVectors(sphere.center,this.p);
+            var tmp = sphere.radius+this.radius;
+            return v.lengthSq() < tmp*tmp;
+        };
+    })();
 
     /**
      *  Test if p is in the area.
@@ -2538,24 +2541,27 @@
      *  @param {!Object} p A point in space, must comply to THREE.Vector3 API.
      *
      */
-    AreaScalisPoint.prototype.contains = function(p)
-    {
-        this.v_to_p.subVectors(p,this.p);
-        return this.v_to_p.lengthSq() < this.thick*this.thick*ScalisMath_1.KS2;
-    };
+    AreaSphere.prototype.contains = (function(){
+        var v = new Three_cjs.Vector3();
+        return function(p)
+        {
+            v.subVectors(p,this.p);
+            return v.lengthSq() < this.r*this.r;
+        };
+    })();
 
     /**
      *  Return the minimum accuracy needed in the intersection of the sphere and the area.
-     *         This function is a generic function used in both getNoceAcc and getRawAcc.
+     *         This function is a generic function used in both getNiceAcc and getRawAcc.
      *
      *  @return {number} the accuracy needed in the intersection zone
      *
      *  @param {!{r:number,c:!THREE.Vector3}}  sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @param {number}  factor  the ratio to determine the wanted accuracy.
      */
-    AreaScalisPoint.prototype.getAcc = function(sphere, factor)
+    AreaSphere.prototype.getAcc = function(sphere, factor)
     {
-        return this.thick*factor;
+        return this.radius*factor;
     };
 
     /**
@@ -2563,46 +2569,46 @@
      *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
-    AreaScalisPoint.prototype.getNiceAcc = function(sphere)
+    AreaSphere.prototype.getNiceAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.nice);
+        return this.getAcc(sphere,Accuracies_1.nice*this.accFactor);
     };
     /**
      *  Convenience function, just call getAcc with Curr Accuracy parameters.
      *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The Curr accuracy needed in the intersection zone
      */
-    AreaScalisPoint.prototype.getCurrAcc = function(sphere)
+    AreaSphere.prototype.getCurrAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.curr);
+        return this.getAcc(sphere,Accuracies_1.curr*this.accFactor);
     };
     /**
      *  Convenience function, just call getAcc with Raw Accuracy parameters.
      *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
-    AreaScalisPoint.prototype.getRawAcc = function(sphere)
+    AreaSphere.prototype.getRawAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.raw);
+        return this.getAcc(sphere,Accuracies_1.raw*this.accFactor);
     };
 
     /**
      *  @return {number} the minimum accuracy needed for this primitive
      */
-    AreaScalisPoint.prototype.getMinAcc = function()
+    AreaSphere.prototype.getMinAcc = function()
     {
-        return Accuracies_1.curr*this.thick;
+        return Accuracies_1.curr*this.r*this.accFactor;
     };
 
     /**
      *  @return {number} the minimum raw accuracy needed for this primitive
      */
-    AreaScalisPoint.prototype.getMinRawAcc = function()
+    AreaSphere.prototype.getMinRawAcc = function()
     {
-        return Accuracies_1.raw*this.thick;
+        return Accuracies_1.raw*this.r*this.accFactor;
     };
 
-       /**
+    /**
      *  Return the minimum accuracy required at some point on the given axis.
      *  The returned accuracy is the one you would need when stepping in the axis
      *  direction when you are on the axis at coordinate t.
@@ -2610,18 +2616,31 @@
      *  @param {number} t Coordinate on the axis
      *  @return {number} The step you can safely do in axis direction
      */
-    AreaScalisPoint.prototype.getAxisProjectionMinStep = function(axis,t){
+    AreaSphere.prototype.getAxisProjectionMinStep = function(axis,t){
         var step = 100000000;
         var diff = t-this.p[axis];
-        if(diff<-2*this.thick){
-            step = Math.min(step,Math.max(Math.abs(diff+2*this.thick),Accuracies_1.curr*this.thick));
-        }else if(diff<2*this.thick){
-            step = Math.min(step,Accuracies_1.curr*this.thick);
-        }// else the vertex is behind us
+        if(diff<-2*this.r){
+            step = Math.min(
+                step,
+                Math.max(
+                    Math.abs(diff+this.r),
+                    Accuracies_1.curr*this.r*this.accFactor
+                )
+            );
+        }else if(diff<2*this.r){
+            step = Math.min(
+                step,
+                Accuracies_1.curr*this.r*this.accFactor
+            );
+        }// else the area is behind us
         return step;
     };
 
-    var AreaScalisPoint_1 = AreaScalisPoint;
+    var AreaSphere_1 = AreaSphere;
+
+    // AreaScalisPoint is deprecated since the more genreal AreaSphere is now supposed to do the job.
+    // Uncomment if you see any difference.
+    // const AreaScalisPoint = require("../areas/deprecated/AreaScalisPoint.js");
 
     /**
      *  @constructor
@@ -2715,7 +2734,9 @@
         }else{
             return [{
                 aabb:this.aabb,
-                bv: new AreaScalisPoint_1(this.v[0].getPos(),this.v[0].getThickness()),
+                bv: new AreaSphere_1(this.v[0].getPos(),ScalisMath_1.KS*this.v[0].getThickness(), ScalisMath_1.KIS),
+                // AreaScalisPoint is deprecated and AreaSphere should be used instead. Uncomment if you notice accuracy issues.
+                // bv: new AreaScalisPoint(this.v[0].getPos(),this.v[0].getThickness()),
                 obj: this
             }];
         }
@@ -5782,154 +5803,6 @@
     var SDFPrimitive_1 = SDFPrimitive;
 
     /**
-     *  AreaSphere is a general representation of a spherical area.
-     *  See Primitive.getArea for more details.
-     *
-     *  @constructor
-     *  @extends {Area}
-     *
-     *  @param {!THREE.Vector3} p Point to locate the area
-     *  @param {number} r Radius of the area
-     *  @param {number} accFactor Accuracy factor. By default SphereArea will use global Accuracies parameters. However, you can setup a accFactor.
-     *                            to change that. You will usually want to have accFactor between 0 (excluded) and 1. Default to 1.0.
-     *                            Be careful not to set it too small as it can increase the complexity of some algorithms up to the crashing point.
-     *
-     */
-    var AreaSphere = function( p, r, accFactor )
-    {
-        Area_1.call(this);
-
-        this.p = new Three_cjs.Vector3(p.x,p.y,p.z);
-        this.r = r;
-
-        this.accFactor = accFactor || 1.0;
-    };
-
-    AreaSphere.prototype = Object.create(Area_1.prototype);
-    AreaSphere.prototype.constructor = AreaSphere;
-
-    /**
-     *  Test intersection of the shape with a sphere
-     *  @return {boolean} true if the sphere and the area intersect
-     *
-     *  @param {!{r:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
-     */
-    AreaSphere.prototype.sphereIntersect = (function(){
-        var v = new Three_cjs.Vector3();
-        return function(sphere)
-        {
-            v.subVectors(sphere.center,this.p);
-            var tmp = sphere.radius+this.radius;
-            return v.lengthSq() < tmp*tmp;
-        };
-    })();
-
-    /**
-     *  Test if p is in the area.
-     *
-     *  @return {boolean} true if p is in th area, false otherwise.
-     *
-     *  @param {!Object} p A point in space, must comply to THREE.Vector3 API.
-     *
-     */
-    AreaSphere.prototype.contains = (function(){
-        var v = new Three_cjs.Vector3();
-        return function(p)
-        {
-            v.subVectors(p,this.p);
-            return v.lengthSq() < this.r*this.r;
-        };
-    })();
-
-    /**
-     *  Return the minimum accuracy needed in the intersection of the sphere and the area.
-     *         This function is a generic function used in both getNiceAcc and getRawAcc.
-     *
-     *  @return {number} the accuracy needed in the intersection zone
-     *
-     *  @param {!{r:number,c:!THREE.Vector3}}  sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
-     *  @param {number}  factor  the ratio to determine the wanted accuracy.
-     */
-    AreaSphere.prototype.getAcc = function(sphere, factor)
-    {
-        return this.radius*factor;
-    };
-
-    /**
-     *  Convenience function, just call getAcc with Nice Accuracy parameters.
-     *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
-     *  @return {number} The Nice accuracy needed in the intersection zone
-     */
-    AreaSphere.prototype.getNiceAcc = function(sphere)
-    {
-        return this.getAcc(sphere,Accuracies_1.nice*this.accFactor);
-    };
-    /**
-     *  Convenience function, just call getAcc with Curr Accuracy parameters.
-     *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
-     *  @return {number} The Curr accuracy needed in the intersection zone
-     */
-    AreaSphere.prototype.getCurrAcc = function(sphere)
-    {
-        return this.getAcc(sphere,Accuracies_1.curr*this.accFactor);
-    };
-    /**
-     *  Convenience function, just call getAcc with Raw Accuracy parameters.
-     *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
-     *  @return {number} The raw accuracy needed in the intersection zone
-     */
-    AreaSphere.prototype.getRawAcc = function(sphere)
-    {
-        return this.getAcc(sphere,Accuracies_1.raw*this.accFactor);
-    };
-
-    /**
-     *  @return {number} the minimum accuracy needed for this primitive
-     */
-    AreaSphere.prototype.getMinAcc = function()
-    {
-        return Accuracies_1.curr*this.r*this.accFactor;
-    };
-
-    /**
-     *  @return {number} the minimum raw accuracy needed for this primitive
-     */
-    AreaSphere.prototype.getMinRawAcc = function()
-    {
-        return Accuracies_1.raw*this.r*this.accFactor;
-    };
-
-    /**
-     *  Return the minimum accuracy required at some point on the given axis.
-     *  The returned accuracy is the one you would need when stepping in the axis
-     *  direction when you are on the axis at coordinate t.
-     *  @param {string} axis x, y or z
-     *  @param {number} t Coordinate on the axis
-     *  @return {number} The step you can safely do in axis direction
-     */
-    AreaSphere.prototype.getAxisProjectionMinStep = function(axis,t){
-        var step = 100000000;
-        var diff = t-this.p[axis];
-        if(diff<-this.r){
-            step = Math.min(
-                step,
-                Math.max(
-                    Math.abs(diff+this.r),
-                    Accuracies_1.curr*this.r*this.accFactor
-                )
-            );
-        }else if(diff<2*this.r){
-            step = Math.min(
-                step,
-                Accuracies_1.curr*this.r*this.accFactor
-            );
-        }// else the area is behind us
-        return step;
-    };
-
-    var AreaSphere_1 = AreaSphere;
-
-    /**
      *  @constructor
      *  @extends SDFPrimitive
      *
@@ -7647,22 +7520,6 @@
 
     var SlidingMarchingCubes_1 = SlidingMarchingCubes;
 
-    /**
-     *  Load a Blobtree as JSON. Deprecated, please use Types.fromJSON now.
-     *  @deprecated
-     */
-    var JSONLoader = function() {
-        console.warn("JSON Loader is deprecated, please use Types.fromJSON(json).");
-    };
-
-    JSONLoader.prototype.constructor = JSONLoader;
-
-    JSONLoader.prototype.parse = function(json){
-        return Types_1.fromJSON(json);
-    };
-
-    var JSONLoader_1 = JSONLoader;
-
     if(Three_cjs.REVISION !== 96){
         console.warn("Blobtree library is currently made for THREE revision 96. Using any other revision may lead to unexpected behavior.");
     }
@@ -7696,14 +7553,11 @@
     Blobtree$1.SDFSphere         = SDFSphere_1;
     Blobtree$1.SDFCapsule         = SDFCapsule_1;
 
-    Blobtree$1.ScalisPrimitive    = ScalisPrimitive_1;
-
     Blobtree$1.Material           = Material_1;
 
-    Blobtree$1.Accuracies               = Accuracies_1;
+    Blobtree$1.Accuracies         = Accuracies_1;
 
     Blobtree$1.Area               = Area_1;
-    Blobtree$1.AreaScalisPoint    = AreaScalisPoint_1;
     Blobtree$1.AreaScalisSeg      = AreaScalisSeg_1;
     Blobtree$1.AreaScalisTri      = AreaScalisTri_1;
     Blobtree$1.AreaSphere         = AreaSphere_1;
@@ -7712,9 +7566,6 @@
     Blobtree$1.EvalTags           = EvalTags_1;
 
     Blobtree$1.SlidingMarchingCubes = SlidingMarchingCubes_1;
-
-    // Deprecated
-    Blobtree$1.JSONLoader         = JSONLoader_1;
 
     /*
     try {

@@ -1,15 +1,16 @@
 'use strict';
 
 const THREE = require("three-full/builds/Three.cjs.js");
-const Types = require("./Types.js");
+const Types = require("../Types.js");
+const Material = require("../Material.js");
+const EvalTags = require("../EvalTags.js");
 const ScalisPrimitive = require("./ScalisPrimitive.js");
 const ScalisVertex = require("./ScalisVertex.js");
-const Material = require("./Material.js");
-const EvalTags = require("./EvalTags.js");
 const ScalisMath = require("./ScalisMath.js");
-const TriangleUtils = require("../utils/TriangleUtils.js");
-const AreaScalisTri = require("./Areas/AreaScalisTri.js");
-const Accuracies = require("./accuracies/Accuracies.js");
+const AreaScalisTri = require("../areas/AreaScalisTri.js");
+const Accuracies = require("../accuracies/Accuracies.js");
+
+const TriangleUtils = require("../../utils/TriangleUtils.js");
 
 // Number of sample in the Simpsons integration.
 var sampleNumber = 10;

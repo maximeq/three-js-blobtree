@@ -4,7 +4,7 @@ const THREE = require("three-full/builds/Three.cjs.js");
 const Types = require("../Types.js");
 const SDFPrimitive = require("./SDFPrimitive.js");
 const EvalTags = require("../EvalTags.js");
-const AreaSphere = require("../Areas/AreaSphere.js");
+const AreaSphere = require("../areas/AreaSphere.js");
 
 /**
  *  @constructor

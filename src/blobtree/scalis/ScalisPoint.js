@@ -1,14 +1,18 @@
 "use strict";
 
 const THREE = require("three-full/builds/Three.cjs.js");
-const Types = require("./Types.js");
+const Types = require("../Types.js");
+const Material = require("../Material.js");
+const EvalTags = require("../EvalTags.js");
 const ScalisPrimitive = require("./ScalisPrimitive.js");
 const ScalisVertex = require("./ScalisVertex.js");
-const Material = require("./Material.js");
-const EvalTags = require("./EvalTags.js");
 const ScalisMath = require("./ScalisMath.js");
-const AreaScalisPoint = require("./Areas/AreaScalisPoint.js");
-const Accuracies = require("./accuracies/Accuracies.js");
+const AreaSphere = require("../areas/AreaSphere.js");
+const Accuracies = require("../accuracies/Accuracies.js");
+
+// AreaScalisPoint is deprecated since the more genreal AreaSphere is now supposed to do the job.
+// Uncomment if you see any difference.
+// const AreaScalisPoint = require("../areas/deprecated/AreaScalisPoint.js");
 
 /**
  *  @constructor
@@ -102,7 +106,9 @@ ScalisPoint.prototype.getAreas = function() {
     }else{
         return [{
             aabb:this.aabb,
-            bv: new AreaScalisPoint(this.v[0].getPos(),this.v[0].getThickness()),
+            bv: new AreaSphere(this.v[0].getPos(),ScalisMath.KS*this.v[0].getThickness(), ScalisMath.KIS),
+            // AreaScalisPoint is deprecated and AreaSphere should be used instead. Uncomment if you notice accuracy issues.
+            // bv: new AreaScalisPoint(this.v[0].getPos(),this.v[0].getThickness()),
             obj: this
         }];
     }

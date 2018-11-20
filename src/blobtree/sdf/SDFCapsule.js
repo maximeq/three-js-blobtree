@@ -4,7 +4,7 @@ const THREE = require("three-full/builds/Three.cjs.js");
 const Types = require("../Types.js");
 const SDFPrimitive = require("./SDFPrimitive.js");
 const EvalTags = require("../EvalTags.js");
-const AreaCapsule = require("../Areas/AreaCapsule.js");
+const AreaCapsule = require("../areas/AreaCapsule.js");
 
 /**
  *  This primitive implements a distance field to an extanded "capsule geometry", which is actually a weighted segment.

@@ -19,39 +19,33 @@ Blobtree.MinNode            = require("./blobtree/MinNode.js");
 
 Blobtree.Primitive          = require("./blobtree/Primitive.js");
 
-Blobtree.ScalisPrimitive    = require("./blobtree/ScalisPrimitive.js");
-Blobtree.ScalisPoint        = require("./blobtree/ScalisPoint.js");
-Blobtree.ScalisSegment      = require("./blobtree/ScalisSegment.js");
-Blobtree.ScalisTriangle     = require("./blobtree/ScalisTriangle.js");
-Blobtree.ScalisVertex       = require("./blobtree/ScalisVertex.js");
+Blobtree.ScalisPrimitive    = require("./blobtree/scalis/ScalisPrimitive.js");
+Blobtree.ScalisPoint        = require("./blobtree/scalis/ScalisPoint.js");
+Blobtree.ScalisSegment      = require("./blobtree/scalis/ScalisSegment.js");
+Blobtree.ScalisTriangle     = require("./blobtree/scalis/ScalisTriangle.js");
+Blobtree.ScalisVertex       = require("./blobtree/scalis/ScalisVertex.js");
 
-Blobtree.DistanceFunctor   = require("./blobtree/SDF/DistanceFunctor.js");
-Blobtree.Poly6DistanceFunctor = require("./blobtree/SDF/Poly6DistanceFunctor.js");
+Blobtree.DistanceFunctor   = require("./blobtree/sdf/DistanceFunctor.js");
+Blobtree.Poly6DistanceFunctor = require("./blobtree/sdf/Poly6DistanceFunctor.js");
 
-Blobtree.SDFRootNode       = require("./blobtree/SDF/SDFRootNode.js");
-Blobtree.SDFPrimitive      = require("./blobtree/SDF/SDFPrimitive.js");
-Blobtree.SDFSphere         = require("./blobtree/SDF/SDFSphere.js");
-Blobtree.SDFCapsule         = require("./blobtree/SDF/SDFCapsule.js");
-
-Blobtree.ScalisPrimitive    = require("./blobtree/ScalisPrimitive.js");
+Blobtree.SDFRootNode       = require("./blobtree/sdf/SDFRootNode.js");
+Blobtree.SDFPrimitive      = require("./blobtree/sdf/SDFPrimitive.js");
+Blobtree.SDFSphere         = require("./blobtree/sdf/SDFSphere.js");
+Blobtree.SDFCapsule         = require("./blobtree/sdf/SDFCapsule.js");
 
 Blobtree.Material           = require("./blobtree/Material.js");
 
-Blobtree.Accuracies               = require("./blobtree/accuracies/Accuracies.js");
+Blobtree.Accuracies         = require("./blobtree/accuracies/Accuracies.js");
 
-Blobtree.Area               = require("./blobtree/Areas/Area.js");
-Blobtree.AreaScalisPoint    = require("./blobtree/Areas/AreaScalisPoint.js");
-Blobtree.AreaScalisSeg      = require("./blobtree/Areas/AreaScalisSeg.js");
-Blobtree.AreaScalisTri      = require("./blobtree/Areas/AreaScalisTri.js");
-Blobtree.AreaSphere         = require("./blobtree/Areas/AreaSphere.js");
-Blobtree.AreaCapsule        = require("./blobtree/Areas/AreaCapsule.js");
+Blobtree.Area               = require("./blobtree/areas/Area.js");
+Blobtree.AreaScalisSeg      = require("./blobtree/areas/AreaScalisSeg.js");
+Blobtree.AreaScalisTri      = require("./blobtree/areas/AreaScalisTri.js");
+Blobtree.AreaSphere         = require("./blobtree/areas/AreaSphere.js");
+Blobtree.AreaCapsule        = require("./blobtree/areas/AreaCapsule.js");
 
 Blobtree.EvalTags           = require("./blobtree/EvalTags.js");
 
 Blobtree.SlidingMarchingCubes = require("./polygonizers/SlidingMarchingCubes.js");
-
-// Deprecated
-Blobtree.JSONLoader         = require("./blobtree/JSONLoader.js");
 
 /*
 try {

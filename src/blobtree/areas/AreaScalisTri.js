@@ -1,7 +1,7 @@
 'use strict';
 
 const THREE = require("three-full/builds/Three.cjs.js");
-const ScalisMath = require("../ScalisMath.js");
+const ScalisMath = require("../scalis/ScalisMath.js");
 const Area = require("./Area.js");
 const TriangleUtils = require("../../utils/TriangleUtils.js");
 const Accuracies = require("../accuracies/Accuracies.js");
