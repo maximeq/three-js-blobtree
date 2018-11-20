@@ -2,3 +2,4 @@
 - Nodes for "blending" distances : ie use distance field combination to compute distance fields to the union, intersection, difference.
   https://iquilezles.org/www/articles/distfunctions/distfunctions.htm
 - Matrix transformation for distance fields.
+- Thickness in  SCALIS should be renamed radius, or be divided by 2... (bad naming)
