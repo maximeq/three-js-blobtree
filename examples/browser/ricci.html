@@ -101,6 +101,7 @@
 			ricciFolder.add(ricciControls, 'ricciN' ).min(1).max(8).step(1).onChange(function() {
 				ricci_node.setRicciN(ricciControls.ricciN);
                 mesh.geometry = smc.compute();
+                updateShadow();
 			});
 
 			ricciFolder.open();

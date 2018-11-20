@@ -36,7 +36,7 @@ var AreaScalisSeg = function(p0, p1, thick0, thick1)
     this.thick0 = thick0;
     this.thick1 = thick1;
 
-    this.unit_dir = new THREE.Vector3().subVectors(p2,p2);
+    this.unit_dir = new THREE.Vector3().subVectors(p1,p0);
     this.length = this.unit_dir.length();
     this.unit_dir.normalize();
 

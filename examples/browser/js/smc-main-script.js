@@ -4,7 +4,7 @@
 // Global variable "geometry", a THREE.BufferGeometry computed from a Blobtree.RootNode, must have been defined in a previously included script
 // Global variable "mesh", a mesh using "geometry", must have been defined in a previously included script.
 
-var camera, controls, scene, renderer;
+var camera, controls, scene, renderer, shadow;
 
 init();
 animate();
@@ -48,14 +48,12 @@ function init() {
     scene.add( mesh );
 
     // hacked "shadow" (Projection of the geometry on a plane below the object, with solid color.)
-
-    var material =
-    scene.add(
-        new THREE.Mesh(
-            geometry.clone().scale(1,0.00001,1).translate(0,-geometry.boundingBox.getSize(new THREE.Vector3()).y/1.5,0),
-            new THREE.MeshBasicMaterial( { color: 0xe0e0e0, side: THREE.DoubleSide } )
-        )
+    shadow = new THREE.Mesh(
+        new THREE.BufferGeometry(),
+        new THREE.MeshBasicMaterial( { color: 0xe0e0e0, side: THREE.DoubleSide } )
     );
+    updateShadow();
+    scene.add(shadow);
 
     // lights
 
@@ -79,6 +77,13 @@ function init() {
 
     window.addEventListener( 'resize', onWindowResize, false );
 
+}
+
+function updateShadow() {
+    if(mesh.geometry.boundingBox === null){
+        mesh.geometry.computeBoundingBox();
+    }
+    shadow.geometry = mesh.geometry.clone().scale(1,0.00001,1).translate(0,-mesh.geometry.boundingBox.getSize(new THREE.Vector3()).y/1.5,0);
 }
 
 function onWindowResize() {

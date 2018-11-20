@@ -153,7 +153,6 @@ ScalisSegment.prototype.prepareForEval = function() {
         this.computeHelpVariables();
         this.valid_aabb = true;
     }
-    return res;
 };
 
 // [Abstract] See Primtive.getArea for more details

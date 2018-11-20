@@ -22,12 +22,18 @@ var sampleNumber = 10;
  *  @constructor
  *  @param {!Array.<!ScalisVertex>} v the 3 vertices for the triangle
  *  @param {string} volType type of volume
+ *  @param {number} density Density like for other Scalis Primitives. This parameter is here only to ensure signature consistancy.
+ *                          It is not implemented for now and will therefore be set to 1.0.
  *  @param {!Array.<!Material>} mats the triangle materials per vertices
  *  @extends ScalisPrimitive
  */
-var ScalisTriangle = function(v, volType, mats) {
+var ScalisTriangle = function(v, volType, density, mats) {
     // Calling parent class initialize function
     ScalisPrimitive.call(this);
+
+    if(density !== 1.0){
+        throw "Error in ScalisTriangle : cannot use a density different from 1.0, not implemented.";
+    }
 
     this.volType = volType;
     this.materials     = mats !== null? mats : [Material.defaultMaterial.clone(), Material.defaultMaterial.clone(), Material.defaultMaterial.clone()];

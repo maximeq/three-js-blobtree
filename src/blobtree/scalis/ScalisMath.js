@@ -22,7 +22,7 @@ ScalisMath.KIS2 = 1/(ScalisMath.KS*ScalisMath.KS);
  */
 ScalisMath.Poly6Eval = function(r)
 {
-    var aux = 1.0-ScalisMath.KS2*r*r;
+    var aux = 1.0-ScalisMath.KIS2*r*r;
 
     if(aux > 0.0)
     {
@@ -38,7 +38,7 @@ ScalisMath.Poly6Eval = function(r)
  */
 ScalisMath.Poly6EvalSq = function(r2)
 {
-    var aux = 1.0-ScalisMath.KS2*r2;
+    var aux = 1.0-ScalisMath.KIS2*r2;
 
     if(aux > 0.0)
     {

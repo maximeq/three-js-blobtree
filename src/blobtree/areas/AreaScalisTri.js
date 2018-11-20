@@ -5,6 +5,7 @@ const ScalisMath = require("../scalis/ScalisMath.js");
 const Area = require("./Area.js");
 const TriangleUtils = require("../../utils/TriangleUtils.js");
 const Accuracies = require("../accuracies/Accuracies.js");
+const AreaScalisSeg = require("./AreaScalisSeg");
 
 /**
  *  Bounding area for the triangle.
@@ -100,7 +101,7 @@ var AreaScalisTri = function(v,unit_normal,main_dir,segParams,min_thick,max_thic
     this.segAreas = [];
     for(var i=0; i<3; ++i){
         this.segAreas.push(
-            new AreaSeg(
+            new AreaScalisSeg(
                 this.segParams[i].v[0].getPos(),this.segParams[i].v[1].getPos(),
                 this.segParams[i].v[0].getThickness(), this.segParams[i].v[1].getThickness(),
                 this.segParams[i].norm, this.segParams[i].dir)
@@ -368,7 +369,7 @@ AreaScalisTri.prototype.getCurrAcc = function(sphere)
  */
 AreaScalisTri.prototype.getRawAcc = function(sphere)
 {
-    return this.getAcc(sphere,ScalisAccuracies.raw);
+    return this.getAcc(sphere,Accuracies.raw);
 };
 
 /**
@@ -384,7 +385,7 @@ AreaScalisTri.prototype.getMinAcc = function()
  */
 AreaScalisTri.prototype.getMinRawAcc = function()
 {
-    return ScalisAccuracies.raw*this.min_thick;
+    return Accuracies.raw*this.min_thick;
 };
 
 /**
@@ -402,3 +403,5 @@ AreaScalisTri.prototype.getAxisProjectionMinStep = function(axis,t){
     }
     return step;
 };
+
+module.exports = AreaScalisTri;

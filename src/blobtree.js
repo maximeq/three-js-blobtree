@@ -19,6 +19,7 @@ Blobtree.MinNode            = require("./blobtree/MinNode.js");
 
 Blobtree.Primitive          = require("./blobtree/Primitive.js");
 
+Blobtree.ScalisMath         = require("./blobtree/scalis/ScalisMath.js");
 Blobtree.ScalisPrimitive    = require("./blobtree/scalis/ScalisPrimitive.js");
 Blobtree.ScalisPoint        = require("./blobtree/scalis/ScalisPoint.js");
 Blobtree.ScalisSegment      = require("./blobtree/scalis/ScalisSegment.js");
