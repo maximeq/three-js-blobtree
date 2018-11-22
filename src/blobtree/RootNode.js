@@ -147,8 +147,11 @@ RootNode.prototype.intersectRayBlob = function(iso_value)
     var curPos = new THREE.Vector3();
     var marchingVector = new THREE.Vector3();
     var currentStep = new THREE.Vector3();
+
+    var g = new THREE.Vector3();
     var tmp_res = {
-        g : new THREE.Vector3()
+        v:0,
+        g : g
     };
     var conv_res = {
         p : new THREE.Vector3(),
@@ -167,9 +170,9 @@ RootNode.prototype.intersectRayBlob = function(iso_value)
         marchingVector.normalize();
         dist=0;
         // compute first value to have next step length
+        tmp_res.g = null;
         this.value(
             curPos,
-            EvalTags.Value | EvalTags.NextStep,
             tmp_res);
 
         // march
@@ -185,7 +188,6 @@ RootNode.prototype.intersectRayBlob = function(iso_value)
 
             this.value(
                 curPos,
-                EvalTags.Value | EvalTags.NextStep,
                 tmp_res);
         }
         if (tmp_res.v >= iso_value)
@@ -214,7 +216,7 @@ RootNode.prototype.intersectRayBlob = function(iso_value)
                                         10,
                                         conv_res
                                         );
-            res.distance = dist -conv_res.absc;
+            res.distance = dist-conv_res.absc;
 
             res.point = conv_res.p.clone();
 
@@ -247,9 +249,9 @@ RootNode.prototype.intersectOrthoRayBlob = function() {
 // we are using closure method
     var curPos = new THREE.Vector3();
     var resumePos = new THREE.Vector3();
-    var tmp_res = {};
+    var tmp_res = {step:0};
+    var g = new THREE.Vector3();
     var dicho_res = {};
-    dicho_res.g = new THREE.Vector3();
     var previousStepLength=0;
     var previousDist=0;
     // to ensure that we're within the aabb
@@ -257,17 +259,17 @@ RootNode.prototype.intersectOrthoRayBlob = function() {
     var within = -1;
     return function(wOffset,hOffset,res,dim) {
 
-        if (dim.axis & EvalTags.NextStepZ) {
+        if (dim.axis.z) {
             curPos.set(this.aabb.min.x+wOffset,
                        this.aabb.min.y+hOffset,
                        this.aabb.min.z+epsilon);
         }
-        else if (dim.axis & EvalTags.NextStepY) {
+        else if (dim.axis.y) {
             curPos.set(this.aabb.min.x+wOffset,
                        this.aabb.min.y+epsilon,
                        this.aabb.min.z+hOffset);
         }
-        else if (dim.axis & EvalTags.NextStepX) {
+        else if (dim.axis.z) {
             curPos.set(this.aabb.min.x+epsilon,
                        this.aabb.min.y+wOffset,
                        this.aabb.min.z+hOffset);
@@ -278,7 +280,6 @@ RootNode.prototype.intersectOrthoRayBlob = function() {
 
         this.value(
             curPos,
-            EvalTags.Value | dim.axis,
             tmp_res);
 
         previousStepLength=epsilon;
@@ -302,7 +303,6 @@ RootNode.prototype.intersectOrthoRayBlob = function() {
                 tmp_res.step=dim.get(this.aabb.max)-dim.get(curPos);
                 this.value(
                     curPos,
-                    EvalTags.Value | dim.axis,
                     tmp_res);
             }
             // either a sign difference or we're out
@@ -324,6 +324,7 @@ RootNode.prototype.intersectOrthoRayBlob = function() {
                 // to keep track of previous results in order to resume later
 
                 // dynamic number of dichotomia step
+                dicho_res.g = null;
                 while(previousStepLength>0.1)
                 {
                     previousDist=dim.get(curPos);
@@ -331,7 +332,6 @@ RootNode.prototype.intersectOrthoRayBlob = function() {
                     // not asking for the next step, which is always half of previous
                     this.value(
                         curPos,
-                        EvalTags.Value,
                         dicho_res);
 
                     if ((dicho_res.v - 1) * within < 0)
@@ -345,8 +345,8 @@ RootNode.prototype.intersectOrthoRayBlob = function() {
                 dim.add(curPos,previousDist);
                 dim.divide(curPos,2);
                 // get the gradient
+                dicho_res.g = g;
                 this.value(curPos,
-                           EvalTags.Grad,
                            dicho_res);
                 res.push({
                     point : curPos.clone(),

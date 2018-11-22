@@ -2,7 +2,6 @@
 
 const THREE = require("three-full/builds/Three.cjs.js");
 const Material = require("../blobtree/Material.js");
-const EvalTags = require("../blobtree/EvalTags.js");
 const Convergence = require("../utils/Convergence.js");
 
 'use strict';
@@ -400,7 +399,7 @@ SlidingMarchingCubes.prototype.computeFrontValAt = function(cx, cy, cz, x,y){
  *  for profiling purpose.
  */
 SlidingMarchingCubes.prototype.computeFrontValAtClosure = (function(){
-    var eval_res = {v:null, g:new THREE.Vector3(0,0,0), m:new Material(null, null, null)};
+    var eval_res = {v:0};
     var p = new THREE.Vector3();
     return function(cx, cy, cz, x,y){
         var index = y*this.reso[0]+x;
@@ -411,7 +410,7 @@ SlidingMarchingCubes.prototype.computeFrontValAtClosure = (function(){
                 cy+y*this.min_acc,
                 cz
             );
-            this.blobtree.value(p, EvalTags.Value, eval_res);
+            this.blobtree.value(p, eval_res);
             this.values_xy[1][index] = eval_res.v;
         }
     };
@@ -1113,7 +1112,7 @@ SlidingMarchingCubes.prototype.computeVertexClosure = (function() {
             this.vertex.copy(conv_res);
         }
 
-        this.blobtree.value(this.vertex, EvalTags.ValueGradMat, eval_res);
+        this.blobtree.value(this.vertex, eval_res);
 
         eval_res.g.normalize();
         this.vertex_n.copy(eval_res.g).multiplyScalar(-1);

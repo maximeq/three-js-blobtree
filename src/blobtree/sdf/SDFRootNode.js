@@ -3,7 +3,6 @@
 const THREE = require("three-full/builds/Three.cjs.js");
 const Types = require("../Types.js");
 const SDFNode = require("./SDFNode.js");
-const EvalTags = require("../EvalTags.js");
 const Material = require("../Material.js");
 
 /**
@@ -88,34 +87,34 @@ SDFRootNode.prototype.getAreas = function() {
 };
 
 // [Abstract] see Node for more details.
-SDFRootNode.prototype.value = function(p,req,res)
+SDFRootNode.prototype.value = function(p,res)
 {
     var tmp = this.tmp_res;
 
     // Init res
     res.v = 0;
-    if(req & EvalTags.Mat)  {
+    if(res.m)  {
         res.m.copy(Material.defaultMaterial);
-    }if(req & EvalTags.Grad) {
+    }if(res.g) {
         res.g.set(0,0,0);
-    }else if (req & EvalTags.NextStep) {
+    }else if (res.step) {
         // that, is the max distance
         // we want a value that won't miss any 'min'
         res.step = 1000000000;
     }
 
     if(this.aabb.containsPoint(p)){
-        this.children[0].value(p,req,tmp);
+        this.children[0].value(p,tmp);
 
         res.v = this.f.value(tmp.v);
-        if(req & EvalTags.Grad){
+        if(res.g){
             res.g.copy(tmp.g).multiplyScalar(this.f.gradient(res.v))
         }
-        if(req && EvalTags.Mat){
+        if(res.m){
             res.m.copy(this.material);
         }
     }
-    else if (req & EvalTags.NextStep) {
+    else if (res.step) {
         // return distance to aabb such that next time we'll hit from within the aabbb
         res.step = this.aabb.distanceToPoint(p) + 0.3;
     }

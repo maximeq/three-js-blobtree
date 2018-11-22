@@ -44,8 +44,6 @@ Blobtree.AreaScalisTri      = require("./blobtree/areas/AreaScalisTri.js");
 Blobtree.AreaSphere         = require("./blobtree/areas/AreaSphere.js");
 Blobtree.AreaCapsule        = require("./blobtree/areas/AreaCapsule.js");
 
-Blobtree.EvalTags           = require("./blobtree/EvalTags.js");
-
 Blobtree.SlidingMarchingCubes = require("./polygonizers/SlidingMarchingCubes.js");
 
 /*

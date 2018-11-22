@@ -2,7 +2,6 @@
 
 const THREE = require("three-full/builds/Three.cjs.js");
 const Types = require("./Types.js");
-const EvalTags = require("./EvalTags.js");
 
 var elementIds = 0;
 
@@ -125,16 +124,13 @@ Element.prototype.prepareForEval = function() {
  *  of the element at position p in space. return computations in res (see below)
  *
  *  @param {!THREE.Vector3} p Point where we want to evaluate the primitive field
- *  @param {EvalTags} req  Mask of required computation, see EvalTags constants
- *                       Note : EvalTags.Grad, EvalTags.GradMat and EvalTags.Mat are not
- *                       implemented here, value must always be computed.
  *  @param {!Object} res Computed values will be stored here. Each values should exist and
  *                       be allocated already.
- *  @param {number} res.v Value
- *  @param {Material} res.m Material
- *  @param {THREE.Vector3} res.g Gradient.
+ *  @param {number} res.v Value, must be defined
+ *  @param {Material} res.m Material, must be allocated and defined if wanted
+ *  @param {THREE.Vector3} res.g Gradient, must be allocated and defined if wanted
  */
-Element.prototype.value = function(p,req,res) {
+Element.prototype.value = function(p,res) {
     throw "ERROR : value is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
     return 0.0;
 };
@@ -142,15 +138,15 @@ Element.prototype.value = function(p,req,res) {
 Element.prototype.numericalGradient = (function(){
     var tmp = {v:0};
     var coord = ['x','y','z'];
-    return function(p,res, epsilon) {
+    return function(p, res, epsilon) {
         var eps = epsilon || 0.00001;
 
         for(var i=0; i<3; ++i){
             p[coord[i]] = p[coord[i]]+eps;
-            this.value(p,EvalTags.Value,tmp);
+            this.value(p,tmp);
             res[coord[i]] = tmp.v;
             p[coord[i]] = p[coord[i]]-2*eps;
-            this.value(p,EvalTags.Value,tmp);
+            this.value(p,tmp);
             res[coord[i]] = (res[coord[i]]-tmp.v)/(2*eps);
             p[coord[i]] = p[coord[i]]+eps; // reset p
         }

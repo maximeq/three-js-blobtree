@@ -60,7 +60,7 @@ SDFPrimitive.prototype.getAreas = function() {
 SDFPrimitive.prototype.distanceTo = (function(){
     var res = {v:0};
     return function(p) {
-        this.value(p, EvalTags.Value, res);
+        this.value(p,res);
         return res.v;
     };
 })();

@@ -3,7 +3,6 @@
 const THREE = require("three-full/builds/Three.cjs.js");
 const Types = require("../Types.js");
 const Material = require("../Material.js");
-const EvalTags = require("../EvalTags.js");
 const ScalisPrimitive = require("./ScalisPrimitive.js");
 const ScalisVertex = require("./ScalisVertex.js");
 const ScalisMath = require("./ScalisMath.js");
@@ -120,7 +119,7 @@ ScalisPoint.prototype.heuristicStepWithin = function() {
 };
 
 // [Abstract] see ScalisPrimitive.value
-ScalisPoint.prototype.value = function(p,req,res) {
+ScalisPoint.prototype.value = function(p,res) {
     if(!this.valid_aabb){
         throw "Error : PrepareForEval should have been called";
     }
@@ -135,7 +134,7 @@ ScalisPoint.prototype.value = function(p,req,res) {
     {
         res.v = this.density*tmp*tmp*tmp*ScalisMath.Poly6NF0D;
 
-        if(req & EvalTags.Grad)
+        if(res.g)
         {
             // Gradient computation is easy since the
             // gradient is radial. We use the analitical solution
@@ -143,13 +142,13 @@ ScalisPoint.prototype.value = function(p,req,res) {
             var tmp2 = -this.density * ScalisMath.KIS2 * 6.0 * this.v_to_p.length() * tmp * tmp * ScalisMath.Poly6NF0D/(thickness*thickness);
             res.g.copy(this.v_to_p).normalize().multiplyScalar(tmp2);
         }
-        if(req & EvalTags.Mat)  { res.m.copy(this.materials[0]); }
+        if(res.m)  { res.m.copy(this.materials[0]); }
     }
     else
     {
         res.v = 0.0;
-        if(req & EvalTags.Grad) { res.g.set(0,0,0); }
-        if(req & EvalTags.Mat)  { res.m.copy(Material.defaultMaterial); }
+        if(res.g) { res.g.set(0,0,0); }
+        if(res.m)  { res.m.copy(Material.defaultMaterial); }
     }
 
 };

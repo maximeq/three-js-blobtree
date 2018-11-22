@@ -2,7 +2,6 @@
 
 const Element = require("./Element.js");
 const Types = require("./Types.js");
-const EvalTags = require("./EvalTags.js");
 
 /**
  *  Represent a blobtree primitive.

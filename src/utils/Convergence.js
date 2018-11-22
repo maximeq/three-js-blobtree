@@ -6,7 +6,6 @@
 'use strict';
 
 const THREE = require("three-full/builds/Three.cjs.js");
-const EvalTags = require("../blobtree/EvalTags.js");
 
 var Convergence = {};
 
@@ -21,7 +20,8 @@ var Convergence = {};
 // Variable used in function. This avoid reallocation.
     Convergence.last_mov_pt = new THREE.Vector3();
     Convergence.grad = new THREE.Vector3();
-    Convergence.eval_res = {v:0, g:new THREE.Vector3(0,0,0)};
+    Convergence.eval_res_g = new THREE.Vector3(0,0,0);
+    Convergence.eval_res = {v:0, g:null};
     Convergence.vec = new THREE.Vector3();
 
 Convergence.safeNewton3D = function(    pot,              // Scalar Field to eval
@@ -43,7 +43,9 @@ Convergence.safeNewton3D = function(    pot,              // Scalar Field to eva
         {
             this.last_mov_pt.copy(res);
 
-            pot.value(res,EvalTags.ValueGrad,this.eval_res) ;
+            this.eval_res.g = this.eval_res_g; // active gradient computation
+            pot.value(res,this.eval_res) ;
+
             this.grad.copy(this.eval_res.g);
             if(this.grad.x !== 0.0 || this.grad.y !== 0.0 || this.grad.z !== 0.0 )
             {
@@ -79,8 +81,9 @@ Convergence.safeNewton3D = function(    pot,              // Scalar Field to eva
                 /*
                 if( this.vec.subVectors(res,starting_point).lengthSq() > r_max*r_max)
                 {
+                    this.eval_res.g = null; // deactive gradient computation
                     var current_val = this.eval_res.v;
-                    pot.value(res,EvalTags.Value,this.eval_res);
+                    pot.value(res,this.eval_res);
                     if( (this.eval_res.v-value)*(current_val-value) < 0.0)   // can only use dichotomy if one point is inside and one outside among (res and last_mov_pt)
                     {
                         res.add(this.last_mov_pt);
@@ -110,10 +113,13 @@ Convergence.safeNewton3D = function(    pot,              // Scalar Field to eva
 
         /*
         if(broken){
+
+            this.eval_res.g = null; // deactive gradient computation
+
             // Check the point between last_moving_point and starting_point which is closest to the surface and return it.
-            pot.value(this.last_mov_pt,EvalTags.Value, this.eval_res);
+            pot.value(this.last_mov_pt,this.eval_res);
             var ev_last_mov_pt = this.eval_res.v;
-            pot.value(starting_point,EvalTags.Value, this.eval_res);
+            pot.value(starting_point,this.eval_res);
             var ev_st_pt = this.eval_res.v;
             if( Math.abs(ev_last_mov_pt-value) > Math.abs(starting_point-value) )
             {
@@ -168,6 +174,8 @@ Convergence.safeNewton1D = function(
                                         res // resulting point res.p and gradient res.g (if res.g defined) resulting absc in res.p_absc
                                         )
 {
+    this.eval_res.g = this.eval_res_g; // active gradient computation
+
     if( !(search_dir_unit.x !== 0.0 || search_dir_unit.y !== 0.0 || search_dir_unit.z !== 0.0) ){
         throw "Error : search direction is null";
     }
@@ -191,7 +199,6 @@ Convergence.safeNewton1D = function(
     {
         // curr_point_absc is guaranteed inside [min_absc_inside,max_absc_outside]
         pot.value(  eval_pt.copy(search_dir_unit).multiplyScalar(curr_point_absc).add(origin),
-                    EvalTags.ValueGrad,
                     this.eval_res) ;
         // update bounding absc
         if(this.eval_res.v > value)
@@ -231,7 +238,6 @@ Convergence.safeNewton1D = function(
     if(res.g !== undefined){
         if(i===0){
             pot.value(  res.p,
-                        EvalTags.ValueGrad,
                         this.eval_res) ;
         }
         res.g.copy(this.eval_res.g);
@@ -250,6 +256,9 @@ Convergence.dichotomy1D = function(
                                         res // resulting point res.p and gradient res.g (if res.g defined) resulting absc in res.p_absc
                                         )
 {
+
+    this.eval_res.g = null; // deactive gradient computation
+
     var previousPos = new THREE.Vector3().copy(origin);
     var currentStep = new THREE.Vector3();
     // intersection
@@ -271,7 +280,6 @@ Convergence.dichotomy1D = function(
         // not asking for the next step, which is always half of previous
         pot.value(
             origin,
-            EvalTags.Value,
             this.eval_res);
 
         if (this.eval_res.v < value)
@@ -303,9 +311,9 @@ Convergence.dichotomy1D = function(
     // (we assume that if res.g is defined, it's a request)
     if (res.g)
     {
+        this.eval_res.g = this.eval_res_g; // active gradient computation
         pot.value(
             res.p,
-            EvalTags.Grad,
             this.eval_res);
         res.g.copy(this.eval_res.g);
     }

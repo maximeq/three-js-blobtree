@@ -3,7 +3,6 @@
 const THREE = require("three-full/builds/Three.cjs.js");
 const Types = require("../Types.js");
 const SDFPrimitive = require("./SDFPrimitive.js");
-const EvalTags = require("../EvalTags.js");
 const AreaSphere = require("../areas/AreaSphere.js");
 
 /**
@@ -112,7 +111,7 @@ SDFSphere.prototype.getAreas = function(d) {
 SDFSphere.prototype.value = (function(){
     var v = new THREE.Vector3();
 
-    return function(p,req,res) {
+    return function(p,res) {
         if(!this.valid_aabb){
             throw "Error : PrepareForEval should have been called";
         }
@@ -120,7 +119,7 @@ SDFSphere.prototype.value = (function(){
         v.subVectors(p,this.p);
         var l = v.length();
         res.v = l - this.r;
-        if(req & EvalTags.Grad)
+        if(res.g)
         {
             res.g.copy(v).multiplyScalar(1/l);
         }

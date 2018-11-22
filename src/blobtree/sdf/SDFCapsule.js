@@ -3,7 +3,6 @@
 const THREE = require("three-full/builds/Three.cjs.js");
 const Types = require("../Types.js");
 const SDFPrimitive = require("./SDFPrimitive.js");
-const EvalTags = require("../EvalTags.js");
 const AreaCapsule = require("../areas/AreaCapsule.js");
 
 /**
@@ -173,7 +172,7 @@ SDFCapsule.prototype.value = (function(){
     var v = new THREE.Vector3();
     var proj = new THREE.Vector3();
 
-    return function(p,req,res) {
+    return function(p,res) {
         v.subVectors(p,this.p1);
         var p1p_sqrl = v.lengthSq();
         var p1p_l = Math.sqrt(p1p_sqrl);
@@ -198,7 +197,7 @@ SDFCapsule.prototype.value = (function(){
         proj.copy(this.p1).lerp(this.p2,a); // compute the actual 3D projection
         var l = v.subVectors(p,proj).length();
         res.v = l - (a*this.r2+(1.0-a)*this.r1);
-        if(req & EvalTags.Grad){
+        if(res.g){
             res.g.copy(v).divideScalar(l);
         }
     };

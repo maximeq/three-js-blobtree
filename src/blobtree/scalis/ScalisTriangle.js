@@ -3,7 +3,6 @@
 const THREE = require("three-full/builds/Three.cjs.js");
 const Types = require("../Types.js");
 const Material = require("../Material.js");
-const EvalTags = require("../EvalTags.js");
 const ScalisPrimitive = require("./ScalisPrimitive.js");
 const ScalisVertex = require("./ScalisVertex.js");
 const ScalisMath = require("./ScalisMath.js");
@@ -46,8 +45,6 @@ var ScalisTriangle = function(v, volType, density, mats) {
     // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
     this.res_gseg = {};
     this.tmp_res_gseg = {};
-    this.ev_eps = {v:0};
-    this.p_eps = new THREE.Vector3();
 
     this.p0p1  = new THREE.Vector3();
     this.p1p2 = new THREE.Vector3();
@@ -258,13 +255,13 @@ ScalisTriangle.prototype.heuristicStepWithin = function() {
 };
 
 // [Abstract] See Primitive.value for more details
-ScalisTriangle.prototype.value = function(p,req,res) {
+ScalisTriangle.prototype.value = function(p,res) {
     switch(this.volType){
         case ScalisPrimitive.DIST:
-            return this.evalDist(p,req,res);
+            return this.evalDist(p,res);
         case ScalisPrimitive.CONVOL:
             // for now rings are just evaluated as distance surface
-            return this.evalConvol(p,req,res);
+            return this.evalConvol(p,res);
         default:
             throw "Unknown volType, use Orga";
         break;
@@ -273,251 +270,245 @@ ScalisTriangle.prototype.value = function(p,req,res) {
 
 /**
  *  value function for Distance volume type (distance field).
- *  Compute the value and/or gradient and/or material
- *  of the primitive at position p in space. return computations in res (see below)
- *
- *  @param {!THREE.Vector3} p Point where we want to evaluate the primitive field, as a THREE.Vector3
- *  @param {EvalTags} req  Mask of required computation, see EvalTags
- *                       Note : EvalTags.Grad, EvalTags.GradMat and EvalTags.Mat are not
- *                       implemented here, value must always be computed.
- *  @param {!Object} res  Computed values will be stored here :
- *              res = {v: value, m: material, g: gradient}
- *              res.v/m/g should exist if wanted and be allocated already.
  */
 // jshint maxstatements:150
-ScalisTriangle.prototype.evalDist = function(p, req, res)
-{
-/*
-    // bounding box check (could/should be done in the node ?)
-    if( p.x > this.aabb.min_x && p.x < this.aabb.max_x &&
-        p.y > this.aabb.min_y && p.y < this.aabb.max_y &&
-        p.z > this.aabb.min_z && p.z < this.aabb.max_z
-        )
+ScalisTriangle.prototype.evalDist = (function(){
+    var ev_eps = {v:0};
+    var p_eps = new THREE.Vector3();
+    return function(p,res)
     {
-*/
-        // First compute the distance to the triangle and find the nearest point
-        // Code taken from EuclideanDistance functor, can be optimized.
-        var p0_to_p = new THREE.Vector3();
-        p0_to_p.subVectors(p,this.v[0].getPos());
-        var normal_inv = this.unit_normal.clone().multiplyScalar(-1);
-        ///////////////////////////////////////////////////////////////////////
-        // We must generalize the principle used for the segment
-        if(!this.equal_weights){
-
-            // Now look for the point equivalent to the Z point for the segment.
-            // This point Z is the intersection of 3 orthogonal planes :
-            //      plane 1 : triangle plane
-            //      plane 2 : n = ortho_dir, passing through point
-            //      plane 3 : n = main_dir, passing through point_iso_zero_dir1 and point_iso_zero_dir2
-            // Formula for a unique intersection of 3 planes : http://geomalgorithms.com/a05-_intersect-1.html
-            //  Plane equation from a normal n and a point p0 : <n.(x,y,z)> - <n.p0> = 0
-            //
-            // TODO : this formula can probably be optimized :
-            //        - some elements can be stored
-            //        - some assertion are verified and may help to simplify the computation, for example : n3 = n2%n1
-            var n1 = normal_inv;
-            var n2 = this.unsigned_ortho_dir;
-            var n3 = this.main_dir.clone().multiplyScalar(-1);
-            var d1 = -this.v[0].getPos().dot(n1);
-            var d2 = -p.dot(n2);
-            var d3 = -this.point_iso_zero.dot(n3);
-
-            var d1n2n3 = new THREE.Vector3();
-            d1n2n3.crossVectors(n2,n3);
-            d1n2n3.multiplyScalar(-d1);
-            var d2n3n1 = new THREE.Vector3();
-            d2n3n1.crossVectors(n3,n1);
-            d2n3n1.multiplyScalar(-d2);
-            var d3n1n2 = new THREE.Vector3();
-            d3n1n2.crossVectors(n1,n2);
-            d3n1n2.multiplyScalar(-d3);
-            var n2cn3 = new THREE.Vector3();
-            n2cn3.crossVectors(n2,n3);
-            var Z = new THREE.Vector3(  d1n2n3.x+d2n3n1.x+d3n1n2.x,
-                                        d1n2n3.y+d2n3n1.y+d3n1n2.y,
-                                        d1n2n3.z+d2n3n1.z+d3n1n2.z);
-            Z.divideScalar(n1.dot(n2cn3));
-
-            // Now we want to project in the direction orthogonal to (pZ) and ortho_dir
-            var pz = new THREE.Vector3(Z.x-p.x,Z.y-p.y,Z.z-p.z);
-
-            // set proj_dir
-            this.proj_dir = new THREE.Vector3();
-            this.proj_dir.crossVectors(pz,this.unsigned_ortho_dir);
-            this.proj_dir.normalize(); // should be useless
-        }
-
-        // Project along the given direction
-        var non_ortho_proj = new THREE.Vector3();
-        non_ortho_proj.copy(this.proj_dir);
-        non_ortho_proj.multiplyScalar( -p0_to_p.dot(normal_inv)/this.proj_dir.dot(normal_inv));
-        non_ortho_proj.add(p);
-
-        var tmp_vec = new THREE.Vector3();
-        var tmp_vec0 = new THREE.Vector3();
-        var tmp_vec1 = new THREE.Vector3();
-        var tmp_vec2 = new THREE.Vector3();
-        tmp_vec0.subVectors(non_ortho_proj,this.v[0].getPos());
-        tmp_vec1.subVectors(non_ortho_proj,this.v[1].getPos());
-        tmp_vec2.subVectors(non_ortho_proj,this.v[2].getPos());
-
-        if( tmp_vec.crossVectors(this.unit_p0p1,tmp_vec0).dot(normal_inv) > 0.0 &&
-            tmp_vec.crossVectors(this.unit_p1p2,tmp_vec1).dot(normal_inv) > 0.0 &&
-            tmp_vec.crossVectors(this.unit_p2p0,tmp_vec2).dot(normal_inv) > 0.0)
+    /*
+        // bounding box check (could/should be done in the node ?)
+        if( p.x > this.aabb.min_x && p.x < this.aabb.max_x &&
+            p.y > this.aabb.min_y && p.y < this.aabb.max_y &&
+            p.z > this.aabb.min_z && p.z < this.aabb.max_z
+            )
         {
-            tmp_vec.subVectors(p,non_ortho_proj);
-            res.v = tmp_vec.lengthSq();
+    */
+            // First compute the distance to the triangle and find the nearest point
+            // Code taken from EuclideanDistance functor, can be optimized.
+            var p0_to_p = new THREE.Vector3();
+            p0_to_p.subVectors(p,this.v[0].getPos());
+            var normal_inv = this.unit_normal.clone().multiplyScalar(-1);
+            ///////////////////////////////////////////////////////////////////////
+            // We must generalize the principle used for the segment
+            if(!this.equal_weights){
 
-            // get barycentric coordinates of nearest_point (which is necessarily in the triangle
-            var p0 = this.v[0].getPos();
-            var p1 = this.v[1].getPos();
-            var p2 = this.v[2].getPos();
+                // Now look for the point equivalent to the Z point for the segment.
+                // This point Z is the intersection of 3 orthogonal planes :
+                //      plane 1 : triangle plane
+                //      plane 2 : n = ortho_dir, passing through point
+                //      plane 3 : n = main_dir, passing through point_iso_zero_dir1 and point_iso_zero_dir2
+                // Formula for a unique intersection of 3 planes : http://geomalgorithms.com/a05-_intersect-1.html
+                //  Plane equation from a normal n and a point p0 : <n.(x,y,z)> - <n.p0> = 0
+                //
+                // TODO : this formula can probably be optimized :
+                //        - some elements can be stored
+                //        - some assertion are verified and may help to simplify the computation, for example : n3 = n2%n1
+                var n1 = normal_inv;
+                var n2 = this.unsigned_ortho_dir;
+                var n3 = this.main_dir.clone().multiplyScalar(-1);
+                var d1 = -this.v[0].getPos().dot(n1);
+                var d2 = -p.dot(n2);
+                var d3 = -this.point_iso_zero.dot(n3);
 
-            var tmp_vec_bis = new THREE.Vector3();
-            tmp_vec.subVectors(p1,p0);
-            tmp_vec_bis.subVectors(p2,p0);
-            var n = new THREE.Vector3();
-            n.crossVectors(tmp_vec,tmp_vec_bis);
-            tmp_vec.subVectors(p2,p1);
-            var n1 = new THREE.Vector3();
-            n1.crossVectors(tmp_vec,tmp_vec1);
-            tmp_vec.subVectors(p0,p2);
-            var n2 = new THREE.Vector3();
-            n2.crossVectors(tmp_vec,tmp_vec2);
-            tmp_vec.subVectors(p1,p0);
-            var n3 = new THREE.Vector3();
-            n3.crossVectors(tmp_vec,tmp_vec0);
+                var d1n2n3 = new THREE.Vector3();
+                d1n2n3.crossVectors(n2,n3);
+                d1n2n3.multiplyScalar(-d1);
+                var d2n3n1 = new THREE.Vector3();
+                d2n3n1.crossVectors(n3,n1);
+                d2n3n1.multiplyScalar(-d2);
+                var d3n1n2 = new THREE.Vector3();
+                d3n1n2.crossVectors(n1,n2);
+                d3n1n2.multiplyScalar(-d3);
+                var n2cn3 = new THREE.Vector3();
+                n2cn3.crossVectors(n2,n3);
+                var Z = new THREE.Vector3(  d1n2n3.x+d2n3n1.x+d3n1n2.x,
+                                            d1n2n3.y+d2n3n1.y+d3n1n2.y,
+                                            d1n2n3.z+d2n3n1.z+d3n1n2.z);
+                Z.divideScalar(n1.dot(n2cn3));
 
-            var nsq = n.lengthSq();
-            var a1 = n.dot(n1);
-            var a2 = n.dot(n2);
-            var a3 = n.dot(n3);
+                // Now we want to project in the direction orthogonal to (pZ) and ortho_dir
+                var pz = new THREE.Vector3(Z.x-p.x,Z.y-p.y,Z.z-p.z);
 
-            var inter_weight = (a1*this.v[0].getThickness()+a2*this.v[1].getThickness()+a3*this.v[2].getThickness())/nsq;
-
-            res.v = ScalisMath.Poly6Eval(Math.sqrt(res.v)/inter_weight)*ScalisMath.Poly6NF0D;
-
-            if(req & EvalTags.Mat){
-                res.m.triMean(this.materials[0],this.materials[1],this.materials[2],a1,a2,a3,nsq);
-            }
-        }
-        else
-        {
-            // Use to keep the case selected in case we need to compute the material
-            var seg_case = 0;
-            // do the same as for a segment on all triangle sides
-            this.GenericSegmentComputation(
-                p,
-                this.v[0].getPos(),
-                this.p0p1,
-                this.length_p0p1,
-                this.length_p0p1*this.length_p0p1,
-                this.v[0].getThickness(),
-                this.v[1].getThickness()-this.v[0].getThickness(),
-                this.res_gseg
-            );
-
-            this.res_gseg.sqrdist = this.res_gseg.proj_to_p.lengthSq();
-            this.res_gseg.ratio = this.res_gseg.sqrdist/(this.res_gseg.weight_proj*this.res_gseg.weight_proj);
-
-            this.GenericSegmentComputation(
-                p,
-                this.v[1].getPos(),
-                this.p1p2,
-                this.length_p1p2,
-                this.length_p1p2*this.length_p1p2,
-                this.v[1].getThickness(),
-                this.v[2].getThickness()-this.v[1].getThickness(),
-                this.tmp_res_gseg
-            );
-            this.tmp_res_gseg.sqrdist = this.tmp_res_gseg.proj_to_p.lengthSq();
-            this.tmp_res_gseg.ratio = this.tmp_res_gseg.sqrdist/(this.tmp_res_gseg.weight_proj*this.tmp_res_gseg.weight_proj);
-            if(this.res_gseg.ratio>this.tmp_res_gseg.ratio){
-                this.res_gseg.sqrdist         = this.tmp_res_gseg.sqrdist;
-                this.res_gseg.proj_to_p       = this.tmp_res_gseg.proj_to_p;
-                this.res_gseg.weight_proj     = this.tmp_res_gseg.weight_proj;
-                this.res_gseg.ratio           = this.tmp_res_gseg.ratio;
-                this.res_gseg.t               = this.tmp_res_gseg.t;
-                seg_case = 1;
+                // set proj_dir
+                this.proj_dir = new THREE.Vector3();
+                this.proj_dir.crossVectors(pz,this.unsigned_ortho_dir);
+                this.proj_dir.normalize(); // should be useless
             }
 
-            this.GenericSegmentComputation(
-                p,
-                this.v[2].getPos(),
-                this.p2p0,
-                this.length_p2p0,
-                this.length_p2p0*this.length_p2p0,
-                this.v[2].getThickness(),
-                this.v[0].getThickness()-this.v[2].getThickness(),
-                this.tmp_res_gseg
-            );
-            this.tmp_res_gseg.sqrdist = this.tmp_res_gseg.proj_to_p.lengthSq();
-            this.tmp_res_gseg.ratio = this.tmp_res_gseg.sqrdist/(this.tmp_res_gseg.weight_proj*this.tmp_res_gseg.weight_proj);
-            if(this.res_gseg.ratio>this.tmp_res_gseg.ratio){
-                this.res_gseg.sqrdist         = this.tmp_res_gseg.sqrdist;
-                this.res_gseg.proj_to_p       = this.tmp_res_gseg.proj_to_p;
-                this.res_gseg.weight_proj     = this.tmp_res_gseg.weight_proj;
-                this.res_gseg.ratio           = this.tmp_res_gseg.ratio;
-                this.res_gseg.t               = this.tmp_res_gseg.t;
-                seg_case = 2;
-            }
+            // Project along the given direction
+            var non_ortho_proj = new THREE.Vector3();
+            non_ortho_proj.copy(this.proj_dir);
+            non_ortho_proj.multiplyScalar( -p0_to_p.dot(normal_inv)/this.proj_dir.dot(normal_inv));
+            non_ortho_proj.add(p);
 
-            res.v = ScalisMath.Poly6Eval(Math.sqrt(this.res_gseg.sqrdist)/this.res_gseg.weight_proj)*ScalisMath.Poly6NF0D;
+            var tmp_vec = new THREE.Vector3();
+            var tmp_vec0 = new THREE.Vector3();
+            var tmp_vec1 = new THREE.Vector3();
+            var tmp_vec2 = new THREE.Vector3();
+            tmp_vec0.subVectors(non_ortho_proj,this.v[0].getPos());
+            tmp_vec1.subVectors(non_ortho_proj,this.v[1].getPos());
+            tmp_vec2.subVectors(non_ortho_proj,this.v[2].getPos());
 
+            if( tmp_vec.crossVectors(this.unit_p0p1,tmp_vec0).dot(normal_inv) > 0.0 &&
+                tmp_vec.crossVectors(this.unit_p1p2,tmp_vec1).dot(normal_inv) > 0.0 &&
+                tmp_vec.crossVectors(this.unit_p2p0,tmp_vec2).dot(normal_inv) > 0.0)
+            {
+                tmp_vec.subVectors(p,non_ortho_proj);
+                res.v = tmp_vec.lengthSq();
 
+                // get barycentric coordinates of nearest_point (which is necessarily in the triangle
+                var p0 = this.v[0].getPos();
+                var p1 = this.v[1].getPos();
+                var p2 = this.v[2].getPos();
 
+                var tmp_vec_bis = new THREE.Vector3();
+                tmp_vec.subVectors(p1,p0);
+                tmp_vec_bis.subVectors(p2,p0);
+                var n = new THREE.Vector3();
+                n.crossVectors(tmp_vec,tmp_vec_bis);
+                tmp_vec.subVectors(p2,p1);
+                var n1 = new THREE.Vector3();
+                n1.crossVectors(tmp_vec,tmp_vec1);
+                tmp_vec.subVectors(p0,p2);
+                var n2 = new THREE.Vector3();
+                n2.crossVectors(tmp_vec,tmp_vec2);
+                tmp_vec.subVectors(p1,p0);
+                var n3 = new THREE.Vector3();
+                n3.crossVectors(tmp_vec,tmp_vec0);
 
+                var nsq = n.lengthSq();
+                var a1 = n.dot(n1);
+                var a2 = n.dot(n2);
+                var a3 = n.dot(n3);
 
-            ////////////////////////////////////////////////////////////////
-            // Material computation
-            if(req & EvalTags.Mat){
-                switch(seg_case){
-                    case 0:
-                        res.m.copy(this.materials[0]);
-                        res.m.lerp(this.materials[1], this.res_gseg.t);
-                    break;
-                    case 1:
-                        res.m.copy(this.materials[1]);
-                        res.m.lerp(this.materials[2], this.res_gseg.t);
-                    break;
-                    case 2:
-                        res.m.copy(this.materials[2]);
-                        res.m.lerp(this.materials[0], this.res_gseg.t);
-                    break;
-                    default:
-                        throw "Error : seg_case unknown";
-                    break;
+                var inter_weight = (a1*this.v[0].getThickness()+a2*this.v[1].getThickness()+a3*this.v[2].getThickness())/nsq;
+
+                res.v = ScalisMath.Poly6Eval(Math.sqrt(res.v)/inter_weight)*ScalisMath.Poly6NF0D;
+
+                if(res.m){
+                    res.m.triMean(this.materials[0],this.materials[1],this.materials[2],a1,a2,a3,nsq);
                 }
             }
-            //////////////////////////////////////////////////////////////
-        }
-        // IMPORTANT NOTE :
-        // We should use an analytical gradient here. It should be possible to
-        // compute.
-        if(req & EvalTags.Grad)
-        {
-            var epsilon = 0.00001;
-            this.p_eps.copy(p);
-            this.p_eps.x += epsilon;
-            this.evalDist(this.p_eps, EvalTags.Value, this.ev_eps);
-            res.g.x = (this.ev_eps.v-res.v)/epsilon;
-            this.p_eps.x -= epsilon;
+            else
+            {
+                // Use to keep the case selected in case we need to compute the material
+                var seg_case = 0;
+                // do the same as for a segment on all triangle sides
+                this.GenericSegmentComputation(
+                    p,
+                    this.v[0].getPos(),
+                    this.p0p1,
+                    this.length_p0p1,
+                    this.length_p0p1*this.length_p0p1,
+                    this.v[0].getThickness(),
+                    this.v[1].getThickness()-this.v[0].getThickness(),
+                    this.res_gseg
+                );
 
-            this.p_eps.y += epsilon;
-            this.evalDist(this.p_eps, EvalTags.Value, this.ev_eps);
-            res.g.y = (this.ev_eps.v-res.v)/epsilon;
-            this.p_eps.y -= epsilon;
+                this.res_gseg.sqrdist = this.res_gseg.proj_to_p.lengthSq();
+                this.res_gseg.ratio = this.res_gseg.sqrdist/(this.res_gseg.weight_proj*this.res_gseg.weight_proj);
 
-            this.p_eps.z += epsilon;
-            this.evalDist(this.p_eps, EvalTags.Value, this.ev_eps);
-            res.g.z = (this.ev_eps.v-res.v)/epsilon;
+                this.GenericSegmentComputation(
+                    p,
+                    this.v[1].getPos(),
+                    this.p1p2,
+                    this.length_p1p2,
+                    this.length_p1p2*this.length_p1p2,
+                    this.v[1].getThickness(),
+                    this.v[2].getThickness()-this.v[1].getThickness(),
+                    this.tmp_res_gseg
+                );
+                this.tmp_res_gseg.sqrdist = this.tmp_res_gseg.proj_to_p.lengthSq();
+                this.tmp_res_gseg.ratio = this.tmp_res_gseg.sqrdist/(this.tmp_res_gseg.weight_proj*this.tmp_res_gseg.weight_proj);
+                if(this.res_gseg.ratio>this.tmp_res_gseg.ratio){
+                    this.res_gseg.sqrdist         = this.tmp_res_gseg.sqrdist;
+                    this.res_gseg.proj_to_p       = this.tmp_res_gseg.proj_to_p;
+                    this.res_gseg.weight_proj     = this.tmp_res_gseg.weight_proj;
+                    this.res_gseg.ratio           = this.tmp_res_gseg.ratio;
+                    this.res_gseg.t               = this.tmp_res_gseg.t;
+                    seg_case = 1;
+                }
+
+                this.GenericSegmentComputation(
+                    p,
+                    this.v[2].getPos(),
+                    this.p2p0,
+                    this.length_p2p0,
+                    this.length_p2p0*this.length_p2p0,
+                    this.v[2].getThickness(),
+                    this.v[0].getThickness()-this.v[2].getThickness(),
+                    this.tmp_res_gseg
+                );
+                this.tmp_res_gseg.sqrdist = this.tmp_res_gseg.proj_to_p.lengthSq();
+                this.tmp_res_gseg.ratio = this.tmp_res_gseg.sqrdist/(this.tmp_res_gseg.weight_proj*this.tmp_res_gseg.weight_proj);
+                if(this.res_gseg.ratio>this.tmp_res_gseg.ratio){
+                    this.res_gseg.sqrdist         = this.tmp_res_gseg.sqrdist;
+                    this.res_gseg.proj_to_p       = this.tmp_res_gseg.proj_to_p;
+                    this.res_gseg.weight_proj     = this.tmp_res_gseg.weight_proj;
+                    this.res_gseg.ratio           = this.tmp_res_gseg.ratio;
+                    this.res_gseg.t               = this.tmp_res_gseg.t;
+                    seg_case = 2;
+                }
+
+                res.v = ScalisMath.Poly6Eval(Math.sqrt(this.res_gseg.sqrdist)/this.res_gseg.weight_proj)*ScalisMath.Poly6NF0D;
+
+
+
+
+
+                ////////////////////////////////////////////////////////////////
+                // Material computation
+                if(res.m){
+                    switch(seg_case){
+                        case 0:
+                            res.m.copy(this.materials[0]);
+                            res.m.lerp(this.materials[1], this.res_gseg.t);
+                        break;
+                        case 1:
+                            res.m.copy(this.materials[1]);
+                            res.m.lerp(this.materials[2], this.res_gseg.t);
+                        break;
+                        case 2:
+                            res.m.copy(this.materials[2]);
+                            res.m.lerp(this.materials[0], this.res_gseg.t);
+                        break;
+                        default:
+                            throw "Error : seg_case unknown";
+                        break;
+                    }
+                }
+                //////////////////////////////////////////////////////////////
+            }
+            // IMPORTANT NOTE :
+            // We should use an analytical gradient here. It should be possible to
+            // compute.
+            if(res.g)
+            {
+                var epsilon = 0.00001;
+                p_eps.copy(p);
+                p_eps.x += epsilon;
+                this.evalDist(p_eps, ev_eps);
+                res.g.x = (ev_eps.v-res.v)/epsilon;
+                p_eps.x -= epsilon;
+
+                p_eps.y += epsilon;
+                this.evalDist(p_eps, ev_eps);
+                res.g.y = (ev_eps.v-res.v)/epsilon;
+                p_eps.y -= epsilon;
+
+                p_eps.z += epsilon;
+                this.evalDist(p_eps, ev_eps);
+                res.g.z = (ev_eps.v-res.v)/epsilon;
+            }
+    /*
+        }else{
+            res.v = 0;
         }
-/*
-    }else{
-        res.v = 0;
-    }
-*/
-};
+    */
+    };
+})();
 
 
 /**
@@ -573,20 +564,21 @@ ScalisTriangle.prototype.GenericSegmentComputation = function(
 
 /**
  *  value function for Distance volume type (distance field).
- *  Compute the value and/or gradient and/or material
- *  of the primitive at position p in space. return computations in res (see below)
- *
- *  @param {!THREE.Vector3} p Point where we want to evaluate the primitive field, as a THREE.Vector3
- *  @param {EvalTags} req  Mask of required computation, see EvalTags
- *                       Note : EvalTags.Grad, EvalTags.GradMat and EvalTags.Mat are not
- *                       implemented here, value must always be computed.
- *  @param {!Object} res  Computed values will be stored here :
- *              res = {v: value, m: material, g: gradient}
- *              res.v/m/g should exist if wanted and be allocated already.
  */
 ScalisTriangle.prototype.evalConvol = (function() {
-    var tmp_res = {v:0,m:new Material(null,null,null)};
-    return function (p, req, res) {
+
+    var g = new THREE.Vector3();
+    var m = new Material(null,null,null);
+    var tmpRes = {v:0,g:null,m:null};
+    var g2 = new THREE.Vector3();
+    var m2 = new Material(null,null,null);
+    var tmpRes2 = {v:0,g:null,m:null};
+
+    return function (p, res) {
+
+        tmpRes.g = res.g ? g : null;
+        tmpRes.m = res.m ? m : null;
+
         // Compute closest point (t parameter) on the triangle in "warped space" as well as clipping
         var clipped = {l1: 0, l2: 0};
         if (this.ComputeTParam(p, clipped)) {
@@ -606,10 +598,10 @@ ScalisTriangle.prototype.evalConvol = (function() {
             var res_odd = 0.0;
             var grad_odd = new THREE.Vector3();
 
-            for (var i = 1, tmpRes = null; i < nb_samples; i += 2) {
-                tmpRes = this.computeLineIntegral(this.unwarpAbscissa(t) * w_local + t_low, p, req);
+            for (var i = 1; i < nb_samples; i += 2) {
+                this.computeLineIntegral(this.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
                 res_odd += tmpRes.v;
-                if (req & EvalTags.Grad) {
+                if (res.g) {
                     grad_odd.addVectors(grad_odd, tmpRes.g);
                 }
                 t += d_step_size;
@@ -618,21 +610,25 @@ ScalisTriangle.prototype.evalConvol = (function() {
             var res_even = 0.0;
             var grad_even = new THREE.Vector3();
             t = 0.0;
-            for (var i = 2, tmpRes = null; i < nb_samples; i += 2) {
+            for (var i = 2; i < nb_samples; i += 2) {
                 t += d_step_size;
-                tmpRes = this.computeLineIntegral(this.unwarpAbscissa(t) * w_local + t_low, p, req);
-                if (req & EvalTags.Grad) {
+                this.computeLineIntegral(this.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
+                if (res.g) {
                     grad_even.addVectors(grad_even, tmpRes.g);
                 }
                 res_even += tmpRes.v;
             }
-            var res_low = this.computeLineIntegral(t_low, p, req);
-            var res_high = this.computeLineIntegral(t_high, p, req);
+
+            tmpRes2.g = res.g ? g2 : null;
+            tmpRes2.m = res.m ? m2 : null;
+
+            var res_low = this.computeLineIntegral(t_low, p, tmpRes);
+            var res_high = this.computeLineIntegral(t_high, p, tmpRes2);
 
             res.v = res_low.v + 4.0 * res_odd + 2.0 * res_even + res_low.v;
             var factor = ( local_t_max / (3.0 * (nb_samples)) ) * ScalisMath.Poly6NF2D;
             res.v *= factor;
-            if (req & EvalTags.Grad) {
+            if (res.g) {
                 var grad_res = new THREE.Vector3();
                 grad_res.addVectors(grad_res, res_low.g);
                 grad_res.addVectors(grad_res, grad_odd.multiplyScalar(4.0));
@@ -644,9 +640,10 @@ ScalisTriangle.prototype.evalConvol = (function() {
             res.v = 0.0;
             res.g = new THREE.Vector3();
         }
-        if (req & EvalTags.Mat) {
-            this.evalDist(p, EvalTags.Mat, tmp_res);
-            res.m.copy(tmp_res.m);
+        if (res.m) {
+            tmpRes.g = null;
+            this.evalDist(p, tmpRes);
+            res.m.copy(tmpRes.m);
         }
     };
 })();
@@ -682,12 +679,10 @@ ScalisTriangle.prototype.unwarpAbscissa = function (t) {
 /**
  *  @param {number} t
  *  @param {!THREE.Vector3} p point, as a THREE.Vector3
- *  @param {EvalTags} req  Mask of required computation, see EvalTags
- *                       Note : EvalTags.Grad, EvalTags.GradMat and EvalTags.Mat are not
- *                       implemented here, value must always be computed.
- *  @return {!Object} An object containing v the value
+ *  @param {Object} res result containing the wanted elements like res.v for the value, res.g for the gradient, res.m for the material.
+ *  @return the res parameter, filled with proper values
  */
-ScalisTriangle.prototype.computeLineIntegral = function (t, p, req) {
+ScalisTriangle.prototype.computeLineIntegral = function (t, p, res) {
 
     var weight = this.weight_min + t * this.unit_delta_weight;
     var p_1 = new THREE.Vector3();
@@ -695,12 +690,13 @@ ScalisTriangle.prototype.computeLineIntegral = function (t, p, req) {
 
     var length = (t<this.coord_middle) ? (t/this.coord_middle) * this.max_seg_length
                                            : ((this.coord_max-t)/(this.coord_max - this.coord_middle)) * this.max_seg_length;
-    if (req & EvalTags.Grad) {
-        return this.consWeightEvalGradForSeg( p_1, weight, this.ortho_dir, length, p);
+    if (res.g) {
+        this.consWeightEvalGradForSeg( p_1, weight, this.ortho_dir, length, p, res);
     } else {
-        return this.consWeightEvalForSeg( p_1, weight, this.ortho_dir, length, p);
+        this.consWeightEvalForSeg( p_1, weight, this.ortho_dir, length, p, res);
     }
 
+    return res;
 };
 
 
@@ -757,8 +753,7 @@ ScalisTriangle.prototype.homotheticClippingSpecial = function(w, length, clipped
  *
  *  @protected
  */
-ScalisTriangle.prototype.consWeightEvalForSeg = function( p_1, w_1, unit_dir, length, point) {
-    var res = {v:0};
+ScalisTriangle.prototype.consWeightEvalForSeg = function( p_1, w_1, unit_dir, length, point, res) {
     var p_min_to_point = new THREE.Vector3();
     p_min_to_point.subVectors( point, p_1 );
     var uv = unit_dir.dot(p_min_to_point);
@@ -792,8 +787,7 @@ ScalisTriangle.prototype.consWeightEvalForSeg = function( p_1, w_1, unit_dir, le
  *
  *  @protected
  */
-ScalisTriangle.prototype.consWeightEvalGradForSeg = function( p_1, w_1, unit_dir, length, point) {
-    var res = {v:0.0, g:new THREE.Vector3()};
+ScalisTriangle.prototype.consWeightEvalGradForSeg = function( p_1, w_1, unit_dir, length, point, res) {
 
     var p_min_to_point = new THREE.Vector3();
     p_min_to_point.subVectors( point, p_1 );

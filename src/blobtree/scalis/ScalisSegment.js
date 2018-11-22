@@ -3,7 +3,6 @@
 const THREE = require("three-full/builds/Three.cjs.js");
 const Types = require("../Types.js");
 const Material = require("../Material.js");
-const EvalTags = require("../EvalTags.js");
 const ScalisPrimitive = require("./ScalisPrimitive.js");
 const ScalisVertex = require("./ScalisVertex.js");
 const ScalisMath = require("./ScalisMath.js");
@@ -46,9 +45,6 @@ var ScalisSegment = function(v0, v1, volType, density, mats) {
     this.vector = new THREE.Vector3();
     this.cycle  = new THREE.Vector3();
     this.proj   = new THREE.Vector3();
-    // DIST
-    this.ev_eps = {v:0};
-    this.p_eps = new THREE.Vector3();
     // helper attributes
     this.v0_p = this.v[0].getPos();
     this.v1_p = this.v[1].getPos(); // this one is probably useless to be kept for eval since not used....
@@ -228,13 +224,13 @@ ScalisSegment.prototype.computeHelpVariables = function() {
 };
 
 // [Abstract] See Primitive.value for more details
-ScalisSegment.prototype.value = function(p,req,res) {
+ScalisSegment.prototype.value = function(p,res) {
     switch(this.volType){
     case ScalisPrimitive.DIST:
-        this.evalDist(p,req,res);
+        this.evalDist(p,res);
         break;
     case ScalisPrimitive.CONVOL:
-        this.evalConvol(p,req,res);
+        this.evalConvol(p,res);
         break;
     default:
         throw "Unknown volType, cannot evaluate.";
@@ -249,80 +245,74 @@ ScalisSegment.prototype.value = function(p,req,res) {
 
 /**
  *  value function for Distance volume type (distance field).
- *  Compute the value and/or gradient and/or material
- *  of the primitive at position p in space. return computations in res (see below)
- *
- *  @param {!THREE.Vector3} p Point where we want to evaluate the primitive field
- *  @param {EvalTags} req  Mask of required computation, see EvalTags.js
- *                       Note : EvalTags.Grad, EvalTags.GradMat and EvalTags.Mat are not
- *                       implemented here, value must always be computed.
- *  @param {!Object} res  Computed values will be stored here :
- *              res = {v: value, m: material, g: gradient}
- *              res.v/m/g should exist if wanted and be allocated already.
  */
-ScalisSegment.prototype.evalDist = function(p, req, res) {
+ScalisSegment.prototype.evalDist = (function(){
+    var ev_eps = {v:0};
+    var p_eps = new THREE.Vector3();
+    return function(p,res) {
 
-    var p0_to_p = this.vector;
-    p0_to_p.subVectors(p,this.v[0].getPos());
+        var p0_to_p = this.vector;
+        p0_to_p.subVectors(p,this.v[0].getPos());
 
-    // Documentation : see DistanceHomothetic.pdf in convol/Documentation/Convol-Core/
-    var orig_p_scal_dir = p0_to_p.dot(this.dir);
-    var orig_p_sqr = p0_to_p.lengthSq();
+        // Documentation : see DistanceHomothetic.pdf in convol/Documentation/Convol-Core/
+        var orig_p_scal_dir = p0_to_p.dot(this.dir);
+        var orig_p_sqr = p0_to_p.lengthSq();
 
-    var denum = this.lengthSq * this.c0 + orig_p_scal_dir * this.c1;
-    var t = (this.c1<0) ? 0 : 1;
-    if(denum > 0.0)
-    {
-        t = orig_p_scal_dir * this.c0 + orig_p_sqr * this.c1;
-        t = (t<0.0) ? 0.0 : ((t>denum) ? 1.0 : t/denum) ; // clipping (nearest point on segment not line)
-    }
+        var denum = this.lengthSq * this.c0 + orig_p_scal_dir * this.c1;
+        var t = (this.c1<0) ? 0 : 1;
+        if(denum > 0.0)
+        {
+            t = orig_p_scal_dir * this.c0 + orig_p_sqr * this.c1;
+            t = (t<0.0) ? 0.0 : ((t>denum) ? 1.0 : t/denum) ; // clipping (nearest point on segment not line)
+        }
 
-    // Optim the below code... But keep the old code it's more understandable
-    var proj_p_l = Math.sqrt(t*(t*this.lengthSq-2*orig_p_scal_dir)+orig_p_sqr);
-    //var proj_to_point = this.proj;
-    //proj_to_point.set(
-    //    t*this.dir.x - p0_to_p.x,
-    //    t*this.dir.y - p0_to_p.y,
-    //    t*this.dir.z - p0_to_p.z
-    //);
-    //var proj_p_l = proj_to_point.length();
+        // Optim the below code... But keep the old code it's more understandable
+        var proj_p_l = Math.sqrt(t*(t*this.lengthSq-2*orig_p_scal_dir)+orig_p_sqr);
+        //var proj_to_point = this.proj;
+        //proj_to_point.set(
+        //    t*this.dir.x - p0_to_p.x,
+        //    t*this.dir.y - p0_to_p.y,
+        //    t*this.dir.z - p0_to_p.z
+        //);
+        //var proj_p_l = proj_to_point.length();
 
-    var weight_proj = this.c0 + t*this.c1;
-    res.v = this.density*ScalisMath.Poly6Eval(proj_p_l/weight_proj)*ScalisMath.Poly6NF0D;
+        var weight_proj = this.c0 + t*this.c1;
+        res.v = this.density*ScalisMath.Poly6Eval(proj_p_l/weight_proj)*ScalisMath.Poly6NF0D;
 
-    ///////////////////////////////////////////////////////////////////////
-    // Material computation : by orthogonal projection
-    if(req & EvalTags.Mat){
-        this.evalMat(p,res);
-    }
+        ///////////////////////////////////////////////////////////////////////
+        // Material computation : by orthogonal projection
+        if(res.m){
+            this.evalMat(p,res);
+        }
 
-    // IMPORTANT NOTE :
-    // We should use an analytical gradient here. It should be possible to
-    // compute.
-    if(req & EvalTags.Grad){
-        var epsilon = 0.00001;
-        var d_over_eps = this.density/epsilon;
-        this.p_eps.copy(p);
-        this.p_eps.x += epsilon;
-        this.evalDist(this.p_eps, EvalTags.Value, this.ev_eps);
-        res.g.x = d_over_eps*(this.ev_eps.v-res.v);
-        this.p_eps.x -= epsilon;
+        // IMPORTANT NOTE :
+        // We should use an analytical gradient here. It should be possible to
+        // compute.
+        if(res.g){
+            var epsilon = 0.00001;
+            var d_over_eps = this.density/epsilon;
+            p_eps.copy(p);
+            p_eps.x += epsilon;
+            this.evalDist(p_eps, ev_eps);
+            res.g.x = d_over_eps*(ev_eps.v-res.v);
+            p_eps.x -= epsilon;
 
-        this.p_eps.y += epsilon;
-        this.evalDist(this.p_eps, EvalTags.Value, this.ev_eps);
-        res.g.y = d_over_eps*(this.ev_eps.v-res.v);
-        this.p_eps.y -= epsilon;
+            p_eps.y += epsilon;
+            this.evalDist(p_eps,ev_eps);
+            res.g.y = d_over_eps*(ev_eps.v-res.v);
+            p_eps.y -= epsilon;
 
-        this.p_eps.z += epsilon;
-        this.evalDist(this.p_eps, EvalTags.Value, this.ev_eps);
-        res.g.z = d_over_eps*(this.ev_eps.v-res.v);
-    }
-};
+            p_eps.z += epsilon;
+            this.evalDist(p_eps,ev_eps);
+            res.g.z = d_over_eps*(ev_eps.v-res.v);
+        }
+    };
+})();
 
 /**
  *
  * @param {THREE.Vector3} p Evaluation point
- * @param {Object} res REsulting material will be in res.m
+ * @param {Object} res Resulting material will be in res.m
  */
 ScalisSegment.prototype.evalMat = function(p,res){
     var p0_to_p = this.vector;
@@ -390,23 +380,13 @@ ScalisSegment.prototype.heuristicStepWithin = function() {
 // Convolution Evaluation functions and auxiliaary functions
 /**
  *  value function for Convol volume type (Homothetic convolution).
- *  Compute the value and/or gradient and/or material
- *  of the primitive at position p in space. return computations in res (see below)
- *
- *  @param {!THREE.Vector3} p Point where we want to evaluate the primitive field
- *  @param {EvalTags} req  Mask of required computation, see EvalTags.js
- *                       Note : EvalTags.Grad, EvalTags.GradMat and EvalTags.Mat are not
- *                       implemented here, value must always be computed.
- *  @param {!Object} res  Computed values will be stored here :
- *              res = {v: value, m: material, g: gradient}
- *              res.v/m/g should exist if wanted and be allocated already.
  */
-ScalisSegment.prototype.evalConvol = function(p, req, res) {
+ScalisSegment.prototype.evalConvol = function(p, res) {
     if(!this.valid_aabb){
         throw "Error : prepareForEval should have been called";
     }
     // init
-    if(req & EvalTags.Grad)
+    if(res.g)
         res.g.set(0,0,0);
     res.v=0;
 
@@ -429,7 +409,7 @@ ScalisSegment.prototype.evalConvol = function(p, req, res) {
         special_coeff.x = 1.0 - ScalisMath.KIS2 * ( this.clipped_l1*(this.clipped_l1-2.0*uv) + d2 ) * inv_local_min_weight*inv_local_min_weight;
         special_coeff.y = - this.unit_delta_weight - ScalisMath.KIS2*(uv-this.clipped_l1) * inv_local_min_weight;
 
-        if (req & EvalTags.Grad) //both grad and value
+        if (res.g) //both grad and value
         {
             if(this.unit_delta_weight >= 0.06) { // ensure a maximum relative error of ??? (for degree i up to 8)
                 this.HomotheticCompactPolynomial_segment_FGradF_i6( (this.clipped_l2-this.clipped_l1) *
@@ -471,7 +451,7 @@ ScalisSegment.prototype.evalConvol = function(p, req, res) {
             }
         }
 
-        if(req & EvalTags.Mat){
+        if(res.m){
             this.evalMat(p,res);
         }
     }
