@@ -26,6 +26,11 @@ var MinNode = function (children) {
         });
     }
 
+    // temp vars to speed up evaluation by avoiding allocations
+    this.tmp_res = {v:0,g:null,m:null};
+    this.tmp_g = new THREE.Vector3();
+    this.tmp_m = new Material(null,null,null);
+
 };
 
 MinNode.prototype = Object.create( Node.prototype );
@@ -62,61 +67,55 @@ MinNode.prototype.prepareForEval = function()
 };
 
 // [Abstract] see Node for more details.
-MinNode.prototype.value = (function (){
-    // temp vars to speed up evaluation by avoiding allocations
-    var tmp = {v:0,g:null,m:null};
-    var g = new THREE.Vector3();
-    var m = new Material(null,null,null);
+MinNode.prototype.value = function(p,res)
+{
+    // TODO : check that all bounding box of all children and subchildrens are valid
+    //        This enable not to do it in prim and limit the number of assert call (and string built)
 
-    return function(p,res)
-    {
-        // TODO : check that all bounding box of all children and subchildrens are valid
-        //        This enable not to do it in prim and limit the number of assert call (and string built)
+    var l = this.children.length;
+    var tmp = this.tmp_res;
+    tmp.g = res.g ? this.tmp_g : null;
+    tmp.m = res.m ? this.tmp_m : null;
 
-        var l = this.children.length;
-        tmp.g = res.g ? g : null;
-        tmp.m = res.m ? m : null;
+    // Init res
+    res.v = 0;
+    if(res.m)  {
+        res.m.copy(Material.defaultMaterial);
+    }if(res.g) {
+        res.g.set(0,0,0);
+    }else if (res.step) {
+        // that, is the max distance
+        // we want a value that loose any 'min'
+        res.step = 1000000000;
+    }
 
-        // Init res
-        res.v = 0;
-        if(res.m)  {
-            res.m.copy(Material.defaultMaterial);
-        }if(res.g) {
-            res.g.set(0,0,0);
-        }else if (res.step) {
-            // that, is the max distance
-            // we want a value that loose any 'min'
-            res.step = 1000000000;
-        }
-
-        if(this.aabb.containsPoint(p) && l !== 0){
-            res.v = Number.MAX_VALUE;
-            for(var i=0; i<l; ++i)
-            {
-                this.children[i].value(p,tmp);
-                this.countEval++;
-                if(tmp.v < res.v){
-                    res.v = tmp.v;
-                    if(res.g) {
-                        res.g.copy(tmp.g);
-                    }
-                    if(res.m){
-                        res.m.copy(tmp.m);
-                    }
-                    // within primitive potential
-                    if (res.step || res.stepOrtho){
-                        throw "Not implemented";
-                    }
+    if(this.aabb.containsPoint(p) && l !== 0){
+        res.v = Number.MAX_VALUE;
+        for(var i=0; i<l; ++i)
+        {
+            this.children[i].value(p,tmp);
+            this.countEval++;
+            if(tmp.v < res.v){
+                res.v = tmp.v;
+                if(res.g) {
+                    res.g.copy(tmp.g);
                 }
-                res.v = Math.min(res.v,tmp.v);
+                if(res.m){
+                    res.m.copy(tmp.m);
+                }
+                // within primitive potential
+                if (res.step || res.stepOrtho){
+                    throw "Not implemented";
+                }
             }
+            res.v = Math.min(res.v,tmp.v);
         }
-        else if (res.steo || res.stepOrtho) {
-            throw "Not implemented";
-        }
+    }
+    else if (res.steo || res.stepOrtho) {
+        throw "Not implemented";
+    }
 
-    };
-})();
+};
 
 // Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
 MinNode.prototype.trim = function(aabb, trimmed, parents)

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Blobtree - Ricci</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+  <style>
+  body {
+    color: #000;
+    font-family:Monospace;
+    font-size:13px;
+    text-align:center;
+    font-weight: bold;
+
+    background-color: #fff;
+    margin: 0px;
+    overflow: hidden;
+  }
+
+  #info {
+    color:#000;
+    position: absolute;
+    top: 0px; width: 100%;
+    padding: 5px;
+
+  }
+
+  a {
+    color: red;
+  }
+  </style>
+</head>
+
+<body>
+  <div id="info">
+    <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Animation Ricci example
+  </div>
+
+  <script src="../../node_modules/three-full/builds/Three.iife.js"></script>
+  <script src="./lib/dat.gui.min.js"></script>
+  <script>
+  // Alias to use Three-full as Three
+  var THREE = THREE || Three;
+  </script>
+  <script src="../../dist/browser/blobtree.js"></script>
+  <script>
+
+  var alpha = 1;
+  var root = new Blobtree.RootNode();
+  var ricci_node = new Blobtree.RicciNode(
+    1,
+    [
+      new Blobtree.ScalisPoint(
+        new Blobtree.ScalisVertex(
+          new THREE.Vector3(-30,0,0),
+          14
+        ),
+        Blobtree.ScalisPrimitive.DIST,
+        1.0,
+        new Blobtree.Material('#dd4f43')
+      ),
+      new Blobtree.ScalisPoint(
+        new Blobtree.ScalisVertex(
+          new THREE.Vector3(10,0,0),
+          14
+        ),
+        Blobtree.ScalisPrimitive.DIST,
+        1.0,
+        new Blobtree.Material('#ffcd41')
+      )
+    ]
+  );
+
+  root.addChild(ricci_node);
+
+  var smc = new Blobtree.SlidingMarchingCubes(
+    root,
+    {
+        convergenc:{},
+        detailRatio: 0.25    // Double resolution with respect to the primitives setup.
+    }
+  );
+
+  // Compute the geometry using the SlidingMarchingCubes
+  // geometry is kept as a global variable to be used in the following script.
+  var geometry = smc.compute();
+  geometry.computeBoundingBox();
+  var material = new THREE.MeshPhongMaterial( {vertexColors:THREE.VertexColors} );
+
+  var mesh = new THREE.Mesh( geometry, material );
+  console.log(ricci_node)
+
+  var t0 = new Date().getTime();
+  //var myInterval = window.setInterval(function (a,b) {
+
+    let position = ricci_node.children[0].v[0].getPos();
+    ricci_node.children[0].setVPos(
+        0,
+        new THREE.Vector3(
+            position.x + // Math.sin((new Date().getTime()-t0)/3000)*1,
+            position.y,
+            position.z
+        )
+    );
+    //alpha += 1;
+    //ricci_node.setRicciN(alpha%8 +1);
+    mesh.geometry = smc.compute();
+    updateShadow();
+  //},50);
+
+  /*
+  window.setTimeout(function (a,b) {
+    clearInterval(myInterval);
+  },5000);
+  */
+
+
+</script>
+<!-- Main script containing THREE.js setup for the page -->
+<script src="./js/smc-main-script.js"></script>
+
+</body>
+</html>

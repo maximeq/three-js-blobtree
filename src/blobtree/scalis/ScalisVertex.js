@@ -13,7 +13,7 @@ var verticesIds = 0;
  *  @param {number} thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
  */
 var ScalisVertex = function(pos, thickness) {
-    this.pos       = pos;
+    this.pos       = pos.clone();
     this.thickness = thickness;
 
     // Only used for quick fix Zanni Correction. Should be removed as soon as it's not useful anymore.
@@ -43,7 +43,7 @@ ScalisVertex.fromJSON = function(json) {
  */
 ScalisVertex.prototype.setPos = function(pos) {
     this.valid_aabb = false;
-    this.pos = pos;
+    this.pos.copy(pos);
 };
 
 /**

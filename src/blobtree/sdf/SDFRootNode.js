@@ -28,7 +28,9 @@ var SDFRootNode = function (f, material, child) {
     this.addChild(child);
 
     // Tmp vars to speed up computation (no reallocations)
-    this.tmp_res = {v:0, g:new THREE.Vector3(0,0,0)};
+    // TODO : should be pushed in the function static variables since there can be no SDFRoot below the SDFRoot.
+    this.tmp_res = {v:0, g:null};
+    this.tmp_g = new THREE.Vector3(0,0,0);
 };
 
 SDFRootNode.prototype = Object.create( SDFNode.prototype );
@@ -69,7 +71,7 @@ SDFRootNode.prototype.prepareForEval = function()
             var c = this.children[i];
             c.prepareForEval();
             this.aabb.union(
-                c.computeDistanceAABB(this.f.getSupport())
+                c.computeDistanceAABB(this.f.support())
             );     // new aabb is computed according to remaining children aabb
         }
 
@@ -82,49 +84,43 @@ SDFRootNode.prototype.getAreas = function() {
     if(!this.valid_aabb) {
         throw "ERROR : Cannot get area of invalid node";
     }else{
-        return this.children[0].getAreas(this.f.getSupport());
+        return this.children[0].getAreas(this.f.support());
     }
 };
 
 // [Abstract] see Node for more details.
-SDFRootNode.prototype.value = (function(){
-    // temp vars to speed up evaluation by avoiding allocations
-    var tmp = {v:0,g:null,m:null};
-    var g = new THREE.Vector3();
-    var m = new Material(null,null,null);
-    return function(p,res)
-    {
-        // Init res
-        res.v = 0;
-        tmp.g = res.g ? g : null;
-        tmp.m = res.m ? m : null;
+SDFRootNode.prototype.value = function(p,res)
+{
+    var tmp = this.tmp_res;
+    tmp.g = res.g ? this.tmp_g : null;
 
-        if(res.m)  {
-            res.m.copy(Material.defaultMaterial);
-        }if(res.g) {
-            res.g.set(0,0,0);
-        }else if (res.step) {
-            // that, is the max distance
-            // we want a value that won't miss any 'min'
-            res.step = 1000000000;
-        }
+    // Init res
+    res.v = 0;
+    if(res.m)  {
+        res.m.copy(Material.defaultMaterial);
+    }if(res.g) {
+        // res.g.set(0,0,0); // Useless here
+    }else if (res.step) {
+        // that, is the max distance
+        // we want a value that won't miss any 'min'
+        res.step = 1000000000;
+    }
 
-        if(this.aabb.containsPoint(p)){
-            this.children[0].value(p,tmp);
+    if(this.aabb.containsPoint(p)){
+        this.children[0].value(p,tmp);
 
-            res.v = this.f.value(tmp.v);
-            if(res.g){
-                res.g.copy(tmp.g).multiplyScalar(this.f.gradient(res.v))
-            }
-            if(res.m){
-                res.m.copy(this.material);
-            }
+        res.v = this.f.value(tmp.v);
+        if(res.g){
+            res.g.copy(tmp.g).multiplyScalar(this.f.gradient(res.v))
         }
-        else if (res.step) {
-            // return distance to aabb such that next time we'll hit from within the aabbb
-            res.step = this.aabb.distanceToPoint(p) + 0.3;
+        if(res.m){
+            res.m.copy(this.material);
         }
-    };
-})();
+    }
+    else if (res.step) {
+        // return distance to aabb such that next time we'll hit from within the aabbb
+        res.step = this.aabb.distanceToPoint(p) + 0.3;
+    }
+};
 
 module.exports = SDFRootNode;

@@ -32,6 +32,8 @@ var ScalisSegment = function(v0, v1, volType, density, mats) {
     this.v.length   = 2;
     this.v[0]       = v0;
     this.v[1]       = v1;
+    v0.addPrimitive(this);
+    v1.addPrimitive(this);
 
     this.volType     = volType;
     this.density     = density;

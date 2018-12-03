@@ -1022,6 +1022,11 @@
         // Tmp vars to speed up computation (no reallocations)
         this.tmp_v_arr = new Float32Array(0);
         this.tmp_m_arr = new Array(0);
+
+        // temp vars to speed up evaluation by avoiding allocations
+        this.tmp_res = {v:0,g:null,m:null};
+        this.tmp_g = new Three_cjs.Vector3();
+        this.tmp_m = new Material_1(null,null,null);
     };
 
     RicciNode.prototype = Object.create( Node_1.prototype );
@@ -1073,111 +1078,103 @@
     };
 
     // [Abstract] see Node for more details.
-    RicciNode.prototype.value = (function(){
+    RicciNode.prototype.value = function(p,res)
+    {
+        // TODO : check that all bounding box of all children and subchildrens are valid
+        //        This enable not to do it in prim and limit the number of assert call (and string built)
+        var l = this.children.length;
+        var tmp = this.tmp_res;
+        tmp.g = res.g ? this.tmp_g : null;
+        tmp.m = res.m ? this.tmp_m : null;
 
-        // temp vars to speed up evaluation by avoiding allocations
-        var tmp = {v:0,g:null,m:null};
-        var g = new Three_cjs.Vector3();
-        var m = new Material_1(null,null,null);
+        // Init res
+        res.v = 0;
+        if(res.m)  {
+            res.m.copy(Material_1.defaultMaterial);
+        }if(res.g) {
+            res.g.set(0,0,0);
+        }else if (res.step) {
+            // that, is the max distance
+            // we want a value that loose any 'min'
+            res.step = 1000000000;
+        }
 
-        return function(p,res)
-        {
-            // TODO : check that all bounding box of all children and subchildrens are valid
-            //        This enable not to do it in prim and limit the number of assert call (and string built)
+        if(this.aabb.containsPoint(p) && l !== 0){
+            // arrays used for material mean
+            var v_arr = this.tmp_v_arr;
+            var m_arr = this.tmp_m_arr;
+            var mv_arr_n = 0;
 
-            var l = this.children.length;
-            tmp.g = res.g ? g : null;
-            tmp.m = res.m ? m : null;
+            // tmp var to compute the powered sum before the n-root
+            // Kept for gradient computation
+            var res_vv = 0;
+            for(var i=0; i<l; ++i)
+            {
+                if( this.children[i].aabb.containsPoint(p) ) {
 
-            // Init res
-            res.v = 0;
-            if(res.m)  {
-                res.m.copy(Material_1.defaultMaterial);
-            }if(res.g) {
-                res.g.set(0,0,0);
-            }else if (res.step) {
-                // that, is the max distance
-                // we want a value that loose any 'min'
-                res.step = 1000000000;
-            }
+                    this.children[i].value(p,tmp);
+                    this.countEval++;
+                    if(tmp.v > 0) // actually just !=0 should be enough but for stability reason...
+                    {
+                        var v_pow = Math.pow(tmp.v,this.ricci_n-1.0);
+                        res_vv += tmp.v*v_pow;
 
-            if(this.aabb.containsPoint(p) && l !== 0){
-                // arrays used for material mean
-                var v_arr = this.tmp_v_arr;
-                var m_arr = this.tmp_m_arr;
-                var mv_arr_n = 0;
-
-                // tmp var to compute the powered sum before the n-root
-                // Kept for gradient computation
-                var res_vv = 0;
-                for(var i=0; i<l; ++i)
-                {
-                    if( this.children[i].aabb.containsPoint(p) ) {
-
-                        this.children[i].value(p,tmp);
-                        this.countEval++;
-                        if(tmp.v > 0) // actually just !=0 should be enough but for stability reason...
-                        {
-                            var v_pow = Math.pow(tmp.v,this.ricci_n-1.0);
-                            res_vv += tmp.v*v_pow;
-
-                            // gradient if needed
-                            if(res.g) {
-                                tmp.g.multiplyScalar(v_pow);
-                                res.g.add(tmp.g);
-                            }
-                            // material if needed
-                            if(res.m){
-                                v_arr[mv_arr_n] = tmp.v*v_pow;
-                                m_arr[mv_arr_n].copy(tmp.m);
-                                mv_arr_n++;
-                            }
-                            // within primitive potential
-                            if (res.step || res.stepOrtho){
-                                // we have to compute next step or nextStep z
-                                res.step=Math.min(res.step,this.children[i].heuristicStepWithin());
-                            }
-
+                        // gradient if needed
+                        if(res.g) {
+                            tmp.g.multiplyScalar(v_pow);
+                            res.g.add(tmp.g);
                         }
-                        // outside of the potential for this box, but within the box
-                        else {
-                            this.countEval0++;
-                            if (res.step) {
-                                res.step=Math.min(res.step,
-                                                  this.children[i].distanceTo(p));
-                            }
-
+                        // material if needed
+                        if(res.m){
+                            v_arr[mv_arr_n] = tmp.v*v_pow;
+                            m_arr[mv_arr_n].copy(tmp.m);
+                            mv_arr_n++;
                         }
+                        // within primitive potential
+                        if (res.step || res.stepOrtho){
+                            // we have to compute next step or nextStep z
+                            res.step=Math.min(res.step,this.children[i].heuristicStepWithin());
+                        }
+
                     }
-                    else if (res.step || res.stepOrtho) {
-                        res.step = Math.min(res.step,
-                                          this.children[i].distanceTo(p));
+                    // outside of the potential for this box, but within the box
+                    else {
+                        this.countEval0++;
+                        if (res.step) {
+                            res.step=Math.min(res.step,
+                                              this.children[i].distanceTo(p));
+                        }
+
                     }
                 }
-
-                // compute final result using ricci power function
-                res.v = Math.pow(res_vv, 1/this.ricci_n);
-
-                if(res.v !== 0){
-                    if(res.g){
-                        res.g.multiplyScalar(res.v/res_vv);
-                    }
-                    if(res.m){
-                        res.m.weightedMean(m_arr,v_arr,mv_arr_n);
-                    }
+                else if (res.step || res.stepOrtho) {
+                    res.step = Math.min(res.step,
+                                      this.children[i].distanceTo(p));
                 }
-                // else the default values should be OK.
-            }
-            else if (res.step) {
-                // return distance to aabb such that next time we'll hit from within the aabbb
-                res.step = this.aabb.distanceToPoint(p) + 0.3;
             }
 
-            if(res.step){
-                res.stepOrtho = res.step;
+            // compute final result using ricci power function
+            res.v = Math.pow(res_vv, 1/this.ricci_n);
+
+            if(res.v !== 0){
+                if(res.g){
+                    res.g.multiplyScalar(res.v/res_vv);
+                }
+                if(res.m){
+                    res.m.weightedMean(m_arr,v_arr,mv_arr_n);
+                }
             }
-        };
-    })();
+            // else the default values should be OK.
+        }
+        else if (res.step) {
+            // return distance to aabb such that next time we'll hit from within the aabbb
+            res.step = this.aabb.distanceToPoint(p) + 0.3;
+        }
+
+        if(res.step){
+            res.stepOrtho = res.step;
+        }
+    };
 
     RicciNode.prototype.setRicciN = function(n)
     {
@@ -1574,11 +1571,18 @@
         // Tmp vars to speed up computation (no reallocations)
         this.tmp_res0 = {v:0, g:new Three_cjs.Vector3(0,0,0), m:new Material_1(null, null, null)};
         this.tmp_res1 = {v:0, g:new Three_cjs.Vector3(0,0,0), m:new Material_1(null, null, null)};
+        this.g0 = new Three_cjs.Vector3();
+        this.m0 = new Material_1(null,null,null);
+        this.g1 = new Three_cjs.Vector3();
+        this.m1 = new Material_1(null,null,null);
+
         this.tmp_v_arr = new Float32Array(2);
         this.tmp_m_arr = [
             null,
             null
         ];
+
+
     };
 
     DifferenceNode.prototype = Object.create( Node_1.prototype );
@@ -1625,85 +1629,78 @@
     };
 
     // [Abstract] see Node for more details.
-    DifferenceNode.prototype.value = (function(){
+    DifferenceNode.prototype.value = function(p,res)
+    {
+        var l = this.children.length;
+        var v_arr = this.tmp_v_arr;
+        var m_arr = this.tmp_m_arr;
 
-        var g0 = new Three_cjs.Vector3();
-        var m0 = new Material_1(null,null,null);
-        var tmp0 = {v:0,g:null,m:null};
-        var g1 = new Three_cjs.Vector3();
-        var m1 = new Material_1(null,null,null);
-        var tmp1 = {v:0,g:null,m:null};
+        var tmp0 = this.tmp_res0;
+        var tmp1 = this.tmp_res1;
 
-        return function(p,res)
-        {
-            var l = this.children.length;
-            var v_arr = this.tmp_v_arr;
-            var m_arr = this.tmp_m_arr;
+        tmp0.g = res.g ? this.g0 : null;
+        tmp0.m = res.m ? this.m0 : null;
+        tmp1.g = res.g ? this.g1 : null;
+        tmp1.m = res.m ? this.m1 : null;
 
-            tmp0.g = res.g ? g0 : null;
-            tmp0.m = res.m ? m0 : null;
-            tmp1.g = res.g ? g1 : null;
-            tmp1.m = res.m ? m1 : null;
+        // Init res
+        res.v = 0;
+        tmp1.v = 0;
+        tmp0.v = 0;
+        if(res.m)  {
+            res.m.copy(Material_1.defaultMaterial);
+            tmp1.m.copy(Material_1.defaultMaterial);
+            tmp0.m.copy(Material_1.defaultMaterial);
+        }if(res.g) {
+            res.g.set(0,0,0);
+            tmp1.g.set(0,0,0);
+            tmp0.g.set(0,0,0);
+        }else if (res.step) {
+            // that, is the max distance
+            // we want a value that loose any 'min'
+            res.step = 1000000000;
+        }
 
-            // Init res
-            res.v = 0;
-            tmp1.v = 0;
-            tmp0.v = 0;
-            if(res.m)  {
-                res.m.copy(Material_1.defaultMaterial);
-                tmp1.m.copy(Material_1.defaultMaterial);
-                tmp0.m.copy(Material_1.defaultMaterial);
-            }if(res.g) {
-                res.g.set(0,0,0);
-                tmp1.g.set(0,0,0);
-                tmp0.g.set(0,0,0);
-            }else if (res.step) {
-                // that, is the max distance
-                // we want a value that loose any 'min'
-                res.step = 1000000000;
-            }
-
-            if(this.aabb.containsPoint(p)){
-                if( this.children[0].aabb.containsPoint(p) ) {
-                    this.children[0].value(p,tmp0);
-                    if( this.children[1].aabb.containsPoint(p) ) {
-                        this.children[1].value(p,tmp1);
+        if(this.aabb.containsPoint(p)){
+            if( this.children[0].aabb.containsPoint(p) ) {
+                this.children[0].value(p,tmp0);
+                if( this.children[1].aabb.containsPoint(p) ) {
+                    this.children[1].value(p,tmp1);
+                }
+                if( tmp1.v === 0 ){
+                    res.v = tmp0.v;
+                    if(res.g){
+                        res.g.copy(tmp0.g);
                     }
-                    if( tmp1.v === 0 ){
-                        res.v = tmp0.v;
-                        if(res.g){
-                            res.g.copy(tmp0.g);
+                    if(res.m){
+                        res.m.copy(tmp0.m);
+                    }
+                }else{
+                    var v_pow = Math.pow(tmp1.v,this.alpha);
+                    res.v = Math.max(this.clamped,tmp0.v - tmp1.v*Math.pow(tmp1.v,this.alpha-1.0));
+                    if(res.g){
+                        if(res.v === this.clamped){
+                            res.g.set(0,0,0);
+                        }else{
+                            tmp1.g.multiplyScalar(v_pow);
+                            res.g.subVectors(tmp0.g, tmp1.g);
                         }
-                        if(res.m){
-                            res.m.copy(tmp0.m);
-                        }
-                    }else{
-                        var v_pow = Math.pow(tmp1.v,this.alpha);
-                        res.v = Math.max(this.clamped,tmp0.v - tmp1.v*Math.pow(tmp1.v,this.alpha-1.0));
-                        if(res.g){
-                            if(res.v === this.clamped){
-                                res.g.set(0,0,0);
-                            }else{
-                                tmp1.g.multiplyScalar(v_pow);
-                                res.g.subVectors(tmp0.g, tmp1.g);
-                            }
-                        }
-                        if(res.m){
-                            v_arr[0] = tmp0.v;
-                            v_arr[1] = tmp1.v;
-                            m_arr[0] = tmp0.m;
-                            m_arr[1] = tmp1.m;
-                            res.m.weightedMean(m_arr,v_arr,2);
-                        }
+                    }
+                    if(res.m){
+                        v_arr[0] = tmp0.v;
+                        v_arr[1] = tmp1.v;
+                        m_arr[0] = tmp0.m;
+                        m_arr[1] = tmp1.m;
+                        res.m.weightedMean(m_arr,v_arr,2);
                     }
                 }
             }
-            else if (res.step) {
-                // return distance to aabb such that next time we'll hit from within the aabbb
-                res.step = this.aabb.distanceToPoint(p) + 0.3;
-            }
-        };
-    })();
+        }
+        else if (res.step) {
+            // return distance to aabb such that next time we'll hit from within the aabbb
+            res.step = this.aabb.distanceToPoint(p) + 0.3;
+        }
+    };
 
     // Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
     DifferenceNode.prototype.trim = function(aabb, trimmed, parents)
@@ -1735,6 +1732,11 @@
                 self.addChild(c);
             });
         }
+
+        // temp vars to speed up evaluation by avoiding allocations
+        this.tmp_res = {v:0,g:null,m:null};
+        this.tmp_g = new Three_cjs.Vector3();
+        this.tmp_m = new Material_1(null,null,null);
 
     };
 
@@ -1772,61 +1774,55 @@
     };
 
     // [Abstract] see Node for more details.
-    MinNode.prototype.value = (function (){
-        // temp vars to speed up evaluation by avoiding allocations
-        var tmp = {v:0,g:null,m:null};
-        var g = new Three_cjs.Vector3();
-        var m = new Material_1(null,null,null);
+    MinNode.prototype.value = function(p,res)
+    {
+        // TODO : check that all bounding box of all children and subchildrens are valid
+        //        This enable not to do it in prim and limit the number of assert call (and string built)
 
-        return function(p,res)
-        {
-            // TODO : check that all bounding box of all children and subchildrens are valid
-            //        This enable not to do it in prim and limit the number of assert call (and string built)
+        var l = this.children.length;
+        var tmp = this.tmp_res;
+        tmp.g = res.g ? this.tmp_g : null;
+        tmp.m = res.m ? this.tmp_m : null;
 
-            var l = this.children.length;
-            tmp.g = res.g ? g : null;
-            tmp.m = res.m ? m : null;
+        // Init res
+        res.v = 0;
+        if(res.m)  {
+            res.m.copy(Material_1.defaultMaterial);
+        }if(res.g) {
+            res.g.set(0,0,0);
+        }else if (res.step) {
+            // that, is the max distance
+            // we want a value that loose any 'min'
+            res.step = 1000000000;
+        }
 
-            // Init res
-            res.v = 0;
-            if(res.m)  {
-                res.m.copy(Material_1.defaultMaterial);
-            }if(res.g) {
-                res.g.set(0,0,0);
-            }else if (res.step) {
-                // that, is the max distance
-                // we want a value that loose any 'min'
-                res.step = 1000000000;
-            }
-
-            if(this.aabb.containsPoint(p) && l !== 0){
-                res.v = Number.MAX_VALUE;
-                for(var i=0; i<l; ++i)
-                {
-                    this.children[i].value(p,tmp);
-                    this.countEval++;
-                    if(tmp.v < res.v){
-                        res.v = tmp.v;
-                        if(res.g) {
-                            res.g.copy(tmp.g);
-                        }
-                        if(res.m){
-                            res.m.copy(tmp.m);
-                        }
-                        // within primitive potential
-                        if (res.step || res.stepOrtho){
-                            throw "Not implemented";
-                        }
+        if(this.aabb.containsPoint(p) && l !== 0){
+            res.v = Number.MAX_VALUE;
+            for(var i=0; i<l; ++i)
+            {
+                this.children[i].value(p,tmp);
+                this.countEval++;
+                if(tmp.v < res.v){
+                    res.v = tmp.v;
+                    if(res.g) {
+                        res.g.copy(tmp.g);
                     }
-                    res.v = Math.min(res.v,tmp.v);
+                    if(res.m){
+                        res.m.copy(tmp.m);
+                    }
+                    // within primitive potential
+                    if (res.step || res.stepOrtho){
+                        throw "Not implemented";
+                    }
                 }
+                res.v = Math.min(res.v,tmp.v);
             }
-            else if (res.steo || res.stepOrtho) {
-                throw "Not implemented";
-            }
+        }
+        else if (res.steo || res.stepOrtho) {
+            throw "Not implemented";
+        }
 
-        };
-    })();
+    };
 
     // Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
     MinNode.prototype.trim = function(aabb, trimmed, parents)
@@ -2236,7 +2232,7 @@
      *  @param {number} thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
      */
     var ScalisVertex$1 = function(pos, thickness) {
-        this.pos       = pos;
+        this.pos       = pos.clone();
         this.thickness = thickness;
 
         // Only used for quick fix Zanni Correction. Should be removed as soon as it's not useful anymore.
@@ -2266,7 +2262,7 @@
      */
     ScalisVertex$1.prototype.setPos = function(pos) {
         this.valid_aabb = false;
-        this.pos = pos;
+        this.pos.copy(pos);
     };
 
     /**
@@ -3093,6 +3089,8 @@
         this.v.length   = 2;
         this.v[0]       = v0;
         this.v[1]       = v1;
+        v0.addPrimitive(this);
+        v1.addPrimitive(this);
 
         this.volType     = volType;
         this.density     = density;
@@ -5613,7 +5611,9 @@
         this.addChild(child);
 
         // Tmp vars to speed up computation (no reallocations)
-        this.tmp_res = {v:0, g:new Three_cjs.Vector3(0,0,0)};
+        // TODO : should be pushed in the function static variables since there can be no SDFRoot below the SDFRoot.
+        this.tmp_res = {v:0, g:null};
+        this.tmp_g = new Three_cjs.Vector3(0,0,0);
     };
 
     SDFRootNode.prototype = Object.create( SDFNode_1.prototype );
@@ -5654,7 +5654,7 @@
                 var c = this.children[i];
                 c.prepareForEval();
                 this.aabb.union(
-                    c.computeDistanceAABB(this.f.getSupport())
+                    c.computeDistanceAABB(this.f.support())
                 );     // new aabb is computed according to remaining children aabb
             }
 
@@ -5667,50 +5667,42 @@
         if(!this.valid_aabb) {
             throw "ERROR : Cannot get area of invalid node";
         }else{
-            return this.children[0].getAreas(this.f.getSupport());
+            return this.children[0].getAreas(this.f.support());
         }
     };
 
     // [Abstract] see Node for more details.
-    SDFRootNode.prototype.value = (function(){
-        // temp vars to speed up evaluation by avoiding allocations
-        var tmp = {v:0,g:null,m:null};
-        var g = new Three_cjs.Vector3();
-        var m = new Material_1(null,null,null);
-        return function(p,res)
-        {
-            // Init res
-            res.v = 0;
-            tmp.g = res.g ? g : null;
-            tmp.m = res.m ? m : null;
+    SDFRootNode.prototype.value = function(p,res)
+    {
+        var tmp = this.tmp_res;
+        tmp.g = res.g ? this.tmp_g : null;
 
-            if(res.m)  {
-                res.m.copy(Material_1.defaultMaterial);
-            }if(res.g) {
-                res.g.set(0,0,0);
-            }else if (res.step) {
-                // that, is the max distance
-                // we want a value that won't miss any 'min'
-                res.step = 1000000000;
-            }
+        // Init res
+        res.v = 0;
+        if(res.m)  {
+            res.m.copy(Material_1.defaultMaterial);
+        }if(res.g) ;else if (res.step) {
+            // that, is the max distance
+            // we want a value that won't miss any 'min'
+            res.step = 1000000000;
+        }
 
-            if(this.aabb.containsPoint(p)){
-                this.children[0].value(p,tmp);
+        if(this.aabb.containsPoint(p)){
+            this.children[0].value(p,tmp);
 
-                res.v = this.f.value(tmp.v);
-                if(res.g){
-                    res.g.copy(tmp.g).multiplyScalar(this.f.gradient(res.v));
-                }
-                if(res.m){
-                    res.m.copy(this.material);
-                }
+            res.v = this.f.value(tmp.v);
+            if(res.g){
+                res.g.copy(tmp.g).multiplyScalar(this.f.gradient(res.v));
             }
-            else if (res.step) {
-                // return distance to aabb such that next time we'll hit from within the aabbb
-                res.step = this.aabb.distanceToPoint(p) + 0.3;
+            if(res.m){
+                res.m.copy(this.material);
             }
-        };
-    })();
+        }
+        else if (res.step) {
+            // return distance to aabb such that next time we'll hit from within the aabbb
+            res.step = this.aabb.distanceToPoint(p) + 0.3;
+        }
+    };
 
     var SDFRootNode_1 = SDFRootNode;
 
@@ -7365,7 +7357,7 @@
         this.blobtree.prepareForEval();
         var aabb = null;
         if(o_aabb){
-            o_aabb.clone();
+            aabb = o_aabb.clone();
         }else{
             aabb = this.blobtree.getAABB();
         }

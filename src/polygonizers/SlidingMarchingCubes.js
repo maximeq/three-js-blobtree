@@ -726,7 +726,7 @@ SlidingMarchingCubes.prototype.compute = function(o_aabb, extended, progress) {
     this.blobtree.prepareForEval();
     var aabb = null;
     if(o_aabb){
-        o_aabb.clone();
+        aabb = o_aabb.clone();
     }else{
         aabb = this.blobtree.getAABB();
     }

@@ -31,11 +31,18 @@ var DifferenceNode = function (node0, node1, alpha) {
     // Tmp vars to speed up computation (no reallocations)
     this.tmp_res0 = {v:0, g:new THREE.Vector3(0,0,0), m:new Material(null, null, null)};
     this.tmp_res1 = {v:0, g:new THREE.Vector3(0,0,0), m:new Material(null, null, null)};
+    this.g0 = new THREE.Vector3();
+    this.m0 = new Material(null,null,null);
+    this.g1 = new THREE.Vector3();
+    this.m1 = new Material(null,null,null);
+
     this.tmp_v_arr = new Float32Array(2);
     this.tmp_m_arr = [
         null,
         null
     ];
+
+
 };
 
 DifferenceNode.prototype = Object.create( Node.prototype );
@@ -82,85 +89,78 @@ DifferenceNode.prototype.prepareForEval = function()
 };
 
 // [Abstract] see Node for more details.
-DifferenceNode.prototype.value = (function(){
+DifferenceNode.prototype.value = function(p,res)
+{
+    var l = this.children.length;
+    var v_arr = this.tmp_v_arr;
+    var m_arr = this.tmp_m_arr;
 
-    var g0 = new THREE.Vector3();
-    var m0 = new Material(null,null,null);
-    var tmp0 = {v:0,g:null,m:null};
-    var g1 = new THREE.Vector3();
-    var m1 = new Material(null,null,null);
-    var tmp1 = {v:0,g:null,m:null};
+    var tmp0 = this.tmp_res0;
+    var tmp1 = this.tmp_res1;
 
-    return function(p,res)
-    {
-        var l = this.children.length;
-        var v_arr = this.tmp_v_arr;
-        var m_arr = this.tmp_m_arr;
+    tmp0.g = res.g ? this.g0 : null;
+    tmp0.m = res.m ? this.m0 : null;
+    tmp1.g = res.g ? this.g1 : null;
+    tmp1.m = res.m ? this.m1 : null;
 
-        tmp0.g = res.g ? g0 : null;
-        tmp0.m = res.m ? m0 : null;
-        tmp1.g = res.g ? g1 : null;
-        tmp1.m = res.m ? m1 : null;
+    // Init res
+    res.v = 0;
+    tmp1.v = 0;
+    tmp0.v = 0;
+    if(res.m)  {
+        res.m.copy(Material.defaultMaterial);
+        tmp1.m.copy(Material.defaultMaterial);
+        tmp0.m.copy(Material.defaultMaterial);
+    }if(res.g) {
+        res.g.set(0,0,0);
+        tmp1.g.set(0,0,0);
+        tmp0.g.set(0,0,0);
+    }else if (res.step) {
+        // that, is the max distance
+        // we want a value that loose any 'min'
+        res.step = 1000000000;
+    }
 
-        // Init res
-        res.v = 0;
-        tmp1.v = 0;
-        tmp0.v = 0;
-        if(res.m)  {
-            res.m.copy(Material.defaultMaterial);
-            tmp1.m.copy(Material.defaultMaterial);
-            tmp0.m.copy(Material.defaultMaterial);
-        }if(res.g) {
-            res.g.set(0,0,0);
-            tmp1.g.set(0,0,0);
-            tmp0.g.set(0,0,0);
-        }else if (res.step) {
-            // that, is the max distance
-            // we want a value that loose any 'min'
-            res.step = 1000000000;
-        }
-
-        if(this.aabb.containsPoint(p)){
-            if( this.children[0].aabb.containsPoint(p) ) {
-                this.children[0].value(p,tmp0);
-                if( this.children[1].aabb.containsPoint(p) ) {
-                    this.children[1].value(p,tmp1);
+    if(this.aabb.containsPoint(p)){
+        if( this.children[0].aabb.containsPoint(p) ) {
+            this.children[0].value(p,tmp0);
+            if( this.children[1].aabb.containsPoint(p) ) {
+                this.children[1].value(p,tmp1);
+            }
+            if( tmp1.v === 0 ){
+                res.v = tmp0.v;
+                if(res.g){
+                    res.g.copy(tmp0.g);
                 }
-                if( tmp1.v === 0 ){
-                    res.v = tmp0.v;
-                    if(res.g){
-                        res.g.copy(tmp0.g);
+                if(res.m){
+                    res.m.copy(tmp0.m);
+                }
+            }else{
+                var v_pow = Math.pow(tmp1.v,this.alpha);
+                res.v = Math.max(this.clamped,tmp0.v - tmp1.v*Math.pow(tmp1.v,this.alpha-1.0));
+                if(res.g){
+                    if(res.v === this.clamped){
+                        res.g.set(0,0,0);
+                    }else{
+                        tmp1.g.multiplyScalar(v_pow);
+                        res.g.subVectors(tmp0.g, tmp1.g);
                     }
-                    if(res.m){
-                        res.m.copy(tmp0.m);
-                    }
-                }else{
-                    var v_pow = Math.pow(tmp1.v,this.alpha);
-                    res.v = Math.max(this.clamped,tmp0.v - tmp1.v*Math.pow(tmp1.v,this.alpha-1.0));
-                    if(res.g){
-                        if(res.v === this.clamped){
-                            res.g.set(0,0,0);
-                        }else{
-                            tmp1.g.multiplyScalar(v_pow);
-                            res.g.subVectors(tmp0.g, tmp1.g);
-                        }
-                    }
-                    if(res.m){
-                        v_arr[0] = tmp0.v;
-                        v_arr[1] = tmp1.v;
-                        m_arr[0] = tmp0.m;
-                        m_arr[1] = tmp1.m;
-                        res.m.weightedMean(m_arr,v_arr,2);
-                    }
+                }
+                if(res.m){
+                    v_arr[0] = tmp0.v;
+                    v_arr[1] = tmp1.v;
+                    m_arr[0] = tmp0.m;
+                    m_arr[1] = tmp1.m;
+                    res.m.weightedMean(m_arr,v_arr,2);
                 }
             }
         }
-        else if (res.step) {
-            // return distance to aabb such that next time we'll hit from within the aabbb
-            res.step = this.aabb.distanceToPoint(p) + 0.3;
-        }
-    };
-})();
+    }
+    else if (res.step) {
+        // return distance to aabb such that next time we'll hit from within the aabbb
+        res.step = this.aabb.distanceToPoint(p) + 0.3;
+    }
+};
 
 // Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
 DifferenceNode.prototype.trim = function(aabb, trimmed, parents)
