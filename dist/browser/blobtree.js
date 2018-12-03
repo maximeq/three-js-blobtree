@@ -5672,38 +5672,45 @@
     };
 
     // [Abstract] see Node for more details.
-    SDFRootNode.prototype.value = function(p,res)
-    {
-        var tmp = this.tmp_res;
+    SDFRootNode.prototype.value = (function(){
+        // temp vars to speed up evaluation by avoiding allocations
+        var tmp = {v:0,g:null,m:null};
+        var g = new Three_cjs.Vector3();
+        var m = new Material_1(null,null,null);
+        return function(p,res)
+        {
+            // Init res
+            res.v = 0;
+            tmp.g = res.g ? g : null;
+            tmp.m = res.m ? m : null;
 
-        // Init res
-        res.v = 0;
-        if(res.m)  {
-            res.m.copy(Material_1.defaultMaterial);
-        }if(res.g) {
-            res.g.set(0,0,0);
-        }else if (res.step) {
-            // that, is the max distance
-            // we want a value that won't miss any 'min'
-            res.step = 1000000000;
-        }
-
-        if(this.aabb.containsPoint(p)){
-            this.children[0].value(p,tmp);
-
-            res.v = this.f.value(tmp.v);
-            if(res.g){
-                res.g.copy(tmp.g).multiplyScalar(this.f.gradient(res.v));
+            if(res.m)  {
+                res.m.copy(Material_1.defaultMaterial);
+            }if(res.g) {
+                res.g.set(0,0,0);
+            }else if (res.step) {
+                // that, is the max distance
+                // we want a value that won't miss any 'min'
+                res.step = 1000000000;
             }
-            if(res.m){
-                res.m.copy(this.material);
+
+            if(this.aabb.containsPoint(p)){
+                this.children[0].value(p,tmp);
+
+                res.v = this.f.value(tmp.v);
+                if(res.g){
+                    res.g.copy(tmp.g).multiplyScalar(this.f.gradient(res.v));
+                }
+                if(res.m){
+                    res.m.copy(this.material);
+                }
             }
-        }
-        else if (res.step) {
-            // return distance to aabb such that next time we'll hit from within the aabbb
-            res.step = this.aabb.distanceToPoint(p) + 0.3;
-        }
-    };
+            else if (res.step) {
+                // return distance to aabb such that next time we'll hit from within the aabbb
+                res.step = this.aabb.distanceToPoint(p) + 0.3;
+            }
+        };
+    })();
 
     var SDFRootNode_1 = SDFRootNode;
 
@@ -5780,60 +5787,59 @@
      *  @constructor
      *  @extends SDFPrimitive
      *
-     *  @param {THREE.Vector3} p Position (ie center) of the sphere
-     *  @param {number} r Radius of the sphere
+     *  @param {THREE.Vector3} p Position (ie center) of the point
+     *  @param {number} acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
      */
-    var SDFSphere = function(p, r) {
+    var SDFPoint = function(p, acc) {
         SDFPrimitive_1.call(this);
 
         this.p = p.clone();
-        this.r = r;
+        this.acc = acc || 1.0;
     };
 
-    SDFSphere.prototype = Object.create(SDFPrimitive_1.prototype);
-    SDFSphere.prototype.constructor = SDFSphere;
+    SDFPoint.prototype = Object.create(SDFPrimitive_1.prototype);
+    SDFPoint.prototype.constructor = SDFPoint;
 
-    SDFSphere.type = "SDFSphere";
-    Types_1.register(SDFSphere.type, SDFSphere);
+    SDFPoint.type = "SDFPoint";
+    Types_1.register(SDFPoint.type, SDFPoint);
 
-    SDFSphere.prototype.getType = function(){
-        return SDFSphere.type;
+    SDFPoint.prototype.getType = function(){
+        return SDFPoint.type;
     };
 
-    SDFSphere.prototype.toJSON = function() {
+    SDFPoint.prototype.toJSON = function() {
         var res = SDFPrimitive_1.prototype.toJSON.call(this);
         res.p = {
             x:this.p.x,
             y:this.p.y,
             z:this.p.z
         };
-        res.r = this.r;
+        res.acc = this.acc;
         return res;
     };
-    SDFSphere.fromJSON = function(json){
-        var v = ScalisVertex.fromJSON(json.v[0]);
-        return new SDFSphere(new Three_cjs.Vector3(json.p.x,json.p.y, json.p.z), json.r);
+    SDFPoint.fromJSON = function(json){
+        return new SDFPoint(new Three_cjs.Vector3(json.p.x,json.p.y, json.p.z), json.acc);
     };
 
     /**
-     *  @param {number} r The new radius
+     *  @param {number} acc The new accuracy factor
      */
-    SDFSphere.prototype.setRadius = function(r) {
-        this.r = r;
+    SDFPoint.prototype.setAccuracy = function(acc) {
+        this.acc = acc;
         this.invalidAABB();
     };
 
     /**
-     *  @return {number} Current radius
+     *  @return {number} Current accuracy factor
      */
-    SDFSphere.prototype.getRadius = function() {
-        return this.r;
+    SDFPoint.prototype.getAccuracy = function() {
+        return this.acc;
     };
 
     /**
      *  @param {THREE.Vector3} p The new position (ie center)
      */
-    SDFSphere.prototype.setPosition = function(p) {
+    SDFPoint.prototype.setPosition = function(p) {
         this.p.copy(p);
         this.invalidAABB();
     };
@@ -5841,19 +5847,19 @@
     /**
      *  @return {THREE.Vector3} Current position (ie center)
      */
-    SDFSphere.prototype.getPosition = function() {
+    SDFPoint.prototype.getPosition = function() {
         return this.p;
     };
 
     // [Abstract]
-    SDFSphere.prototype.computeDistanceAABB = function(d) {
+    SDFPoint.prototype.computeDistanceAABB = function(d) {
         return new Three_cjs.Box3(
-            this.p.clone().add(new Three_cjs.Vector3(-this.r-d,-this.r-d,-this.r-d)),
-            this.p.clone().add(new Three_cjs.Vector3(this.r+d,this.r+d,this.r+d))
+            this.p.clone().add(new Three_cjs.Vector3(-d,-d,-d)),
+            this.p.clone().add(new Three_cjs.Vector3(d,d,d))
         );
     };
     // [Abstract]
-    SDFSphere.prototype.prepareForEval = function() {
+    SDFPoint.prototype.prepareForEval = function() {
         if(!this.valid_aabb)
         {
             this.valid_aabb = true;
@@ -5861,7 +5867,7 @@
     };
 
     // [Abstract] see ScalisPrimitive.getArea
-    SDFSphere.prototype.getAreas = function(d) {
+    SDFPoint.prototype.getAreas = function(d) {
         if(!this.valid_aabb) {
             throw "ERROR : Cannot get area of invalid primitive";
             return [];
@@ -5870,8 +5876,8 @@
                 aabb:this.computeDistanceAABB(d),
                 bv: new AreaSphere_1(
                     this.p,
-                    this.r+d,
-                    this.r/(this.r+d) // Adjust accuray factor according to the radius and not only to the required d
+                    d,
+                    this.acc
                 ),
                 obj: this
             }];
@@ -5879,7 +5885,7 @@
     };
 
     // [Abstract] see SDFPrimitive.value
-    SDFSphere.prototype.value = (function(){
+    SDFPoint.prototype.value = (function(){
         var v = new Three_cjs.Vector3();
 
         return function(p,res) {
@@ -5889,7 +5895,7 @@
 
             v.subVectors(p,this.p);
             var l = v.length();
-            res.v = l - this.r;
+            res.v = l;
             if(res.g)
             {
                 res.g.copy(v).multiplyScalar(1/l);
@@ -5897,7 +5903,7 @@
         };
     })();
 
-    var SDFSphere_1 = SDFSphere;
+    var SDFPoint_1 = SDFPoint;
 
     /**
      *  General representation of a "Capsule" area, ie, 2 sphere connected by a cone.
@@ -6164,6 +6170,282 @@
     };
 
     var AreaCapsule_1 = AreaCapsule;
+
+    /**
+     *
+     *  @constructor
+     *  @extends SDFPrimitive
+     *
+     *  @param {THREE.Vector3} p1 Position of the first segment extremity
+     *  @param {THREE.Vector3} p2 Position of the second segment extremity
+     *  @param {number} acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
+     */
+    var SDFSegment = function(p1, p2, acc) {
+        SDFPrimitive_1.call(this);
+
+        this.p1 = p1.clone();
+        this.p2 = p2.clone();
+        this.acc = acc || 1.0;
+
+        // Helper for evaluation
+        this.l = new Three_cjs.Line3(this.p1, this.p2);
+    };
+
+    SDFSegment.prototype = Object.create(SDFPrimitive_1.prototype);
+    SDFSegment.prototype.constructor = SDFSegment;
+
+    SDFSegment.type = "SDFSegment";
+    Types_1.register(SDFSegment.type, SDFSegment);
+
+    SDFSegment.prototype.getType = function(){
+        return SDFSegment.type;
+    };
+
+    SDFSegment.prototype.toJSON = function() {
+        var res = SDFPrimitive_1.prototype.toJSON.call(this);
+        res.p1 = {
+            x:this.p1.x,
+            y:this.p1.y,
+            z:this.p1.z
+        };
+        res.p2 = {
+            x:this.p2.x,
+            y:this.p2.y,
+            z:this.p2.z
+        };
+        res.acc = this.acc;
+        return res;
+    };
+    SDFSegment.fromJSON = function(json){
+        var v = ScalisVertex.fromJSON(json.v[0]);
+        return new SDFSegment(
+            new Three_cjs.Vector3(json.p1.x,json.p1.y, json.p1.z),
+            new Three_cjs.Vector3(json.p2.x,json.p2.y, json.p2.z),
+            json.acc
+        );
+    };
+
+    /**
+     *  @param {number} acc The new accuracy factor
+     */
+    SDFSegment.prototype.setAccuracy = function(acc) {
+        this.acc = acc;
+        this.invalidAABB();
+    };
+
+    /**
+     *  @return {number} Current accuracy factor
+     */
+    SDFSegment.prototype.getAccuracy = function() {
+        return this.acc;
+    };
+
+    /**
+     *  @param {THREE.Vector3} p1 The new position of the first segment point.
+     */
+    SDFSegment.prototype.setPosition1 = function(p1) {
+        this.p1.copy(p1);
+        this.invalidAABB();
+    };
+    /**
+     *  @param {THREE.Vector3} p2 The new position of the second segment point
+     */
+    SDFSegment.prototype.setPosition2 = function(p2) {
+        this.p2.copy(p2);
+        this.invalidAABB();
+    };
+
+    /**
+     *  @return {THREE.Vector3} Current position of the first segment point
+     */
+    SDFSegment.prototype.getPosition1 = function() {
+        return this.p1;
+    };
+    /**
+     *  @return {THREE.Vector3} Current position of the second segment point
+     */
+    SDFSegment.prototype.getPosition2 = function() {
+        return this.p2;
+    };
+
+    // [Abstract]
+    SDFSegment.prototype.computeDistanceAABB = function(d) {
+        var b1 = new Three_cjs.Box3(
+            this.p1.clone().add(new Three_cjs.Vector3(-d,-d,-d)),
+            this.p1.clone().add(new Three_cjs.Vector3(d,d,d))
+        );
+        var b2 = new Three_cjs.Box3(
+            this.p2.clone().add(new Three_cjs.Vector3(-d,-d,-d)),
+            this.p2.clone().add(new Three_cjs.Vector3(d,d,d))
+        );
+        return b1.union(b2);
+    };
+    // [Abstract]
+    SDFSegment.prototype.prepareForEval = function() {
+        if(!this.valid_aabb)
+        {
+            this.l.set(this.p1,this.p2);
+            this.valid_aabb = true;
+        }
+    };
+
+    // [Abstract] see ScalisPrimitive.getArea
+    SDFSegment.prototype.getAreas = function(d) {
+        if(!this.valid_aabb) {
+            throw "ERROR : Cannot get area of invalid primitive";
+            return [];
+        }else{
+            return [{
+                aabb:this.computeDistanceAABB(d),
+                bv: new AreaCapsule_1(
+                    this.p1,
+                    this.p2,
+                    d,
+                    d,
+                    this.acc,
+                    this.acc
+                ),
+                obj: this
+            }];
+        }
+    };
+
+    // [Abstract] see SDFPrimitive.value
+    SDFSegment.prototype.value = (function(){
+        var v = new Three_cjs.Vector3();
+        var lc = new Three_cjs.Vector3();
+        return function(p,res) {
+            this.l.closestPointToPoint(p,true,v);
+            res.v = lc.subVectors(p,v).length();
+            if(res.g){
+                res.g.copy(lc).divideScalar(res.v);
+            }
+        };
+    })();
+
+    var SDFSegment_1 = SDFSegment;
+
+    /**
+     *  @constructor
+     *  @extends SDFPrimitive
+     *
+     *  @param {THREE.Vector3} p Position (ie center) of the sphere
+     *  @param {number} r Radius of the sphere
+     */
+    var SDFSphere = function(p, r) {
+        SDFPrimitive_1.call(this);
+
+        this.p = p.clone();
+        this.r = r;
+    };
+
+    SDFSphere.prototype = Object.create(SDFPrimitive_1.prototype);
+    SDFSphere.prototype.constructor = SDFSphere;
+
+    SDFSphere.type = "SDFSphere";
+    Types_1.register(SDFSphere.type, SDFSphere);
+
+    SDFSphere.prototype.getType = function(){
+        return SDFSphere.type;
+    };
+
+    SDFSphere.prototype.toJSON = function() {
+        var res = SDFPrimitive_1.prototype.toJSON.call(this);
+        res.p = {
+            x:this.p.x,
+            y:this.p.y,
+            z:this.p.z
+        };
+        res.r = this.r;
+        return res;
+    };
+    SDFSphere.fromJSON = function(json){
+        return new SDFSphere(new Three_cjs.Vector3(json.p.x,json.p.y, json.p.z), json.r);
+    };
+
+    /**
+     *  @param {number} r The new radius
+     */
+    SDFSphere.prototype.setRadius = function(r) {
+        this.r = r;
+        this.invalidAABB();
+    };
+
+    /**
+     *  @return {number} Current radius
+     */
+    SDFSphere.prototype.getRadius = function() {
+        return this.r;
+    };
+
+    /**
+     *  @param {THREE.Vector3} p The new position (ie center)
+     */
+    SDFSphere.prototype.setPosition = function(p) {
+        this.p.copy(p);
+        this.invalidAABB();
+    };
+
+    /**
+     *  @return {THREE.Vector3} Current position (ie center)
+     */
+    SDFSphere.prototype.getPosition = function() {
+        return this.p;
+    };
+
+    // [Abstract]
+    SDFSphere.prototype.computeDistanceAABB = function(d) {
+        return new Three_cjs.Box3(
+            this.p.clone().add(new Three_cjs.Vector3(-this.r-d,-this.r-d,-this.r-d)),
+            this.p.clone().add(new Three_cjs.Vector3(this.r+d,this.r+d,this.r+d))
+        );
+    };
+    // [Abstract]
+    SDFSphere.prototype.prepareForEval = function() {
+        if(!this.valid_aabb)
+        {
+            this.valid_aabb = true;
+        }
+    };
+
+    // [Abstract] see ScalisPrimitive.getArea
+    SDFSphere.prototype.getAreas = function(d) {
+        if(!this.valid_aabb) {
+            throw "ERROR : Cannot get area of invalid primitive";
+            return [];
+        }else{
+            return [{
+                aabb:this.computeDistanceAABB(d),
+                bv: new AreaSphere_1(
+                    this.p,
+                    this.r+d,
+                    this.r/(this.r+d) // Adjust accuray factor according to the radius and not only to the required d
+                ),
+                obj: this
+            }];
+        }
+    };
+
+    // [Abstract] see SDFPrimitive.value
+    SDFSphere.prototype.value = (function(){
+        var v = new Three_cjs.Vector3();
+
+        return function(p,res) {
+            if(!this.valid_aabb){
+                throw "Error : PrepareForEval should have been called";
+            }
+
+            v.subVectors(p,this.p);
+            var l = v.length();
+            res.v = l - this.r;
+            if(res.g)
+            {
+                res.g.copy(v).multiplyScalar(1/l);
+            }
+        };
+    })();
+
+    var SDFSphere_1 = SDFSphere;
 
     /**
      *  This primitive implements a distance field to an extanded "capsule geometry", which is actually a weighted segment.
@@ -7520,12 +7802,14 @@
     Blobtree$1.ScalisTriangle     = ScalisTriangle_1;
     Blobtree$1.ScalisVertex       = ScalisVertex_1;
 
-    Blobtree$1.DistanceFunctor   = DistanceFunctor_1;
+    Blobtree$1.DistanceFunctor    = DistanceFunctor_1;
     Blobtree$1.Poly6DistanceFunctor = Poly6DistanceFunctor_1;
 
-    Blobtree$1.SDFRootNode       = SDFRootNode_1;
-    Blobtree$1.SDFPrimitive      = SDFPrimitive_1;
-    Blobtree$1.SDFSphere         = SDFSphere_1;
+    Blobtree$1.SDFRootNode        = SDFRootNode_1;
+    Blobtree$1.SDFPrimitive       = SDFPrimitive_1;
+    Blobtree$1.SDFPoint           = SDFPoint_1;
+    Blobtree$1.SDFSegment         = SDFSegment_1;
+    Blobtree$1.SDFSphere          = SDFSphere_1;
     Blobtree$1.SDFCapsule         = SDFCapsule_1;
 
     Blobtree$1.Material           = Material_1;

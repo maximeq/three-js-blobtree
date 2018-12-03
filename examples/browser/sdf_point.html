@@ -33,7 +33,7 @@
 
     <body>
         <div id="info">
-            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Scalar Distance Field Sphere
+            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Scalar Distance Field Point
         </div>
 
         <script src="../../node_modules/three-full/builds/Three.iife.js"></script>
@@ -42,38 +42,29 @@
             var THREE = THREE || Three;
         </script>
         <script src="../../dist/browser/blobtree.js"></script>
-        <script src="./js/ExDistanceFunctor.js"></script>
         <script src="./js/SimpleFunctor.js"></script>
         <script>
-
 
             var root = new Blobtree.RootNode();
 
             root.addChild(
                 new Blobtree.SDFRootNode(
-                    // new Blobtree.Poly6DistanceFunctor(4.0), // This is a basic functor provided by the lib.
-                    // new ExDistanceFunctor(4.0),          // Same functor as Poly6DistanceFunctor but defined externally as an example to create custom functions
-                    new SimpleFunctor(                      // Same but defined directly with a javascript function and a support as argument
+                    new SimpleFunctor(
                         function(d){
-                            var dp = d/8 + 0.5;
-                            if(dp<0.0){
-                                return 1.0/0.421875;
-                            }
-                            var aux = 1.0-dp*dp;
-
-                            if(aux > 0.0)
-                            {
-                                return aux*aux*aux/0.421875;
-                            }else{
+                            if(d>10){
                                 return 0.0;
+                            }else if(d<0.0){
+                                return 2.0;
+                            }else{
+                                return (2.0*(1-d/10));
                             }
                         },
-                        4.0
+                        10
                     ),
                     new Blobtree.Material('#ffcd41'),
-                    new Blobtree.SDFSphere(
+                    new Blobtree.SDFPoint(
                         new THREE.Vector3(0,0,0),
-                        5
+                        0.5             // accuracy factor, default to 1.0 but depending on your functions you may want more, you can also increase Marching cube detailRatio
                     )
                 )
             );

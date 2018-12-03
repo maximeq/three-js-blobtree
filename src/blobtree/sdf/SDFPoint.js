@@ -9,59 +9,59 @@ const AreaSphere = require("../areas/AreaSphere.js");
  *  @constructor
  *  @extends SDFPrimitive
  *
- *  @param {THREE.Vector3} p Position (ie center) of the sphere
- *  @param {number} r Radius of the sphere
+ *  @param {THREE.Vector3} p Position (ie center) of the point
+ *  @param {number} acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
  */
-var SDFSphere = function(p, r) {
+var SDFPoint = function(p, acc) {
     SDFPrimitive.call(this);
 
     this.p = p.clone();
-    this.r = r;
+    this.acc = acc || 1.0;
 };
 
-SDFSphere.prototype = Object.create(SDFPrimitive.prototype);
-SDFSphere.prototype.constructor = SDFSphere;
+SDFPoint.prototype = Object.create(SDFPrimitive.prototype);
+SDFPoint.prototype.constructor = SDFPoint;
 
-SDFSphere.type = "SDFSphere";
-Types.register(SDFSphere.type, SDFSphere);
+SDFPoint.type = "SDFPoint";
+Types.register(SDFPoint.type, SDFPoint);
 
-SDFSphere.prototype.getType = function(){
-    return SDFSphere.type;
+SDFPoint.prototype.getType = function(){
+    return SDFPoint.type;
 };
 
-SDFSphere.prototype.toJSON = function() {
+SDFPoint.prototype.toJSON = function() {
     var res = SDFPrimitive.prototype.toJSON.call(this);
     res.p = {
         x:this.p.x,
         y:this.p.y,
         z:this.p.z
     };
-    res.r = this.r;
+    res.acc = this.acc;
     return res;
 };
-SDFSphere.fromJSON = function(json){
-    return new SDFSphere(new THREE.Vector3(json.p.x,json.p.y, json.p.z), json.r);
+SDFPoint.fromJSON = function(json){
+    return new SDFPoint(new THREE.Vector3(json.p.x,json.p.y, json.p.z), json.acc);
 };
 
 /**
- *  @param {number} r The new radius
+ *  @param {number} acc The new accuracy factor
  */
-SDFSphere.prototype.setRadius = function(r) {
-    this.r = r;
+SDFPoint.prototype.setAccuracy = function(acc) {
+    this.acc = acc;
     this.invalidAABB();
 };
 
 /**
- *  @return {number} Current radius
+ *  @return {number} Current accuracy factor
  */
-SDFSphere.prototype.getRadius = function() {
-    return this.r;
+SDFPoint.prototype.getAccuracy = function() {
+    return this.acc;
 };
 
 /**
  *  @param {THREE.Vector3} p The new position (ie center)
  */
-SDFSphere.prototype.setPosition = function(p) {
+SDFPoint.prototype.setPosition = function(p) {
     this.p.copy(p);
     this.invalidAABB();
 };
@@ -69,19 +69,19 @@ SDFSphere.prototype.setPosition = function(p) {
 /**
  *  @return {THREE.Vector3} Current position (ie center)
  */
-SDFSphere.prototype.getPosition = function() {
+SDFPoint.prototype.getPosition = function() {
     return this.p;
 };
 
 // [Abstract]
-SDFSphere.prototype.computeDistanceAABB = function(d) {
+SDFPoint.prototype.computeDistanceAABB = function(d) {
     return new THREE.Box3(
-        this.p.clone().add(new THREE.Vector3(-this.r-d,-this.r-d,-this.r-d)),
-        this.p.clone().add(new THREE.Vector3(this.r+d,this.r+d,this.r+d))
+        this.p.clone().add(new THREE.Vector3(-d,-d,-d)),
+        this.p.clone().add(new THREE.Vector3(d,d,d))
     );
 };
 // [Abstract]
-SDFSphere.prototype.prepareForEval = function() {
+SDFPoint.prototype.prepareForEval = function() {
     if(!this.valid_aabb)
     {
         this.valid_aabb = true;
@@ -89,7 +89,7 @@ SDFSphere.prototype.prepareForEval = function() {
 };
 
 // [Abstract] see ScalisPrimitive.getArea
-SDFSphere.prototype.getAreas = function(d) {
+SDFPoint.prototype.getAreas = function(d) {
     if(!this.valid_aabb) {
         throw "ERROR : Cannot get area of invalid primitive";
         return [];
@@ -98,8 +98,8 @@ SDFSphere.prototype.getAreas = function(d) {
             aabb:this.computeDistanceAABB(d),
             bv: new AreaSphere(
                 this.p,
-                this.r+d,
-                this.r/(this.r+d) // Adjust accuray factor according to the radius and not only to the required d
+                d,
+                this.acc
             ),
             obj: this
         }];
@@ -107,7 +107,7 @@ SDFSphere.prototype.getAreas = function(d) {
 };
 
 // [Abstract] see SDFPrimitive.value
-SDFSphere.prototype.value = (function(){
+SDFPoint.prototype.value = (function(){
     var v = new THREE.Vector3();
 
     return function(p,res) {
@@ -117,7 +117,7 @@ SDFSphere.prototype.value = (function(){
 
         v.subVectors(p,this.p);
         var l = v.length();
-        res.v = l - this.r;
+        res.v = l;
         if(res.g)
         {
             res.g.copy(v).multiplyScalar(1/l);
@@ -125,4 +125,4 @@ SDFSphere.prototype.value = (function(){
     };
 })();
 
-module.exports = SDFSphere;
+module.exports = SDFPoint;

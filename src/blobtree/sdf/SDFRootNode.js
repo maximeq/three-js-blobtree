@@ -87,37 +87,44 @@ SDFRootNode.prototype.getAreas = function() {
 };
 
 // [Abstract] see Node for more details.
-SDFRootNode.prototype.value = function(p,res)
-{
-    var tmp = this.tmp_res;
+SDFRootNode.prototype.value = (function(){
+    // temp vars to speed up evaluation by avoiding allocations
+    var tmp = {v:0,g:null,m:null};
+    var g = new THREE.Vector3();
+    var m = new Material(null,null,null);
+    return function(p,res)
+    {
+        // Init res
+        res.v = 0;
+        tmp.g = res.g ? g : null;
+        tmp.m = res.m ? m : null;
 
-    // Init res
-    res.v = 0;
-    if(res.m)  {
-        res.m.copy(Material.defaultMaterial);
-    }if(res.g) {
-        res.g.set(0,0,0);
-    }else if (res.step) {
-        // that, is the max distance
-        // we want a value that won't miss any 'min'
-        res.step = 1000000000;
-    }
-
-    if(this.aabb.containsPoint(p)){
-        this.children[0].value(p,tmp);
-
-        res.v = this.f.value(tmp.v);
-        if(res.g){
-            res.g.copy(tmp.g).multiplyScalar(this.f.gradient(res.v))
+        if(res.m)  {
+            res.m.copy(Material.defaultMaterial);
+        }if(res.g) {
+            res.g.set(0,0,0);
+        }else if (res.step) {
+            // that, is the max distance
+            // we want a value that won't miss any 'min'
+            res.step = 1000000000;
         }
-        if(res.m){
-            res.m.copy(this.material);
+
+        if(this.aabb.containsPoint(p)){
+            this.children[0].value(p,tmp);
+
+            res.v = this.f.value(tmp.v);
+            if(res.g){
+                res.g.copy(tmp.g).multiplyScalar(this.f.gradient(res.v))
+            }
+            if(res.m){
+                res.m.copy(this.material);
+            }
         }
-    }
-    else if (res.step) {
-        // return distance to aabb such that next time we'll hit from within the aabbb
-        res.step = this.aabb.distanceToPoint(p) + 0.3;
-    }
-};
+        else if (res.step) {
+            // return distance to aabb such that next time we'll hit from within the aabbb
+            res.step = this.aabb.distanceToPoint(p) + 0.3;
+        }
+    };
+})();
 
 module.exports = SDFRootNode;
