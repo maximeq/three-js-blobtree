@@ -5,7 +5,7 @@
  *  It is the same for DIST and CONVOL primitives since the support of the convolution
  *  kernel is the same as the support for the distance field.
  *
- *  The Area must be able to return accuracy needed in a given zone (Sphere fr now,
+ *  The Area must be able to return accuracy needed in a given zone (Sphere for now,
  *  since box intersections with such a complex shape are not trivial), and also
  *  propose an intersection test.
  *
@@ -17,7 +17,7 @@ var Area = function()
 };
 
 /**
- * [Asbtract]
+ *  [Abstract]
  *  Test intersection of the shape with a sphere
  *  @return {boolean} true if the sphere and the area intersect
  *
@@ -33,7 +33,7 @@ Area.prototype.sphereIntersect = function(sphere)
  * [Asbtract]
  *  Test if p is in the area.
  *
- *  @return {boolean} true if p is in th area, false otherwise.
+ *  @return {boolean} true if p is in the area, false otherwise.
  *
  *  @param {!THREE.Vector3} p A point in space
  *
@@ -79,7 +79,7 @@ Area.prototype.getNiceAcc = function(sphere)
 /**
  *  @abstract
  *  Convenience function, just call getAcc with Current Accuracy parameters.
- *  @param {!{radius:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+ *  @param {!{radius:number,c:!THREE.Vector3}} sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
  *  @return {number} The Current accuracy needed in the intersection zone
  */
 Area.prototype.getCurrAcc = function(sphere)
@@ -90,7 +90,7 @@ Area.prototype.getCurrAcc = function(sphere)
 /**
  *  @abstract
  *  Convenience function, just call getAcc with Raw Accuracy parameters.
- *  @param {!{radius:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+ *  @param {!{radius:number,c:!THREE.Vector3}} sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
  *  @return {number} The raw accuracy needed in the intersection zone
  */
 Area.prototype.getRawAcc = function(sphere)

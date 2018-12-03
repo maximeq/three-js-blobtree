@@ -53,7 +53,7 @@ ExDistanceFunctor.prototype.value = function(d) {
 // Polygonizers will use this to determine how far they should look for the surface, so :
 //      - Providing a too large support will increase computation time
 //      - Providing a too small support may result in missing the surface
-ExDistanceFunctor.prototype.support = function(d){
+ExDistanceFunctor.prototype.getSupport = function(d){
     return this.scale;
 };
 
@@ -73,9 +73,26 @@ ExDistanceFunctor.prototype.toJSON = function() {
 // Optionnal : this function computes the gradient (simple derivative) of the function.
 //             if not provided, a numerical approximation will be used.
 ExDistanceFunctor.prototype.gradient = function(d) {
+    // This is the standard 6 degree polynomial function used for implicit modeling.
+    // At 0, its value is 1 with a zero derivative.
+    // at 1, its value is 0 with a zero derivative.
+    var f = function(d) {
+        if(d<0.0){
+            return 1.0;
+        }
+        var aux = 1.0-d*d;
+
+        if(aux > 0.0)
+        {
+            return aux*aux*aux;
+        }else{
+            return 0.0;
+        }
+    };
+
     var ds = d/(2*this.scale) + 0.5;
     var res = (1-ds*ds);
-    res = -(6/(2*this.scale))*ds*res*res/Poly6DistanceFunctor.evalStandard(0.5);
+    res = -(6/(2*this.scale))*ds*res*res/f(0.5);
     return res;
 };
 

@@ -74,7 +74,7 @@ DistanceFunctor.prototype.gradient = function(d){
  *  @return {number} Distance above which all values will be 0. Should be reimplemented and default to infinity.
  *
  */
-DistanceFunctor.prototype.support = function(d){
+DistanceFunctor.prototype.getSupport = function(d){
     return Infinity;
 };
 

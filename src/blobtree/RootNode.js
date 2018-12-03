@@ -16,7 +16,7 @@ var RootNode = function() {
 
     this.valid_aabb = true;
 
-    // Defauylt iso value, value where the surface is present
+    // Default iso value, value where the surface is present
     this.iso_value = 1.0;
 
     // Set some nodes as "trimmed", so they are not evaluated.

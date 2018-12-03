@@ -67,7 +67,7 @@ Poly6DistanceFunctor.prototype.gradient = function(d){
 };
 
 // [Abstract]
-Poly6DistanceFunctor.prototype.support = function(d){
+Poly6DistanceFunctor.prototype.getSupport = function(d){
     return this.scale;
 };
 

@@ -80,10 +80,20 @@ function init() {
 }
 
 function updateShadow() {
-    if(mesh.geometry.boundingBox === null){
-        mesh.geometry.computeBoundingBox();
+    // Try to build a shadow based on the meshes in the scene.
+    shadow.geometry = null;
+    scene.traverse(function(obj){
+        if(obj instanceof THREE.Mesh && obj !== shadow){
+            if(obj.geometry.boundingBox === null){
+                obj.geometry.computeBoundingBox();
+            }
+            shadow.geometry = shadow.geometry ? THREE.BufferGeometryUtils.mergeBufferGeometries( [shadow.geometry,obj.geometry] ) : obj.geometry;
+        }
+    });
+    if(!shadow.geometry.boundingBox){
+        shadow.geometry.computeBoundingBox();
     }
-    shadow.geometry = mesh.geometry.clone().scale(1,0.00001,1).translate(0,-mesh.geometry.boundingBox.getSize(new THREE.Vector3()).y/1.5,0);
+    shadow.geometry = shadow.geometry.clone().scale(1,0.00001,1).translate(0,-shadow.geometry.boundingBox.getSize(new THREE.Vector3()).y/1.5,0);
 }
 
 function onWindowResize() {
