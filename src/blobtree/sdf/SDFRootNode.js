@@ -71,7 +71,7 @@ SDFRootNode.prototype.prepareForEval = function()
             var c = this.children[i];
             c.prepareForEval();
             this.aabb.union(
-                c.computeDistanceAABB(this.f.support())
+                c.computeDistanceAABB(this.f.getSupport())
             );     // new aabb is computed according to remaining children aabb
         }
 
@@ -84,7 +84,7 @@ SDFRootNode.prototype.getAreas = function() {
     if(!this.valid_aabb) {
         throw "ERROR : Cannot get area of invalid node";
     }else{
-        return this.children[0].getAreas(this.f.support());
+        return this.children[0].getAreas(this.f.getSupport());
     }
 };
 
