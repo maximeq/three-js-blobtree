@@ -68,67 +68,6 @@ ScalisPrimitive.prototype.getVolType = function() {
     return this.volType;
 };
 
-/**
- *  Set the position of a specific vertex in the primitive.
- *  @param {number} i Index of the vertex concerned
- *  @param {!THREE.Vector3} pos The new position to set
- */
-ScalisPrimitive.prototype.setVPos = function(i, pos) {
-    if(i>=this.v.length){
-        throw "ScalisVertex index invalid";
-    }
-
-    this.v[i].setPos(pos);
-    this.invalidAABB();
-};
-
-/**
- *  Set the thickness of a specific vertex in the primitive.
- *  @param {number} i Index of the vertex concerned
- *  @param {number} thick The thickness to set
- */
-ScalisPrimitive.prototype.setVThickness = function(i, thick) {
-    if(i>=this.v.length){
-        throw "ScalisVertex index invalid";
-    }
-
-    this.v[i].setThickness(thick);
-    this.invalidAABB();
-};
-
-/**
- *  Set both position and thickness for a specific vertex in the primitive.
- *  @param {number} i Index of the vertex concerned
- *  @param {!THREE.Vector3} pos The new position to set
- *  @param {number} thick The thickness to set
- */
-ScalisPrimitive.prototype.setVAll = function(i, pos, thick) {
-    if(i>=this.v.length){
-        throw "ScalisVertex index invalid";
-    }
-
-    this.v[i].setAll(pos, thick);
-    this.invalidAABB();
-};
-
-/**
- *  Get the thickness of a specific vertex in the primitive.
- *  @param {number} i Index of the vertex concerned
- *  @return {THREE.Vector3} The position of the i-th vertex
- */
-ScalisPrimitive.prototype.getVPos = function(i, pos) {
-    return this.v[i].getPos();
-};
-
-/**
- *  Get the thickness of a specific vertex in the primitive.
- *  @param {number} i Index of the vertex concerned
- *  @return {number} The thickness of the i-th vertex
- */
-ScalisPrimitive.prototype.getVThickness = function(i) {
-    return this.v[i].getThickness();
-};
-
 // Abstract : default AABB computation for ScalisPrimitive
 ScalisPrimitive.prototype.computeAABB = function() {
     this.aabb.makeEmpty();

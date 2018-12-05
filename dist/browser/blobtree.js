@@ -2152,67 +2152,6 @@
         return this.volType;
     };
 
-    /**
-     *  Set the position of a specific vertex in the primitive.
-     *  @param {number} i Index of the vertex concerned
-     *  @param {!THREE.Vector3} pos The new position to set
-     */
-    ScalisPrimitive.prototype.setVPos = function(i, pos) {
-        if(i>=this.v.length){
-            throw "ScalisVertex index invalid";
-        }
-
-        this.v[i].setPos(pos);
-        this.invalidAABB();
-    };
-
-    /**
-     *  Set the thickness of a specific vertex in the primitive.
-     *  @param {number} i Index of the vertex concerned
-     *  @param {number} thick The thickness to set
-     */
-    ScalisPrimitive.prototype.setVThickness = function(i, thick) {
-        if(i>=this.v.length){
-            throw "ScalisVertex index invalid";
-        }
-
-        this.v[i].setThickness(thick);
-        this.invalidAABB();
-    };
-
-    /**
-     *  Set both position and thickness for a specific vertex in the primitive.
-     *  @param {number} i Index of the vertex concerned
-     *  @param {!THREE.Vector3} pos The new position to set
-     *  @param {number} thick The thickness to set
-     */
-    ScalisPrimitive.prototype.setVAll = function(i, pos, thick) {
-        if(i>=this.v.length){
-            throw "ScalisVertex index invalid";
-        }
-
-        this.v[i].setAll(pos, thick);
-        this.invalidAABB();
-    };
-
-    /**
-     *  Get the thickness of a specific vertex in the primitive.
-     *  @param {number} i Index of the vertex concerned
-     *  @return {THREE.Vector3} The position of the i-th vertex
-     */
-    ScalisPrimitive.prototype.getVPos = function(i, pos) {
-        return this.v[i].getPos();
-    };
-
-    /**
-     *  Get the thickness of a specific vertex in the primitive.
-     *  @param {number} i Index of the vertex concerned
-     *  @return {number} The thickness of the i-th vertex
-     */
-    ScalisPrimitive.prototype.getVThickness = function(i) {
-        return this.v[i].getThickness();
-    };
-
     // Abstract : default AABB computation for ScalisPrimitive
     ScalisPrimitive.prototype.computeAABB = function() {
         this.aabb.makeEmpty();
@@ -2238,8 +2177,21 @@
         // Only used for quick fix Zanni Correction. Should be removed as soon as it's not useful anymore.
         this.id = verticesIds++;
 
+        // The primitive using this vertex
+        this.prim = null;
+
         this.aabb = new Three_cjs.Box3();
         this.valid_aabb = false;
+    };
+
+    /**
+     *  Set an internal pointer to the primitive using this vertex.
+     *  Should be called from primitive constructor.
+     */
+    ScalisVertex$1.prototype.setPrimitive = function(prim){
+        if(this.prim === null){
+            this.prim = prim;
+        }
     };
 
     ScalisVertex$1.prototype.toJSON = function() {
@@ -2263,6 +2215,7 @@
     ScalisVertex$1.prototype.setPos = function(pos) {
         this.valid_aabb = false;
         this.pos.copy(pos);
+        this.prim.invalidAABB();
     };
 
     /**
@@ -2272,6 +2225,7 @@
     ScalisVertex$1.prototype.setThickness = function(thickness) {
         this.valid_aabb = false;
         this.thickness = thickness;
+        this.prim.invalidAABB();
     };
 
     /**
@@ -2284,6 +2238,7 @@
         this.valid_aabb = false;
         this.pos = pos;
         this.thickness = thickness;
+        this.prim.invalidAABB();
     };
 
     /**
@@ -2648,6 +2603,7 @@
         ScalisPrimitive_1.call(this);
 
         this.v.push(vertex);
+        this.v[0].setPrimitive(this);
 
         this.volType     = ScalisPrimitive_1.DIST;
         this.density     = density;
@@ -3089,8 +3045,8 @@
         this.v.length   = 2;
         this.v[0]       = v0;
         this.v[1]       = v1;
-        v0.addPrimitive(this);
-        v1.addPrimitive(this);
+        v0.setPrimitive(this);
+        v1.setPrimitive(this);
 
         this.volType     = volType;
         this.density     = density;
@@ -4507,6 +4463,9 @@
         this.materials     = mats !== null? mats : [Material_1.defaultMaterial.clone(), Material_1.defaultMaterial.clone(), Material_1.defaultMaterial.clone()];
 
         this.v = v;
+        this.v[0].setPrimitive(this);
+        this.v[1].setPrimitive(this);
+        this.v[2].setPrimitive(this);
         this.min_thick = Math.min(this.v[0].getThickness(), this.v[1].getThickness(), this.v[2].getThickness());
         this.max_thick = Math.max(this.v[0].getThickness(), this.v[1].getThickness(), this.v[2].getThickness());
 

@@ -38,6 +38,9 @@ var ScalisTriangle = function(v, volType, density, mats) {
     this.materials     = mats !== null? mats : [Material.defaultMaterial.clone(), Material.defaultMaterial.clone(), Material.defaultMaterial.clone()];
 
     this.v = v;
+    this.v[0].setPrimitive(this);
+    this.v[1].setPrimitive(this);
+    this.v[2].setPrimitive(this);
     this.min_thick = Math.min(this.v[0].getThickness(), this.v[1].getThickness(), this.v[2].getThickness());
     this.max_thick = Math.max(this.v[0].getThickness(), this.v[1].getThickness(), this.v[2].getThickness());
 

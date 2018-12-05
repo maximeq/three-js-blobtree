@@ -19,8 +19,21 @@ var ScalisVertex = function(pos, thickness) {
     // Only used for quick fix Zanni Correction. Should be removed as soon as it's not useful anymore.
     this.id = verticesIds++;
 
+    // The primitive using this vertex
+    this.prim = null;
+
     this.aabb = new THREE.Box3();
     this.valid_aabb = false;
+};
+
+/**
+ *  Set an internal pointer to the primitive using this vertex.
+ *  Should be called from primitive constructor.
+ */
+ScalisVertex.prototype.setPrimitive = function(prim){
+    if(this.prim === null){
+        this.prim = prim;
+    }
 };
 
 ScalisVertex.prototype.toJSON = function() {
@@ -44,6 +57,7 @@ ScalisVertex.fromJSON = function(json) {
 ScalisVertex.prototype.setPos = function(pos) {
     this.valid_aabb = false;
     this.pos.copy(pos);
+    this.prim.invalidAABB();
 };
 
 /**
@@ -53,6 +67,7 @@ ScalisVertex.prototype.setPos = function(pos) {
 ScalisVertex.prototype.setThickness = function(thickness) {
     this.valid_aabb = false;
     this.thickness = thickness;
+    this.prim.invalidAABB();
 };
 
 /**
@@ -65,6 +80,7 @@ ScalisVertex.prototype.setAll = function(pos, thickness)
     this.valid_aabb = false;
     this.pos = pos;
     this.thickness = thickness;
+    this.prim.invalidAABB();
 };
 
 /**

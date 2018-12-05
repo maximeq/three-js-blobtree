@@ -97,7 +97,7 @@
 
             root.prepareForEval();
             var res = {v:0};
-            root.value(new THREE.Vector3(0,22,0), Blobtree.EvalTags.Value, res);
+            root.value(new THREE.Vector3(0,22,0),res);
             console.log(res.v);
 
             var smc = new Blobtree.SlidingMarchingCubes(
@@ -112,7 +112,7 @@
             // geometry is kept as a global variable to be used in the following script.
             var geometry = smc.compute();
             geometry.computeBoundingBox();
-            var material = new THREE.MeshPhongMaterial( {vertexColors:THREE.VertexColors} );
+            var material = new THREE.MeshBasicMaterial( {vertexColors:THREE.VertexColors} );
 
             var mesh = new THREE.Mesh( geometry, material );
 

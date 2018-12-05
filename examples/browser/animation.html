@@ -93,8 +93,7 @@
   var myInterval = window.setInterval(function (a,b) {
 
     let position = ricci_node.children[0].v[0].getPos();
-    ricci_node.children[0].setVPos(
-        0,
+    ricci_node.children[0].v[0].setPos(
         new THREE.Vector3(
             Math.sin((new Date().getTime()-t0)/1500)*40,
             position.y,

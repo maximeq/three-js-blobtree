@@ -28,6 +28,7 @@ var ScalisPoint = function(vertex, volType, density, mat) {
     ScalisPrimitive.call(this);
 
     this.v.push(vertex);
+    this.v[0].setPrimitive(this);
 
     this.volType     = ScalisPrimitive.DIST;
     this.density     = density;
