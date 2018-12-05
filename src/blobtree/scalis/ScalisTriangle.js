@@ -775,6 +775,8 @@ ScalisTriangle.prototype.consWeightEvalForSeg = function( p_1, w_1, unit_dir, le
 
         res.v = this.homotheticCompactPolynomial_segment_F_i6_cste( (clipped.l2-clipped.l1) * inv_local_min_weight,
                                                                                                   special_coeff );
+    }else{
+        res = 0;
     }
 
     return res;
@@ -818,6 +820,9 @@ ScalisTriangle.prototype.consWeightEvalGradForSeg = function( p_1, w_1, unit_dir
         p_min_to_point.multiplyScalar(- F0F1F2.y);
         p_min_to_point.addVectors(p_min_to_point,vect);
         res.g =  p_min_to_point.multiplyScalar(6.0*ScalisMath.KIS2*inv_local_min_weight);
+    }else{
+        res.v = 0;
+        res.g.set(0,0,0);
     }
 
     return res;

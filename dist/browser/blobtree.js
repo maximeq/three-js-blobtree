@@ -5200,6 +5200,8 @@
 
             res.v = this.homotheticCompactPolynomial_segment_F_i6_cste( (clipped.l2-clipped.l1) * inv_local_min_weight,
                                                                                                       special_coeff );
+        }else{
+            res = 0;
         }
 
         return res;
@@ -5243,6 +5245,9 @@
             p_min_to_point.multiplyScalar(- F0F1F2.y);
             p_min_to_point.addVectors(p_min_to_point,vect);
             res.g =  p_min_to_point.multiplyScalar(6.0*ScalisMath_1.KIS2*inv_local_min_weight);
+        }else{
+            res.v = 0;
+            res.g.set(0,0,0);
         }
 
         return res;

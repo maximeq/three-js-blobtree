@@ -33,7 +33,7 @@
 
     <body>
         <div id="info">
-            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Basic example
+            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Scalis example
         </div>
 
         <script src="../../node_modules/three-full/builds/Three.iife.js"></script>
@@ -113,6 +113,7 @@
             var geometry = smc.compute();
             geometry.computeBoundingBox();
             var material = new THREE.MeshBasicMaterial( {vertexColors:THREE.VertexColors} );
+            var material = new THREE.MeshPhongMaterial( {vertexColors:THREE.VertexColors} );
 
             var mesh = new THREE.Mesh( geometry, material );
 
