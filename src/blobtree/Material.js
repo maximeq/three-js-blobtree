@@ -27,6 +27,7 @@ Material.prototype.toJSON = function()
         metalness:this.metalness
     };
 };
+
 Material.fromJSON = function(json)
 {
     return new Material(new THREE.Color(json.color), json.roughness, json.metalness);

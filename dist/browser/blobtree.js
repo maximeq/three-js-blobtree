@@ -794,6 +794,7 @@
             metalness:this.metalness
         };
     };
+
     Material$1.fromJSON = function(json)
     {
         return new Material$1(new Three_cjs.Color(json.color), json.roughness, json.metalness);
