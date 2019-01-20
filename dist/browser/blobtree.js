@@ -24,7 +24,7 @@
         if(this.types[name]){
             throw "Error : cannot register type " + name + ", this name is already registered.";
         }
-        this[name] = cls;
+        this.types[name] = cls;
     };
 
     /**
@@ -37,7 +37,7 @@
         if(!cls){
             throw "Error : type found in JSON (" + json.type + " is not registered in the Blobtree library.";
         }
-        return cls.fromJSON(json.type);
+        return cls.fromJSON(json);
     };
 
     var Types_1 = Types;
@@ -839,7 +839,6 @@
     /** @return {number} */
     Material$1.prototype.getMetalness = function()  { return this.metalness;  };
 
-
     Material$1.prototype.equals = function(m)  {
         return this.color.equals(m.color) && this.metalness=== m.metalness && this.roughness === m.roughness;
     };
@@ -917,41 +916,6 @@
 
         return this;
     };
-
-    /**
-     *  Build a Material fron its json description.
-     *  @param {Object} json_data Data in Json, see Material.prototype.getJSON
-     *  @return {Material}
-     */
-    Material$1.fromJSON = function(json){
-        return new Material$1(
-            new Three_cjs.Color(parseInt(json_data.c, 16)),
-            json_data.r,
-            json_data.m
-        );
-    };
-
-    /**
-     *  Return material data in a JSON object.
-     *  @return {!{c:string,s:number,r:number}}
-     */
-    Material$1.prototype.getJSON = (function()
-    {
-        var hex_to_string = function(hex){
-            var res = hex.toString(16);
-            var zeros = 6-res.length;
-            for(var i=0;i<zeros;++i){res = '0'+res;}
-            return "0x"+res;
-        };
-
-        return function(){
-            return {
-                c:hex_to_string(this.color.getHex()),
-                r:this.roughness,
-                m:this.metalness
-            };
-        };
-    })();
 
     // Other static functions
     /**
@@ -3826,7 +3790,7 @@
                 // direction of fastest variation of weight
                 triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
                 triangle.main_dir.normalize();
-                if( (triangle.main_dir.dot(dir_2)) < 0.0) {
+                if( (triangle.main_dir.dot(dir_2)) < 0.0) {
                     triangle.main_dir.multiplyScalar( -1.0);
                 }
                 var coord_iso_zero_dir = - triangle.weight_min / delta_2;

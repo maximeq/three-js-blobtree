@@ -18,7 +18,7 @@ Types.register = function(name, cls){
     if(this.types[name]){
         throw "Error : cannot register type " + name + ", this name is already registered.";
     }
-    this[name] = cls;
+    this.types[name] = cls;
 };
 
 /**
@@ -31,7 +31,7 @@ Types.fromJSON = function(json){
     if(!cls){
         throw "Error : type found in JSON (" + json.type + " is not registered in the Blobtree library.";
     }
-    return cls.fromJSON(json.type);
+    return cls.fromJSON(json);
 };
 
 module.exports = Types;

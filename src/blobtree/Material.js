@@ -72,7 +72,6 @@ Material.prototype.getRoughness = function()   { return this.roughness;};
 /** @return {number} */
 Material.prototype.getMetalness = function()  { return this.metalness;  };
 
-
 Material.prototype.equals = function(m)  {
     return this.color.equals(m.color) && this.metalness=== m.metalness && this.roughness === m.roughness;
 };
@@ -150,41 +149,6 @@ Material.prototype.weightedMean = function(m_arr,v_arr, n)
 
     return this;
 };
-
-/**
- *  Build a Material fron its json description.
- *  @param {Object} json_data Data in Json, see Material.prototype.getJSON
- *  @return {Material}
- */
-Material.fromJSON = function(json){
-    return new Material(
-        new THREE.Color(parseInt(json_data.c, 16)),
-        json_data.r,
-        json_data.m
-    );
-};
-
-/**
- *  Return material data in a JSON object.
- *  @return {!{c:string,s:number,r:number}}
- */
-Material.prototype.getJSON = (function()
-{
-    var hex_to_string = function(hex){
-        var res = hex.toString(16);
-        var zeros = 6-res.length;
-        for(var i=0;i<zeros;++i){res = '0'+res;}
-        return "0x"+res;
-    };
-
-    return function(){
-        return {
-            c:hex_to_string(this.color.getHex()),
-            r:this.roughness,
-            m:this.metalness
-        };
-    };
-})();
 
 // Other static functions
 /**
