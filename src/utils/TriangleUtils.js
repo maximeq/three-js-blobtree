@@ -130,7 +130,7 @@ TriangleUtils.computeVectorsDirs = function(triangle){
             // direction of fastest variation of weight
             triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
             triangle.main_dir.normalize();
-            if( (triangle.main_dir.dot(dir_2)) < 0.0) {
+            if( (triangle.main_dir.dot(dir_2)) < 0.0) {
                 triangle.main_dir.multiplyScalar( -1.0);
             }
             var coord_iso_zero_dir = - triangle.weight_min / delta_2;
