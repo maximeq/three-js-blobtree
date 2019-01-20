@@ -13,13 +13,14 @@
     "three-full": "^11.3.2"
   },
   "devDependencies": {
-    "rollup": "^0.67.1",
     "eslint": "^4.11.0",
     "fs-extra": "^7.0.1",
     "jsdoc-api": "^4.0.3",
+    "rollup": "^0.67.1",
     "rollup-plugin-commonjs": "^9.2.0",
     "rollup-plugin-node-resolve": "^3.4.0",
-    "rollup-plugin-terser": "^3.0.0"
+    "rollup-plugin-terser": "^3.0.0",
+    "rollup-plugin-uglify": "^6.0.1",
   },
   "files": [
     "src/*",

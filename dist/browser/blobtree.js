@@ -6806,7 +6806,7 @@
                 this.metalness.push(data.m);
                 this.nVertices++;
             },
-            addFace(a,b,c){
+            addFace:function(a,b,c){
                 this.faces.push(a,b,c);
                 this.nFaces++;
             }
