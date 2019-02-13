@@ -36,7 +36,7 @@ var RicciNode = function (ricci_n, children) {
     // temp vars to speed up evaluation by avoiding allocations
     this.tmp_res = {v:0,g:null,m:null};
     this.tmp_g = new THREE.Vector3();
-    this.tmp_m = new Material(null,null,null);
+    this.tmp_m = new Material();
 };
 
 RicciNode.prototype = Object.create( Node.prototype );
@@ -81,7 +81,7 @@ RicciNode.prototype.prepareForEval = function()
             this.tmp_v_arr = new Float32Array(this.children.length*2);
             this.tmp_m_arr.length = this.children.length*2;
             for(var i=0; i<this.tmp_m_arr.length; ++i){
-                this.tmp_m_arr[i] = new Material(null, 0, 0);
+                this.tmp_m_arr[i] = new Material({roughness:0, metalness:0});
             }
         }
     }

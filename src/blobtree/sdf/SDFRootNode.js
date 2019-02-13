@@ -23,7 +23,7 @@ var SDFRootNode = function (f, material, child) {
 
     this.f = f;
 
-    this.material = material ? material.clone() : new Material(null, null, null);
+    this.material = material ? material.clone() : new Material();
 
     this.addChild(child);
 

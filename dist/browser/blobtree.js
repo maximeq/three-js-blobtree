@@ -774,16 +774,22 @@
      *  be used in implicit elements. It is the internal representation of the material,
      *  not the openGL material that will be used for display.
      *  @constructor
-     *  @param {THREE.Color} color Base diffuse color for the material
-     *  @param {number|null} roughness Roughness for the material
-     *  @param {number|null} metalness Metalness aspect of the material, 1 for metalness, 0 for dielectric
+     *  @param {!Object} params Parameters for the material. As a dictionnary to be easily extended later.
+     *  @param {THREE.Color} param.color Base diffuse color for the material
+     *  @param {number|null} param.roughness Roughness for the material
+     *  @param {number|null} param.metalness Metalness aspect of the material, 1 for metalness, 0 for dielectric
      *
      */
-    var Material$1 = function (color, roughness, metalness) {
+    var Material$1 = function (params) {
+        var params = params || {};
 
-        this.color = new Three_cjs.Color(color !== null && color !== undefined ? color : 0xaaaaaa);
-        this.roughness = roughness ? roughness : 0;
-        this.metalness = metalness ? metalness : 0;
+        if(arguments[1] !== undefined){
+            throw "Error : Blobtree Material now takes only 1 argument.";
+        }
+
+        this.color = new Three_cjs.Color(params.color !== undefined ? params.color : 0xaaaaaa);
+        this.roughness = params.roughness ? roughness : 0;
+        this.metalness = params.metalness ? metalness : 0;
     };
 
     Material$1.prototype.toJSON = function()
@@ -797,7 +803,7 @@
 
     Material$1.fromJSON = function(json)
     {
-        return new Material$1(new Three_cjs.Color(json.color), json.roughness, json.metalness);
+        return new Material$1({color:new Three_cjs.Color(json.color), roughness:json.roughness, metalness:json.metalness});
     };
 
     /**
@@ -806,7 +812,7 @@
      */
     Material$1.prototype.clone = function()
     {
-        return new Material$1(this.color, this.roughness, this.metalness);
+        return new Material$1({color:this.color, roughness:this.roughness, metalness:this.metalness});
     };
 
     /**
@@ -991,7 +997,7 @@
         // temp vars to speed up evaluation by avoiding allocations
         this.tmp_res = {v:0,g:null,m:null};
         this.tmp_g = new Three_cjs.Vector3();
-        this.tmp_m = new Material_1(null,null,null);
+        this.tmp_m = new Material_1();
     };
 
     RicciNode.prototype = Object.create( Node_1.prototype );
@@ -1036,7 +1042,7 @@
                 this.tmp_v_arr = new Float32Array(this.children.length*2);
                 this.tmp_m_arr.length = this.children.length*2;
                 for(var i=0; i<this.tmp_m_arr.length; ++i){
-                    this.tmp_m_arr[i] = new Material_1(null, 0, 0);
+                    this.tmp_m_arr[i] = new Material_1({roughness:0, metalness:0});
                 }
             }
         }
@@ -1534,12 +1540,12 @@
         this.clamped = 0.0;
 
         // Tmp vars to speed up computation (no reallocations)
-        this.tmp_res0 = {v:0, g:new Three_cjs.Vector3(0,0,0), m:new Material_1(null, null, null)};
-        this.tmp_res1 = {v:0, g:new Three_cjs.Vector3(0,0,0), m:new Material_1(null, null, null)};
+        this.tmp_res0 = {v:0, g:new Three_cjs.Vector3(0,0,0), m:new Material_1()};
+        this.tmp_res1 = {v:0, g:new Three_cjs.Vector3(0,0,0), m:new Material_1()};
         this.g0 = new Three_cjs.Vector3();
-        this.m0 = new Material_1(null,null,null);
+        this.m0 = new Material_1();
         this.g1 = new Three_cjs.Vector3();
-        this.m1 = new Material_1(null,null,null);
+        this.m1 = new Material_1();
 
         this.tmp_v_arr = new Float32Array(2);
         this.tmp_m_arr = [
@@ -1701,7 +1707,7 @@
         // temp vars to speed up evaluation by avoiding allocations
         this.tmp_res = {v:0,g:null,m:null};
         this.tmp_g = new Three_cjs.Vector3();
-        this.tmp_m = new Material_1(null,null,null);
+        this.tmp_m = new Material_1();
 
     };
 
@@ -3926,7 +3932,7 @@
      *  @return {!Material} Interpolated material
      */
     TriangleUtils.getMeanMat = function(triangle, u, v){
-        var res = new Material(null,null,null);
+        var res = new Material();
         var m_arr = triangle.materials === null?
             [triangle.v[0].getMaterial(),triangle.v[0].getMaterial(),triangle.v[0].getMaterial()] :
             [triangle.materials[0],triangle.materials[1],triangle.materials[2]];
@@ -4961,10 +4967,10 @@
     ScalisTriangle.prototype.evalConvol = (function() {
 
         var g = new Three_cjs.Vector3();
-        var m = new Material_1(null,null,null);
+        var m = new Material_1();
         var tmpRes = {v:0,g:null,m:null};
         var g2 = new Three_cjs.Vector3();
-        var m2 = new Material_1(null,null,null);
+        var m2 = new Material_1();
         var tmpRes2 = {v:0,g:null,m:null};
 
         return function (p, res) {
@@ -5535,7 +5541,7 @@
 
         this.f = f;
 
-        this.material = material ? material.clone() : new Material_1(null, null, null);
+        this.material = material ? material.clone() : new Material_1();
 
         this.addChild(child);
 
@@ -6770,7 +6776,7 @@
 
         this.vertex = new Three_cjs.Vector3(0,0,0);   // vertex associated to the cell if any
         this.vertex_n = new Three_cjs.Vector3(0,0,0); // vertex normal
-        this.vertex_m = new Material_1(null,null,null);                     // vertex material
+        this.vertex_m = new Material_1();           // vertex material
 
 
         // Vars and tmp vars for extension checks
@@ -7597,7 +7603,7 @@
     */
     SlidingMarchingCubes.prototype.computeVertexClosure = (function() {
         // Function static variable
-        var eval_res = {v:null, g:new Three_cjs.Vector3(0,0,0), m:new Material_1(null, null, null)};
+        var eval_res = {v:null, g:new Three_cjs.Vector3(0,0,0), m:new Material_1()};
         var conv_res = new Three_cjs.Vector3();
 
         return function()

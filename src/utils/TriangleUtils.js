@@ -266,7 +266,7 @@ TriangleUtils.getMeanThick = function(triangle, u, v){
  *  @return {!Material} Interpolated material
  */
 TriangleUtils.getMeanMat = function(triangle, u, v){
-    var res = new Material(null,null,null);
+    var res = new Material();
     var m_arr = triangle.materials === null?
         [triangle.v[0].getMaterial(),triangle.v[0].getMaterial(),triangle.v[0].getMaterial()] :
         [triangle.materials[0],triangle.materials[1],triangle.materials[2]];

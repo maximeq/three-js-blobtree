@@ -54,7 +54,7 @@
                 new Blobtree.SDFRootNode(
                     new Blobtree.Poly6DistanceFunctor(4.0),
                     // new ExDistanceFunctor(4.0),
-                    new Blobtree.Material('#ffcd41'),
+                    new Blobtree.Material({color:'#ffcd41'}),
                     new Blobtree.SDFSphere(
                         new THREE.Vector3(0,0,0),
                         5
@@ -73,7 +73,7 @@
                         ),
                         Blobtree.ScalisPrimitive.DIST,
                         1.0,
-                        new Blobtree.Material('#dd4f43')
+                        new Blobtree.Material({color:'#dd4f43'})
                     ),
                     new Blobtree.ScalisPoint(
                         new Blobtree.ScalisVertex(
@@ -82,7 +82,7 @@
                         ),
                         Blobtree.ScalisPrimitive.DIST,
                         1.0,
-                        new Blobtree.Material('#ffcd41')
+                        new Blobtree.Material({color:'#ffcd41'})
                     )
                 ]
             );

@@ -29,12 +29,12 @@ var DifferenceNode = function (node0, node1, alpha) {
     this.clamped = 0.0;
 
     // Tmp vars to speed up computation (no reallocations)
-    this.tmp_res0 = {v:0, g:new THREE.Vector3(0,0,0), m:new Material(null, null, null)};
-    this.tmp_res1 = {v:0, g:new THREE.Vector3(0,0,0), m:new Material(null, null, null)};
+    this.tmp_res0 = {v:0, g:new THREE.Vector3(0,0,0), m:new Material()};
+    this.tmp_res1 = {v:0, g:new THREE.Vector3(0,0,0), m:new Material()};
     this.g0 = new THREE.Vector3();
-    this.m0 = new Material(null,null,null);
+    this.m0 = new Material();
     this.g1 = new THREE.Vector3();
-    this.m1 = new Material(null,null,null);
+    this.m1 = new Material();
 
     this.tmp_v_arr = new Float32Array(2);
     this.tmp_m_arr = [

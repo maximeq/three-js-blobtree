@@ -210,7 +210,7 @@ var SlidingMarchingCubes = function(blobtree, params) {
 
     this.vertex = new THREE.Vector3(0,0,0);   // vertex associated to the cell if any
     this.vertex_n = new THREE.Vector3(0,0,0); // vertex normal
-    this.vertex_m = new Material(null,null,null);                     // vertex material
+    this.vertex_m = new Material();           // vertex material
 
 
     // Vars and tmp vars for extension checks
@@ -1037,7 +1037,7 @@ SlidingMarchingCubes.prototype.computeVertex = function(){
 */
 SlidingMarchingCubes.prototype.computeVertexClosure = (function() {
     // Function static variable
-    var eval_res = {v:null, g:new THREE.Vector3(0,0,0), m:new Material(null, null, null)};
+    var eval_res = {v:null, g:new THREE.Vector3(0,0,0), m:new Material()};
     var conv_res = new THREE.Vector3();
 
     return function()

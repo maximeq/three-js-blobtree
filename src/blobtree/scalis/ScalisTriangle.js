@@ -571,10 +571,10 @@ ScalisTriangle.prototype.GenericSegmentComputation = function(
 ScalisTriangle.prototype.evalConvol = (function() {
 
     var g = new THREE.Vector3();
-    var m = new Material(null,null,null);
+    var m = new Material();
     var tmpRes = {v:0,g:null,m:null};
     var g2 = new THREE.Vector3();
-    var m2 = new Material(null,null,null);
+    var m2 = new Material();
     var tmpRes2 = {v:0,g:null,m:null};
 
     return function (p, res) {

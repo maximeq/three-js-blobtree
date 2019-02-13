@@ -7,16 +7,22 @@ const THREE = require("three-full/builds/Three.cjs.js");
  *  be used in implicit elements. It is the internal representation of the material,
  *  not the openGL material that will be used for display.
  *  @constructor
- *  @param {THREE.Color} color Base diffuse color for the material
- *  @param {number|null} roughness Roughness for the material
- *  @param {number|null} metalness Metalness aspect of the material, 1 for metalness, 0 for dielectric
+ *  @param {!Object} params Parameters for the material. As a dictionnary to be easily extended later.
+ *  @param {THREE.Color} param.color Base diffuse color for the material
+ *  @param {number|null} param.roughness Roughness for the material
+ *  @param {number|null} param.metalness Metalness aspect of the material, 1 for metalness, 0 for dielectric
  *
  */
-var Material = function (color, roughness, metalness) {
+var Material = function (params) {
+    var params = params || {};
 
-    this.color = new THREE.Color(color !== null && color !== undefined ? color : 0xaaaaaa);
-    this.roughness = roughness ? roughness : 0;
-    this.metalness = metalness ? metalness : 0;
+    if(arguments[1] !== undefined){
+        throw "Error : Blobtree Material now takes only 1 argument.";
+    }
+
+    this.color = new THREE.Color(params.color !== undefined ? params.color : 0xaaaaaa);
+    this.roughness = params.roughness ? roughness : 0;
+    this.metalness = params.metalness ? metalness : 0;
 };
 
 Material.prototype.toJSON = function()
@@ -30,7 +36,7 @@ Material.prototype.toJSON = function()
 
 Material.fromJSON = function(json)
 {
-    return new Material(new THREE.Color(json.color), json.roughness, json.metalness);
+    return new Material({color:new THREE.Color(json.color), roughness:json.roughness, metalness:json.metalness});
 };
 
 /**
@@ -39,7 +45,7 @@ Material.fromJSON = function(json)
  */
 Material.prototype.clone = function()
 {
-    return new Material(this.color, this.roughness, this.metalness);
+    return new Material({color:this.color, roughness:this.roughness, metalness:this.metalness});
 };
 
 /**

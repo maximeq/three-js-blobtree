@@ -29,7 +29,7 @@ var MinNode = function (children) {
     // temp vars to speed up evaluation by avoiding allocations
     this.tmp_res = {v:0,g:null,m:null};
     this.tmp_g = new THREE.Vector3();
-    this.tmp_m = new Material(null,null,null);
+    this.tmp_m = new Material();
 
 };
 

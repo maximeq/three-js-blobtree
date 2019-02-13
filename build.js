@@ -2,8 +2,8 @@ var fs = require('fs-extra');
 var rollup = require('rollup');
 var commonjs = require('rollup-plugin-commonjs');    // require
 var resolve = require('rollup-plugin-node-resolve'); // require from node_modules
-// var terser = require('rollup-plugin-terser').terser; // minify
-var uglify = require('rollup-plugin-uglify').uglify; // minify
+var terser = require('rollup-plugin-terser').terser; // minify
+var prettier = require('rollup-plugin-prettier');
 
 // clean previous build
 fs.removeSync('/dist/blobtree.js')
@@ -53,11 +53,12 @@ build({
     plugins:  [
         commonjs(),
         resolve(),
-        // terser(),
-        uglify({
-            output:{
-              beautify:true // preserve some line breaks and indentation
-            }
+        terser(),
+        prettier({
+          parser: 'babel',
+          tabWidth: 0,
+          singleQuote: false,
+          bracketSpacing:false
         })
     ],
     external: [ 'three-full/builds/Three.cjs.js' ],
