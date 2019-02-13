@@ -4505,7 +4505,7 @@
             Material_1.fromJSON(json.materials[1]),
             Material_1.fromJSON(json.materials[2])
         ];
-        return new ScalisTriangle(v, json.volType, m);
+        return new ScalisTriangle(v, json.volType, 1.0, m);
     };
 
     // [Abstract] See Primitive.prepareForEval for more details
