@@ -788,8 +788,8 @@
         }
 
         this.color = new Three_cjs.Color(params.color !== undefined ? params.color : 0xaaaaaa);
-        this.roughness = params.roughness ? roughness : 0;
-        this.metalness = params.metalness ? metalness : 0;
+        this.roughness = params.roughness !== undefined ? params.roughness : 0;
+        this.metalness = params.metalness !== undefined ? params.metalness : 0;
     };
 
     Material$1.prototype.toJSON = function()
