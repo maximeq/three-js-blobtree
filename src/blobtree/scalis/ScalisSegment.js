@@ -99,7 +99,7 @@ ScalisSegment.fromJSON = function(json){
     var v0 = ScalisVertex.fromJSON(json.v[0]);
     var v1 = ScalisVertex.fromJSON(json.v[1]);
     var m = [
-        Material.fromJSON(json.materials[1]),
+        Material.fromJSON(json.materials[0]),
         Material.fromJSON(json.materials[1])
     ];
     return new ScalisSegment(v0, v1, json.volType, json.density, m);
