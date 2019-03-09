@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Blobtree - Basic</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
+            body {
+                color: #000;
+                font-family:Monospace;
+                font-size:13px;
+                text-align:center;
+                font-weight: bold;
+
+                background-color: #fff;
+                margin: 0px;
+                overflow: hidden;
+            }
+
+            #info {
+                color:#000;
+                position: absolute;
+                top: 0px; width: 100%;
+                padding: 5px;
+
+            }
+
+            a {
+                color: red;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="info">
+            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Scalis example
+        </div>
+
+        <script src="../../node_modules/three-full/builds/Three.iife.js"></script>
+        <script src="./lib/dat.gui.min.js"></script>
+        <script>
+            // Alias to use Three-full as Three
+            var THREE = THREE || Three;
+        </script>
+        <script src="../../dist/browser/blobtree.js"></script>
+        <script>
+
+            var root = new Blobtree.RootNode();
+
+            root.addChild(
+                new Blobtree.ScalisTriangle(
+                    [
+                        new Blobtree.ScalisVertex(
+                            new THREE.Vector3(12,11,0),
+                            4
+                        ),
+                        new Blobtree.ScalisVertex(
+                            new THREE.Vector3(12,-7,0),
+                            6
+                        ),
+                        new Blobtree.ScalisVertex(
+                            new THREE.Vector3(24,2,0),
+                            2
+                        )
+                    ],
+                    Blobtree.ScalisPrimitive.CONVOL,
+                    1.0,
+                    [new Blobtree.Material({color:'#dd4f43'}),new Blobtree.Material({color:'#ffcd41'}),new Blobtree.Material({color:'#19a15f'})]
+                )
+            );
+
+            root.prepareForEval();
+            var res = {v:0};
+            root.value(new THREE.Vector3(0,22,0),res);
+            console.log(res.v);
+
+            var smc = new Blobtree.SlidingMarchingCubes(
+                root,
+                {
+                    convergence:{step:4},
+                    detailRatio: 1.0    // Double resolution with respect to the primitives setup.
+                }
+            );
+
+            // Compute the geometry using the SlidingMarchingCubes
+            // geometry is kept as a global variable to be used in the following script.
+            var geometry = smc.compute();
+            geometry.computeBoundingBox();
+            var material = new THREE.MeshBasicMaterial( {vertexColors:THREE.VertexColors} );
+            var material = new THREE.MeshPhongMaterial( {vertexColors:THREE.VertexColors} );
+
+            var mesh = new THREE.Mesh( geometry, material );
+
+            // init GUI to change the Volume Type parameter
+            var gui = new dat.GUI();
+
+			var ScalisControls = function() {
+				this.volType = "Convolution";
+			};
+
+			var scalisControls = new ScalisControls();
+			var scalisFolder = gui.addFolder( 'SCALIS Control' );
+
+			scalisFolder.add(scalisControls, 'volType', ["Convolution", "Distance"]).onChange(function() {
+                for(var i=0; i<root.children.length; ++i){
+                    root.children[i].setVolType(
+                        scalisControls.volType === "Convolution" ? Blobtree.ScalisPrimitive.CONVOL : Blobtree.ScalisPrimitive.DIST
+                    );
+                }
+                mesh.geometry = smc.compute();
+                updateShadow();
+			});
+
+			scalisFolder.open();
+
+        </script>
+        <!-- Main script containing THREE.js setup for the page -->
+        <script src="./js/smc-main-script.js"></script>
+
+    </body>
+</html>
