@@ -6,8 +6,8 @@ var terser = require('rollup-plugin-terser').terser; // minify
 var prettier = require('rollup-plugin-prettier');
 
 // clean previous build
-fs.removeSync('/dist/blobtree.js')
-fs.removeSync('/dist/blobtree.min.js')
+fs.removeSync('/dist/browser/blobtree.js')
+fs.removeSync('/dist/browser/blobtree.min.js')
 
 async function build(inputOptions, outputOptions) {
     // create a bundle

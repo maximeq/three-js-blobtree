@@ -35,6 +35,14 @@ Element.prototype.toJSON = function(){
         type:this.getType()
     };
 };
+/**
+ *  @abstract
+ *  Clone the object.
+ */
+Element.prototype.clone = function(){
+    return Types.fromJSON(this.toJSON());
+};
+
 
 /**
  *  @return {Blobtree.Node} The parent node of this primitive.

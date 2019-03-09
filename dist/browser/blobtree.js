@@ -74,6 +74,14 @@
             type:this.getType()
         };
     };
+    /**
+     *  @abstract
+     *  Clone the object.
+     */
+    Element.prototype.clone = function(){
+        return Types_1.fromJSON(this.toJSON());
+    };
+
 
     /**
      *  @return {Blobtree.Node} The parent node of this primitive.
@@ -280,6 +288,13 @@
             res.children.push(this.children[i].toJSON());
         }
         return res;
+    };
+
+    /**
+     *  Clone current node and itss hierarchy
+     */
+    Node.prototype.clone = function(){
+        return Types_1.fromJSON(this.toJSON());
     };
 
     /**
@@ -6696,10 +6711,12 @@
 
     /**
      *  Class for a dual marching cube using 2 sliding arrays.
+     *  @param {RootNode} blobtree A blobtree to polygonize.
      *  @param {Object} params Parameters and option for this polygonizer.
      *  @param {number} params.detailRatio The blobtree defines some needed accuracies for polygonizing.
      *                                     However, if you want more details, you can set this to less than 1.
      *                                     Note that this is limited to 0.01, which will already increase your model complexity by a 10 000 factor.
+     *  @param {Function} params.progress Progress callback, taling a percentage as parameter.
      *  @param {Object} params.convergence Add newton convergence steps to position each vertex.
      *  @param {number} params.convergence.ratio A ratio of a the marching cube grid size defining the wanted geometrical accuracy. Must be lower than 1, default is 0.01
      *  @param {number} params.convergence.step The maximum number of newton steps, default is 10.
@@ -6723,6 +6740,10 @@
         }else{
             this.convergence = null;
         }
+
+        this.progress = params.progress ? params.progress : function(percent){
+            //console.log(percent);
+        };
 
         /** @type {Int32Array} */
         this.reso = new Int32Array(3);
@@ -7279,13 +7300,9 @@
      *                            to ensure overlap with a mesh resulting from a computation
      *                            in a neighbouring aabb (Especially usefull for parallelism).
      */
-    SlidingMarchingCubes.prototype.compute = function(o_aabb, extended, progress) {
+    SlidingMarchingCubes.prototype.compute = function(o_aabb, extended) {
 
         this.initGeometry();
-
-        this.progress = progress ? progress : function(percent){
-            //console.log(percent);
-        };
 
         var timer_begin = new Date();
 

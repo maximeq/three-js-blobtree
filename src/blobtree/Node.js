@@ -36,6 +36,13 @@ Node.prototype.toJSON = function(){
 };
 
 /**
+ *  Clone current node and itss hierarchy
+ */
+Node.prototype.clone = function(){
+    return Types.fromJSON(this.toJSON());
+};
+
+/**
  *  @abstract
  *  Prepare the node and all its children for evaluation.
  *  That means setup all necessary elements for an incoming call to eval.
