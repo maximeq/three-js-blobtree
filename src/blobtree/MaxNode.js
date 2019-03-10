@@ -8,14 +8,14 @@ const Material = require("./Material.js");
 
 /**
  *  This class implement a Min node.
- *  It will return the minimum value of the field of each primitive.
- *  Return 0 in regioin were no primitive is present.
+ *  It will return the maximum value of the field of each primitive.
+ *  Return 0 in region were no primitive is present.
  *  @constructor
  *  @extends Node
  *
  *  @param {Array.<Node>} children The children to add to this node. Just a convenient parameter, you can do it manually using addChild.
  */
-var MinNode = function (children) {
+var MaxNode = function (children) {
 
     Node.call(this);
 
@@ -33,18 +33,18 @@ var MinNode = function (children) {
 
 };
 
-MinNode.prototype = Object.create( Node.prototype );
-MinNode.prototype.constructor = MinNode;
+MaxNode.prototype = Object.create( Node.prototype );
+MaxNode.prototype.constructor = MaxNode;
 
-MinNode.type = "MinNode";
-Types.register(MinNode.type, MinNode);
+MaxNode.type = "MaxNode";
+Types.register(MaxNode.type, MaxNode);
 
-MinNode.prototype.getType = function(){
-    return MinNode.type;
+MaxNode.prototype.getType = function(){
+    return MaxNode.type;
 };
 
-MinNode.fromJSON = function(json){
-    var res = new MinNode();
+MaxNode.fromJSON = function(json){
+    var res = new MaxNode();
     for(var i=0; i<json.children.length; ++i){
         res.addChild(Types.fromJSON(json.children[i]));
     }
@@ -52,7 +52,7 @@ MinNode.fromJSON = function(json){
 };
 
 // [Abstract] see Node for a complete description
-MinNode.prototype.prepareForEval = function()
+MaxNode.prototype.prepareForEval = function()
 {
     if(!this.valid_aabb){
         this.aabb = new THREE.Box3();  // Create empty BBox
@@ -67,7 +67,7 @@ MinNode.prototype.prepareForEval = function()
 };
 
 // [Abstract] see Node for more details.
-MinNode.prototype.value = function(p,res)
+MaxNode.prototype.value = function(p,res)
 {
     // TODO : check that all bounding box of all children and subchildrens are valid
     //        This enable not to do it in prim and limit the number of assert call (and string built)
@@ -94,7 +94,7 @@ MinNode.prototype.value = function(p,res)
         for(var i=0; i<l; ++i)
         {
             this.children[i].value(p,tmp);
-            if(tmp.v < res.v){
+            if(tmp.v > res.v){
                 res.v = tmp.v;
                 if(res.g) {
                     res.g.copy(tmp.g);
@@ -107,7 +107,7 @@ MinNode.prototype.value = function(p,res)
                     throw "Not implemented";
                 }
             }
-            res.v = Math.min(res.v,tmp.v);
+            res.v = Math.max(res.v,tmp.v);
         }
     }
     else if (res.steo || res.stepOrtho) {
@@ -116,13 +116,4 @@ MinNode.prototype.value = function(p,res)
 
 };
 
-// Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
-MinNode.prototype.trim = function(aabb, trimmed, parents)
-{
-    // Trim remaining nodes
-    for (var i=0; i<this.children.length; i++) {
-        this.children[i].trim(aabb,trimmed,parents);
-    }
-};
-
-module.exports = MinNode;
+module.exports = MaxNode;

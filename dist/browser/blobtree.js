@@ -1099,7 +1099,6 @@
                 if( this.children[i].aabb.containsPoint(p) ) {
 
                     this.children[i].value(p,tmp);
-                    this.countEval++;
                     if(tmp.v > 0) // actually just !=0 should be enough but for stability reason...
                     {
                         var v_pow = Math.pow(tmp.v,this.ricci_n-1.0);
@@ -1125,7 +1124,6 @@
                     }
                     // outside of the potential for this box, but within the box
                     else {
-                        this.countEval0++;
                         if (res.step) {
                             res.step=Math.min(res.step,
                                               this.children[i].distanceTo(p));
@@ -1787,7 +1785,6 @@
             for(var i=0; i<l; ++i)
             {
                 this.children[i].value(p,tmp);
-                this.countEval++;
                 if(tmp.v < res.v){
                     res.v = tmp.v;
                     if(res.g) {
@@ -7720,6 +7717,260 @@
 
     var SlidingMarchingCubes_1 = SlidingMarchingCubes;
 
+    /**
+     *  This class implement a Min node.
+     *  It will return the maximum value of the field of each primitive.
+     *  Return 0 in region were no primitive is present.
+     *  @constructor
+     *  @extends Node
+     *
+     *  @param {Array.<Node>} children The children to add to this node. Just a convenient parameter, you can do it manually using addChild.
+     */
+    var MaxNode = function (children) {
+
+        Node_1.call(this);
+
+        if(children){
+            var self = this;
+            children.forEach(function(c){
+                self.addChild(c);
+            });
+        }
+
+        // temp vars to speed up evaluation by avoiding allocations
+        this.tmp_res = {v:0,g:null,m:null};
+        this.tmp_g = new Three_cjs.Vector3();
+        this.tmp_m = new Material_1();
+
+    };
+
+    MaxNode.prototype = Object.create( Node_1.prototype );
+    MaxNode.prototype.constructor = MaxNode;
+
+    MaxNode.type = "MaxNode";
+    Types_1.register(MaxNode.type, MaxNode);
+
+    MaxNode.prototype.getType = function(){
+        return MaxNode.type;
+    };
+
+    MaxNode.fromJSON = function(json){
+        var res = new MaxNode();
+        for(var i=0; i<json.children.length; ++i){
+            res.addChild(Types_1.fromJSON(json.children[i]));
+        }
+        return res;
+    };
+
+    // [Abstract] see Node for a complete description
+    MaxNode.prototype.prepareForEval = function()
+    {
+        if(!this.valid_aabb){
+            this.aabb = new Three_cjs.Box3();  // Create empty BBox
+            for(var i=0; i<this.children.length; ++i){
+                var c = this.children[i];
+                c.prepareForEval();
+                this.aabb.union(c.getAABB());     // new aabb is computed according to remaining children aabb
+            }
+
+            this.valid_aabb = true;
+        }
+    };
+
+    // [Abstract] see Node for more details.
+    MaxNode.prototype.value = function(p,res)
+    {
+        // TODO : check that all bounding box of all children and subchildrens are valid
+        //        This enable not to do it in prim and limit the number of assert call (and string built)
+
+        var l = this.children.length;
+        var tmp = this.tmp_res;
+        tmp.g = res.g ? this.tmp_g : null;
+        tmp.m = res.m ? this.tmp_m : null;
+
+        // Init res
+        res.v = 0;
+        if(res.m)  {
+            res.m.copy(Material_1.defaultMaterial);
+        }if(res.g) {
+            res.g.set(0,0,0);
+        }else if (res.step) {
+            // that, is the max distance
+            // we want a value that loose any 'min'
+            res.step = 1000000000;
+        }
+
+        if(this.aabb.containsPoint(p) && l !== 0){
+            res.v = Number.MAX_VALUE;
+            for(var i=0; i<l; ++i)
+            {
+                this.children[i].value(p,tmp);
+                if(tmp.v > res.v){
+                    res.v = tmp.v;
+                    if(res.g) {
+                        res.g.copy(tmp.g);
+                    }
+                    if(res.m){
+                        res.m.copy(tmp.m);
+                    }
+                    // within primitive potential
+                    if (res.step || res.stepOrtho){
+                        throw "Not implemented";
+                    }
+                }
+                res.v = Math.max(res.v,tmp.v);
+            }
+        }
+        else if (res.steo || res.stepOrtho) {
+            throw "Not implemented";
+        }
+
+    };
+
+    var MaxNode_1 = MaxNode;
+
+    // Does not work yet, so just suppose that Blobtree is defined externally
+    // const Blobtree = require('three-js-blobtree");
+
+
+
+
+
+
+
+
+
+
+    /**
+     *  This class will polygonize nodes independantly when they blend with a MaxNode or a RicciNode
+     *  (for RicciNode, only if the coefficient of at least "ricciThreshold", threshold being a parameter).
+     *  It will create a mesh made of several shells but intersections will be better looking than with some
+     *  global polygonizers like MarchingCubes.
+     *
+     *  @param {Object} params Parameters and option for this polygonizer.
+     *      @param {Object} params.subPolygonizer Parameters for the subpolygonizer to use.
+     *                                            Must contain all parameters for the given subPolygonizer (like detailRatio, etc...)
+     *          @param {Function} params.subPolygonizer.class The class of the subpolygonizer (default to SlidingMarchingCubes)
+     *  @param {Function} params.progress Progress callback, taking a percentage as parameter.
+     *  @param {Number} params.ricciThreshold The RicciNode coefficient above which it will be considered like a MaxNode.
+     */
+    var SplitMaxPolygonizer = function(blobtree, params) {
+
+        var params = params || {};
+
+        this.blobtree = blobtree;
+
+        this.subPolygonizer = params.subPolygonizer  ? params.subPolygonizer : {
+            class:SlidingMarchingCubes_1,
+            detailRatio:1.0
+        };
+
+        this.ricciThreshold = params.ricciThreshold || 64;
+
+        this.progress = params.progress ? params.progress : function(percent){
+            //console.log(percent);
+        };
+
+        // Now we need to parse the blobtree and split it according to the different ways of
+        // generating each groups.
+        // Since we do not wantto alterate the original blobtree, for now we will use cloning.
+        // (to be changed if it is too slow)
+        this.subtrees = []; // Blobtrees created for primitives which must be generated with SMC
+            this.progCoeff = []; // progress coefficient, mainly depends on the total number of primitives in the node.
+            this.totalCoeff = 0;
+
+        this.setBlobtree(blobtree);
+    };
+
+    SplitMaxPolygonizer.prototype.constructor = SplitMaxPolygonizer;
+
+    SplitMaxPolygonizer.prototype.setBlobtree = function(blobtree){
+
+        this.blobtree = blobtree;
+        this.blobtree.prepareForEval();
+
+        this.subtrees = [];
+            this.progCoeff = [];
+            this.totalCoeff = 0;
+
+        var self = this;
+        var addToSubtrees = function(n){
+            var subtree = null;
+            if(n instanceof RootNode_1){
+                subtree = n.clone();
+            }else{
+                subtree = new RootNode_1();
+                subtree.addChild(n.clone());
+            }
+            self.subtrees.push(subtree);
+            self.subtrees[self.subtrees.length-1].prepareForEval();
+            self.progCoeff.push(
+                subtree.count(ScalisPoint_1) + subtree.count(ScalisSegment_1) + subtree.count(ScalisTriangle_1)
+            );
+            self.totalCoeff += self.progCoeff[self.progCoeff.length-1];
+        };
+
+        var recurse = function(n){
+            if(n instanceof RicciNode_1){
+                if(n.getRicciN() < self.ricciThreshold){
+                    // This node must be copied and generated using SMC
+                    if(n.children.length !== 0){
+                        addToSubtrees(n);
+                    }
+                }else{
+                    for(var i=0; i<n.children.length; ++i){
+                        recurse(n.children[i]);
+                    }
+                }
+            }else if(n instanceof MaxNode_1){
+                for(var i=0; i<n.children.length; ++i){
+                    recurse(n.children[i]);
+                }
+            }else if(n instanceof ScalisPoint_1){
+                addToSubtrees(n);
+            }else if(n instanceof ScalisSegment_1){
+                addToSubtrees(n);
+            }else if(n instanceof ScalisTriangle_1){
+                addToSubtrees(n);
+            }else{
+                addToSubtrees(n);
+            }
+        };
+
+        recurse(this.blobtree);
+    };
+
+    SplitMaxPolygonizer.prototype.compute = function() {
+
+        if(!this.blobtree.isValidAABB()){
+            this.setBlobtree(this.blobtree);
+        }
+
+        var self = this;
+        this.progress(0);
+        var prog = 0;
+        var geometries = [];
+        for(var i=0; i<this.subtrees.length; ++i){
+            this.subPolygonizer.progress = function(percent){
+                self.progress(100*(prog + (percent/100)*self.progCoeff[i])/self.totalCoeff);
+            };
+            var polygonizer = new this.subPolygonizer.class(
+                this.subtrees[i],
+                this.subPolygonizer
+            );
+            geometries.push(polygonizer.compute());
+            prog += this.progCoeff[i];
+        }
+
+        var res = Three_cjs.BufferGeometryUtils.mergeBufferGeometries(geometries);
+
+        this.progress(100);
+
+        return res;
+    };
+
+    var SplitMaxPolygonizer_1 = SplitMaxPolygonizer;
+
     if(Three_cjs.REVISION !== 96){
         console.warn("Blobtree library is currently made for THREE revision 96. Using any other revision may lead to unexpected behavior.");
     }
@@ -7736,6 +7987,7 @@
     Blobtree$1.RicciNode          = RicciNode_1;
     Blobtree$1.DifferenceNode     = DifferenceNode_1;
     Blobtree$1.MinNode            = MinNode_1;
+    Blobtree$1.MaxNode            = MinNode_1;
 
     Blobtree$1.Primitive          = Primitive_1;
 
@@ -7767,6 +8019,7 @@
     Blobtree$1.AreaCapsule        = AreaCapsule_1;
 
     Blobtree$1.SlidingMarchingCubes = SlidingMarchingCubes_1;
+    Blobtree$1.SplitMaxPolygonizer = SplitMaxPolygonizer_1;
 
     /*
     try {

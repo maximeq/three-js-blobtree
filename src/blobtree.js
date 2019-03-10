@@ -16,6 +16,7 @@ Blobtree.RootNode           = require("./blobtree/RootNode.js");
 Blobtree.RicciNode          = require("./blobtree/RicciNode.js");
 Blobtree.DifferenceNode     = require("./blobtree/DifferenceNode.js");
 Blobtree.MinNode            = require("./blobtree/MinNode.js");
+Blobtree.MaxNode            = require("./blobtree/MinNode.js");
 
 Blobtree.Primitive          = require("./blobtree/Primitive.js");
 
@@ -47,6 +48,7 @@ Blobtree.AreaSphere         = require("./blobtree/areas/AreaSphere.js");
 Blobtree.AreaCapsule        = require("./blobtree/areas/AreaCapsule.js");
 
 Blobtree.SlidingMarchingCubes = require("./polygonizers/SlidingMarchingCubes.js");
+Blobtree.SplitMaxPolygonizer = require("./polygonizers/SplitMaxPolygonizer.js");
 
 /*
 try {

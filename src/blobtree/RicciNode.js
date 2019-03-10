@@ -123,7 +123,6 @@ RicciNode.prototype.value = function(p,res)
             if( this.children[i].aabb.containsPoint(p) ) {
 
                 this.children[i].value(p,tmp);
-                this.countEval++;
                 if(tmp.v > 0) // actually just !=0 should be enough but for stability reason...
                 {
                     var v_pow = Math.pow(tmp.v,this.ricci_n-1.0);
@@ -149,7 +148,6 @@ RicciNode.prototype.value = function(p,res)
                 }
                 // outside of the potential for this box, but within the box
                 else {
-                    this.countEval0++;
                     if (res.step) {
                         res.step=Math.min(res.step,
                                           this.children[i].distanceTo(p));
