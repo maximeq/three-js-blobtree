@@ -99,6 +99,9 @@ Box2Acc.prototype.getMinCorner = function(){
  *  Class for a dual marching cube using 2 sliding arrays.
  *  @param {RootNode} blobtree A blobtree to polygonize.
  *  @param {Object} params Parameters and option for this polygonizer.
+ *  @param {String} params.zResolution Defines how the stepping in z occurs. Options are :
+ *                                     "adaptive" (default) steps are computed according to local minimum accuracy.
+ *                                     "uniform" steps are uniform along z, according to the global minimum accuracy.
  *  @param {number} params.detailRatio The blobtree defines some needed accuracies for polygonizing.
  *                                     However, if you want more details, you can set this to less than 1.
  *                                     Note that this is limited to 0.01, which will already increase your model complexity by a 10 000 factor.
@@ -116,6 +119,8 @@ var SlidingMarchingCubes = function(blobtree, params) {
     var params = params || {};
 
     this.blobtree = blobtree;
+
+    this.uniformZ = params.zResolution === "uniform" ? true : false;
 
     this.detail_ratio = params.detailRatio ? Math.max(0.01, params.detailRatio) : 1.0;
 
@@ -737,9 +742,7 @@ SlidingMarchingCubes.prototype.compute = function(o_aabb, extended) {
 
     // if no areas, blobtree is empty so stop and send an empty mesh.
     if(this.areas.length === 0){
-
         this.progress(100);
-
         return new THREE.BufferGeometry();
     }
 
@@ -761,8 +764,14 @@ SlidingMarchingCubes.prototype.compute = function(o_aabb, extended) {
     var areas = this.blobtree.getAreas();
     while(this.steps.z[index-1]<corner.z+dims.z){
         var min_step = dims.z;
-        for(var i=0; i<areas.length; ++i){
-            min_step = Math.min(min_step, areas[i].bv.getAxisProjectionMinStep('z',this.steps.z[index-1])*this.detail_ratio);
+        // If uniformZ is true, we do not adapt z stepping to local slice accuracy.
+        if(this.uniformZ){
+            min_step = this.min_acc;
+        }else{
+            // find minimum accuracy needed in this slice.
+            for(var i=0; i<areas.length; ++i){
+                min_step = Math.min(min_step, areas[i].bv.getAxisProjectionMinStep('z',this.steps.z[index-1])*this.detail_ratio);
+            }
         }
         this.steps.z[index] = this.steps.z[index-1]+min_step;
         index++;

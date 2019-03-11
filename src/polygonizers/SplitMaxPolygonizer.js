@@ -22,6 +22,7 @@ const SlidingMarchingCubes = require("./SlidingMarchingCubes");
  *  @param {Object} params Parameters and option for this polygonizer.
  *      @param {Object} params.subPolygonizer Parameters for the subpolygonizer to use.
  *                                            Must contain all parameters for the given subPolygonizer (like detailRatio, etc...)
+ *      @param {Boolean} params.uniformRes If true, uniform resolution will be used on all primitives, according to the minimum accuracy in the blobtree.
  *          @param {Function} params.subPolygonizer.class The class of the subpolygonizer (default to SlidingMarchingCubes)
  *  @param {Function} params.progress Progress callback, taking a percentage as parameter.
  *  @param {Number} params.ricciThreshold The RicciNode coefficient above which it will be considered like a MaxNode.
@@ -31,6 +32,10 @@ var SplitMaxPolygonizer = function(blobtree, params) {
     var params = params || {};
 
     this.blobtree = blobtree;
+
+    this.uniformRes = params.uniformRes || false;
+    this.min_acc = null;
+    this.minAccs = [];
 
     this.subPolygonizer = params.subPolygonizer  ? params.subPolygonizer : {
         class:SlidingMarchingCubes,
@@ -61,6 +66,18 @@ SplitMaxPolygonizer.prototype.setBlobtree = function(blobtree){
     this.blobtree = blobtree;
     this.blobtree.prepareForEval();
 
+    var getBlobtreeMinAcc = function(btree){
+        var areas = btree.getAreas();
+        var min_acc = areas.length !== 0 ? areas[0].bv.getMinAcc() : null;
+        for(var i=0; i<areas.length; ++i){
+            if(areas[i].bv.getMinAcc()<min_acc){
+                min_acc = areas[i].bv.getMinAcc();
+            }
+        }
+        return min_acc;
+    };
+    this.min_acc = getBlobtreeMinAcc(this.blobtree);
+
     this.subtrees = [];
         this.progCoeff = [];
         this.totalCoeff = 0;
@@ -75,7 +92,8 @@ SplitMaxPolygonizer.prototype.setBlobtree = function(blobtree){
             subtree.addChild(n.clone());
         }
         self.subtrees.push(subtree);
-        self.subtrees[self.subtrees.length-1].prepareForEval();
+        subtree.prepareForEval();
+        self.minAccs.push(getBlobtreeMinAcc(subtree));
         self.progCoeff.push(
             subtree.count(ScalisPoint) + subtree.count(ScalisSegment) + subtree.count(ScalisTriangle)
         );
@@ -123,6 +141,12 @@ SplitMaxPolygonizer.prototype.compute = function() {
     var prog = 0;
     var geometries = [];
     for(var i=0; i<this.subtrees.length; ++i){
+
+        var prev_detailRatio = this.subPolygonizer.detailRatio || 1.0;
+        if(this.uniformRes && this.min_acc){
+            this.subPolygonizer.detailRatio = prev_detailRatio*this.min_acc/this.minAccs[i];
+        }
+
         this.subPolygonizer.progress = function(percent){
             self.progress(100*(prog + (percent/100)*self.progCoeff[i])/self.totalCoeff)
         };
@@ -131,6 +155,9 @@ SplitMaxPolygonizer.prototype.compute = function() {
             this.subPolygonizer
         );
         geometries.push(polygonizer.compute());
+
+        this.subPolygonizer.detailRatio = prev_detailRatio;
+
         prog += this.progCoeff[i];
     }
 

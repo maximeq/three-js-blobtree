@@ -6711,6 +6711,9 @@
      *  Class for a dual marching cube using 2 sliding arrays.
      *  @param {RootNode} blobtree A blobtree to polygonize.
      *  @param {Object} params Parameters and option for this polygonizer.
+     *  @param {String} params.zResolution Defines how the stepping in z occurs. Options are :
+     *                                     "adaptive" (default) steps are computed according to local minimum accuracy.
+     *                                     "uniform" steps are uniform along z, according to the global minimum accuracy.
      *  @param {number} params.detailRatio The blobtree defines some needed accuracies for polygonizing.
      *                                     However, if you want more details, you can set this to less than 1.
      *                                     Note that this is limited to 0.01, which will already increase your model complexity by a 10 000 factor.
@@ -6728,6 +6731,8 @@
         var params = params || {};
 
         this.blobtree = blobtree;
+
+        this.uniformZ = params.zResolution === "uniform" ? true : false;
 
         this.detail_ratio = params.detailRatio ? Math.max(0.01, params.detailRatio) : 1.0;
 
@@ -7349,9 +7354,7 @@
 
         // if no areas, blobtree is empty so stop and send an empty mesh.
         if(this.areas.length === 0){
-
             this.progress(100);
-
             return new Three_cjs.BufferGeometry();
         }
 
@@ -7373,8 +7376,14 @@
         var areas = this.blobtree.getAreas();
         while(this.steps.z[index-1]<corner.z+dims.z){
             var min_step = dims.z;
-            for(var i=0; i<areas.length; ++i){
-                min_step = Math.min(min_step, areas[i].bv.getAxisProjectionMinStep('z',this.steps.z[index-1])*this.detail_ratio);
+            // If uniformZ is true, we do not adapt z stepping to local slice accuracy.
+            if(this.uniformZ){
+                min_step = this.min_acc;
+            }else{
+                // find minimum accuracy needed in this slice.
+                for(var i=0; i<areas.length; ++i){
+                    min_step = Math.min(min_step, areas[i].bv.getAxisProjectionMinStep('z',this.steps.z[index-1])*this.detail_ratio);
+                }
             }
             this.steps.z[index] = this.steps.z[index-1]+min_step;
             index++;
@@ -7844,6 +7853,7 @@
      *  @param {Object} params Parameters and option for this polygonizer.
      *      @param {Object} params.subPolygonizer Parameters for the subpolygonizer to use.
      *                                            Must contain all parameters for the given subPolygonizer (like detailRatio, etc...)
+     *      @param {Boolean} params.uniformRes If true, uniform resolution will be used on all primitives, according to the minimum accuracy in the blobtree.
      *          @param {Function} params.subPolygonizer.class The class of the subpolygonizer (default to SlidingMarchingCubes)
      *  @param {Function} params.progress Progress callback, taking a percentage as parameter.
      *  @param {Number} params.ricciThreshold The RicciNode coefficient above which it will be considered like a MaxNode.
@@ -7853,6 +7863,10 @@
         var params = params || {};
 
         this.blobtree = blobtree;
+
+        this.uniformRes = params.uniformRes || false;
+        this.min_acc = null;
+        this.minAccs = [];
 
         this.subPolygonizer = params.subPolygonizer  ? params.subPolygonizer : {
             class:SlidingMarchingCubes_1,
@@ -7883,6 +7897,18 @@
         this.blobtree = blobtree;
         this.blobtree.prepareForEval();
 
+        var getBlobtreeMinAcc = function(btree){
+            var areas = btree.getAreas();
+            var min_acc = areas.length !== 0 ? areas[0].bv.getMinAcc() : null;
+            for(var i=0; i<areas.length; ++i){
+                if(areas[i].bv.getMinAcc()<min_acc){
+                    min_acc = areas[i].bv.getMinAcc();
+                }
+            }
+            return min_acc;
+        };
+        this.min_acc = getBlobtreeMinAcc(this.blobtree);
+
         this.subtrees = [];
             this.progCoeff = [];
             this.totalCoeff = 0;
@@ -7897,7 +7923,8 @@
                 subtree.addChild(n.clone());
             }
             self.subtrees.push(subtree);
-            self.subtrees[self.subtrees.length-1].prepareForEval();
+            subtree.prepareForEval();
+            self.minAccs.push(getBlobtreeMinAcc(subtree));
             self.progCoeff.push(
                 subtree.count(ScalisPoint_1) + subtree.count(ScalisSegment_1) + subtree.count(ScalisTriangle_1)
             );
@@ -7945,6 +7972,12 @@
         var prog = 0;
         var geometries = [];
         for(var i=0; i<this.subtrees.length; ++i){
+
+            var prev_detailRatio = this.subPolygonizer.detailRatio || 1.0;
+            if(this.uniformRes && this.min_acc){
+                this.subPolygonizer.detailRatio = prev_detailRatio*this.min_acc/this.minAccs[i];
+            }
+
             this.subPolygonizer.progress = function(percent){
                 self.progress(100*(prog + (percent/100)*self.progCoeff[i])/self.totalCoeff);
             };
@@ -7953,6 +7986,9 @@
                 this.subPolygonizer
             );
             geometries.push(polygonizer.compute());
+
+            this.subPolygonizer.detailRatio = prev_detailRatio;
+
             prog += this.progCoeff[i];
         }
 
