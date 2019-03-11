@@ -4,40 +4,7 @@ const THREE = require("three-full/builds/Three.cjs.js");
 const Material = require("../blobtree/Material.js");
 const Convergence = require("../utils/Convergence.js");
 
-'use strict';
-
-var Tables = {};
-
-// edgevmap[i][0] = first vertex index of the ith edge of a cube
-// edgevmap[i][0] = second vertex index of the ith edge of a cube
-Tables.EdgeVMap = [
-    [0,4],
-    [1,5],
-    [2,6],
-    [3,7],
-
-    [0,2],
-    [1,3],
-    [4,6],
-    [5,7],
-
-    [0,1],
-    [2,3],
-    [4,5],
-    [6,7]
-];
-
-Tables.VertexTopo = [
-    [0,0,0], //0 (MC = 0)
-    [0,0,1], //1 (MC = 4)
-    [0,1,0], //2 (MC = 3)
-    [0,1,1], //3 (MC = 7)
-    [1,0,0], //4 (MC = 1)
-    [1,0,1], //5 (MC = 5)
-    [1,1,0], //6 (MC = 2)
-    [1,1,1]  //7 (MC = 6)
-];
-
+const Tables = require("./MCTables.js");
 
 /**
  *  Axis Aligned Bounding Box in 2D carrying accuracy data
@@ -1030,14 +997,7 @@ SlidingMarchingCubes.prototype.triangulate = function(x,y,z){
  *  Compute the vertex in the current cube.
  *  Use this.x, this.y, this.z
  */
-SlidingMarchingCubes.prototype.computeVertex = function(){
-    this.computeVertexClosure();
-};
-
-/**
- *  Compute a vertex data in a crossed cell.
-*/
-SlidingMarchingCubes.prototype.computeVertexClosure = (function() {
+SlidingMarchingCubes.prototype.computeVertex = (function() {
     // Function static variable
     var eval_res = {v:null, g:new THREE.Vector3(0,0,0), m:new Material()};
     var conv_res = new THREE.Vector3();

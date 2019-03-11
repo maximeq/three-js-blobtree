@@ -49,6 +49,7 @@ Blobtree.AreaCapsule        = require("./blobtree/areas/AreaCapsule.js");
 
 Blobtree.SlidingMarchingCubes = require("./polygonizers/SlidingMarchingCubes.js");
 Blobtree.SplitMaxPolygonizer = require("./polygonizers/SplitMaxPolygonizer.js");
+Blobtree.SplitSMC = require("./polygonizers/SplitSMC.js");
 
 /*
 try {
