@@ -19,7 +19,10 @@ const Accuracies = require("../accuracies/Accuracies.js");
  *
  *  @param {!ScalisVertex} vertex The vertex with point parameters.
  *  @param {string} volType The volume type wanted for this primitive.
- *                                Note : can only be ScalisPrimitive.DIST for now, since "convolution" does not make sens for a point.
+ *                          Note : "convolution" does not make sens for a point, so technically,
+ *                                 ScalisPrimitive.DIST or ScalisPrimitive.CONVOL will give the same results.
+ *                                 However, since this may be a simple way of sorting for later blending,
+ *                                 you can still choose between the 2 options.
  *  @param {number} density Implicit field density.
  *                          Gives afiner control of the created implicit field.
  *  @param {!Material} mat Material for the point
@@ -30,7 +33,7 @@ var ScalisPoint = function(vertex, volType, density, mat) {
     this.v.push(vertex);
     this.v[0].setPrimitive(this);
 
-    this.volType     = ScalisPrimitive.DIST;
+    this.volType     = volType;
     this.density     = density;
     this.materials.push(mat);
 
