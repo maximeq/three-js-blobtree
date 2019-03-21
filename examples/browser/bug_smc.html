@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Blobtree - Basic</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
+            body {
+                color: #000;
+                font-family:Monospace;
+                font-size:13px;
+                text-align:center;
+                font-weight: bold;
+
+                background-color: #fff;
+                margin: 0px;
+                overflow: hidden;
+            }
+
+            #info {
+                color:#000;
+                position: absolute;
+                top: 0px; width: 100%;
+                padding: 5px;
+
+            }
+
+            a {
+                color: red;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="info">
+            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Bug to be fixed when having a Ricci Hierarhcy.
+        </div>
+
+        <script src="../../node_modules/three-full/builds/Three.iife.js"></script>
+        <script>
+            // Alias to use Three-full as Three
+            var THREE = THREE || Three;
+        </script>
+        <script src="../../dist/browser/blobtree.js"></script>
+        <script>
+
+            var root = Blobtree.Types.fromJSON(
+                JSON.parse(
+                    '{"type":"RootNode","children":[{"type":"RicciNode","children":[{"type":"RicciNode","children":[{"type":"ScalisPoint","materials":[{"color":"#aaaaaa","roughness":0,"metalness":0}],"v":[{"position":{"x":0,"y":0,"z":12.480809995742845},"thickness":10.057421634160548}],"volType":"dist","density":1}],"ricci":512}],"ricci":1},{"type":"RicciNode","children":[{"type":"RicciNode","children":[{"type":"ScalisPoint","materials":[{"color":"#aaaaaa","roughness":0,"metalness":0}],"v":[{"position":{"x":0,"y":0,"z":3.4811060326016445},"thickness":11.091638442331806}],"volType":"dist","density":1}],"ricci":512}],"ricci":1},{"type":"ScalisPoint","materials":[{"color":"#4a8af4","roughness":0,"metalness":0}],"v":[{"position":{"x":0,"y":0,"z":0},"thickness":5}],"volType":"dist","density":1}],"ricci":64,"iso":1}'
+                )
+            );
+
+            var smc = new Blobtree.SlidingMarchingCubes(
+                root,
+                {
+                    // convergence:{step:4},
+                    detailRatio:1
+                }
+            );
+
+            // Compute the geometry using the SlidingMarchingCubes
+            // geometry is kept as a global variable to be used in the following script.
+            var geometry = smc.compute();
+            geometry.computeBoundingBox();
+            var material = new THREE.MeshPhongMaterial( {vertexColors:THREE.VertexColors} );
+
+            var mesh = new THREE.Mesh( geometry, material );
+        </script>
+        <!-- Main script containing THREE.js setup for the page -->
+        <script src="./js/smc-main-script.js"></script>
+
+    </body>
+</html>
