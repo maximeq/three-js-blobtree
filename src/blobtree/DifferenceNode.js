@@ -115,7 +115,7 @@ DifferenceNode.prototype.value = function(p,res)
         res.g.set(0,0,0);
         tmp1.g.set(0,0,0);
         tmp0.g.set(0,0,0);
-    }else if (res.step) {
+    }else if (res.step !== undefined) {
         // that, is the max distance
         // we want a value that loose any 'min'
         res.step = 1000000000;
@@ -156,7 +156,7 @@ DifferenceNode.prototype.value = function(p,res)
             }
         }
     }
-    else if (res.step) {
+    else if (res.step !== undefined) {
         // return distance to aabb such that next time we'll hit from within the aabbb
         res.step = this.aabb.distanceToPoint(p) + 0.3;
     }

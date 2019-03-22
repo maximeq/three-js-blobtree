@@ -100,7 +100,7 @@ SDFRootNode.prototype.value = function(p,res)
         res.m.copy(Material.defaultMaterial);
     }if(res.g) {
         // res.g.set(0,0,0); // Useless here
-    }else if (res.step) {
+    }else if (res.step !== undefined) {
         // that, is the max distance
         // we want a value that won't miss any 'min'
         res.step = 1000000000;
@@ -117,7 +117,7 @@ SDFRootNode.prototype.value = function(p,res)
             res.m.copy(this.material);
         }
     }
-    else if (res.step) {
+    else if (res.step !== undefined) {
         // return distance to aabb such that next time we'll hit from within the aabbb
         res.step = this.aabb.distanceToPoint(p) + 0.3;
     }

@@ -83,7 +83,7 @@ MaxNode.prototype.value = function(p,res)
         res.m.copy(Material.defaultMaterial);
     }if(res.g) {
         res.g.set(0,0,0);
-    }else if (res.step) {
+    }else if (res.step !== undefined) {
         // that, is the max distance
         // we want a value that loose any 'min'
         res.step = 1000000000;

@@ -103,7 +103,7 @@ RicciNode.prototype.value = function(p,res)
         res.m.copy(Material.defaultMaterial);
     }if(res.g) {
         res.g.set(0,0,0);
-    }else if (res.step) {
+    }else if (res.step !== undefined) {
         // that, is the max distance
         // we want a value that loose any 'min'
         res.step = 1000000000;
@@ -148,7 +148,7 @@ RicciNode.prototype.value = function(p,res)
                 }
                 // outside of the potential for this box, but within the box
                 else {
-                    if (res.step) {
+                    if (res.step !== undefined) {
                         res.step=Math.min(res.step,
                                           this.children[i].distanceTo(p));
                     }
@@ -174,12 +174,19 @@ RicciNode.prototype.value = function(p,res)
         }
         // else the default values should be OK.
     }
-    else if (res.step) {
+    else if (res.step !== undefined) {
+        if(this.children.length === 0){
+            throw "Evaluating step of an empty node is not possible. Please ensure never to ask for that, or fix all this.";
+        }
+        var add = this.children[0].heuristicStepWithin();
+        for(var i=1; i<this.children.length; ++i){
+            add = Math.min(add,this.children[i].heuristicStepWithin());
+        }
         // return distance to aabb such that next time we'll hit from within the aabbb
-        res.step = this.aabb.distanceToPoint(p) + 0.3;
+        res.step = this.aabb.distanceToPoint(p) + add;
     }
 
-    if(res.step){
+    if(res.stepOrtho !== undefined){
         res.stepOrtho = res.step;
     }
 };

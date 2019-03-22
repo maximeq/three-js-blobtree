@@ -4,6 +4,8 @@ const THREE = require("three-full/builds/Three.cjs.js");
 const Types = require("./Types.js");
 const RicciNode = require("./RicciNode.js");
 
+const Convergence = require("../utils/Convergence");
+
 /**
  *  The root of any implicit blobtree. Does behave computationaly like a RicciNode with n = 64.
  *  The RootNode is the only node to be its own parent.
@@ -140,10 +142,8 @@ RootNode.prototype.isEmpty = function(){
  *
  *  @return {boolean} True if an intersection has been found.
  */
-RootNode.prototype.intersectRayBlob = function(iso_value)
+RootNode.prototype.intersectRayBlob = function()
 {
-// curpos and marching vector are only instanciated once,
-// we are using closure method
     var curPos = new THREE.Vector3();
     var marchingVector = new THREE.Vector3();
     var currentStep = new THREE.Vector3();
@@ -151,7 +151,8 @@ RootNode.prototype.intersectRayBlob = function(iso_value)
     var g = new THREE.Vector3();
     var tmp_res = {
         v:0,
-        g : g
+        g : g,
+        step:0
     };
     var conv_res = {
         p : new THREE.Vector3(),
@@ -176,7 +177,7 @@ RootNode.prototype.intersectRayBlob = function(iso_value)
             tmp_res);
 
         // march
-        while ((tmp_res.v < iso_value) && (dist < maxDistance))
+        while ((tmp_res.v < this.iso_value) && (dist < maxDistance))
         {
             curPos.add(
                 currentStep.copy(marchingVector).multiplyScalar(tmp_res.step)
@@ -190,7 +191,7 @@ RootNode.prototype.intersectRayBlob = function(iso_value)
                 curPos,
                 tmp_res);
         }
-        if (tmp_res.v >= iso_value)
+        if (tmp_res.v >= this.iso_value)
         {
             // Convergence.dichotomy1D(
                                         // this,
@@ -210,8 +211,8 @@ RootNode.prototype.intersectRayBlob = function(iso_value)
                                         marchingVector.multiplyScalar(-1.0),
                                         0.0,
                                         previousStepLength,
-                                        previousStepLength*(iso_value-tmp_res.v)/(previousValue-tmp_res.v), // linear approx of the first position
-                                        iso_value,
+                                        previousStepLength*(this.iso_value-tmp_res.v)/(previousValue-tmp_res.v), // linear approx of the first position
+                                        this.iso_value,
                                         previousStepLength/512.0, //deltaPix*(dist-previousStepLength), // should be the size of a pixel at the previous curPos BROKEN?
                                         10,
                                         conv_res

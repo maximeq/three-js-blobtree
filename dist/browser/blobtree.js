@@ -470,7 +470,7 @@
 
     var Node_1 = Node;
 
-    var Convergence$1 = {};
+    var Convergence = {};
 
     // Limitations: 3D only, but can easily be rewritten for nD
     // The algorithm stops when :
@@ -481,13 +481,13 @@
     // @todo write documentation to talk about failure cases.
     //
     // Variable used in function. This avoid reallocation.
-        Convergence$1.last_mov_pt = new Three_cjs.Vector3();
-        Convergence$1.grad = new Three_cjs.Vector3();
-        Convergence$1.eval_res_g = new Three_cjs.Vector3(0,0,0);
-        Convergence$1.eval_res = {v:0, g:null};
-        Convergence$1.vec = new Three_cjs.Vector3();
+        Convergence.last_mov_pt = new Three_cjs.Vector3();
+        Convergence.grad = new Three_cjs.Vector3();
+        Convergence.eval_res_g = new Three_cjs.Vector3(0,0,0);
+        Convergence.eval_res = {v:0, g:null};
+        Convergence.vec = new Three_cjs.Vector3();
 
-    Convergence$1.safeNewton3D = function(    pot,              // Scalar Field to eval
+    Convergence.safeNewton3D = function(    pot,              // Scalar Field to eval
                                             starting_point,   // 3D point where we start, must comply to THREE.Vector3 API
                                             value,            // iso value we are looking for
                                             epsilon,          // Geometrical limit to stop
@@ -624,7 +624,7 @@
     *   @todo write documentation to talk about failure cases.
     *   @todo Should not normalise search_dir. Change that here and in all part of code where this is used.
     */
-    Convergence$1.safeNewton1D = function(
+    Convergence.safeNewton1D = function(
                                             pot,
                                             origin,
                                             search_dir_unit,
@@ -706,7 +706,7 @@
         }
     };
 
-    Convergence$1.dichotomy1D = function(
+    Convergence.dichotomy1D = function(
                                             pot,
                                             origin,
                                             search_dir_unit,
@@ -782,7 +782,7 @@
 
     };
 
-    var Convergence_1 = Convergence$1;
+    var Convergence_1 = Convergence;
 
     /**
      *  Material object for blobtree. It is an internal material, that should especially
@@ -1079,7 +1079,7 @@
             res.m.copy(Material_1.defaultMaterial);
         }if(res.g) {
             res.g.set(0,0,0);
-        }else if (res.step) {
+        }else if (res.step !== undefined) {
             // that, is the max distance
             // we want a value that loose any 'min'
             res.step = 1000000000;
@@ -1124,7 +1124,7 @@
                     }
                     // outside of the potential for this box, but within the box
                     else {
-                        if (res.step) {
+                        if (res.step !== undefined) {
                             res.step=Math.min(res.step,
                                               this.children[i].distanceTo(p));
                         }
@@ -1150,12 +1150,19 @@
             }
             // else the default values should be OK.
         }
-        else if (res.step) {
+        else if (res.step !== undefined) {
+            if(this.children.length === 0){
+                throw "Evaluating step of an empty node is not possible. Please ensure never to ask for that, or fix all this.";
+            }
+            var add = this.children[0].heuristicStepWithin();
+            for(var i=1; i<this.children.length; ++i){
+                add = Math.min(add,this.children[i].heuristicStepWithin());
+            }
             // return distance to aabb such that next time we'll hit from within the aabbb
-            res.step = this.aabb.distanceToPoint(p) + 0.3;
+            res.step = this.aabb.distanceToPoint(p) + add;
         }
 
-        if(res.step){
+        if(res.stepOrtho !== undefined){
             res.stepOrtho = res.step;
         }
     };
@@ -1309,10 +1316,8 @@
      *
      *  @return {boolean} True if an intersection has been found.
      */
-    RootNode.prototype.intersectRayBlob = function(iso_value)
+    RootNode.prototype.intersectRayBlob = function()
     {
-    // curpos and marching vector are only instanciated once,
-    // we are using closure method
         var curPos = new Three_cjs.Vector3();
         var marchingVector = new Three_cjs.Vector3();
         var currentStep = new Three_cjs.Vector3();
@@ -1320,7 +1325,8 @@
         var g = new Three_cjs.Vector3();
         var tmp_res = {
             v:0,
-            g : g
+            g : g,
+            step:0
         };
         var conv_res = {
             p : new Three_cjs.Vector3(),
@@ -1344,7 +1350,7 @@
                 tmp_res);
 
             // march
-            while ((tmp_res.v < iso_value) && (dist < maxDistance))
+            while ((tmp_res.v < this.iso_value) && (dist < maxDistance))
             {
                 curPos.add(
                     currentStep.copy(marchingVector).multiplyScalar(tmp_res.step)
@@ -1358,7 +1364,7 @@
                     curPos,
                     tmp_res);
             }
-            if (tmp_res.v >= iso_value)
+            if (tmp_res.v >= this.iso_value)
             {
                 // Convergence.dichotomy1D(
                                             // this,
@@ -1372,14 +1378,14 @@
                                             // );
                 // res.distance = dist + conv_res.absc;
 
-                Convergence.safeNewton1D(
+                Convergence_1.safeNewton1D(
                                             this,
                                             curPos,
                                             marchingVector.multiplyScalar(-1.0),
                                             0.0,
                                             previousStepLength,
-                                            previousStepLength*(iso_value-tmp_res.v)/(previousValue-tmp_res.v), // linear approx of the first position
-                                            iso_value,
+                                            previousStepLength*(this.iso_value-tmp_res.v)/(previousValue-tmp_res.v), // linear approx of the first position
+                                            this.iso_value,
                                             previousStepLength/512.0, //deltaPix*(dist-previousStepLength), // should be the size of a pixel at the previous curPos BROKEN?
                                             10,
                                             conv_res
@@ -1639,7 +1645,7 @@
             res.g.set(0,0,0);
             tmp1.g.set(0,0,0);
             tmp0.g.set(0,0,0);
-        }else if (res.step) {
+        }else if (res.step !== undefined) {
             // that, is the max distance
             // we want a value that loose any 'min'
             res.step = 1000000000;
@@ -1680,7 +1686,7 @@
                 }
             }
         }
-        else if (res.step) {
+        else if (res.step !== undefined) {
             // return distance to aabb such that next time we'll hit from within the aabbb
             res.step = this.aabb.distanceToPoint(p) + 0.3;
         }
@@ -1774,7 +1780,7 @@
             res.m.copy(Material_1.defaultMaterial);
         }if(res.g) {
             res.g.set(0,0,0);
-        }else if (res.step) {
+        }else if (res.step !== undefined) {
             // that, is the max distance
             // we want a value that loose any 'min'
             res.step = 1000000000;
@@ -5631,7 +5637,7 @@
         res.v = 0;
         if(res.m)  {
             res.m.copy(Material_1.defaultMaterial);
-        }if(res.g) ;else if (res.step) {
+        }if(res.g) ;else if (res.step !== undefined) {
             // that, is the max distance
             // we want a value that won't miss any 'min'
             res.step = 1000000000;
@@ -5648,7 +5654,7 @@
                 res.m.copy(this.material);
             }
         }
-        else if (res.step) {
+        else if (res.step !== undefined) {
             // return distance to aabb such that next time we'll hit from within the aabbb
             res.step = this.aabb.distanceToPoint(p) + 0.3;
         }
@@ -7800,7 +7806,7 @@
             res.m.copy(Material_1.defaultMaterial);
         }if(res.g) {
             res.g.set(0,0,0);
-        }else if (res.step) {
+        }else if (res.step !== undefined) {
             // that, is the max distance
             // we want a value that loose any 'min'
             res.step = 1000000000;
