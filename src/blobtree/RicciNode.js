@@ -173,17 +173,15 @@ RicciNode.prototype.value = function(p,res)
             }
         }
         // else the default values should be OK.
-    }
-    else if (res.step !== undefined) {
-        if(this.children.length === 0){
-            throw "Evaluating step of an empty node is not possible. Please ensure never to ask for that, or fix all this.";
+    }else if (res.step !== undefined) {
+        if(this.children.length !== 0){
+            var add = this.children[0].heuristicStepWithin();
+            for(var i=1; i<this.children.length; ++i){
+                add = Math.min(add,this.children[i].heuristicStepWithin());
+            }
+            // return distance to aabb such that next time we'll hit from within the aabbb
+            res.step = this.aabb.distanceToPoint(p) + add;
         }
-        var add = this.children[0].heuristicStepWithin();
-        for(var i=1; i<this.children.length; ++i){
-            add = Math.min(add,this.children[i].heuristicStepWithin());
-        }
-        // return distance to aabb such that next time we'll hit from within the aabbb
-        res.step = this.aabb.distanceToPoint(p) + add;
     }
 
     if(res.stepOrtho !== undefined){
