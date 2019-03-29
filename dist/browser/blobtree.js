@@ -1388,7 +1388,7 @@
                                             10,
                                             conv_res
                                             );
-                res.distance = dist-conv_res.absc;
+                res.distance = dist-conv_res.p_absc;
 
                 res.point = conv_res.p.clone();
 
@@ -8122,7 +8122,7 @@
 
     var SplitSMC_1 = SplitSMC;
 
-    if(Three_cjs.REVISION !== 96){
+    if(Three_cjs.REVISION !== "96"){
         console.warn("Blobtree library is currently made for THREE revision 96. Using any other revision may lead to unexpected behavior.");
     }
 

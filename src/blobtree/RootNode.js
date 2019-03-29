@@ -217,7 +217,7 @@ RootNode.prototype.intersectRayBlob = function()
                                         10,
                                         conv_res
                                         );
-            res.distance = dist-conv_res.absc;
+            res.distance = dist-conv_res.p_absc;
 
             res.point = conv_res.p.clone();
 
