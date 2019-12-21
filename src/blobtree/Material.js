@@ -59,7 +59,7 @@ Material.prototype.copy = function(mat)
     this.metalness = mat.metalness;
 };
 /**
- *  Set Material parameters at once
+ *  Set Material parameters at once. DEPRECATED. Use setParams
  *  @param {THREE.Color} c Color
  *  @param {number} r roughness
  *  @param {number} m Metalness
@@ -69,6 +69,15 @@ Material.prototype.set = function(c, r, m)
     this.color.copy(c);
     this.roughness = r;
     this.metalness = m;
+};
+
+/**
+ *  Set Material parameters (all or just some)
+ */
+Material.prototype.setParams = function (params) {
+    this.color.copy(params.color ? params.color : this.color);
+    this.roughness = params.roughness !== undefined ? params.roughness : this.roughness;
+    this.metalness = params.metalness !== undefined ? params.metalness : this.metalness;
 };
 
 /** @return {THREE.Color} */
