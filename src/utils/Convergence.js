@@ -5,7 +5,7 @@
 
 'use strict';
 
-const THREE = require("three-full/builds/Three.cjs.js");
+const THREE = require("three-full");
 
 var Convergence = {};
 

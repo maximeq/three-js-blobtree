@@ -1,6 +1,6 @@
 "use strict";
 
-const THREE = require("three-full/builds/Three.cjs.js");
+const THREE = require("three-full");
 const Types = require("../Types.js");
 const SDFNode = require("./SDFNode.js");
 const Material = require("../Material.js");

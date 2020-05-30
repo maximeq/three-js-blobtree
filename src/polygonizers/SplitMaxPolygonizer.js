@@ -1,5 +1,5 @@
 
-const THREE = require("three-full/builds/Three.cjs.js");
+const THREE = require("three-full");
 
 // Does not work yet, so just suppose that Blobtree is defined externally
 // const Blobtree = require('three-js-blobtree");

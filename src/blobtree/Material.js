@@ -1,6 +1,6 @@
 'use strict';
 
-const THREE = require("three-full/builds/Three.cjs.js");
+const THREE = require("three-full");
 
 /**
  *  Material object for blobtree. It is an internal material, that should especially

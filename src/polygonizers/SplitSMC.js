@@ -1,5 +1,5 @@
 
-const THREE = require("three-full/builds/Three.cjs.js");
+const THREE = require("three-full");
 
 const Material = require("../blobtree/Material.js");
 const Tables = require("./MCTables.js");
