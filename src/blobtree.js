@@ -60,4 +60,6 @@ try {
 catch(e) {}
 */
 
+THREE.Blobtree = Blobtree;
+
 module.exports = Blobtree;

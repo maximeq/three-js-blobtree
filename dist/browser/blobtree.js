@@ -8191,6 +8191,8 @@
     catch(e) {}
     */
 
+    threeFull.Blobtree = Blobtree$1;
+
     var blobtree = Blobtree$1;
 
     return blobtree;
