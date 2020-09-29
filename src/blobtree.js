@@ -1,7 +1,7 @@
 
 const THREE = require("three-full");
-if(THREE.REVISION !== "96"){
-    console.warn("Blobtree library is currently made for THREE revision 96. Using any other revision may lead to unexpected behavior.")
+if(THREE.REVISION !== "101"){
+    console.warn("Blobtree library is currently made for THREE revision 101. Using any other revision may lead to unexpected behavior.")
 }
 
 var Blobtree = {};

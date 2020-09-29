@@ -1,6 +1,6 @@
 {
   "name": "three-js-blobtree",
-  "version": "1.0.0",
+  "version": "101.0.0",
   "description": "Library to handle implicit surfaces in THREE.JS using a blobtree.",
   "main": "src/blobtree.js",
   "scripts": {

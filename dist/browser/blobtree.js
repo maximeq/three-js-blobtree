@@ -8131,8 +8131,8 @@
 
     var SplitSMC_1 = SplitSMC;
 
-    if(threeFull.REVISION !== "96"){
-        console.warn("Blobtree library is currently made for THREE revision 96. Using any other revision may lead to unexpected behavior.");
+    if(threeFull.REVISION !== "101"){
+        console.warn("Blobtree library is currently made for THREE revision 101. Using any other revision may lead to unexpected behavior.");
     }
 
     var Blobtree$1 = {};
