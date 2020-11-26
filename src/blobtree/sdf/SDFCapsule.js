@@ -1,6 +1,6 @@
 "use strict";
 
-const THREE = require("three-full");
+const THREE = require("@dualbox/three");
 const Types = require("../Types.js");
 const SDFPrimitive = require("./SDFPrimitive.js");
 const AreaCapsule = require("../areas/AreaCapsule.js");
@@ -193,7 +193,7 @@ SDFCapsule.prototype.value = (function(){
         // var proj_y = 0.0; // by construction
 
         // Easy way to compute the distance now that we ave the projection on the segment
-        var a = THREE._Math.clamp(proj_x/this.length,0,1.0);
+        var a = THREE.Math.clamp(proj_x/this.length,0,1.0);
         proj.copy(this.p1).lerp(this.p2,a); // compute the actual 3D projection
         var l = v.subVectors(p,proj).length();
         res.v = l - (a*this.r2+(1.0-a)*this.r1);

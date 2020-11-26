@@ -1,6 +1,6 @@
 'use strict';
 
-const THREE = require("three-full");
+const THREE = require("@dualbox/three");
 const Types = require("../Types.js");
 const DistanceFunctor = require("./DistanceFunctor.js");
 

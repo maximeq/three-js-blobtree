@@ -1,6 +1,6 @@
 "use strict";
 
-const THREE = require("three-full");
+const THREE = require("@dualbox/three");
 const ScalisMath = require("../../scalis/ScalisMath.js");
 const Area = require("./Area.js");
 const Accuracies = require("../accuracies/Accuracies.js");

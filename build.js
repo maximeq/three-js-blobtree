@@ -33,14 +33,12 @@ async function build(inputOptions, outputOptions) {
 build({
     input: 'src/blobtree.js',
     plugins:  [ commonjs(), resolve() ],
-    external: [ 'three-full' ],
+    external: p => /@dualbox\/three/.test(p),
 }, {
     format: 'umd',
     name: 'Blobtree',
     file: './dist/browser/blobtree.js',
-    globals: {
-        'three-full' : 'THREE'
-    }
+    globals: s => /@dualbox\/three/.test(s) ? 'THREE' : s,
 });
 
 
@@ -61,13 +59,11 @@ build({
           bracketSpacing:false
         })
     ],
-    external: [ 'three-full' ],
+    external: p => /@dualbox\/three/.test(p),
 }, {
     format: 'umd',
     name: 'Blobtree',
     file: './dist/browser/blobtree.min.js',
-    globals: {
-        'three-full' : 'THREE'
-    }
+    globals: s => /@dualbox\/three/.test(s) ? 'THREE' : s,
 });
 
