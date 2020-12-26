@@ -5,7 +5,7 @@
 
 'use strict';
 
-const THREE = require("three-full");
+const THREE = require("three");
 
 var Convergence = {};
 

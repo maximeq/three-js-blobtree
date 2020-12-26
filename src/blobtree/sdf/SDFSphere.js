@@ -1,6 +1,6 @@
 "use strict";
 
-const THREE = require("three-full");
+const THREE = require("three");
 const Types = require("../Types.js");
 const SDFPrimitive = require("./SDFPrimitive.js");
 const AreaSphere = require("../areas/AreaSphere.js");

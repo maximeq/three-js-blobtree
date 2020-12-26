@@ -33,13 +33,13 @@ async function build(inputOptions, outputOptions) {
 build({
     input: 'src/blobtree.js',
     plugins:  [ commonjs(), resolve() ],
-    external: [ 'three-full' ],
+    external: [ 'three' ],
 }, {
     format: 'umd',
     name: 'Blobtree',
     file: './dist/browser/blobtree.js',
     globals: {
-        'three-full' : 'THREE'
+        'three' : 'THREE'
     }
 });
 
@@ -61,13 +61,13 @@ build({
           bracketSpacing:false
         })
     ],
-    external: [ 'three-full' ],
+    external: [ 'three' ],
 }, {
     format: 'umd',
     name: 'Blobtree',
     file: './dist/browser/blobtree.min.js',
     globals: {
-        'three-full' : 'THREE'
+        'three' : 'THREE'
     }
 });
 

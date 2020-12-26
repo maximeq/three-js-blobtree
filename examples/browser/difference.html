@@ -36,12 +36,10 @@
             <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Diffence Node example (Warning : Alpha exponent is buggy)
         </div>
 
-        <script src="../../node_modules/three-full/builds/Three.iife.js"></script>
+        <script src="../../node_modules/three/build/three.js"></script>
+  <script src="../../node_modules/three/examples/js/controls/OrbitControls.js"></script>
         <script src="./lib/dat.gui.min.js"></script>
-        <script>
-            // Alias to use Three-full as Three
-            var THREE = THREE || Three;
-        </script>
+
         <script src="../../dist/browser/blobtree.js"></script>
         <script>
 
@@ -79,27 +77,27 @@
             // geometry is kept as a global variable to be used in the following script.
             var geometry = smc.compute();
             geometry.computeBoundingBox();
-            var material = new THREE.MeshPhongMaterial( {vertexColors:THREE.VertexColors} );
+            var material = new THREE.MeshPhongMaterial( {vertexColors:true} );
 
             var mesh = new THREE.Mesh( geometry, material );
 
             // init GUI to change the Ricci parameter
             var gui = new dat.GUI();
 
-			var DiffControls = function() {
-				this.alpha =  diff_node.getAlpha();
-			};
+            var DiffControls = function() {
+                this.alpha =  diff_node.getAlpha();
+            };
 
-			var diffControls = new DiffControls();
-			var diffFolder = gui.addFolder( 'Difference Control' );
+            var diffControls = new DiffControls();
+            var diffFolder = gui.addFolder( 'Difference Control' );
 
             // Limit range of Ricci N to 8 since the SMC accuracy is not sufficient to capture the detail when
-			diffFolder.add(diffControls, 'alpha' ).min(1).max(16).step(1).onChange(function() {
-				diff_node.setAlpha(diffControls.alpha);
+            diffFolder.add(diffControls, 'alpha' ).min(1).max(16).step(1).onChange(function() {
+                diff_node.setAlpha(diffControls.alpha);
                 mesh.geometry = smc.compute();
-			});
+            });
 
-			diffFolder.open();
+            diffFolder.open();
 
         </script>
         <!-- Main script containing THREE.js setup for the page -->

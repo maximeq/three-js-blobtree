@@ -38,11 +38,9 @@
             <span>Red mesh vertices are positioned using linear interpolation, Green mesh vertices use Newton Convergence.</span>
         </div>
 
-        <script src="../../node_modules/three-full/builds/Three.iife.js"></script>
-        <script>
-            // Alias to use Three-full as Three
-            var THREE = THREE || Three;
-        </script>
+        <script src="../../node_modules/three/build/three.js"></script>
+  <script src="../../node_modules/three/examples/js/controls/OrbitControls.js"></script>
+
         <script src="../../dist/browser/blobtree.js"></script>
         <script src="./js/ExDistanceFunctor.js"></script>
         <script>
@@ -103,7 +101,7 @@
             // geometry is kept as a global variable to be used in the following script.
             var geometry = smc.compute();
             geometry.computeBoundingBox();
-            var material = new THREE.MeshPhongMaterial( {vertexColors:THREE.VertexColors, wireframe:true} );
+            var material = new THREE.MeshPhongMaterial( {vertexColors:true, wireframe:true} );
 
             var smc2 = new Blobtree.SlidingMarchingCubes(
                 root,
