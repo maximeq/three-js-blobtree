@@ -6866,11 +6866,11 @@
      */
     SlidingMarchingCubes.prototype.buildResultingBufferGeometry = function(){
         var res = new three.BufferGeometry();
-        res.addAttribute( 'position',  new three.BufferAttribute( new Float32Array( this.geometry.position ),  3 ) );
-        res.addAttribute( 'normal',    new three.BufferAttribute( new Float32Array( this.geometry.normal ),    3 ) );
-        res.addAttribute( 'color',     new three.BufferAttribute( new Float32Array( this.geometry.color ),     3 ) );
-        res.addAttribute( 'roughness', new three.BufferAttribute( new Float32Array( this.geometry.roughness ), 1 ) );
-        res.addAttribute( 'metalness', new three.BufferAttribute( new Float32Array( this.geometry.metalness ), 1 ) );
+        res.setAttribute( 'position',  new three.BufferAttribute( new Float32Array( this.geometry.position ),  3 ) );
+        res.setAttribute( 'normal',    new three.BufferAttribute( new Float32Array( this.geometry.normal ),    3 ) );
+        res.setAttribute( 'color',     new three.BufferAttribute( new Float32Array( this.geometry.color ),     3 ) );
+        res.setAttribute( 'roughness', new three.BufferAttribute( new Float32Array( this.geometry.roughness ), 1 ) );
+        res.setAttribute( 'metalness', new three.BufferAttribute( new Float32Array( this.geometry.metalness ), 1 ) );
 
         res.setIndex(new three.BufferAttribute(
             this.geometry.nVertices >65535 ? new Uint32Array(this.geometry.faces) : new Uint16Array(this.geometry.faces), 1 )
