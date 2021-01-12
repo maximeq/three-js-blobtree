@@ -7,14 +7,24 @@ const THREE = require("@dualbox/three");
  *  be used in implicit elements. It is the internal representation of the material,
  *  not the openGL material that will be used for display.
  *  @constructor
- *  @param {!Object} params Parameters for the material. As a dictionnary to be easily extended later.
- *  @param {THREE.Color} param.color Base diffuse color for the material
- *  @param {number|null} param.roughness Roughness for the material
- *  @param {number|null} param.metalness Metalness aspect of the material, 1 for metalness, 0 for dielectric
  *
+ *  @param {!Object} params Parameters for the material. As a dictionary to be easily extended later.
+ *
+ *  @param {THREE.Color?}   params.color        Base diffuse color for the material.
+ *                                              Defaults to #aaaaaa
+ *
+ *  @param {number?}        params.roughness    Roughness for the material.
+ *                                              Defaults to 0.
+ *
+ *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
+ *                                              Defaults to 0.
+ *
+ *  @param {THREE.Color?} params.emissive       Emissive color for the material.
+ *                                              Defaults to pitch black. (no light emission)
  */
 var Material = function (params) {
-    var params = params || {};
+
+    params = params || {};
 
     if(arguments[1] !== undefined){
         throw "Error : Blobtree Material now takes only 1 argument.";
@@ -23,20 +33,28 @@ var Material = function (params) {
     this.color = new THREE.Color(params.color !== undefined ? params.color : 0xaaaaaa);
     this.roughness = params.roughness !== undefined ? params.roughness : 0;
     this.metalness = params.metalness !== undefined ? params.metalness : 0;
+    this.emissive = new THREE.Color( params.emissive !== undefined ? params.emissive : 0x000000 );
+
 };
 
 Material.prototype.toJSON = function()
 {
     return {
-        color: "#"+this.color.getHexString(),
+        color: "#" + this.color.getHexString(),
         roughness: this.roughness,
-        metalness:this.metalness
+        metalness: this.metalness,
+        emissive: `#${this.emissive.getHexString()}`
     };
 };
 
 Material.fromJSON = function(json)
 {
-    return new Material({color:new THREE.Color(json.color), roughness:json.roughness, metalness:json.metalness});
+    return new Material({
+        color: new THREE.Color( json.color ),
+        roughness: json.roughness,
+        metalness: json.metalness,
+        emissive: json.emissive, // If undefined, will default to pitch black. If not, will load the hex string.
+    });
 };
 
 /**
@@ -45,7 +63,12 @@ Material.fromJSON = function(json)
  */
 Material.prototype.clone = function()
 {
-    return new Material({color:this.color, roughness:this.roughness, metalness:this.metalness});
+    return new Material({
+        color: this.color,
+        roughness: this.roughness,
+        metalness: this.metalness,
+        emissive: this.emissive,
+    });
 };
 
 /**
@@ -57,12 +80,15 @@ Material.prototype.copy = function(mat)
     this.color.copy(mat.color);
     this.roughness = mat.roughness;
     this.metalness = mat.metalness;
+    this.emissive.copy( mat.emissive );
 };
+
 /**
+ *  @deprecated Use setParams instead
  *  Set Material parameters at once. DEPRECATED. Use setParams
- *  @param {THREE.Color} c Color
- *  @param {number} r roughness
- *  @param {number} m Metalness
+ *  @param {THREE.Color!} c Color
+ *  @param {number!} r roughness
+ *  @param {number!} m Metalness
  */
 Material.prototype.set = function(c, r, m)
 {
@@ -73,22 +99,39 @@ Material.prototype.set = function(c, r, m)
 
 /**
  *  Set Material parameters (all or just some)
+ *
+ *  @param {!Object} params Parameters for the material. As a dictionary to be easily extended later.
+ *  @param {THREE.Color?}   params.color        Base diffuse color for the material.
+ *  @param {number?}        params.roughness    Roughness for the material.
+ *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
+ *  @param {THREE.Color?} params.emissive       Emissive color for the material.
  */
-Material.prototype.setParams = function (params) {
+Material.prototype.setParams = function (params)
+{
     this.color.copy(params.color ? params.color : this.color);
     this.roughness = params.roughness !== undefined ? params.roughness : this.roughness;
     this.metalness = params.metalness !== undefined ? params.metalness : this.metalness;
+    this.emissive.copy( params.emissive !== undefined ? params.emissive : this.emissive );
 };
 
 /** @return {THREE.Color} */
 Material.prototype.getColor = function()       { return this.color;    };
+
 /** @return {number} */
 Material.prototype.getRoughness = function()   { return this.roughness;};
+
 /** @return {number} */
 Material.prototype.getMetalness = function()  { return this.metalness;  };
 
+/** @return {THREE.Color} */
+Material.prototype.getEmissive = function() { return this.emissive; }
+
+
 Material.prototype.equals = function(m)  {
-    return this.color.equals(m.color) && this.metalness=== m.metalness && this.roughness === m.roughness;
+    return this.color.equals(m.color) &&
+        this.metalness=== m.metalness &&
+        this.roughness === m.roughness &&
+        this.emissive.equals( m.emissive );
 };
 
 /**
@@ -102,6 +145,7 @@ Material.prototype.lerp = function(m,s)
     this.color.lerp(m.color,s);
     this.roughness = (1-s)*this.roughness + s*m.roughness;
     this.metalness = (1-s)*this.metalness + s*m.metalness;
+    this.emissive.lerp( m.emissive, s );
 };
 /**
  *  Used in triangles (ok it's specific, still we need it :)
@@ -120,8 +164,14 @@ Material.prototype.triMean = function(m1,m2,m3,a1,a2,a3,denum)
     this.color.r = (a1*m1.color.r + a2*m2.color.r + a3*m3.color.r)/denum;
     this.color.g = (a1*m1.color.g + a2*m2.color.g + a3*m3.color.g)/denum;
     this.color.b = (a1*m1.color.b + a2*m2.color.b + a3*m3.color.b)/denum;
+
     this.roughness = (a1*m1.roughness + a2*m2.roughness + a3*m3.roughness)/denum;
+
     this.metalness = (a1*m1.metalness + a2*m2.metalness + a3*m3.metalness)/denum;
+
+    this.emissive.r = (a1*m1.emissive.r + a2*m2.emissive.r + a3*m3.emissive.r)/denum;
+    this.emissive.g = (a1*m1.emissive.g + a2*m2.emissive.g + a3*m3.emissive.g)/denum;
+    this.emissive.b = (a1*m1.emissive.b + a2*m2.emissive.b + a3*m3.emissive.b)/denum;
 
     return this;
 };
@@ -138,28 +188,38 @@ Material.prototype.weightedMean = function(m_arr,v_arr, n)
     this.color.setRGB(0,0,0);
     this.roughness = 0;
     this.metalness = 0;
-    var l = (n === undefined) ? m_arr.length : n;
-    var sum_v = 0.0;
-    for(var i=0; i<l; ++i){
+    this.emissive.setScalar( 0 );
+    const l = (n === undefined) ? m_arr.length : n;
+    let sum_v = 0.0;
+
+    for ( let i = 0; i < l; ++ i ) {
+
         this.color.r += v_arr[i]*m_arr[i].color.r;
         this.color.g += v_arr[i]*m_arr[i].color.g;
         this.color.b += v_arr[i]*m_arr[i].color.b;
         this.roughness += v_arr[i]*m_arr[i].roughness;
         this.metalness += v_arr[i]*m_arr[i].metalness;
+        this.emissive.r += v_arr[i]*m_arr[i].emissive.r;
+        this.emissive.g += v_arr[i]*m_arr[i].emissive.g;
+        this.emissive.b += v_arr[i]*m_arr[i].emissive.b;
         sum_v += v_arr[i];
+
     }
+
     if(sum_v !== 0){
         this.color.r /= sum_v;
         this.color.g /= sum_v;
         this.color.b /= sum_v;
         this.roughness /= sum_v;
         this.metalness /= sum_v;
+        this.emissive.r /= sum_v;
+        this.emissive.g /= sum_v;
+        this.emissive.b /= sum_v;
     }else{
-        this.color.r = 0;
-        this.color.g = 0;
-        this.color.b = 0;
+        this.color.setScalar( 0 );
         this.roughness = 0;
         this.metalness = 0;
+        this.emissive.setScalar( 0 );
     }
 
     return this;
