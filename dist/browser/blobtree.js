@@ -6,6 +6,16 @@
 
     three = three && three.hasOwnProperty('default') ? three['default'] : three;
 
+    function checkExample( example, subdirectory, trueName ) {
+
+        if ( three[example] === undefined )
+            throw `THREE is missing example '${example}' and, as such, webgl-modelers-plugin-blobtree can't work properly. You can find it` +
+            ` in 'three/examples/js/${subdirectory !== undefined ? subdirectory + '/' : ''}${trueName || example}.js'`
+
+    }
+
+    checkExample('BufferGeometryUtils', 'utils');
+
     /**
      *  Keep track of all Types added to the Blobtree library.
      *  For now just a list of strings registered by the classes.
@@ -8131,7 +8141,7 @@
 
     var SplitSMC_1 = SplitSMC;
 
-    if(three.REVISION !== "122"){
+    if (three.REVISION !== "122") {
         console.warn("Blobtree library is currently made for THREE revision 122. Using any other revision may lead to unexpected behavior.");
     }
 
