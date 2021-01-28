@@ -1,7 +1,12 @@
 three-js-blobtree
 ================
 
-[![License][license-badge]][license-badge-url]
+This library has been developped by [Dioxygen Software](https://dioxygen.io) for [Dualbox](https://dualbox.com) and [Laboratory LIX](https://www.lix.polytechnique.fr).
+It is currently useed in the following projects:
+
+  * [Dualbox](https://dualbox.com)
+  * [Capsule Sketch](https://capsulesketch.org)
+  * [LIX Sketch Based Modeler](https://sbm.maximequiblier.now.sh)
 
 ## Three.js Extension to manipulate Blobtrees and implicit surfaces ##
 
