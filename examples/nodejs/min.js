@@ -3,7 +3,7 @@ const childProcess = require('child_process');
 
 const GeometryToOBJ = require('./lib/GeometryToOBJ.js');
 
-const THREE = require("@dualbox/three");
+const THREE = require("three");
 const Blobtree = require('../../');
 
 var root = new Blobtree.RootNode();

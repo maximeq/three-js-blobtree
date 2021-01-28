@@ -1,6 +1,6 @@
 "use strict";
 
-const THREE = require("@dualbox/three");
+const THREE = require("three");
 const Area = require("./Area.js");
 const Accuracies = require("../accuracies/Accuracies.js");
 

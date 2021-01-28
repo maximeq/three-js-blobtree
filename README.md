@@ -81,8 +81,8 @@ Will update the browser build in dist.
 ### Dependencies ###
 
 #### Node Dependencies ####
-This library currently depends on node module @dualbox/three which is packaging all THREE.JS sources, including extras like examples.
-It can work with only THREE, but for convenience we rely on @dualbox/three.
+This library currently depends on node module three which is packaging all THREE.JS sources, including extras like examples.
+It can work with only THREE, but for convenience we rely on three.
 
 #### Browser Dependencies ####
 In browser, only THREE is required.
@@ -104,9 +104,9 @@ However, the best way to start is to read and play with the examples.
 
 ## Future Improvements ##
 
-### Dependency to @dualbox/three ###
-The lib depends on @dualbox/three on the nodejs side. It is not necessary in theory, it could depend only on three, but @dualbox/three is more complete to be used in examples, etc...
-We could consider automatically building two nodejs entry points, one linked to three and the other to @dualbox/three.
+### Dependency to three ###
+The lib depends on three on the nodejs side. It is not necessary in theory, it could depend only on three, but three is more complete to be used in examples, etc...
+We could consider automatically building two nodejs entry points, one linked to three and the other to three.
 
 ### Signed Distance Fields ###
 

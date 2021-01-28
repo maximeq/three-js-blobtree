@@ -1,6 +1,6 @@
 'use strict';
 
-const THREE = require("@dualbox/three");
+const THREE = require("three");
 
 
 var EPSILON = 0.000001;

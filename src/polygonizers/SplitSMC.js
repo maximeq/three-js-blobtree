@@ -1,5 +1,5 @@
 
-const THREE = require("@dualbox/three");
+const THREE = require("three");
 
 const Material = require("../blobtree/Material.js");
 const Tables = require("./MCTables.js");

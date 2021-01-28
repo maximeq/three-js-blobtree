@@ -5,7 +5,7 @@
 
 'use strict';
 
-const THREE = require("@dualbox/three");
+const THREE = require("three");
 
 var Convergence = {};
 

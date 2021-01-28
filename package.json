@@ -10,7 +10,7 @@
     "make-doc": "node make-doc.js"
   },
   "dependencies": {
-    "@dualbox/three": "1.122.1"
+    "three": "0.122.0"
   },
   "devDependencies": {
     "rollup-plugin-prettier": "^0.6.0",

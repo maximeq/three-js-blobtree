@@ -1,6 +1,6 @@
 "use strict";
 
-const THREE = require("@dualbox/three");
+const THREE = require("three");
 const Material = require("../blobtree/Material.js");
 const Convergence = require("../utils/Convergence.js");
 

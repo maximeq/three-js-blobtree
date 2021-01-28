@@ -1,6 +1,6 @@
 "use strict";
 
-const THREE = require("@dualbox/three");
+const THREE = require("three");
 const Types = require("../Types.js");
 const Material = require("../Material.js");
 const ScalisPrimitive = require("./ScalisPrimitive.js");

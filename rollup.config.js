@@ -9,7 +9,7 @@ export default {
         file: './dist/browser/blobtree.js',
         format: 'cjs'
     },
-    external: ['@dualbox/three'],
+    external: ['three'],
     plugins: [
         commonjs(), // prise en charge de require
         resolve(), // prise en charge des modules depuis node_modules

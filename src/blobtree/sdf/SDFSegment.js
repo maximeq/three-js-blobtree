@@ -1,6 +1,6 @@
 "use strict";
 
-const THREE = require("@dualbox/three");
+const THREE = require("three");
 const Types = require("../Types.js");
 const SDFPrimitive = require("./SDFPrimitive.js");
 const AreaCapsule = require("../areas/AreaCapsule.js");

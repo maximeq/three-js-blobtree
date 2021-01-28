@@ -1,6 +1,6 @@
 'use strict';
 
-const THREE = require("@dualbox/three");
+const THREE = require("three");
 
 /**
  *  Material object for blobtree. It is an internal material, that should especially
