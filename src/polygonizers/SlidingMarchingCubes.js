@@ -238,11 +238,11 @@ SlidingMarchingCubes.prototype.initGeometry = function(){
  */
 SlidingMarchingCubes.prototype.buildResultingBufferGeometry = function(){
     var res = new THREE.BufferGeometry();
-    res.addAttribute( 'position',  new THREE.BufferAttribute( new Float32Array( this.geometry.position ),  3 ) );
-    res.addAttribute( 'normal',    new THREE.BufferAttribute( new Float32Array( this.geometry.normal ),    3 ) );
-    res.addAttribute( 'color',     new THREE.BufferAttribute( new Float32Array( this.geometry.color ),     3 ) );
-    res.addAttribute( 'roughness', new THREE.BufferAttribute( new Float32Array( this.geometry.roughness ), 1 ) );
-    res.addAttribute( 'metalness', new THREE.BufferAttribute( new Float32Array( this.geometry.metalness ), 1 ) );
+    res.setAttribute( 'position',  new THREE.BufferAttribute( new Float32Array( this.geometry.position ),  3 ) );
+    res.setAttribute( 'normal',    new THREE.BufferAttribute( new Float32Array( this.geometry.normal ),    3 ) );
+    res.setAttribute( 'color',     new THREE.BufferAttribute( new Float32Array( this.geometry.color ),     3 ) );
+    res.setAttribute( 'roughness', new THREE.BufferAttribute( new Float32Array( this.geometry.roughness ), 1 ) );
+    res.setAttribute( 'metalness', new THREE.BufferAttribute( new Float32Array( this.geometry.metalness ), 1 ) );
 
     res.setIndex(new THREE.BufferAttribute(
         this.geometry.nVertices >65535 ? new Uint32Array(this.geometry.faces) : new Uint16Array(this.geometry.faces), 1 )
