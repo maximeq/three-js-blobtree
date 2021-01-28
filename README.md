@@ -1,4 +1,4 @@
-three-js-blobtree
+Blobtree.js an Implicit Surfaces / Scalar Distance Fields - SDF library for three.js
 ================
 
 This library has been developped by [Dioxygen Software](https://dioxygen.io) for [Dualbox](https://dualbox.com) and [Laboratory LIX](https://www.lix.polytechnique.fr).
@@ -8,7 +8,7 @@ It is currently useed in the following projects:
   * [Capsule Sketch](https://capsulesketch.org)
   * [LIX Sketch Based Modeler](https://sbm.maximequiblier.now.sh)
 
-## Three.js Extension to manipulate Blobtrees and implicit surfaces ##
+## Three.js Extension to manipulate Blobtrees (called  Implicit Surfaces or SDF, Scalar Distance Fields)
 
 A library to manage implicit surfaces in THREE.JS applications using a Blobtree.
 
@@ -81,8 +81,8 @@ Will update the browser build in dist.
 ### Dependencies ###
 
 #### Node Dependencies ####
-This library currently depends on node module three which is packaging all THREE.JS sources, including extras like examples.
-It can work with only THREE, but for convenience we rely on three.
+This library currently depends on node module three-full which is packaging all THREE.JS sources, including extras like examples.
+It can work with only THREE, but for convenience we rely on three-full.
 
 #### Browser Dependencies ####
 In browser, only THREE is required.
@@ -104,9 +104,9 @@ However, the best way to start is to read and play with the examples.
 
 ## Future Improvements ##
 
-### Dependency to three ###
-The lib depends on three on the nodejs side. It is not necessary in theory, it could depend only on three, but three is more complete to be used in examples, etc...
-We could consider automatically building two nodejs entry points, one linked to three and the other to three.
+### Dependency to three-full ###
+The lib depends on three-full on the nodejs side. It is not necessary in theory, it could depend only on three, but three-full is more complete to be used in examples, etc...
+We could consider automatically building two nodejs entry points, one linked to three and the other to three-full.
 
 ### Signed Distance Fields ###
 
@@ -134,7 +134,3 @@ Scalis bounding volumes are redundants with Sphere and Capsule volumes (AreaSphe
 ##### Scalis Distance #####
 
 It should be possible to use a SDFRootNode with a SDFCapsule instead of a Scalis with a DIST volume type. This would remove some duplicate code.
-
-
-
-
