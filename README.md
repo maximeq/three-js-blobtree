@@ -1,4 +1,4 @@
-three-js-blobtree
+Blobtree.js an Implicit Surfaces / Scalar Distance Fields - SDF library for three.js
 ================
 
 This library has been developped by [Dioxygen Software](https://dioxygen.io) for [Dualbox](https://dualbox.com) and [Laboratory LIX](https://www.lix.polytechnique.fr).
@@ -8,7 +8,7 @@ It is currently useed in the following projects:
   * [Capsule Sketch](https://capsulesketch.org)
   * [LIX Sketch Based Modeler](https://sbm.maximequiblier.now.sh)
 
-## Three.js Extension to manipulate Blobtrees and implicit surfaces ##
+## Three.js Extension to manipulate Blobtrees (called  Implicit Surfaces or SDF, Scalar Distance Fields)
 
 A library to manage implicit surfaces in THREE.JS applications using a Blobtree.
 
