@@ -104,10 +104,6 @@ However, the best way to start is to read and play with the examples.
 
 ## Future Improvements ##
 
-### Dependency to three-full ###
-The lib depends on three-full on the nodejs side. It is not necessary in theory, it could depend only on three, but three-full is more complete to be used in examples, etc...
-We could consider automatically building two nodejs entry points, one linked to three and the other to three-full.
-
 ### Signed Distance Fields ###
 
 #### Nodes ####
