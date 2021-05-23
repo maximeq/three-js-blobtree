@@ -76,11 +76,11 @@ build({
           bracketSpacing:false
         })
     ],
-    external: p => /@dualbox\/three/.test(p),
+    external: external,
 }, {
     format: 'umd',
     name: 'Blobtree',
     file: './dist/browser/blobtree.min.js',
-    globals: s => /@dualbox\/three/.test(s) ? 'THREE' : s,
+    globals: globals,
 });
 
