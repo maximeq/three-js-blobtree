@@ -26,6 +26,23 @@ async function build(inputOptions, outputOptions) {
     await bundle.write(outputOptions);
 }
 
+let external = function (p) {
+
+    return [
+        /^@dualbox\/three$/,    // Only mark pure '@dualbox/three' package as external.
+        /^three$/,              // Only mark pure 'three' package as external.
+        /^three-full$/,         // three-full dependency for packages that still use it.
+    ].some(r => r.test(p))
+}
+
+var globals = function (p) {
+    const base = {
+        // 'jquery': '$', // Jquery not used anymore.
+    };
+
+    return base[p] || (/three/.test(p) ? "THREE" : null)
+};
+
 /*******************************************
  *  Debug build
  ******************************************/
@@ -33,12 +50,12 @@ async function build(inputOptions, outputOptions) {
 build({
     input: 'src/blobtree.js',
     plugins:  [ commonjs(), resolve() ],
-    external: p => /@dualbox\/three/.test(p),
+    external: external,
 }, {
     format: 'umd',
     name: 'Blobtree',
     file: './dist/browser/blobtree.js',
-    globals: s => /@dualbox\/three/.test(s) ? 'THREE' : s,
+    globals: globals,
 });
 
 
