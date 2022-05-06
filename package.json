@@ -1,6 +1,6 @@
 {
   "name": "three-js-blobtree",
-  "version": "1.122.0",
+  "version": "1.130.0",
   "description": "Library to handle implicit surfaces in THREE.JS using a blobtree.",
   "main": "src/blobtree.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "make-doc": "node make-doc.js"
   },
   "dependencies": {
-    "three": "0.122.0"
+    "three": "0.130.x"
   },
   "devDependencies": {
     "rollup-plugin-prettier": "^0.6.0",

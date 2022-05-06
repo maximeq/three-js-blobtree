@@ -333,7 +333,7 @@ TriangleUtils.getUVCoord = function(U, V, p0, p){
             U.z, V.z, W.z,0,
               0,   0,   0,1);
     var mat1 = new THREE.Matrix4();
-    mat1.getInverse(mat);
+    mat1.copy(mat).invert();
     var vec = new THREE.Vector3().subVectors(p, p0);
     vec.applyMatrix4(mat1);
 

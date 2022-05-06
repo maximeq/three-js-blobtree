@@ -6,622 +6,448 @@
 
 	three = three && three.hasOwnProperty('default') ? three['default'] : three;
 
-	THREE.BufferGeometryUtils = {
+	( function () {
 
-		computeTangents: function ( geometry ) {
+		class BufferGeometryUtils {
 
-			var index = geometry.index;
-			var attributes = geometry.attributes;
+			static computeTangents( geometry ) {
 
-			// based on http://www.terathon.com/code/tangent.html
-			// (per vertex tangents)
-
-			if ( index === null ||
-				 attributes.position === undefined ||
-				 attributes.normal === undefined ||
-				 attributes.uv === undefined ) {
-
-				console.error( 'THREE.BufferGeometryUtils: .computeTangents() failed. Missing required attributes (index, position, normal or uv)' );
-				return;
+				geometry.computeTangents();
+				console.warn( 'THREE.BufferGeometryUtils: .computeTangents() has been removed. Use THREE.BufferGeometry.computeTangents() instead.' );
 
 			}
+			/**
+	   * @param  {Array<BufferGeometry>} geometries
+	   * @param  {Boolean} useGroups
+	   * @return {BufferGeometry}
+	   */
 
-			var indices = index.array;
-			var positions = attributes.position.array;
-			var normals = attributes.normal.array;
-			var uvs = attributes.uv.array;
 
-			var nVertices = positions.length / 3;
+			static mergeBufferGeometries( geometries, useGroups = false ) {
 
-			if ( attributes.tangent === undefined ) {
+				const isIndexed = geometries[ 0 ].index !== null;
+				const attributesUsed = new Set( Object.keys( geometries[ 0 ].attributes ) );
+				const morphAttributesUsed = new Set( Object.keys( geometries[ 0 ].morphAttributes ) );
+				const attributes = {};
+				const morphAttributes = {};
+				const morphTargetsRelative = geometries[ 0 ].morphTargetsRelative;
+				const mergedGeometry = new THREE.BufferGeometry();
+				let offset = 0;
 
-				geometry.setAttribute( 'tangent', new THREE.BufferAttribute( new Float32Array( 4 * nVertices ), 4 ) );
+				for ( let i = 0; i < geometries.length; ++ i ) {
 
-			}
+					const geometry = geometries[ i ];
+					let attributesCount = 0; // ensure that all geometries are indexed, or none
 
-			var tangents = attributes.tangent.array;
+					if ( isIndexed !== ( geometry.index !== null ) ) {
 
-			var tan1 = [], tan2 = [];
+						console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. All geometries must have compatible attributes; make sure index attribute exists among all geometries, or in none of them.' );
+						return null;
 
-			for ( var i = 0; i < nVertices; i ++ ) {
+					} // gather attributes, exit early if they're different
 
-				tan1[ i ] = new THREE.Vector3();
-				tan2[ i ] = new THREE.Vector3();
 
-			}
+					for ( const name in geometry.attributes ) {
 
-			var vA = new THREE.Vector3(),
-				vB = new THREE.Vector3(),
-				vC = new THREE.Vector3(),
+						if ( ! attributesUsed.has( name ) ) {
 
-				uvA = new THREE.Vector2(),
-				uvB = new THREE.Vector2(),
-				uvC = new THREE.Vector2(),
+							console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. All geometries must have compatible attributes; make sure "' + name + '" attribute exists among all geometries, or in none of them.' );
+							return null;
 
-				sdir = new THREE.Vector3(),
-				tdir = new THREE.Vector3();
+						}
 
-			function handleTriangle( a, b, c ) {
+						if ( attributes[ name ] === undefined ) attributes[ name ] = [];
+						attributes[ name ].push( geometry.attributes[ name ] );
+						attributesCount ++;
 
-				vA.fromArray( positions, a * 3 );
-				vB.fromArray( positions, b * 3 );
-				vC.fromArray( positions, c * 3 );
+					} // ensure geometries have the same number of attributes
 
-				uvA.fromArray( uvs, a * 2 );
-				uvB.fromArray( uvs, b * 2 );
-				uvC.fromArray( uvs, c * 2 );
 
-				vB.sub( vA );
-				vC.sub( vA );
+					if ( attributesCount !== attributesUsed.size ) {
 
-				uvB.sub( uvA );
-				uvC.sub( uvA );
+						console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. Make sure all geometries have the same number of attributes.' );
+						return null;
 
-				var r = 1.0 / ( uvB.x * uvC.y - uvC.x * uvB.y );
+					} // gather morph attributes, exit early if they're different
 
-				// silently ignore degenerate uv triangles having coincident or colinear vertices
 
-				if ( ! isFinite( r ) ) return;
+					if ( morphTargetsRelative !== geometry.morphTargetsRelative ) {
 
-				sdir.copy( vB ).multiplyScalar( uvC.y ).addScaledVector( vC, - uvB.y ).multiplyScalar( r );
-				tdir.copy( vC ).multiplyScalar( uvB.x ).addScaledVector( vB, - uvC.x ).multiplyScalar( r );
-
-				tan1[ a ].add( sdir );
-				tan1[ b ].add( sdir );
-				tan1[ c ].add( sdir );
-
-				tan2[ a ].add( tdir );
-				tan2[ b ].add( tdir );
-				tan2[ c ].add( tdir );
-
-			}
-
-			var groups = geometry.groups;
-
-			if ( groups.length === 0 ) {
-
-				groups = [ {
-					start: 0,
-					count: indices.length
-				} ];
-
-			}
-
-			for ( var i = 0, il = groups.length; i < il; ++ i ) {
-
-				var group = groups[ i ];
-
-				var start = group.start;
-				var count = group.count;
-
-				for ( var j = start, jl = start + count; j < jl; j += 3 ) {
-
-					handleTriangle(
-						indices[ j + 0 ],
-						indices[ j + 1 ],
-						indices[ j + 2 ]
-					);
-
-				}
-
-			}
-
-			var tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3();
-			var n = new THREE.Vector3(), n2 = new THREE.Vector3();
-			var w, t, test;
-
-			function handleVertex( v ) {
-
-				n.fromArray( normals, v * 3 );
-				n2.copy( n );
-
-				t = tan1[ v ];
-
-				// Gram-Schmidt orthogonalize
-
-				tmp.copy( t );
-				tmp.sub( n.multiplyScalar( n.dot( t ) ) ).normalize();
-
-				// Calculate handedness
-
-				tmp2.crossVectors( n2, t );
-				test = tmp2.dot( tan2[ v ] );
-				w = ( test < 0.0 ) ? - 1.0 : 1.0;
-
-				tangents[ v * 4 ] = tmp.x;
-				tangents[ v * 4 + 1 ] = tmp.y;
-				tangents[ v * 4 + 2 ] = tmp.z;
-				tangents[ v * 4 + 3 ] = w;
-
-			}
-
-			for ( var i = 0, il = groups.length; i < il; ++ i ) {
-
-				var group = groups[ i ];
-
-				var start = group.start;
-				var count = group.count;
-
-				for ( var j = start, jl = start + count; j < jl; j += 3 ) {
-
-					handleVertex( indices[ j + 0 ] );
-					handleVertex( indices[ j + 1 ] );
-					handleVertex( indices[ j + 2 ] );
-
-				}
-
-			}
-
-		},
-
-		/**
-		 * @param  {Array<THREE.BufferGeometry>} geometries
-		 * @param  {Boolean} useGroups
-		 * @return {THREE.BufferGeometry}
-		 */
-		mergeBufferGeometries: function ( geometries, useGroups ) {
-
-			var isIndexed = geometries[ 0 ].index !== null;
-
-			var attributesUsed = new Set( Object.keys( geometries[ 0 ].attributes ) );
-			var morphAttributesUsed = new Set( Object.keys( geometries[ 0 ].morphAttributes ) );
-
-			var attributes = {};
-			var morphAttributes = {};
-
-			var morphTargetsRelative = geometries[ 0 ].morphTargetsRelative;
-
-			var mergedGeometry = new THREE.BufferGeometry();
-
-			var offset = 0;
-
-			for ( var i = 0; i < geometries.length; ++ i ) {
-
-				var geometry = geometries[ i ];
-				var attributesCount = 0;
-
-				// ensure that all geometries are indexed, or none
-
-				if ( isIndexed !== ( geometry.index !== null ) ) {
-
-					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. All geometries must have compatible attributes; make sure index attribute exists among all geometries, or in none of them.' );
-					return null;
-
-				}
-
-				// gather attributes, exit early if they're different
-
-				for ( var name in geometry.attributes ) {
-
-					if ( ! attributesUsed.has( name ) ) {
-
-						console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. All geometries must have compatible attributes; make sure "' + name + '" attribute exists among all geometries, or in none of them.' );
+						console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. .morphTargetsRelative must be consistent throughout all geometries.' );
 						return null;
 
 					}
 
-					if ( attributes[ name ] === undefined ) attributes[ name ] = [];
+					for ( const name in geometry.morphAttributes ) {
 
-					attributes[ name ].push( geometry.attributes[ name ] );
+						if ( ! morphAttributesUsed.has( name ) ) {
 
-					attributesCount ++;
+							console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '.  .morphAttributes must be consistent throughout all geometries.' );
+							return null;
 
-				}
+						}
 
-				// ensure geometries have the same number of attributes
+						if ( morphAttributes[ name ] === undefined ) morphAttributes[ name ] = [];
+						morphAttributes[ name ].push( geometry.morphAttributes[ name ] );
 
-				if ( attributesCount !== attributesUsed.size ) {
+					} // gather .userData
 
-					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. Make sure all geometries have the same number of attributes.' );
-					return null;
 
-				}
+					mergedGeometry.userData.mergedUserData = mergedGeometry.userData.mergedUserData || [];
+					mergedGeometry.userData.mergedUserData.push( geometry.userData );
 
-				// gather morph attributes, exit early if they're different
+					if ( useGroups ) {
 
-				if ( morphTargetsRelative !== geometry.morphTargetsRelative ) {
+						let count;
 
-					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. .morphTargetsRelative must be consistent throughout all geometries.' );
-					return null;
+						if ( isIndexed ) {
 
-				}
+							count = geometry.index.count;
 
-				for ( var name in geometry.morphAttributes ) {
+						} else if ( geometry.attributes.position !== undefined ) {
 
-					if ( ! morphAttributesUsed.has( name ) ) {
+							count = geometry.attributes.position.count;
 
-						console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '.  .morphAttributes must be consistent throughout all geometries.' );
+						} else {
+
+							console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. The geometry must have either an index or a position attribute' );
+							return null;
+
+						}
+
+						mergedGeometry.addGroup( offset, count, i );
+						offset += count;
+
+					}
+
+				} // merge indices
+
+
+				if ( isIndexed ) {
+
+					let indexOffset = 0;
+					const mergedIndex = [];
+
+					for ( let i = 0; i < geometries.length; ++ i ) {
+
+						const index = geometries[ i ].index;
+
+						for ( let j = 0; j < index.count; ++ j ) {
+
+							mergedIndex.push( index.getX( j ) + indexOffset );
+
+						}
+
+						indexOffset += geometries[ i ].attributes.position.count;
+
+					}
+
+					mergedGeometry.setIndex( mergedIndex );
+
+				} // merge attributes
+
+
+				for ( const name in attributes ) {
+
+					const mergedAttribute = this.mergeBufferAttributes( attributes[ name ] );
+
+					if ( ! mergedAttribute ) {
+
+						console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed while trying to merge the ' + name + ' attribute.' );
 						return null;
 
 					}
 
-					if ( morphAttributes[ name ] === undefined ) morphAttributes[ name ] = [];
+					mergedGeometry.setAttribute( name, mergedAttribute );
 
-					morphAttributes[ name ].push( geometry.morphAttributes[ name ] );
+				} // merge morph attributes
+
+
+				for ( const name in morphAttributes ) {
+
+					const numMorphTargets = morphAttributes[ name ][ 0 ].length;
+					if ( numMorphTargets === 0 ) break;
+					mergedGeometry.morphAttributes = mergedGeometry.morphAttributes || {};
+					mergedGeometry.morphAttributes[ name ] = [];
+
+					for ( let i = 0; i < numMorphTargets; ++ i ) {
+
+						const morphAttributesToMerge = [];
+
+						for ( let j = 0; j < morphAttributes[ name ].length; ++ j ) {
+
+							morphAttributesToMerge.push( morphAttributes[ name ][ j ][ i ] );
+
+						}
+
+						const mergedMorphAttribute = this.mergeBufferAttributes( morphAttributesToMerge );
+
+						if ( ! mergedMorphAttribute ) {
+
+							console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed while trying to merge the ' + name + ' morphAttribute.' );
+							return null;
+
+						}
+
+						mergedGeometry.morphAttributes[ name ].push( mergedMorphAttribute );
+
+					}
 
 				}
 
-				// gather .userData
+				return mergedGeometry;
 
-				mergedGeometry.userData.mergedUserData = mergedGeometry.userData.mergedUserData || [];
-				mergedGeometry.userData.mergedUserData.push( geometry.userData );
+			}
+			/**
+	   * @param {Array<BufferAttribute>} attributes
+	   * @return {BufferAttribute}
+	   */
 
-				if ( useGroups ) {
 
-					var count;
+			static mergeBufferAttributes( attributes ) {
 
-					if ( isIndexed ) {
+				let TypedArray;
+				let itemSize;
+				let normalized;
+				let arrayLength = 0;
 
-						count = geometry.index.count;
+				for ( let i = 0; i < attributes.length; ++ i ) {
 
-					} else if ( geometry.attributes.position !== undefined ) {
+					const attribute = attributes[ i ];
 
-						count = geometry.attributes.position.count;
+					if ( attribute.isInterleavedBufferAttribute ) {
+
+						console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. InterleavedBufferAttributes are not supported.' );
+						return null;
+
+					}
+
+					if ( TypedArray === undefined ) TypedArray = attribute.array.constructor;
+
+					if ( TypedArray !== attribute.array.constructor ) {
+
+						console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. THREE.BufferAttribute.array must be of consistent array types across matching attributes.' );
+						return null;
+
+					}
+
+					if ( itemSize === undefined ) itemSize = attribute.itemSize;
+
+					if ( itemSize !== attribute.itemSize ) {
+
+						console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. THREE.BufferAttribute.itemSize must be consistent across matching attributes.' );
+						return null;
+
+					}
+
+					if ( normalized === undefined ) normalized = attribute.normalized;
+
+					if ( normalized !== attribute.normalized ) {
+
+						console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. THREE.BufferAttribute.normalized must be consistent across matching attributes.' );
+						return null;
+
+					}
+
+					arrayLength += attribute.array.length;
+
+				}
+
+				const array = new TypedArray( arrayLength );
+				let offset = 0;
+
+				for ( let i = 0; i < attributes.length; ++ i ) {
+
+					array.set( attributes[ i ].array, offset );
+					offset += attributes[ i ].array.length;
+
+				}
+
+				return new THREE.BufferAttribute( array, itemSize, normalized );
+
+			}
+			/**
+	   * @param {Array<BufferAttribute>} attributes
+	   * @return {Array<InterleavedBufferAttribute>}
+	   */
+
+
+			static interleaveAttributes( attributes ) {
+
+				// Interleaves the provided attributes into an THREE.InterleavedBuffer and returns
+				// a set of InterleavedBufferAttributes for each attribute
+				let TypedArray;
+				let arrayLength = 0;
+				let stride = 0; // calculate the the length and type of the interleavedBuffer
+
+				for ( let i = 0, l = attributes.length; i < l; ++ i ) {
+
+					const attribute = attributes[ i ];
+					if ( TypedArray === undefined ) TypedArray = attribute.array.constructor;
+
+					if ( TypedArray !== attribute.array.constructor ) {
+
+						console.error( 'AttributeBuffers of different types cannot be interleaved' );
+						return null;
+
+					}
+
+					arrayLength += attribute.array.length;
+					stride += attribute.itemSize;
+
+				} // Create the set of buffer attributes
+
+
+				const interleavedBuffer = new THREE.InterleavedBuffer( new TypedArray( arrayLength ), stride );
+				let offset = 0;
+				const res = [];
+				const getters = [ 'getX', 'getY', 'getZ', 'getW' ];
+				const setters = [ 'setX', 'setY', 'setZ', 'setW' ];
+
+				for ( let j = 0, l = attributes.length; j < l; j ++ ) {
+
+					const attribute = attributes[ j ];
+					const itemSize = attribute.itemSize;
+					const count = attribute.count;
+					const iba = new THREE.InterleavedBufferAttribute( interleavedBuffer, itemSize, offset, attribute.normalized );
+					res.push( iba );
+					offset += itemSize; // Move the data for each attribute into the new interleavedBuffer
+					// at the appropriate offset
+
+					for ( let c = 0; c < count; c ++ ) {
+
+						for ( let k = 0; k < itemSize; k ++ ) {
+
+							iba[ setters[ k ] ]( c, attribute[ getters[ k ] ]( c ) );
+
+						}
+
+					}
+
+				}
+
+				return res;
+
+			}
+			/**
+	   * @param {Array<BufferGeometry>} geometry
+	   * @return {number}
+	   */
+
+
+			static estimateBytesUsed( geometry ) {
+
+				// Return the estimated memory used by this geometry in bytes
+				// Calculate using itemSize, count, and BYTES_PER_ELEMENT to account
+				// for InterleavedBufferAttributes.
+				let mem = 0;
+
+				for ( const name in geometry.attributes ) {
+
+					const attr = geometry.getAttribute( name );
+					mem += attr.count * attr.itemSize * attr.array.BYTES_PER_ELEMENT;
+
+				}
+
+				const indices = geometry.getIndex();
+				mem += indices ? indices.count * indices.itemSize * indices.array.BYTES_PER_ELEMENT : 0;
+				return mem;
+
+			}
+			/**
+	   * @param {BufferGeometry} geometry
+	   * @param {number} tolerance
+	   * @return {BufferGeometry>}
+	   */
+
+
+			static mergeVertices( geometry, tolerance = 1e-4 ) {
+
+				tolerance = Math.max( tolerance, Number.EPSILON ); // Generate an index buffer if the geometry doesn't have one, or optimize it
+				// if it's already available.
+
+				const hashToIndex = {};
+				const indices = geometry.getIndex();
+				const positions = geometry.getAttribute( 'position' );
+				const vertexCount = indices ? indices.count : positions.count; // next value for triangle indices
+
+				let nextIndex = 0; // attributes and new attribute arrays
+
+				const attributeNames = Object.keys( geometry.attributes );
+				const attrArrays = {};
+				const morphAttrsArrays = {};
+				const newIndices = [];
+				const getters = [ 'getX', 'getY', 'getZ', 'getW' ]; // initialize the arrays
+
+				for ( let i = 0, l = attributeNames.length; i < l; i ++ ) {
+
+					const name = attributeNames[ i ];
+					attrArrays[ name ] = [];
+					const morphAttr = geometry.morphAttributes[ name ];
+
+					if ( morphAttr ) {
+
+						morphAttrsArrays[ name ] = new Array( morphAttr.length ).fill().map( () => [] );
+
+					}
+
+				} // convert the error tolerance to an amount of decimal places to truncate to
+
+
+				const decimalShift = Math.log10( 1 / tolerance );
+				const shiftMultiplier = Math.pow( 10, decimalShift );
+
+				for ( let i = 0; i < vertexCount; i ++ ) {
+
+					const index = indices ? indices.getX( i ) : i; // Generate a hash for the vertex attributes at the current index 'i'
+
+					let hash = '';
+
+					for ( let j = 0, l = attributeNames.length; j < l; j ++ ) {
+
+						const name = attributeNames[ j ];
+						const attribute = geometry.getAttribute( name );
+						const itemSize = attribute.itemSize;
+
+						for ( let k = 0; k < itemSize; k ++ ) {
+
+							// double tilde truncates the decimal value
+							hash += `${~ ~ ( attribute[ getters[ k ] ]( index ) * shiftMultiplier )},`;
+
+						}
+
+					} // Add another reference to the vertex if it's already
+					// used by another index
+
+
+					if ( hash in hashToIndex ) {
+
+						newIndices.push( hashToIndex[ hash ] );
 
 					} else {
 
-						console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. The geometry must have either an index or a position attribute' );
-						return null;
+						// copy data to the new index in the attribute arrays
+						for ( let j = 0, l = attributeNames.length; j < l; j ++ ) {
 
-					}
+							const name = attributeNames[ j ];
+							const attribute = geometry.getAttribute( name );
+							const morphAttr = geometry.morphAttributes[ name ];
+							const itemSize = attribute.itemSize;
+							const newarray = attrArrays[ name ];
+							const newMorphArrays = morphAttrsArrays[ name ];
 
-					mergedGeometry.addGroup( offset, count, i );
+							for ( let k = 0; k < itemSize; k ++ ) {
 
-					offset += count;
+								const getterFunc = getters[ k ];
+								newarray.push( attribute[ getterFunc ]( index ) );
 
-				}
+								if ( morphAttr ) {
 
-			}
+									for ( let m = 0, ml = morphAttr.length; m < ml; m ++ ) {
 
-			// merge indices
+										newMorphArrays[ m ].push( morphAttr[ m ][ getterFunc ]( index ) );
 
-			if ( isIndexed ) {
-
-				var indexOffset = 0;
-				var mergedIndex = [];
-
-				for ( var i = 0; i < geometries.length; ++ i ) {
-
-					var index = geometries[ i ].index;
-
-					for ( var j = 0; j < index.count; ++ j ) {
-
-						mergedIndex.push( index.getX( j ) + indexOffset );
-
-					}
-
-					indexOffset += geometries[ i ].attributes.position.count;
-
-				}
-
-				mergedGeometry.setIndex( mergedIndex );
-
-			}
-
-			// merge attributes
-
-			for ( var name in attributes ) {
-
-				var mergedAttribute = this.mergeBufferAttributes( attributes[ name ] );
-
-				if ( ! mergedAttribute ) {
-
-					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed while trying to merge the ' + name + ' attribute.' );
-					return null;
-
-				}
-
-				mergedGeometry.setAttribute( name, mergedAttribute );
-
-			}
-
-			// merge morph attributes
-
-			for ( var name in morphAttributes ) {
-
-				var numMorphTargets = morphAttributes[ name ][ 0 ].length;
-
-				if ( numMorphTargets === 0 ) break;
-
-				mergedGeometry.morphAttributes = mergedGeometry.morphAttributes || {};
-				mergedGeometry.morphAttributes[ name ] = [];
-
-				for ( var i = 0; i < numMorphTargets; ++ i ) {
-
-					var morphAttributesToMerge = [];
-
-					for ( var j = 0; j < morphAttributes[ name ].length; ++ j ) {
-
-						morphAttributesToMerge.push( morphAttributes[ name ][ j ][ i ] );
-
-					}
-
-					var mergedMorphAttribute = this.mergeBufferAttributes( morphAttributesToMerge );
-
-					if ( ! mergedMorphAttribute ) {
-
-						console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed while trying to merge the ' + name + ' morphAttribute.' );
-						return null;
-
-					}
-
-					mergedGeometry.morphAttributes[ name ].push( mergedMorphAttribute );
-
-				}
-
-			}
-
-			return mergedGeometry;
-
-		},
-
-		/**
-		 * @param {Array<THREE.BufferAttribute>} attributes
-		 * @return {THREE.BufferAttribute}
-		 */
-		mergeBufferAttributes: function ( attributes ) {
-
-			var TypedArray;
-			var itemSize;
-			var normalized;
-			var arrayLength = 0;
-
-			for ( var i = 0; i < attributes.length; ++ i ) {
-
-				var attribute = attributes[ i ];
-
-				if ( attribute.isInterleavedBufferAttribute ) {
-
-					console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. InterleavedBufferAttributes are not supported.' );
-					return null;
-
-				}
-
-				if ( TypedArray === undefined ) TypedArray = attribute.array.constructor;
-				if ( TypedArray !== attribute.array.constructor ) {
-
-					console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.array must be of consistent array types across matching attributes.' );
-					return null;
-
-				}
-
-				if ( itemSize === undefined ) itemSize = attribute.itemSize;
-				if ( itemSize !== attribute.itemSize ) {
-
-					console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.itemSize must be consistent across matching attributes.' );
-					return null;
-
-				}
-
-				if ( normalized === undefined ) normalized = attribute.normalized;
-				if ( normalized !== attribute.normalized ) {
-
-					console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.normalized must be consistent across matching attributes.' );
-					return null;
-
-				}
-
-				arrayLength += attribute.array.length;
-
-			}
-
-			var array = new TypedArray( arrayLength );
-			var offset = 0;
-
-			for ( var i = 0; i < attributes.length; ++ i ) {
-
-				array.set( attributes[ i ].array, offset );
-
-				offset += attributes[ i ].array.length;
-
-			}
-
-			return new THREE.BufferAttribute( array, itemSize, normalized );
-
-		},
-
-		/**
-		 * @param {Array<THREE.BufferAttribute>} attributes
-		 * @return {Array<THREE.InterleavedBufferAttribute>}
-		 */
-		interleaveAttributes: function ( attributes ) {
-
-			// Interleaves the provided attributes into an InterleavedBuffer and returns
-			// a set of InterleavedBufferAttributes for each attribute
-			var TypedArray;
-			var arrayLength = 0;
-			var stride = 0;
-
-			// calculate the the length and type of the interleavedBuffer
-			for ( var i = 0, l = attributes.length; i < l; ++ i ) {
-
-				var attribute = attributes[ i ];
-
-				if ( TypedArray === undefined ) TypedArray = attribute.array.constructor;
-				if ( TypedArray !== attribute.array.constructor ) {
-
-					console.error( 'AttributeBuffers of different types cannot be interleaved' );
-					return null;
-
-				}
-
-				arrayLength += attribute.array.length;
-				stride += attribute.itemSize;
-
-			}
-
-			// Create the set of buffer attributes
-			var interleavedBuffer = new THREE.InterleavedBuffer( new TypedArray( arrayLength ), stride );
-			var offset = 0;
-			var res = [];
-			var getters = [ 'getX', 'getY', 'getZ', 'getW' ];
-			var setters = [ 'setX', 'setY', 'setZ', 'setW' ];
-
-			for ( var j = 0, l = attributes.length; j < l; j ++ ) {
-
-				var attribute = attributes[ j ];
-				var itemSize = attribute.itemSize;
-				var count = attribute.count;
-				var iba = new THREE.InterleavedBufferAttribute( interleavedBuffer, itemSize, offset, attribute.normalized );
-				res.push( iba );
-
-				offset += itemSize;
-
-				// Move the data for each attribute into the new interleavedBuffer
-				// at the appropriate offset
-				for ( var c = 0; c < count; c ++ ) {
-
-					for ( var k = 0; k < itemSize; k ++ ) {
-
-						iba[ setters[ k ] ]( c, attribute[ getters[ k ] ]( c ) );
-
-					}
-
-				}
-
-			}
-
-			return res;
-
-		},
-
-		/**
-		 * @param {Array<THREE.BufferGeometry>} geometry
-		 * @return {number}
-		 */
-		estimateBytesUsed: function ( geometry ) {
-
-			// Return the estimated memory used by this geometry in bytes
-			// Calculate using itemSize, count, and BYTES_PER_ELEMENT to account
-			// for InterleavedBufferAttributes.
-			var mem = 0;
-			for ( var name in geometry.attributes ) {
-
-				var attr = geometry.getAttribute( name );
-				mem += attr.count * attr.itemSize * attr.array.BYTES_PER_ELEMENT;
-
-			}
-
-			var indices = geometry.getIndex();
-			mem += indices ? indices.count * indices.itemSize * indices.array.BYTES_PER_ELEMENT : 0;
-			return mem;
-
-		},
-
-		/**
-		 * @param {THREE.BufferGeometry} geometry
-		 * @param {number} tolerance
-		 * @return {THREE.BufferGeometry>}
-		 */
-		mergeVertices: function ( geometry, tolerance = 1e-4 ) {
-
-			tolerance = Math.max( tolerance, Number.EPSILON );
-
-			// Generate an index buffer if the geometry doesn't have one, or optimize it
-			// if it's already available.
-			var hashToIndex = {};
-			var indices = geometry.getIndex();
-			var positions = geometry.getAttribute( 'position' );
-			var vertexCount = indices ? indices.count : positions.count;
-
-			// next value for triangle indices
-			var nextIndex = 0;
-
-			// attributes and new attribute arrays
-			var attributeNames = Object.keys( geometry.attributes );
-			var attrArrays = {};
-			var morphAttrsArrays = {};
-			var newIndices = [];
-			var getters = [ 'getX', 'getY', 'getZ', 'getW' ];
-
-			// initialize the arrays
-			for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
-
-				var name = attributeNames[ i ];
-
-				attrArrays[ name ] = [];
-
-				var morphAttr = geometry.morphAttributes[ name ];
-				if ( morphAttr ) {
-
-					morphAttrsArrays[ name ] = new Array( morphAttr.length ).fill().map( () => [] );
-
-				}
-
-			}
-
-			// convert the error tolerance to an amount of decimal places to truncate to
-			var decimalShift = Math.log10( 1 / tolerance );
-			var shiftMultiplier = Math.pow( 10, decimalShift );
-			for ( var i = 0; i < vertexCount; i ++ ) {
-
-				var index = indices ? indices.getX( i ) : i;
-
-				// Generate a hash for the vertex attributes at the current index 'i'
-				var hash = '';
-				for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
-
-					var name = attributeNames[ j ];
-					var attribute = geometry.getAttribute( name );
-					var itemSize = attribute.itemSize;
-
-					for ( var k = 0; k < itemSize; k ++ ) {
-
-						// double tilde truncates the decimal value
-						hash += `${ ~ ~ ( attribute[ getters[ k ] ]( index ) * shiftMultiplier ) },`;
-
-					}
-
-				}
-
-				// Add another reference to the vertex if it's already
-				// used by another index
-				if ( hash in hashToIndex ) {
-
-					newIndices.push( hashToIndex[ hash ] );
-
-				} else {
-
-					// copy data to the new index in the attribute arrays
-					for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
-
-						var name = attributeNames[ j ];
-						var attribute = geometry.getAttribute( name );
-						var morphAttr = geometry.morphAttributes[ name ];
-						var itemSize = attribute.itemSize;
-						var newarray = attrArrays[ name ];
-						var newMorphArrays = morphAttrsArrays[ name ];
-
-						for ( var k = 0; k < itemSize; k ++ ) {
-
-							var getterFunc = getters[ k ];
-							newarray.push( attribute[ getterFunc ]( index ) );
-
-							if ( morphAttr ) {
-
-								for ( var m = 0, ml = morphAttr.length; m < ml; m ++ ) {
-
-									newMorphArrays[ m ].push( morphAttr[ m ][ getterFunc ]( index ) );
+									}
 
 								}
 
@@ -629,135 +455,364 @@
 
 						}
 
-					}
-
-					hashToIndex[ hash ] = nextIndex;
-					newIndices.push( nextIndex );
-					nextIndex ++;
-
-				}
-
-			}
-
-			// Generate typed arrays from new attribute arrays and update
-			// the attributeBuffers
-			const result = geometry.clone();
-			for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
-
-				var name = attributeNames[ i ];
-				var oldAttribute = geometry.getAttribute( name );
-
-				var buffer = new oldAttribute.array.constructor( attrArrays[ name ] );
-				var attribute = new THREE.BufferAttribute( buffer, oldAttribute.itemSize, oldAttribute.normalized );
-
-				result.setAttribute( name, attribute );
-
-				// Update the attribute arrays
-				if ( name in morphAttrsArrays ) {
-
-					for ( var j = 0; j < morphAttrsArrays[ name ].length; j ++ ) {
-
-						var oldMorphAttribute = geometry.morphAttributes[ name ][ j ];
-
-						var buffer = new oldMorphAttribute.array.constructor( morphAttrsArrays[ name ][ j ] );
-						var morphAttribute = new THREE.BufferAttribute( buffer, oldMorphAttribute.itemSize, oldMorphAttribute.normalized );
-						result.morphAttributes[ name ][ j ] = morphAttribute;
+						hashToIndex[ hash ] = nextIndex;
+						newIndices.push( nextIndex );
+						nextIndex ++;
 
 					}
 
-				}
+				} // Generate typed arrays from new attribute arrays and update
+				// the attributeBuffers
 
-			}
 
-			// indices
+				const result = geometry.clone();
 
-			result.setIndex( newIndices );
+				for ( let i = 0, l = attributeNames.length; i < l; i ++ ) {
 
-			return result;
+					const name = attributeNames[ i ];
+					const oldAttribute = geometry.getAttribute( name );
+					const buffer = new oldAttribute.array.constructor( attrArrays[ name ] );
+					const attribute = new THREE.BufferAttribute( buffer, oldAttribute.itemSize, oldAttribute.normalized );
+					result.setAttribute( name, attribute ); // Update the attribute arrays
 
-		},
+					if ( name in morphAttrsArrays ) {
 
-		/**
-		 * @param {THREE.BufferGeometry} geometry
-		 * @param {number} drawMode
-		 * @return {THREE.BufferGeometry>}
-		 */
-		toTrianglesDrawMode: function ( geometry, drawMode ) {
+						for ( let j = 0; j < morphAttrsArrays[ name ].length; j ++ ) {
 
-			if ( drawMode === THREE.TrianglesDrawMode ) {
-
-				console.warn( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Geometry already defined as triangles.' );
-				return geometry;
-
-			}
-
-			if ( drawMode === THREE.TriangleFanDrawMode || drawMode === THREE.TriangleStripDrawMode ) {
-
-				var index = geometry.getIndex();
-
-				// generate index if not present
-
-				if ( index === null ) {
-
-					var indices = [];
-
-					var position = geometry.getAttribute( 'position' );
-
-					if ( position !== undefined ) {
-
-						for ( var i = 0; i < position.count; i ++ ) {
-
-							indices.push( i );
+							const oldMorphAttribute = geometry.morphAttributes[ name ][ j ];
+							const buffer = new oldMorphAttribute.array.constructor( morphAttrsArrays[ name ][ j ] );
+							const morphAttribute = new THREE.BufferAttribute( buffer, oldMorphAttribute.itemSize, oldMorphAttribute.normalized );
+							result.morphAttributes[ name ][ j ] = morphAttribute;
 
 						}
 
-						geometry.setIndex( indices );
-						index = geometry.getIndex();
-
-					} else {
-
-						console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Undefined position attribute. Processing not possible.' );
-						return geometry;
-
 					}
+
+				} // indices
+
+
+				result.setIndex( newIndices );
+				return result;
+
+			}
+			/**
+	   * @param {BufferGeometry} geometry
+	   * @param {number} drawMode
+	   * @return {BufferGeometry>}
+	   */
+
+
+			static toTrianglesDrawMode( geometry, drawMode ) {
+
+				if ( drawMode === THREE.TrianglesDrawMode ) {
+
+					console.warn( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Geometry already defined as triangles.' );
+					return geometry;
 
 				}
 
-				//
+				if ( drawMode === THREE.TriangleFanDrawMode || drawMode === THREE.TriangleStripDrawMode ) {
 
-				var numberOfTriangles = index.count - 2;
-				var newIndices = [];
+					let index = geometry.getIndex(); // generate index if not present
 
-				if ( drawMode === THREE.TriangleFanDrawMode ) {
+					if ( index === null ) {
 
-					// gl.TRIANGLE_FAN
+						const indices = [];
+						const position = geometry.getAttribute( 'position' );
 
-					for ( var i = 1; i <= numberOfTriangles; i ++ ) {
+						if ( position !== undefined ) {
 
-						newIndices.push( index.getX( 0 ) );
-						newIndices.push( index.getX( i ) );
-						newIndices.push( index.getX( i + 1 ) );
+							for ( let i = 0; i < position.count; i ++ ) {
 
-					}
+								indices.push( i );
 
-				} else {
+							}
 
-					// gl.TRIANGLE_STRIP
-
-					for ( var i = 0; i < numberOfTriangles; i ++ ) {
-
-						if ( i % 2 === 0 ) {
-
-							newIndices.push( index.getX( i ) );
-							newIndices.push( index.getX( i + 1 ) );
-							newIndices.push( index.getX( i + 2 ) );
-
+							geometry.setIndex( indices );
+							index = geometry.getIndex();
 
 						} else {
 
-							newIndices.push( index.getX( i + 2 ) );
-							newIndices.push( index.getX( i + 1 ) );
+							console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Undefined position attribute. Processing not possible.' );
+							return geometry;
+
+						}
+
+					} //
+
+
+					const numberOfTriangles = index.count - 2;
+					const newIndices = [];
+
+					if ( drawMode === THREE.TriangleFanDrawMode ) {
+
+						// gl.TRIANGLE_FAN
+						for ( let i = 1; i <= numberOfTriangles; i ++ ) {
+
+							newIndices.push( index.getX( 0 ) );
 							newIndices.push( index.getX( i ) );
+							newIndices.push( index.getX( i + 1 ) );
+
+						}
+
+					} else {
+
+						// gl.TRIANGLE_STRIP
+						for ( let i = 0; i < numberOfTriangles; i ++ ) {
+
+							if ( i % 2 === 0 ) {
+
+								newIndices.push( index.getX( i ) );
+								newIndices.push( index.getX( i + 1 ) );
+								newIndices.push( index.getX( i + 2 ) );
+
+							} else {
+
+								newIndices.push( index.getX( i + 2 ) );
+								newIndices.push( index.getX( i + 1 ) );
+								newIndices.push( index.getX( i ) );
+
+							}
+
+						}
+
+					}
+
+					if ( newIndices.length / 3 !== numberOfTriangles ) {
+
+						console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Unable to generate correct amount of triangles.' );
+
+					} // build final geometry
+
+
+					const newGeometry = geometry.clone();
+					newGeometry.setIndex( newIndices );
+					newGeometry.clearGroups();
+					return newGeometry;
+
+				} else {
+
+					console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Unknown draw mode:', drawMode );
+					return geometry;
+
+				}
+
+			}
+			/**
+	   * Calculates the morphed attributes of a morphed/skinned THREE.BufferGeometry.
+	   * Helpful for Raytracing or Decals.
+	   * @param {Mesh | Line | Points} object An instance of Mesh, Line or Points.
+	   * @return {Object} An Object with original position/normal attributes and morphed ones.
+	   */
+
+
+			static computeMorphedAttributes( object ) {
+
+				if ( object.geometry.isBufferGeometry !== true ) {
+
+					console.error( 'THREE.BufferGeometryUtils: Geometry is not of type THREE.BufferGeometry.' );
+					return null;
+
+				}
+
+				const _vA = new THREE.Vector3();
+
+				const _vB = new THREE.Vector3();
+
+				const _vC = new THREE.Vector3();
+
+				const _tempA = new THREE.Vector3();
+
+				const _tempB = new THREE.Vector3();
+
+				const _tempC = new THREE.Vector3();
+
+				const _morphA = new THREE.Vector3();
+
+				const _morphB = new THREE.Vector3();
+
+				const _morphC = new THREE.Vector3();
+
+				function _calculateMorphedAttributeData( object, material, attribute, morphAttribute, morphTargetsRelative, a, b, c, modifiedAttributeArray ) {
+
+					_vA.fromBufferAttribute( attribute, a );
+
+					_vB.fromBufferAttribute( attribute, b );
+
+					_vC.fromBufferAttribute( attribute, c );
+
+					const morphInfluences = object.morphTargetInfluences;
+
+					if ( material.morphTargets && morphAttribute && morphInfluences ) {
+
+						_morphA.set( 0, 0, 0 );
+
+						_morphB.set( 0, 0, 0 );
+
+						_morphC.set( 0, 0, 0 );
+
+						for ( let i = 0, il = morphAttribute.length; i < il; i ++ ) {
+
+							const influence = morphInfluences[ i ];
+							const morph = morphAttribute[ i ];
+							if ( influence === 0 ) continue;
+
+							_tempA.fromBufferAttribute( morph, a );
+
+							_tempB.fromBufferAttribute( morph, b );
+
+							_tempC.fromBufferAttribute( morph, c );
+
+							if ( morphTargetsRelative ) {
+
+								_morphA.addScaledVector( _tempA, influence );
+
+								_morphB.addScaledVector( _tempB, influence );
+
+								_morphC.addScaledVector( _tempC, influence );
+
+							} else {
+
+								_morphA.addScaledVector( _tempA.sub( _vA ), influence );
+
+								_morphB.addScaledVector( _tempB.sub( _vB ), influence );
+
+								_morphC.addScaledVector( _tempC.sub( _vC ), influence );
+
+							}
+
+						}
+
+						_vA.add( _morphA );
+
+						_vB.add( _morphB );
+
+						_vC.add( _morphC );
+
+					}
+
+					if ( object.isSkinnedMesh ) {
+
+						object.boneTransform( a, _vA );
+						object.boneTransform( b, _vB );
+						object.boneTransform( c, _vC );
+
+					}
+
+					modifiedAttributeArray[ a * 3 + 0 ] = _vA.x;
+					modifiedAttributeArray[ a * 3 + 1 ] = _vA.y;
+					modifiedAttributeArray[ a * 3 + 2 ] = _vA.z;
+					modifiedAttributeArray[ b * 3 + 0 ] = _vB.x;
+					modifiedAttributeArray[ b * 3 + 1 ] = _vB.y;
+					modifiedAttributeArray[ b * 3 + 2 ] = _vB.z;
+					modifiedAttributeArray[ c * 3 + 0 ] = _vC.x;
+					modifiedAttributeArray[ c * 3 + 1 ] = _vC.y;
+					modifiedAttributeArray[ c * 3 + 2 ] = _vC.z;
+
+				}
+
+				const geometry = object.geometry;
+				const material = object.material;
+				let a, b, c;
+				const index = geometry.index;
+				const positionAttribute = geometry.attributes.position;
+				const morphPosition = geometry.morphAttributes.position;
+				const morphTargetsRelative = geometry.morphTargetsRelative;
+				const normalAttribute = geometry.attributes.normal;
+				const morphNormal = geometry.morphAttributes.position;
+				const groups = geometry.groups;
+				const drawRange = geometry.drawRange;
+				let i, j, il, jl;
+				let group, groupMaterial;
+				let start, end;
+				const modifiedPosition = new Float32Array( positionAttribute.count * positionAttribute.itemSize );
+				const modifiedNormal = new Float32Array( normalAttribute.count * normalAttribute.itemSize );
+
+				if ( index !== null ) {
+
+					// indexed buffer geometry
+					if ( Array.isArray( material ) ) {
+
+						for ( i = 0, il = groups.length; i < il; i ++ ) {
+
+							group = groups[ i ];
+							groupMaterial = material[ group.materialIndex ];
+							start = Math.max( group.start, drawRange.start );
+							end = Math.min( group.start + group.count, drawRange.start + drawRange.count );
+
+							for ( j = start, jl = end; j < jl; j += 3 ) {
+
+								a = index.getX( j );
+								b = index.getX( j + 1 );
+								c = index.getX( j + 2 );
+
+								_calculateMorphedAttributeData( object, groupMaterial, positionAttribute, morphPosition, morphTargetsRelative, a, b, c, modifiedPosition );
+
+								_calculateMorphedAttributeData( object, groupMaterial, normalAttribute, morphNormal, morphTargetsRelative, a, b, c, modifiedNormal );
+
+							}
+
+						}
+
+					} else {
+
+						start = Math.max( 0, drawRange.start );
+						end = Math.min( index.count, drawRange.start + drawRange.count );
+
+						for ( i = start, il = end; i < il; i += 3 ) {
+
+							a = index.getX( i );
+							b = index.getX( i + 1 );
+							c = index.getX( i + 2 );
+
+							_calculateMorphedAttributeData( object, material, positionAttribute, morphPosition, morphTargetsRelative, a, b, c, modifiedPosition );
+
+							_calculateMorphedAttributeData( object, material, normalAttribute, morphNormal, morphTargetsRelative, a, b, c, modifiedNormal );
+
+						}
+
+					}
+
+				} else if ( positionAttribute !== undefined ) {
+
+					// non-indexed buffer geometry
+					if ( Array.isArray( material ) ) {
+
+						for ( i = 0, il = groups.length; i < il; i ++ ) {
+
+							group = groups[ i ];
+							groupMaterial = material[ group.materialIndex ];
+							start = Math.max( group.start, drawRange.start );
+							end = Math.min( group.start + group.count, drawRange.start + drawRange.count );
+
+							for ( j = start, jl = end; j < jl; j += 3 ) {
+
+								a = j;
+								b = j + 1;
+								c = j + 2;
+
+								_calculateMorphedAttributeData( object, groupMaterial, positionAttribute, morphPosition, morphTargetsRelative, a, b, c, modifiedPosition );
+
+								_calculateMorphedAttributeData( object, groupMaterial, normalAttribute, morphNormal, morphTargetsRelative, a, b, c, modifiedNormal );
+
+							}
+
+						}
+
+					} else {
+
+						start = Math.max( 0, drawRange.start );
+						end = Math.min( positionAttribute.count, drawRange.start + drawRange.count );
+
+						for ( i = start, il = end; i < il; i += 3 ) {
+
+							a = i;
+							b = i + 1;
+							c = i + 2;
+
+							_calculateMorphedAttributeData( object, material, positionAttribute, morphPosition, morphTargetsRelative, a, b, c, modifiedPosition );
+
+							_calculateMorphedAttributeData( object, material, normalAttribute, morphNormal, morphTargetsRelative, a, b, c, modifiedNormal );
 
 						}
 
@@ -765,30 +820,22 @@
 
 				}
 
-				if ( ( newIndices.length / 3 ) !== numberOfTriangles ) {
-
-					console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Unable to generate correct amount of triangles.' );
-
-				}
-
-				// build final geometry
-
-				var newGeometry = geometry.clone();
-				newGeometry.setIndex( newIndices );
-				newGeometry.clearGroups();
-
-				return newGeometry;
-
-			} else {
-
-				console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Unknown draw mode:', drawMode );
-				return geometry;
+				const morphedPositionAttribute = new THREE.Float32BufferAttribute( modifiedPosition, 3 );
+				const morphedNormalAttribute = new THREE.Float32BufferAttribute( modifiedNormal, 3 );
+				return {
+					positionAttribute: positionAttribute,
+					normalAttribute: normalAttribute,
+					morphedPositionAttribute: morphedPositionAttribute,
+					morphedNormalAttribute: morphedNormalAttribute
+				};
 
 			}
 
 		}
 
-	};
+		THREE.BufferGeometryUtils = BufferGeometryUtils;
+
+	} )();
 
 	/**
 	 *  Keep track of all Types added to the Blobtree library.
@@ -4871,7 +4918,7 @@
 	            U.z, V.z, W.z,0,
 	              0,   0,   0,1);
 	    var mat1 = new three.Matrix4();
-	    mat1.getInverse(mat);
+	    mat1.copy(mat).invert();
 	    var vec = new three.Vector3().subVectors(p, p0);
 	    vec.applyMatrix4(mat1);
 
@@ -7479,6 +7526,13 @@
 
 	var MCTables = Tables;
 
+	const { Box2 } = three;
+	const THREE$1 = three;
+
+
+
+
+
 	/**
 	 *  Axis Aligned Bounding Box in 2D carrying accuracy data
 	 *  @constructor
@@ -7490,82 +7544,88 @@
 	 *  @param {number=} nice_acc Nice accuracy in this box
 	 *  @param {number=} raw_acc Raw accuracy in this box
 	 */
-	var Box2Acc = function (min,max, nice_acc, raw_acc)
-	{
-	    three.Box2.call(this,min,max);
 
-	    if(nice_acc === undefined || nice_acc === null){
-	        var s = Math.max(this.max.x-this.min.x, this.max.y-this.min.y);
-	        this.nice_acc = s <=0 ? 10000000 : s;
-	    }else{
-	        this.nice_acc = nice_acc;
+	class Box2Acc extends Box2 {
+	    constructor(min, max, nice_acc, raw_acc) {
+	        super(min, max);
+
+	        if (nice_acc === undefined || nice_acc === null) {
+	            var s = Math.max(this.max.x - this.min.x, this.max.y - this.min.y);
+	            this.nice_acc = s <= 0 ? 10000000 : s;
+	        } else {
+	            this.nice_acc = nice_acc;
+	        }
+	        if (raw_acc === undefined || raw_acc === null) {
+	            this.raw_acc = this.nice_acc;
+	        } else {
+	            this.raw_acc = raw_acc;
+	        }
 	    }
-	    if(raw_acc === undefined || raw_acc === null){
-	        this.raw_acc = this.nice_acc;
-	    }else{
-	        this.raw_acc = raw_acc;
+
+	    union(box) {
+	        super.union(box);
+	        // Union of 2 boxes get the min acc for both
+	        this.raw_acc = Math.min(box.raw_acc, this.raw_acc);
+	        this.nice_acc = Math.min(box.nice_acc, this.nice_acc);
 	    }
-	};
 
-	Box2Acc.prototype = Object.create(three.Box2.prototype);
+	    getRawAcc () {
+	        return this.raw_acc;
+	    };
 
-	Box2Acc.prototype.union = function(box) {
-	    three.Box2.prototype.union.call(this,box);
-	    // Union of 2 boxes get the min acc for both
-	    this.raw_acc = Math.min(box.raw_acc, this.raw_acc);
-	    this.nice_acc = Math.min(box.nice_acc, this.nice_acc);
-	};
+	    getNiceAcc () {
+	        return this.nice_acc;
+	    };
 
-	Box2Acc.prototype.getRawAcc = function() {
-	    return this.raw_acc;
-	};
+	    setRawAcc (raw_acc) {
+	        this.raw_acc = Math.max(0, raw_acc);
+	    };
 
-	Box2Acc.prototype.getNiceAcc = function() {
-	    return this.nice_acc;
-	};
+	    setNiceAcc (nice_acc) {
+	        this.nice_acc = Math.max(0, nice_acc);
+	    };
 
-	Box2Acc.prototype.setRawAcc = function(raw_acc) {
-	    this.raw_acc = Math.max(0,raw_acc);};
+	    toString () {
+	        return (
+	            "(" +
+	            this.min.x.toFixed(2) +
+	            ", " +
+	            this.min.y.toFixed(2) +
+	            ") -> (" +
+	            this.max.x.toFixed(2) +
+	            ", " +
+	            this.max.y.toFixed(2) +
+	            ") "
+	        );
+	    };
 
-	Box2Acc.prototype.setNiceAcc = function(nice_acc) {
-	    this.nice_acc = Math.max(0,nice_acc);
-	};
+	    /**
+	     *  @param {number} min_x
+	     *  @param {number} min_y
+	     *  @param {number} max_x
+	     *  @param {number} max_y
+	     *  @param {number=} nice_acc
+	     *  @param {number=} raw_acc
+	     */
+	    set (min_x, min_y, max_x, max_y, nice_acc, raw_acc) {
+	        this.min.set(min_x, min_y);
+	        this.max.set(max_x, max_y);
+	        if (nice_acc !== undefined) {
+	            this.nice_acc = nice_acc;
+	        }
+	        if (raw_acc !== undefined) {
+	            this.raw_acc = raw_acc;
+	        }
+	    };
 
-	Box2Acc.prototype.toString = function() {
-	    return "(" + this.min.x.toFixed(2) + ", " + this.min.y.toFixed(2) + ") -> (" + this.max.x.toFixed(2) + ", " + this.max.y.toFixed(2) + ") ";
-	};
-
-	/**
-	 *  @param {number} min_x
-	 *  @param {number} min_y
-	 *  @param {number} max_x
-	 *  @param {number} max_y
-	 *  @param {number=} nice_acc
-	 *  @param {number=} raw_acc
-	 */
-	Box2Acc.prototype.set = function (min_x,min_y,max_x,max_y, nice_acc, raw_acc)
-	{
-	    this.min.set(min_x,min_y);
-	    this.max.set(max_x,max_y);
-	    if(nice_acc !== undefined){
-	        this.nice_acc = nice_acc;
-	    }
-	    if(raw_acc !== undefined){
-	        this.raw_acc = raw_acc;
-	    }
-	};
-
-	/**
-	 *  Get corner with the minimum coordinates
-	 *  @return {THREE.Vector3}
-	 */
-	Box2Acc.prototype.getMinCorner = function(){
-	    return this.min;
-	};
-
-
-
-
+	    /**
+	     *  Get corner with the minimum coordinates
+	     *  @return {THREE.Vector3}
+	     */
+	    getMinCorner () {
+	        return this.min;
+	    };
+	}
 
 	/**
 	 *  Class for a dual marching cube using 2 sliding arrays.
@@ -7586,40 +7646,44 @@
 	 *                                   field is such that congerging is not possible (for example, null gradients on large areas)
 	 *  @constructor
 	 */
-	var SlidingMarchingCubes = function(blobtree, params) {
 
+	var SlidingMarchingCubes = function(blobtree, params) {
 	    var params = params || {};
 
 	    this.blobtree = blobtree;
 
 	    this.uniformZ = params.zResolution === "uniform" ? true : false;
 
-	    this.detail_ratio = params.detailRatio ? Math.max(0.01, params.detailRatio) : 1.0;
+	    this.detail_ratio = params.detailRatio
+	        ? Math.max(0.01, params.detailRatio)
+	        : 1.0;
 
-	    if(params.convergence){
+	    if (params.convergence) {
 	        this.convergence = params.convergence;
 	        this.convergence.ratio = this.convergence.ratio || 0.01;
 	        this.convergence.step = this.convergence.step || 10;
-	    }else{
+	    } else {
 	        this.convergence = null;
 	    }
 
-	    this.progress = params.progress ? params.progress : function(percent){
-	        //console.log(percent);
-	    };
+	    this.progress = params.progress
+	        ? params.progress
+	        : function(percent) {
+	              //console.log(percent);
+	          };
 
 	    /** @type {Int32Array} */
 	    this.reso = new Int32Array(3);
 	    this.steps = {
-	        x:null,
-	        y:null,
-	        z:null
+	        x: null,
+	        y: null,
+	        z: null
 	    };
 	    /** @type {!{x:number,y:number,z:number}} */
 	    this.curr_steps = {
-	        x:0,
-	        y:0,
-	        z:0
+	        x: 0,
+	        y: 0,
+	        z: 0
 	    };
 	    // = this.curr_steps.x*this.curr_steps.y*this.curr_steps.z
 	    this.curr_step_vol = 0;
@@ -7628,45 +7692,44 @@
 	     *  Sliding values array
 	     *  @type {!Array.<Float32Array>}
 	     */
-	    this.values_xy = [
-	        null,
-	        null
-	    ];
+	    this.values_xy = [null, null];
 	    /**
 	     *  Sliding values array
 	     *  @type {!Array.<Int32Array>}
 	     */
-	    this.vertices_xy = [
-	        null,
-	        null
-	    ];
+	    this.vertices_xy = [null, null];
 	    this.areas = [];
 	    this.min_acc = 1;
 
 	    // Processing vars
 	    this.values = new Array(8);
-	    this.x      = 0;
-	    this.y      = 0;
-	    this.z      = 0;
+	    this.x = 0;
+	    this.y = 0;
+	    this.z = 0;
 	    this.mask = 0;
 	    this.edge_cross = [
-	        false,  // Tables.EdgeVMap[0], x=1
-	        false, false, false,
-	        false,  // edge 2 : Tables.EdgeVMap[4], y=1
-	        false, false, false,
-	        false,   // edge 3 : Tables.EdgeVMap[8], z=1
-	        false, false, false
+	        false, // Tables.EdgeVMap[0], x=1
+	        false,
+	        false,
+	        false,
+	        false, // edge 2 : Tables.EdgeVMap[4], y=1
+	        false,
+	        false,
+	        false,
+	        false, // edge 3 : Tables.EdgeVMap[8], z=1
+	        false,
+	        false,
+	        false
 	    ];
 
-	    this.vertex = new three.Vector3(0,0,0);   // vertex associated to the cell if any
-	    this.vertex_n = new three.Vector3(0,0,0); // vertex normal
-	    this.vertex_m = new Material_1();           // vertex material
-
+	    this.vertex = new THREE$1.Vector3(0, 0, 0); // vertex associated to the cell if any
+	    this.vertex_n = new THREE$1.Vector3(0, 0, 0); // vertex normal
+	    this.vertex_m = new Material_1(); // vertex material
 
 	    // Vars and tmp vars for extension checks
 	    this.extended = false;
-	    this.dis_o_aabb = new three.Box3();
-	    this.ext_p = new three.Vector3();
+	    this.dis_o_aabb = new THREE$1.Box3();
+	    this.ext_p = new THREE$1.Vector3();
 
 	    /**
 	     *  Resulting mesh data
@@ -7678,17 +7741,17 @@
 	 *  Initialize the internal Geometry structure.
 	 *  @private
 	 */
-	SlidingMarchingCubes.prototype.initGeometry = function(){
+	SlidingMarchingCubes.prototype.initGeometry = function() {
 	    this.geometry = {
-	        position:[],
-	        normal:[],
-	        color:[],
-	        metalness:[],
-	        roughness:[],
-	        nVertices:0,
-	        faces:[],
-	        nFaces:0,
-	        addVertex:function(data){
+	        position: [],
+	        normal: [],
+	        color: [],
+	        metalness: [],
+	        roughness: [],
+	        nVertices: 0,
+	        faces: [],
+	        nFaces: 0,
+	        addVertex: function(data) {
 	            this.position.push(data.p.x, data.p.y, data.p.z);
 	            this.normal.push(data.n.x, data.n.y, data.n.z);
 	            this.color.push(data.c.r, data.c.g, data.c.b);
@@ -7696,8 +7759,8 @@
 	            this.metalness.push(data.m);
 	            this.nVertices++;
 	        },
-	        addFace:function(a,b,c){
-	            this.faces.push(a,b,c);
+	        addFace: function(a, b, c) {
+	            this.faces.push(a, b, c);
 	            this.nFaces++;
 	        }
 	    };
@@ -7708,16 +7771,36 @@
 	 *  used in compute function.
 	 *  @private
 	 */
-	SlidingMarchingCubes.prototype.buildResultingBufferGeometry = function(){
-	    var res = new three.BufferGeometry();
-	    res.setAttribute( 'position',  new three.BufferAttribute( new Float32Array( this.geometry.position ),  3 ) );
-	    res.setAttribute( 'normal',    new three.BufferAttribute( new Float32Array( this.geometry.normal ),    3 ) );
-	    res.setAttribute( 'color',     new three.BufferAttribute( new Float32Array( this.geometry.color ),     3 ) );
-	    res.setAttribute( 'roughness', new three.BufferAttribute( new Float32Array( this.geometry.roughness ), 1 ) );
-	    res.setAttribute( 'metalness', new three.BufferAttribute( new Float32Array( this.geometry.metalness ), 1 ) );
+	SlidingMarchingCubes.prototype.buildResultingBufferGeometry = function() {
+	    var res = new THREE$1.BufferGeometry();
+	    res.setAttribute(
+	        "position",
+	        new THREE$1.BufferAttribute(new Float32Array(this.geometry.position), 3)
+	    );
+	    res.setAttribute(
+	        "normal",
+	        new THREE$1.BufferAttribute(new Float32Array(this.geometry.normal), 3)
+	    );
+	    res.setAttribute(
+	        "color",
+	        new THREE$1.BufferAttribute(new Float32Array(this.geometry.color), 3)
+	    );
+	    res.setAttribute(
+	        "roughness",
+	        new THREE$1.BufferAttribute(new Float32Array(this.geometry.roughness), 1)
+	    );
+	    res.setAttribute(
+	        "metalness",
+	        new THREE$1.BufferAttribute(new Float32Array(this.geometry.metalness), 1)
+	    );
 
-	    res.setIndex(new three.BufferAttribute(
-	        this.geometry.nVertices >65535 ? new Uint32Array(this.geometry.faces) : new Uint16Array(this.geometry.faces), 1 )
+	    res.setIndex(
+	        new THREE$1.BufferAttribute(
+	            this.geometry.nVertices > 65535
+	                ? new Uint32Array(this.geometry.faces)
+	                : new Uint16Array(this.geometry.faces),
+	            1
+	        )
 	    );
 
 	    return res;
@@ -7727,9 +7810,9 @@
 	 *  Set values in this.values_xy[1] to 0
 	 *  @private
 	 */
-	SlidingMarchingCubes.prototype.setFrontToZero = function(){
+	SlidingMarchingCubes.prototype.setFrontToZero = function() {
 	    // init to 0, can be omptim later
-	    for(var i=0; i<this.values_xy[1].length; ++i){
+	    for (var i = 0; i < this.values_xy[1].length; ++i) {
 	        this.values_xy[1][i] = 0;
 	    }
 	};
@@ -7739,9 +7822,9 @@
 	 *  -1 is a marker to state the value has not been computed nor interpolated
 	 *  @private
 	 */
-	SlidingMarchingCubes.prototype.setFrontToMinus = function(){
+	SlidingMarchingCubes.prototype.setFrontToMinus = function() {
 	    // init to 0, can be omptim later
-	    for(var i=0; i<this.values_xy[1].length; ++i){
+	    for (var i = 0; i < this.values_xy[1].length; ++i) {
 	        this.values_xy[1][i] = -1;
 	    }
 	};
@@ -7750,10 +7833,10 @@
 	 *  Set values in this.values_xy[1] to 0 wherever it is -1.
 	 *  @private
 	 */
-	SlidingMarchingCubes.prototype.setFrontToZeroIfMinus = function(){
+	SlidingMarchingCubes.prototype.setFrontToZeroIfMinus = function() {
 	    // init to 0, can be omptim later
-	    for(var i=0; i<this.values_xy[1].length; ++i){
-	        if(this.values_xy[1][i] === -1){
+	    for (var i = 0; i < this.values_xy[1].length; ++i) {
+	        if (this.values_xy[1][i] === -1) {
 	            this.values_xy[1][i] = 0;
 	        }
 	    }
@@ -7773,12 +7856,19 @@
 	 *
 	 *  @private
 	 */
-	SlidingMarchingCubes.prototype.interpolateInBox = function(cx,cy,cz, x0,x1,y0,y1)
-	{
+	SlidingMarchingCubes.prototype.interpolateInBox = function(
+	    cx,
+	    cy,
+	    cz,
+	    x0,
+	    x1,
+	    y0,
+	    y1
+	) {
 	    var varr = this.values_xy[1];
 
-	    var nx = x1-x0;
-	    var ny = y1-y0;
+	    var nx = x1 - x0;
+	    var ny = y1 - y0;
 
 	    /*
 	    this.computeFrontValAtBoxCorners(cx,cy,cz, new THREE.Vector2(x0,y0), new THREE.Vector2(x1,y1));
@@ -7788,37 +7878,37 @@
 	    }
 	    */
 
-	    if(nx>1){
+	    if (nx > 1) {
 	        // must interpolate
-	        var line = y0*this.reso[0];
-	        var val0 = varr[line+x0];
-	        var v_step = (varr[line+x1] - val0)/nx;
-	        for(var i = 1;i<nx;++i){
-	            if(varr[line+x0+i] === -1){
-	                varr[line+x0+i] = val0+i*v_step;
+	        var line = y0 * this.reso[0];
+	        var val0 = varr[line + x0];
+	        var v_step = (varr[line + x1] - val0) / nx;
+	        for (var i = 1; i < nx; ++i) {
+	            if (varr[line + x0 + i] === -1) {
+	                varr[line + x0 + i] = val0 + i * v_step;
 	                //this.computeFrontValAt(cx,cy,cz,x0+i,y0);
 	            }
 	        }
 	    }
 
-	    if(ny>1){
+	    if (ny > 1) {
 	        // compute upper line
-	        var line = y1*this.reso[0];
-	        var val0 = varr[line+x0];
-	        var v_step = (varr[line+x1] - val0)/nx;
-	        for(var i = 1;i<nx;++i){
-	            if(varr[line+x0+i] ===-1){
-	                varr[line+x0+i] = val0+i*v_step;
+	        var line = y1 * this.reso[0];
+	        var val0 = varr[line + x0];
+	        var v_step = (varr[line + x1] - val0) / nx;
+	        for (var i = 1; i < nx; ++i) {
+	            if (varr[line + x0 + i] === -1) {
+	                varr[line + x0 + i] = val0 + i * v_step;
 	                //this.computeFrontValAt(cx,cy,cz,x0+i,y1);
 	            }
 	        }
 
-	        for(var i = 0;i<=nx;++i){
-	            val0 = varr[y0*this.reso[0]+x0+i];
-	            v_step = (varr[y1*this.reso[0]+x0+i] - val0)/ny;
-	            for(var k = 1;k<ny;++k){
-	                if(varr[(y0+k)*this.reso[0]+x0+i] === -1){
-	                    varr[(y0+k)*this.reso[0]+x0+i] = val0+k*v_step;
+	        for (var i = 0; i <= nx; ++i) {
+	            val0 = varr[y0 * this.reso[0] + x0 + i];
+	            v_step = (varr[y1 * this.reso[0] + x0 + i] - val0) / ny;
+	            for (var k = 1; k < ny; ++k) {
+	                if (varr[(y0 + k) * this.reso[0] + x0 + i] === -1) {
+	                    varr[(y0 + k) * this.reso[0] + x0 + i] = val0 + k * v_step;
 	                    //if(i===0 || i==nx){
 	                    //    this.computeFrontValAt(cx,cy,cz,x0+i,(y0+k));
 	                    //}
@@ -7826,7 +7916,6 @@
 	            }
 	        }
 	    }
-
 	};
 
 	/**
@@ -7841,25 +7930,21 @@
 	 *
 	 *  @private
 	 */
-	SlidingMarchingCubes.prototype.computeFrontValAt = function(cx, cy, cz, x,y){
-	    this.computeFrontValAtClosure(cx, cy, cz, x,y);
+	SlidingMarchingCubes.prototype.computeFrontValAt = function(cx, cy, cz, x, y) {
+	    this.computeFrontValAtClosure(cx, cy, cz, x, y);
 	};
 	/**
 	 *  Function using closure to have static variable. Wrapped in computeFrontValAt
 	 *  for profiling purpose.
 	 */
-	SlidingMarchingCubes.prototype.computeFrontValAtClosure = (function(){
-	    var eval_res = {v:0};
-	    var p = new three.Vector3();
-	    return function(cx, cy, cz, x,y){
-	        var index = y*this.reso[0]+x;
+	SlidingMarchingCubes.prototype.computeFrontValAtClosure = (function() {
+	    var eval_res = { v: 0 };
+	    var p = new THREE$1.Vector3();
+	    return function(cx, cy, cz, x, y) {
+	        var index = y * this.reso[0] + x;
 	        eval_res.v = this.blobtree.getNeutralValue();
-	        if(this.values_xy[1][index] === -1){
-	            p.set(
-	                cx+x*this.min_acc,
-	                cy+y*this.min_acc,
-	                cz
-	            );
+	        if (this.values_xy[1][index] === -1) {
+	            p.set(cx + x * this.min_acc, cy + y * this.min_acc, cz);
 	            this.blobtree.value(p, eval_res);
 	            this.values_xy[1][index] = eval_res.v;
 	        }
@@ -7874,11 +7959,17 @@
 	 *  @param {!THREE.Vector2} min 2D box min
 	 *  @param {!THREE.Vector2} max 2D box max
 	 */
-	SlidingMarchingCubes.prototype.computeFrontValAtBoxCorners = function(cx,cy,cz, min, max){
-	    this.computeFrontValAt(cx,cy,cz, min.x, min.y);
-	    this.computeFrontValAt(cx,cy,cz, min.x, max.y);
-	    this.computeFrontValAt(cx,cy,cz, max.x, min.y);
-	    this.computeFrontValAt(cx,cy,cz, max.x, max.y);
+	SlidingMarchingCubes.prototype.computeFrontValAtBoxCorners = function(
+	    cx,
+	    cy,
+	    cz,
+	    min,
+	    max
+	) {
+	    this.computeFrontValAt(cx, cy, cz, min.x, min.y);
+	    this.computeFrontValAt(cx, cy, cz, min.x, max.y);
+	    this.computeFrontValAt(cx, cy, cz, max.x, min.y);
+	    this.computeFrontValAt(cx, cy, cz, max.x, max.y);
 	};
 
 	/**
@@ -7889,10 +7980,16 @@
 	 *  @param {!THREE.Vector2} min 2D box min
 	 *  @param {!THREE.Vector2} max 2D box max
 	 */
-	SlidingMarchingCubes.prototype.computeFrontValInBox = function(cx,cy,cz, min, max){
-	    for(var xx = min.x; xx<=max.x; ++xx){
-	        for(var yy = min.y; yy<=max.y; ++yy){
-	            this.computeFrontValAt(cx,cy,cz, xx, yy);
+	SlidingMarchingCubes.prototype.computeFrontValInBox = function(
+	    cx,
+	    cy,
+	    cz,
+	    min,
+	    max
+	) {
+	    for (var xx = min.x; xx <= max.x; ++xx) {
+	        for (var yy = min.y; yy <= max.y; ++yy) {
+	            this.computeFrontValAt(cx, cy, cz, xx, yy);
 	        }
 	    }
 	};
@@ -7902,10 +7999,10 @@
 	 *  @param {!THREE.Vector2} min 2D box min
 	 *  @param {!THREE.Vector2} max 2D box max
 	 */
-	SlidingMarchingCubes.prototype.setFrontValZeroInBox = function(min, max){
-	    for(var ix=min.x; ix<=max.x; ++ix){
-	        for(var iy=min.y; iy<=max.y; ++iy){
-	            this.values_xy[1][iy*this.reso[0]+ix] = 0;
+	SlidingMarchingCubes.prototype.setFrontValZeroInBox = function(min, max) {
+	    for (var ix = min.x; ix <= max.x; ++ix) {
+	        for (var iy = min.y; iy <= max.y; ++iy) {
+	            this.values_xy[1][iy * this.reso[0] + ix] = 0;
 	        }
 	    }
 	};
@@ -7917,12 +8014,28 @@
 	 *  @param {!THREE.Vector2} max 2D box max
 	 *  @return {number} The mask
 	 */
-	SlidingMarchingCubes.prototype.computeBoxMask = function(min, max){
+	SlidingMarchingCubes.prototype.computeBoxMask = function(min, max) {
 	    var mask = 0;
-	    mask |= (this.values_xy[1][min.y*this.reso[0]+min.x] > this.blobtree.getIsoValue()) ? (1<<0) : 0;
-	    mask |= (this.values_xy[1][min.y*this.reso[0]+max.x] > this.blobtree.getIsoValue()) ? (1<<1) : 0;
-	    mask |= (this.values_xy[1][max.y*this.reso[0]+max.x] > this.blobtree.getIsoValue()) ? (1<<2) : 0;
-	    mask |= (this.values_xy[1][max.y*this.reso[0]+min.x] > this.blobtree.getIsoValue()) ? (1<<3) : 0;
+	    mask |=
+	        this.values_xy[1][min.y * this.reso[0] + min.x] >
+	        this.blobtree.getIsoValue()
+	            ? 1 << 0
+	            : 0;
+	    mask |=
+	        this.values_xy[1][min.y * this.reso[0] + max.x] >
+	        this.blobtree.getIsoValue()
+	            ? 1 << 1
+	            : 0;
+	    mask |=
+	        this.values_xy[1][max.y * this.reso[0] + max.x] >
+	        this.blobtree.getIsoValue()
+	            ? 1 << 2
+	            : 0;
+	    mask |=
+	        this.values_xy[1][max.y * this.reso[0] + min.x] >
+	        this.blobtree.getIsoValue()
+	            ? 1 << 3
+	            : 0;
 	    return mask;
 	};
 
@@ -7932,13 +8045,14 @@
 	 *  @param {!THREE.Vector2} max 2D box max
 	 *  @return {number}
 	 */
-	SlidingMarchingCubes.prototype.checkZeroBox = function(min, max){
-	    return   this.values_xy[1][min.y*this.reso[0]+min.x]
-	           + this.values_xy[1][min.y*this.reso[0]+max.x]
-	           + this.values_xy[1][max.y*this.reso[0]+max.x]
-	           + this.values_xy[1][max.y*this.reso[0]+min.x];
+	SlidingMarchingCubes.prototype.checkZeroBox = function(min, max) {
+	    return (
+	        this.values_xy[1][min.y * this.reso[0] + min.x] +
+	        this.values_xy[1][min.y * this.reso[0] + max.x] +
+	        this.values_xy[1][max.y * this.reso[0] + max.x] +
+	        this.values_xy[1][max.y * this.reso[0] + min.x]
+	    );
 	};
-
 
 	/**
 	 *  Recursive function computing values in the given 2D box (which is a subbox
@@ -7952,47 +8066,65 @@
 	 *  @param {!Array.<!Box2Acc>} boxes2D 2D boxes intersecting box. Used to compute accuracy for split boxes.
 	 *  @param {!Box2Acc} box The 2D box in which we compute values
 	 */
-	SlidingMarchingCubes.prototype.recursiveBoxComputation = function(cx,cy,cz, box, boxes2D){
+	SlidingMarchingCubes.prototype.recursiveBoxComputation = function(
+	    cx,
+	    cy,
+	    cz,
+	    box,
+	    boxes2D
+	) {
 	    // split the current box in 2 boxes in the largest dimension
 
 	    var new_boxes = null;
-	    var diff = new three.Vector2(
-	        Math.round((box.max.x-box.min.x)),
-	        Math.round((box.max.y-box.min.y))
+	    var diff = new THREE$1.Vector2(
+	        Math.round(box.max.x - box.min.x),
+	        Math.round(box.max.y - box.min.y)
 	    );
 
-	    if(diff.x>1 && diff.x>=diff.y){
+	    if (diff.x > 1 && diff.x >= diff.y) {
 	        // cut in x
-	        var x_cut = box.min.x+Math.floor(diff.x/2);
+	        var x_cut = box.min.x + Math.floor(diff.x / 2);
 	        new_boxes = [
-	            new Box2Acc(box.min, new three.Vector2(x_cut, box.max.y),
-	                10000 , 10000
+	            new Box2Acc(
+	                box.min,
+	                new THREE$1.Vector2(x_cut, box.max.y),
+	                10000,
+	                10000
 	            ),
-	            new Box2Acc(new three.Vector2(x_cut, box.min.y),box.max,
-	                10000 , 10000
+	            new Box2Acc(
+	                new THREE$1.Vector2(x_cut, box.min.y),
+	                box.max,
+	                10000,
+	                10000
 	            )
 	        ];
-	        this.computeFrontValAt(cx,cy,cz, x_cut, box.min.y);
-	        this.computeFrontValAt(cx,cy,cz, x_cut, box.max.y);
+	        this.computeFrontValAt(cx, cy, cz, x_cut, box.min.y);
+	        this.computeFrontValAt(cx, cy, cz, x_cut, box.max.y);
 	        //this.computeFrontValAt(cx,cy,cz, x_cut+1, box.min.y);
 	        //this.computeFrontValAt(cx,cy,cz, x_cut+1, box.max.y);
-	    }else{
+	    } else {
 	        // cut in y
-	        if(diff.y>1){
-	            var y_cut = box.min.y+Math.floor(diff.y/2);
+	        if (diff.y > 1) {
+	            var y_cut = box.min.y + Math.floor(diff.y / 2);
 	            new_boxes = [
-	                 new Box2Acc(box.min,new three.Vector2(box.max.x, y_cut),
-	                    10000 , 10000
+	                new Box2Acc(
+	                    box.min,
+	                    new THREE$1.Vector2(box.max.x, y_cut),
+	                    10000,
+	                    10000
 	                ),
-	                 new Box2Acc(new three.Vector2(box.min.x, y_cut), box.max,
-	                    10000 , 10000
+	                new Box2Acc(
+	                    new THREE$1.Vector2(box.min.x, y_cut),
+	                    box.max,
+	                    10000,
+	                    10000
 	                )
 	            ];
-	            this.computeFrontValAt(cx,cy,cz, box.min.x, y_cut);
-	            this.computeFrontValAt(cx,cy,cz, box.max.x, y_cut);
+	            this.computeFrontValAt(cx, cy, cz, box.min.x, y_cut);
+	            this.computeFrontValAt(cx, cy, cz, box.max.x, y_cut);
 	            //this.computeFrontValAt(cx,cy,cz, box.min.x, y_cut+1);
 	            //this.computeFrontValAt(cx,cy,cz, box.max.x, y_cut+1);
-	        }else{
+	        } else {
 	            // the box is 1 in size, so we stop
 	            return;
 	        }
@@ -8004,64 +8136,80 @@
 	    */
 
 	    // Compute accuracies for each box
-	    var boxes2D_rec = [ [], [] ];
-	    for(var i=0; i<boxes2D.length; ++i){
-	        for(var k=0; k<new_boxes.length;++k){
-	            if(new_boxes[k].intersectsBox(boxes2D[i])){
+	    var boxes2D_rec = [[], []];
+	    for (var i = 0; i < boxes2D.length; ++i) {
+	        for (var k = 0; k < new_boxes.length; ++k) {
+	            if (new_boxes[k].intersectsBox(boxes2D[i])) {
 	                new_boxes[k].setRawAcc(
-	                    Math.min(
-	                        new_boxes[k].getRawAcc(),
-	                        boxes2D[i].getRawAcc()
-	                        )
+	                    Math.min(new_boxes[k].getRawAcc(), boxes2D[i].getRawAcc())
 	                );
 	                new_boxes[k].setNiceAcc(
-	                    Math.min(
-	                        new_boxes[k].getNiceAcc(),
-	                        boxes2D[i].getNiceAcc()
-	                    )
+	                    Math.min(new_boxes[k].getNiceAcc(), boxes2D[i].getNiceAcc())
 	                );
 	                boxes2D_rec[k].push(boxes2D[i]);
 	            }
 	        }
 	    }
 
-	    for(var k=0; k<new_boxes.length;++k){
+	    for (var k = 0; k < new_boxes.length; ++k) {
 	        var b = new_boxes[k];
 
-	        var bsize = b.getSize(new three.Vector3());
+	        var bsize = b.getSize(new THREE$1.Vector3());
 
-	        if(boxes2D_rec[k].length ===0){
+	        if (boxes2D_rec[k].length === 0) {
 	            this.setFrontValZeroInBox(b.min, b.max);
-	        }else{
-	            if(bsize.x<=b.getRawAcc() && bsize.y<=b.getRawAcc()){
+	        } else {
+	            if (bsize.x <= b.getRawAcc() && bsize.y <= b.getRawAcc()) {
 	                // We reach the raw level
 	                var mask = this.computeBoxMask(b.min, b.max);
-	                if( mask === 0xf
-	                    ||
-	                    mask === 0x0
-	                ){
+	                if (mask === 0xf || mask === 0x0) {
 	                    // all points are inside, since we reached raw, we can interpolate
 	                    // Note when all values are very close to 0, it's useless to interpolate, setting 0 can do.
-	                    this.interpolateInBox(cx,cy,cz, b.min.x, b.max.x, b.min.y, b.max.y);
+	                    this.interpolateInBox(
+	                        cx,
+	                        cy,
+	                        cz,
+	                        b.min.x,
+	                        b.max.x,
+	                        b.min.y,
+	                        b.max.y
+	                    );
 
 	                    // OR just compute all values.
 	                    // this.computeFrontValInBox(cx,cy,cz,b.min,b.max);
-	                }else{
+	                } else {
 	                    //Surface is crossed, must go down to the nice
-	                    if(bsize.x<=b.getNiceAcc() && bsize.y<=b.getNiceAcc()){
+	                    if (
+	                        bsize.x <= b.getNiceAcc() &&
+	                        bsize.y <= b.getNiceAcc()
+	                    ) {
 	                        // We are under nice acc, just interpolate
-	                        this.interpolateInBox(cx,cy,cz, b.min.x, b.max.x, b.min.y, b.max.y);
+	                        this.interpolateInBox(
+	                            cx,
+	                            cy,
+	                            cz,
+	                            b.min.x,
+	                            b.max.x,
+	                            b.min.y,
+	                            b.max.y
+	                        );
 
 	                        // OR just compute all values.
 	                        // this.computeFrontValInBox(cx,cy,cz,b.min,b.max);
-	                    }else{
-	                        this.recursiveBoxComputation(cx,cy,cz, b, boxes2D_rec[k]);
+	                    } else {
+	                        this.recursiveBoxComputation(
+	                            cx,
+	                            cy,
+	                            cz,
+	                            b,
+	                            boxes2D_rec[k]
+	                        );
 	                        //console.log("going down in " + b.toString());
 	                    }
 	                }
-	            }else{
+	            } else {
 	                // we did not reach the raw level, so we must cut again
-	                this.recursiveBoxComputation(cx,cy,cz, b, boxes2D_rec[k]);
+	                this.recursiveBoxComputation(cx, cy, cz, b, boxes2D_rec[k]);
 	            }
 	        }
 	    }
@@ -8073,39 +8221,61 @@
 	 *  @param {number} cy Y coordinate of the front buffer corner
 	 *  @param {number} cz Z coordinate of the front buffer corner
 	 */
-	SlidingMarchingCubes.prototype.computeFrontValues = function(cx,cy,cz)
-	{
-	        this.setFrontToMinus();
+	SlidingMarchingCubes.prototype.computeFrontValues = function(cx, cy, cz) {
+	    this.setFrontToMinus();
 
-	        var areas = this.blobtree.getAreas();
-	        var bigbox =  new Box2Acc();
-	        bigbox.makeEmpty();
-	        var boxes2D = [];
-	        for(var i=0; i<areas.length; ++i){
-	            var raw_acc = Math.round(areas[i].bv.getMinRawAcc()*this.detail_ratio/this.min_acc);
-	            var nice_acc = Math.round(areas[i].bv.getMinAcc()*this.detail_ratio/this.min_acc);
-	            var x_min = Math.max(0,Math.floor((areas[i].aabb.min.x-cx)/this.min_acc));
-	            var y_min = Math.max(0,Math.floor((areas[i].aabb.min.y-cy)/this.min_acc));
-	            var x_max = Math.min(this.reso[0]-1,Math.ceil( (areas[i].aabb.max.x-cx)/this.min_acc));
-	            var y_max = Math.min(this.reso[1]-1,Math.ceil( (areas[i].aabb.max.y-cy)/this.min_acc));
-	            boxes2D.push(
-	                 new Box2Acc(
-	                    new three.Vector2(x_min, y_min),
-	                    new three.Vector2(x_max, y_max),
-	                    nice_acc, raw_acc
-	                )
-	            );
-	            bigbox.union(boxes2D[boxes2D.length-1]);
-	        }
+	    var areas = this.blobtree.getAreas();
+	    var bigbox = new Box2Acc();
+	    bigbox.makeEmpty();
+	    var boxes2D = [];
+	    for (var i = 0; i < areas.length; ++i) {
+	        var raw_acc = Math.round(
+	            (areas[i].bv.getMinRawAcc() * this.detail_ratio) / this.min_acc
+	        );
+	        var nice_acc = Math.round(
+	            (areas[i].bv.getMinAcc() * this.detail_ratio) / this.min_acc
+	        );
+	        var x_min = Math.max(
+	            0,
+	            Math.floor((areas[i].aabb.min.x - cx) / this.min_acc)
+	        );
+	        var y_min = Math.max(
+	            0,
+	            Math.floor((areas[i].aabb.min.y - cy) / this.min_acc)
+	        );
+	        var x_max = Math.min(
+	            this.reso[0] - 1,
+	            Math.ceil((areas[i].aabb.max.x - cx) / this.min_acc)
+	        );
+	        var y_max = Math.min(
+	            this.reso[1] - 1,
+	            Math.ceil((areas[i].aabb.max.y - cy) / this.min_acc)
+	        );
+	        boxes2D.push(
+	            new Box2Acc(
+	                new THREE$1.Vector2(x_min, y_min),
+	                new THREE$1.Vector2(x_max, y_max),
+	                nice_acc,
+	                raw_acc
+	            )
+	        );
+	        bigbox.union(boxes2D[boxes2D.length - 1]);
+	    }
 
-	        bigbox.intersect(new Box2Acc(new three.Vector2(0, 0), new three.Vector2(this.reso[0], this.reso[1]), bigbox.getNiceAcc(), bigbox.getRawAcc()));
+	    bigbox.intersect(
+	        new Box2Acc(
+	            new THREE$1.Vector2(0, 0),
+	            new THREE$1.Vector2(this.reso[0], this.reso[1]),
+	            bigbox.getNiceAcc(),
+	            bigbox.getRawAcc()
+	        )
+	    );
 
-	        this.computeFrontValAtBoxCorners(cx,cy,cz, bigbox.min, bigbox.max);
-	        this.recursiveBoxComputation(cx,cy,cz, bigbox, boxes2D);
+	    this.computeFrontValAtBoxCorners(cx, cy, cz, bigbox.min, bigbox.max);
+	    this.recursiveBoxComputation(cx, cy, cz, bigbox, boxes2D);
 
-	        this.setFrontToZeroIfMinus();
+	    this.setFrontToZeroIfMinus();
 	};
-
 
 	/**
 	 *   get the min accuracy needed for this zone
@@ -8116,19 +8286,19 @@
 	    var areas = this.blobtree.getAreas();
 	    var minAcc = Number.MAX_VALUE;
 
-	    for(var i=0; i<areas.length; i++) {
+	    for (var i = 0; i < areas.length; i++) {
 	        var area = areas[i];
-	        if( area.aabb.intersectsBox(bbox) ) {
-	            if( area.bv ) {
+	        if (area.aabb.intersectsBox(bbox)) {
+	            if (area.bv) {
 	                // it's a new area, we can get the min acc
 	                var areaMinAcc = area.bv.getMinAcc();
-	                if( areaMinAcc < minAcc ) {
+	                if (areaMinAcc < minAcc) {
 	                    minAcc = areaMinAcc;
 	                }
 	            }
 	        }
 	    }
-	    return minAcc*this.detail_ratio;
+	    return minAcc * this.detail_ratio;
 	};
 
 	/**
@@ -8140,19 +8310,19 @@
 	    var areas = this.blobtree.getAreas();
 	    var maxAcc = 0;
 
-	    for(var i=0; i<areas.length; i++) {
+	    for (var i = 0; i < areas.length; i++) {
 	        var area = areas[i];
-	        if( area.aabb.intersectsBox(bbox) ) {
-	            if( area.bv ) {
+	        if (area.aabb.intersectsBox(bbox)) {
+	            if (area.bv) {
 	                // it's a new area, we can get the min acc
 	                var areaMaxAcc = area.bv.getMinAcc();
-	                if( areaMaxAcc > maxAcc ) {
+	                if (areaMaxAcc > maxAcc) {
 	                    maxAcc = areaMaxAcc;
 	                }
 	            }
 	        }
 	    }
-	    return maxAcc*this.detail_ratio;
+	    return maxAcc * this.detail_ratio;
 	};
 
 	/**
@@ -8164,39 +8334,38 @@
 	 *                            in a neighbouring aabb (Especially usefull for parallelism).
 	 */
 	SlidingMarchingCubes.prototype.compute = function(o_aabb, extended) {
-
 	    this.initGeometry();
 
 	    var timer_begin = new Date();
 
 	    this.blobtree.prepareForEval();
 	    var aabb = null;
-	    if(o_aabb){
+	    if (o_aabb) {
 	        aabb = o_aabb.clone();
-	    }else{
+	    } else {
 	        aabb = this.blobtree.getAABB();
 	    }
 
 	    this.extended = extended !== undefined ? extended : false;
 
-	    if(this.extended){
-	        var adims = aabb.getSize(new three.Vector3());
+	    if (this.extended) {
+	        var adims = aabb.getSize(new THREE$1.Vector3());
 	        var minAcc = Math.min(
 	            Math.min(this.getMinAcc(aabb), adims[0]),
 	            Math.min(adims[1], adims[2])
 	        );
 	        var acc_box = aabb.clone();
 	        var final_bbox = aabb.clone();
-	        var axis = ['x','y','z'];
-	        for(var k=0; k<axis.length; ++k){
+	        var axis = ["x", "y", "z"];
+	        for (var k = 0; k < axis.length; ++k) {
 	            acc_box.max[axis[k]] = aabb.min[axis[k]] + minAcc;
 	            var slice_max = this.getMaxAcc(acc_box);
-	            if(slice_max !== 0){
+	            if (slice_max !== 0) {
 	                final_bbox.min[axis[k]] = final_bbox.min[axis[k]] - slice_max;
 	            }
 	            acc_box.max[axis[k]] = aabb.max[axis[k]] - minAcc;
 	            slice_max = this.getMaxAcc(acc_box);
-	            if(slice_max !== 0){
+	            if (slice_max !== 0) {
 	                final_bbox.max[axis[k]] = final_bbox.max[axis[k]] + slice_max;
 	            }
 	        }
@@ -8205,7 +8374,7 @@
 
 	    var aabb_trim = [];
 	    var aabb_trim_parents = [];
-	    if(o_aabb){
+	    if (o_aabb) {
 	        this.blobtree.externalTrim(aabb, aabb_trim, aabb_trim_parents);
 	        this.blobtree.prepareForEval();
 	    }
@@ -8213,89 +8382,111 @@
 	    this.areas = this.blobtree.getAreas();
 
 	    // if no areas, blobtree is empty so stop and send an empty mesh.
-	    if(this.areas.length === 0){
+	    if (this.areas.length === 0) {
 	        this.progress(100);
-	        return new three.BufferGeometry();
+	        return new THREE$1.BufferGeometry();
 	    }
 
 	    this.min_acc = this.areas.length !== 0 ? this.areas[0].bv.getMinAcc() : 1;
-	    for(var i=0; i<this.areas.length; ++i){
-	        if(this.areas[i].bv.getMinAcc()<this.min_acc){
+	    for (var i = 0; i < this.areas.length; ++i) {
+	        if (this.areas[i].bv.getMinAcc() < this.min_acc) {
 	            this.min_acc = this.areas[i].bv.getMinAcc();
 	        }
 	    }
-	    this.min_acc = this.min_acc*this.detail_ratio;
+	    this.min_acc = this.min_acc * this.detail_ratio;
 
 	    var corner = aabb.min;
-	    var dims = aabb.getSize(new three.Vector3());
+	    var dims = aabb.getSize(new THREE$1.Vector3());
 
-	    this.steps.z = new Float32Array(Math.ceil(dims.z/this.min_acc)+2);
+	    this.steps.z = new Float32Array(Math.ceil(dims.z / this.min_acc) + 2);
 	    var z = corner.z;
 	    this.steps.z[0] = corner.z;
 	    var index = 1;
 	    var areas = this.blobtree.getAreas();
-	    while(this.steps.z[index-1]<corner.z+dims.z){
+	    while (this.steps.z[index - 1] < corner.z + dims.z) {
 	        var min_step = dims.z;
 	        // If uniformZ is true, we do not adapt z stepping to local slice accuracy.
-	        if(this.uniformZ){
+	        if (this.uniformZ) {
 	            min_step = this.min_acc;
-	        }else{
+	        } else {
 	            // find minimum accuracy needed in this slice.
-	            for(var i=0; i<areas.length; ++i){
-	                min_step = Math.min(min_step, areas[i].bv.getAxisProjectionMinStep('z',this.steps.z[index-1])*this.detail_ratio);
+	            for (var i = 0; i < areas.length; ++i) {
+	                min_step = Math.min(
+	                    min_step,
+	                    areas[i].bv.getAxisProjectionMinStep(
+	                        "z",
+	                        this.steps.z[index - 1]
+	                    ) * this.detail_ratio
+	                );
 	            }
 	        }
-	        this.steps.z[index] = this.steps.z[index-1]+min_step;
+	        this.steps.z[index] = this.steps.z[index - 1] + min_step;
 	        index++;
 	    }
 	    this.reso[2] = index;
 
-	    this.reso[0] = Math.ceil(dims.x/this.min_acc)+2;
-	    this.reso[1] = Math.ceil(dims.y/this.min_acc)+2;
+	    this.reso[0] = Math.ceil(dims.x / this.min_acc) + 2;
+	    this.reso[1] = Math.ceil(dims.y / this.min_acc) + 2;
 
 	    // If necessary, set this.dis_o_aabb
 	    // Reminder : dis_o_aabb is the discret o_aabb, ie indices for which we are in the o_aabb.
-	    if(this.extended){
-	        var i=0;
-	        this.dis_o_aabb.set(new three.Vector3(-1,-1,-1),new three.Vector3(-1,-1,-1));
-	        while(i<this.reso[2] && this.dis_o_aabb.min.z === -1){
-	            if(this.steps.z[i] >= o_aabb.min.z){
+	    if (this.extended) {
+	        var i = 0;
+	        this.dis_o_aabb.set(
+	            new THREE$1.Vector3(-1, -1, -1),
+	            new THREE$1.Vector3(-1, -1, -1)
+	        );
+	        while (i < this.reso[2] && this.dis_o_aabb.min.z === -1) {
+	            if (this.steps.z[i] >= o_aabb.min.z) {
 	                this.dis_o_aabb.min.z = i;
 	            }
 	            i++;
 	        }
-	        if(i>this.reso[2]-1){ this.dis_o_aabb.min.z = this.reso[2]-1; } // should never happen
+	        if (i > this.reso[2] - 1) {
+	            this.dis_o_aabb.min.z = this.reso[2] - 1;
+	        } // should never happen
 
-	        i = this.reso[2]-1;
-	        while(i>=0 && this.dis_o_aabb.max.z === -1){
-	            if(this.steps.z[i] < o_aabb.max.z){
+	        i = this.reso[2] - 1;
+	        while (i >= 0 && this.dis_o_aabb.max.z === -1) {
+	            if (this.steps.z[i] < o_aabb.max.z) {
 	                this.dis_o_aabb.max.z = i;
 	            }
 	            i--;
 	        }
-	        if(i<0){ this.dis_o_aabb.max.z = 0; } // should never happen
+	        if (i < 0) {
+	            this.dis_o_aabb.max.z = 0;
+	        } // should never happen
 
-	        this.dis_o_aabb.min.x = Math.round((o_aabb.min.x-aabb.min.x)/this.min_acc);
-	        this.dis_o_aabb.min.y = Math.round((o_aabb.min.y-aabb.min.y)/this.min_acc);
-	        this.dis_o_aabb.max.x = this.reso[0]-2 - Math.round((aabb.max.x-o_aabb.max.x)/this.min_acc);
-	        this.dis_o_aabb.max.y = this.reso[1]-2 - Math.round((aabb.max.y-o_aabb.max.y)/this.min_acc);
+	        this.dis_o_aabb.min.x = Math.round(
+	            (o_aabb.min.x - aabb.min.x) / this.min_acc
+	        );
+	        this.dis_o_aabb.min.y = Math.round(
+	            (o_aabb.min.y - aabb.min.y) / this.min_acc
+	        );
+	        this.dis_o_aabb.max.x =
+	            this.reso[0] -
+	            2 -
+	            Math.round((aabb.max.x - o_aabb.max.x) / this.min_acc);
+	        this.dis_o_aabb.max.y =
+	            this.reso[1] -
+	            2 -
+	            Math.round((aabb.max.y - o_aabb.max.y) / this.min_acc);
 	    }
 	    // Back values
-	    this.values_xy[0] = new Float32Array(this.reso[0]*this.reso[1]);
+	    this.values_xy[0] = new Float32Array(this.reso[0] * this.reso[1]);
 	    // Front values
-	    this.values_xy[1] = new Float32Array(this.reso[0]*this.reso[1]);
+	    this.values_xy[1] = new Float32Array(this.reso[0] * this.reso[1]);
 
-	    this.vertices_xy[0] = new Int32Array(this.reso[0]*this.reso[1]);
-	    this.vertices_xy[1] = new Int32Array(this.reso[0]*this.reso[1]);
+	    this.vertices_xy[0] = new Int32Array(this.reso[0] * this.reso[1]);
+	    this.vertices_xy[1] = new Int32Array(this.reso[0] * this.reso[1]);
 
 	    // Aabb for trimming the blobtree
-	    var trim_aabb = new three.Box3();
+	    var trim_aabb = new THREE$1.Box3();
 	    this.computeFrontValues(corner.x, corner.y, corner.z);
 
 	    var percent = 0;
 
-	    for(var iz=0; iz<this.reso[2]-1; ++iz){
-
+	    for (var iz = 0; iz < this.reso[2] - 1; ++iz) {
 	        // Switch the 2 arrays, and fill the one in front
 	        var switcher = this.values_xy[0];
 	        this.values_xy[0] = this.values_xy[1];
@@ -8304,17 +8495,14 @@
 	        this.vertices_xy[0] = this.vertices_xy[1];
 	        this.vertices_xy[1] = switcher;
 
-	        var z1 = this.steps.z[iz+1];
-	        trim_aabb.set(  new three.Vector3(
-	                            corner.x,
-	                            corner.y,
-	                            z1-this.min_acc/64
-	                        ),
-	                        new three.Vector3(
-	                            corner.x+this.reso[0]*this.min_acc,
-	                            corner.y+this.reso[1]*this.min_acc,
-	                            z1+this.min_acc/64
-	                        )
+	        var z1 = this.steps.z[iz + 1];
+	        trim_aabb.set(
+	            new THREE$1.Vector3(corner.x, corner.y, z1 - this.min_acc / 64),
+	            new THREE$1.Vector3(
+	                corner.x + this.reso[0] * this.min_acc,
+	                corner.y + this.reso[1] * this.min_acc,
+	                z1 + this.min_acc / 64
+	            )
 	        );
 	        this.blobtree.internalTrim(trim_aabb);
 	        this.blobtree.prepareForEval();
@@ -8324,32 +8512,34 @@
 
 	        this.z = this.steps.z[iz];
 
-	        this.curr_steps.z = this.steps.z[iz+1]-this.steps.z[iz];
+	        this.curr_steps.z = this.steps.z[iz + 1] - this.steps.z[iz];
 	        this.curr_steps.x = this.min_acc;
 	        this.curr_steps.y = this.min_acc;
-	        this.curr_step_vol = this.curr_steps.x*this.curr_steps.y*this.curr_steps.z;
+	        this.curr_step_vol =
+	            this.curr_steps.x * this.curr_steps.y * this.curr_steps.z;
 
-	        for(var iy=0; iy<this.reso[1]-1; ++iy){
-	            for(var ix=0; ix<this.reso[0]-1; ++ix){
-	                this.y = corner.y + iy*this.min_acc;
+	        for (var iy = 0; iy < this.reso[1] - 1; ++iy) {
+	            for (var ix = 0; ix < this.reso[0] - 1; ++ix) {
+	                this.y = corner.y + iy * this.min_acc;
 	                this.fetchAndTriangulate(ix, iy, iz, corner);
 	            }
 	        }
 
-	        if(Math.round(100*iz/this.reso[2]) > percent){
-	            percent = Math.round(100*iz/this.reso[2]);
+	        if (Math.round((100 * iz) / this.reso[2]) > percent) {
+	            percent = Math.round((100 * iz) / this.reso[2]);
 	            this.progress(percent);
 	        }
 	    }
 
-
-	    if(o_aabb){
+	    if (o_aabb) {
 	        this.blobtree.untrim(aabb_trim, aabb_trim_parents);
 	        this.blobtree.prepareForEval();
 	    }
 
 	    var timer_end = new Date();
-	    console.log("Sliding Marching Cubes computed in " + (timer_end-timer_begin) + "ms");
+	    console.log(
+	        "Sliding Marching Cubes computed in " + (timer_end - timer_begin) + "ms"
+	    );
 
 	    // Clear memory, in case this object is kept alive
 	    this.values_xy[0] = null;
@@ -8369,33 +8559,32 @@
 	 *  @param {number} y
 	 *  @param {THREE.Vector3} corner Bottom left corner of front array.
 	 */
-	SlidingMarchingCubes.prototype.fetchAndTriangulate = function(x,y,z, corner)
-	{
-	    var idx_y_0 = y*this.reso[0]+x;
-	    var idx_y_1 = (y+1)*this.reso[0]+x;
-	    this.values[0] = this.values_xy[0][idx_y_0];    //v_000;
-	    this.values[1] = this.values_xy[1][idx_y_0];    //v_001;
-	    this.values[2] = this.values_xy[0][idx_y_1];    //v_010;
-	    this.values[3] = this.values_xy[1][idx_y_1];    //v_011;
-	    this.values[4] = this.values_xy[0][idx_y_0+1];  //v_100;
-	    this.values[5] = this.values_xy[1][idx_y_0+1];  //v_101;
-	    this.values[6] = this.values_xy[0][idx_y_1+1];  //v_110;
-	    this.values[7] = this.values_xy[1][idx_y_1+1];  //v_111;
+	SlidingMarchingCubes.prototype.fetchAndTriangulate = function(x, y, z, corner) {
+	    var idx_y_0 = y * this.reso[0] + x;
+	    var idx_y_1 = (y + 1) * this.reso[0] + x;
+	    this.values[0] = this.values_xy[0][idx_y_0]; //v_000;
+	    this.values[1] = this.values_xy[1][idx_y_0]; //v_001;
+	    this.values[2] = this.values_xy[0][idx_y_1]; //v_010;
+	    this.values[3] = this.values_xy[1][idx_y_1]; //v_011;
+	    this.values[4] = this.values_xy[0][idx_y_0 + 1]; //v_100;
+	    this.values[5] = this.values_xy[1][idx_y_0 + 1]; //v_101;
+	    this.values[6] = this.values_xy[0][idx_y_1 + 1]; //v_110;
+	    this.values[7] = this.values_xy[1][idx_y_1 + 1]; //v_111;
 
 	    this.computeMask();
-	    if(this.mask !== 0x0){
-	        if(this.mask !== 0xff){
-	            this.x = corner.x + x*this.min_acc;
+	    if (this.mask !== 0x0) {
+	        if (this.mask !== 0xff) {
+	            this.x = corner.x + x * this.min_acc;
 	            this.computeVertex();
 	            this.geometry.addVertex({
-	                p:this.vertex,
-	                n:this.vertex_n,
-	                c:this.vertex_m.getColor(),
-	                r:this.vertex_m.getRoughness(),
-	                m:this.vertex_m.getMetalness()
+	                p: this.vertex,
+	                n: this.vertex_n,
+	                c: this.vertex_m.getColor(),
+	                r: this.vertex_m.getRoughness(),
+	                m: this.vertex_m.getMetalness()
 	            });
-	            this.vertices_xy[1][idx_y_0] = this.geometry.nVertices-1;
-	            this.triangulate(x,y,z);
+	            this.vertices_xy[1][idx_y_0] = this.geometry.nVertices - 1;
+	            this.triangulate(x, y, z);
 	        }
 	    }
 	};
@@ -8407,9 +8596,9 @@
 	 *  @param {number} v3 Index of vertex 3 in this.geometry
 	 *  @param {number} v4 Index of vertex 4 in this.geometry
 	 */
-	SlidingMarchingCubes.prototype.pushDirectFaces = function(v1,v2,v3,v4){
-	    this.geometry.addFace(v1,v2,v3);
-	    this.geometry.addFace(v3,v4,v1);
+	SlidingMarchingCubes.prototype.pushDirectFaces = function(v1, v2, v3, v4) {
+	    this.geometry.addFace(v1, v2, v3);
+	    this.geometry.addFace(v3, v4, v1);
 	};
 	/**
 	 *  Push 2 faces in undirect order (left handed).
@@ -8418,9 +8607,9 @@
 	 *  @param {number} v3 Index of vertex 3 in this.geometry
 	 *  @param {number} v4 Index of vertex 4 in this.geometry
 	 */
-	SlidingMarchingCubes.prototype.pushUndirectFaces = function(v1,v2,v3,v4){
-	    this.geometry.addFace(v3,v2,v1);
-	    this.geometry.addFace(v1,v4,v3);
+	SlidingMarchingCubes.prototype.pushUndirectFaces = function(v1, v2, v3, v4) {
+	    this.geometry.addFace(v3, v2, v1);
+	    this.geometry.addFace(v1, v4, v3);
 	};
 
 	/**
@@ -8429,47 +8618,45 @@
 	 *  @param {number} y Current cell y coordinate in the grid (integer)
 	 *  @param {number} z Current cell z coordinate in the grid (integer)
 	 */
-	SlidingMarchingCubes.prototype.triangulate = function(x,y,z){
-	    var idx_y_0 = y*this.reso[0]+x;
-	    if(this.edge_cross[0] && y!==0 && z!==0){
+	SlidingMarchingCubes.prototype.triangulate = function(x, y, z) {
+	    var idx_y_0 = y * this.reso[0] + x;
+	    if (this.edge_cross[0] && y !== 0 && z !== 0) {
 	        // x edge is crossed
 	        // Check orientation
 	        var v1 = this.vertices_xy[1][idx_y_0];
-	        var v2 = this.vertices_xy[1][(y-1)*this.reso[0]+x];
-	        var v3 = this.vertices_xy[0][(y-1)*this.reso[0]+x];
+	        var v2 = this.vertices_xy[1][(y - 1) * this.reso[0] + x];
+	        var v3 = this.vertices_xy[0][(y - 1) * this.reso[0] + x];
 	        var v4 = this.vertices_xy[0][idx_y_0];
-	        if(this.mask & 0x1){
-	            this.pushDirectFaces(v1,v2,v3,v4);
-	        }else{
-	            this.pushUndirectFaces(v1,v2,v3,v4);
+	        if (this.mask & 0x1) {
+	            this.pushDirectFaces(v1, v2, v3, v4);
+	        } else {
+	            this.pushUndirectFaces(v1, v2, v3, v4);
 	        }
-
 	    }
-	    if(this.edge_cross[4] && x!==0 && z!==0){
+	    if (this.edge_cross[4] && x !== 0 && z !== 0) {
 	        // y edge is crossed
 	        // Check orientation
 	        var v1 = this.vertices_xy[1][idx_y_0];
 	        var v2 = this.vertices_xy[0][idx_y_0];
-	        var v3 = this.vertices_xy[0][idx_y_0-1];
-	        var v4 = this.vertices_xy[1][idx_y_0-1];
-	        if(this.mask & 0x1){
-	            this.pushDirectFaces(v1,v2,v3,v4);
-	        }else{
-	            this.pushUndirectFaces(v1,v2,v3,v4);
+	        var v3 = this.vertices_xy[0][idx_y_0 - 1];
+	        var v4 = this.vertices_xy[1][idx_y_0 - 1];
+	        if (this.mask & 0x1) {
+	            this.pushDirectFaces(v1, v2, v3, v4);
+	        } else {
+	            this.pushUndirectFaces(v1, v2, v3, v4);
 	        }
-
 	    }
-	    if(this.edge_cross[8] && x!==0 && y!==0){
+	    if (this.edge_cross[8] && x !== 0 && y !== 0) {
 	        // z edge is crossed
 	        // Check orientation
 	        var v1 = this.vertices_xy[1][idx_y_0];
-	        var v2 = this.vertices_xy[1][idx_y_0-1];
-	        var v3 = this.vertices_xy[1][(y-1)*this.reso[0]+x-1];
-	        var v4 = this.vertices_xy[1][(y-1)*this.reso[0]+x];
-	        if(this.mask & 0x1){
-	            this.pushDirectFaces(v1,v2,v3,v4);
-	        }else{
-	            this.pushUndirectFaces(v1,v2,v3,v4);
+	        var v2 = this.vertices_xy[1][idx_y_0 - 1];
+	        var v3 = this.vertices_xy[1][(y - 1) * this.reso[0] + x - 1];
+	        var v4 = this.vertices_xy[1][(y - 1) * this.reso[0] + x];
+	        if (this.mask & 0x1) {
+	            this.pushDirectFaces(v1, v2, v3, v4);
+	        } else {
+	            this.pushUndirectFaces(v1, v2, v3, v4);
 	        }
 	    }
 	};
@@ -8480,11 +8667,14 @@
 	 */
 	SlidingMarchingCubes.prototype.computeVertex = (function() {
 	    // Function static variable
-	    var eval_res = {v:null, g:new three.Vector3(0,0,0), m:new Material_1()};
-	    var conv_res = new three.Vector3();
+	    var eval_res = {
+	        v: null,
+	        g: new THREE$1.Vector3(0, 0, 0),
+	        m: new Material_1()
+	    };
+	    var conv_res = new THREE$1.Vector3();
 
-	    return function()
-	    {
+	    return function() {
 	        eval_res.v = this.blobtree.getNeutralValue();
 
 	        // Optimization note :
@@ -8494,12 +8684,10 @@
 	        // Average edge intersection
 	        var e_count = 0;
 
-	        this.vertex.set(0,0,0);
+	        this.vertex.set(0, 0, 0);
 
 	        //For every edge of the cube...
-	        for(var i=0; i<12; ++i)
-	        {
-
+	        for (var i = 0; i < 12; ++i) {
 	            // --> the following code does not seem to work. Tables.EdgeCross may be broken
 	            //Use edge mask to check if it is crossed
 	            // if(!(edge_mask & (1<<i))) {
@@ -8507,50 +8695,52 @@
 	            // }
 
 	            //Now find the point of intersection
-	            var e0 = MCTables.EdgeVMap[i][0];       //Unpack vertices
+	            var e0 = MCTables.EdgeVMap[i][0]; //Unpack vertices
 	            var e1 = MCTables.EdgeVMap[i][1];
 	            var p0 = MCTables.VertexTopo[e0];
 	            var p1 = MCTables.VertexTopo[e1];
-	            var g0 = this.values[e0];                //Unpack grid values
+	            var g0 = this.values[e0]; //Unpack grid values
 	            var g1 = this.values[e1];
 
 	            // replace the mask check with that. Slower.
-	            this.edge_cross[i] = ((g0>this.blobtree.getIsoValue()) !== (g1>this.blobtree.getIsoValue()));
-	            if( !this.edge_cross[i] ){
+	            this.edge_cross[i] =
+	                g0 > this.blobtree.getIsoValue() !==
+	                g1 > this.blobtree.getIsoValue();
+	            if (!this.edge_cross[i]) {
 	                continue;
 	            }
 	            //If it did, increment number of edge crossings
 	            ++e_count;
 
-	            var d = (g1-g0);
-	            var t  = 0;  //Compute point of intersection
-	            if(Math.abs(d) > 1e-6) {
-	                t = (this.blobtree.getIsoValue()-g0) / d;
+	            var d = g1 - g0;
+	            var t = 0; //Compute point of intersection
+	            if (Math.abs(d) > 1e-6) {
+	                t = (this.blobtree.getIsoValue() - g0) / d;
 	            } else {
 	                continue;
 	            }
 
-	            this.vertex.x += (1.0-t)*p0[0] + t * p1[0];
-	            this.vertex.y += (1.0-t)*p0[1] + t * p1[1];
-	            this.vertex.z += (1.0-t)*p0[2] + t * p1[2];
+	            this.vertex.x += (1.0 - t) * p0[0] + t * p1[0];
+	            this.vertex.y += (1.0 - t) * p0[1] + t * p1[1];
+	            this.vertex.z += (1.0 - t) * p0[2] + t * p1[2];
 	        }
 
-	        this.vertex.x = this.x + this.curr_steps.x*this.vertex.x/e_count;
-	        this.vertex.y = this.y + this.curr_steps.y*this.vertex.y/e_count;
-	        this.vertex.z = this.z + this.curr_steps.z*this.vertex.z/e_count;
+	        this.vertex.x = this.x + (this.curr_steps.x * this.vertex.x) / e_count;
+	        this.vertex.y = this.y + (this.curr_steps.y * this.vertex.y) / e_count;
+	        this.vertex.z = this.z + (this.curr_steps.z * this.vertex.z) / e_count;
 
 	        // now make some convergence step
 	        // Note : it cost 15 to 20% performance lost
 	        //        and the result does not seem 15 et 20% better...
-	        if(this.convergence){
+	        if (this.convergence) {
 	            Convergence_1.safeNewton3D(
-	                this.blobtree,      // Scalar Field to eval
-	                this.vertex,                  // 3D point where we start, must comply to THREE.Vector3 API
-	                this.blobtree.getIsoValue(),               // iso value we are looking for
-	                this.min_acc*this.convergence.ratio ,               // Geometrical limit to stop
-	                this.convergence.step,                           // limit of number of step
-	                this.min_acc,                     // Bounding volume inside which we look for the iso, getting out will make the process stop.
-	                conv_res                          // the resulting point
+	                this.blobtree, // Scalar Field to eval
+	                this.vertex, // 3D point where we start, must comply to THREE.Vector3 API
+	                this.blobtree.getIsoValue(), // iso value we are looking for
+	                this.min_acc * this.convergence.ratio, // Geometrical limit to stop
+	                this.convergence.step, // limit of number of step
+	                this.min_acc, // Bounding volume inside which we look for the iso, getting out will make the process stop.
+	                conv_res // the resulting point
 	            );
 	            this.vertex.copy(conv_res);
 	        }
@@ -8567,14 +8757,13 @@
 	 *  Compute mask of the current cube.
 	 *  Use this.values, set this.mask
 	 */
-	SlidingMarchingCubes.prototype.computeMask = function()
-	{
+	SlidingMarchingCubes.prototype.computeMask = function() {
 	    this.mask = 0;
 
 	    //For each this, compute cube mask
-	    for(var i=0; i<8; ++i) {
+	    for (var i = 0; i < 8; ++i) {
 	        var s = this.values[i];
-	        this.mask |= (s > this.blobtree.getIsoValue()) ? (1<<i) : 0;
+	        this.mask |= s > this.blobtree.getIsoValue() ? 1 << i : 0;
 	    }
 	};
 
