@@ -167,22 +167,22 @@
             // geometry is kept as a global variable to be used in the following script.
             var geometry = polygonizer.compute();
             geometry.computeBoundingBox();
-            var material = new THREE.MeshBasicMaterial( {vertexColors:THREE.VertexColors} );
-            var material = new THREE.MeshPhongMaterial( {vertexColors:THREE.VertexColors} );
+            var material = new THREE.MeshBasicMaterial( {vertexColors:true} );
+            var material = new THREE.MeshPhongMaterial( {vertexColors:true} );
 
             var mesh = new THREE.Mesh( geometry, material );
 
                         // init GUI to change the Volume Type parameter
             var gui = new dat.GUI();
 
-			var ScalisControls = function() {
-				this.volType = "Convolution";
-			};
+            var ScalisControls = function() {
+                this.volType = "Convolution";
+            };
 
-			var scalisControls = new ScalisControls();
-			var scalisFolder = gui.addFolder( 'SCALIS Control' );
+            var scalisControls = new ScalisControls();
+            var scalisFolder = gui.addFolder( 'SCALIS Control' );
 
-			scalisFolder.add(scalisControls, 'volType', ["Convolution", "Distance"]).onChange(function() {
+            scalisFolder.add(scalisControls, 'volType', ["Convolution", "Distance"]).onChange(function() {
                 for(var i=0; i<distNode.children.length; ++i){
                     distNode.children[i].setVolType(
                         scalisControls.volType === "Convolution" ? Blobtree.ScalisPrimitive.CONVOL : Blobtree.ScalisPrimitive.DIST
@@ -195,9 +195,9 @@
                 }
                 mesh.geometry = polygonizer.compute();
                 updateShadow();
-			});
+            });
 
-			scalisFolder.open();
+            scalisFolder.open();
 
         </script>
         <!-- Main script containing THREE.js setup for the page -->
