@@ -80,10 +80,6 @@ Will update the browser build in dist.
 
 ### Dependencies ###
 
-#### Node Dependencies ####
-This library currently depends on node module three-full which is packaging all THREE.JS sources, including extras like examples.
-It can work with only THREE, but for convenience we rely on three-full.
-
 #### Browser Dependencies ####
 In browser, only THREE is required.
 

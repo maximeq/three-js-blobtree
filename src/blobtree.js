@@ -1,7 +1,8 @@
 
 var THREE = require("three");
 
-require("three/examples/js/utils/BufferGeometryUtils");
+// require("three/examples/js/utils/BufferGeometryUtils");
+require("./CheckTHREE");
 
 if (THREE.REVISION !== "122") {
     console.warn("Blobtree library is currently made for THREE revision 122. Using any other revision may lead to unexpected behavior.");

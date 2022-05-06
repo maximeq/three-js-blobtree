@@ -13,13 +13,14 @@
     "three": "0.130.x"
   },
   "devDependencies": {
-    "rollup-plugin-prettier": "^0.6.0",
-    "eslint": "^4.11.0",
+    "eslint": "^8.14.0",
+    "eslint-config-prettier": "^8.5.0",
     "fs-extra": "^7.0.1",
     "jsdoc-api": "^4.0.3",
     "rollup": "^0.67.1",
     "rollup-plugin-commonjs": "^9.2.0",
     "rollup-plugin-node-resolve": "^3.4.0",
+    "rollup-plugin-prettier": "^0.6.0",
     "rollup-plugin-terser": "^3.0.0"
   },
   "files": [
