@@ -2,10 +2,12 @@
   "name": "three-js-blobtree",
   "version": "1.130.0",
   "description": "Library to handle implicit surfaces in THREE.JS using a blobtree.",
-  "main": "src/blobtree.js",
+  "main": "dist/three-js-blobtree.cjs",
+  "browser": "dist/three-js-blobtree.min.js",
+  "module" : "src/blobtree.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "node build.js",
+    "build": "rollup -c",
     "lint": "eslint --env node --env browser --env es6 **.js",
     "make-doc": "node make-doc.js"
   },
@@ -13,21 +15,18 @@
     "three": "0.130.x"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^22.0.0",
+    "@rollup/plugin-node-resolve": "^13.3.0",
     "eslint": "^8.14.0",
     "eslint-config-prettier": "^8.5.0",
     "fs-extra": "^7.0.1",
     "jsdoc-api": "^4.0.3",
-    "rollup": "^0.67.1",
-    "rollup-plugin-commonjs": "^9.2.0",
-    "rollup-plugin-node-resolve": "^3.4.0",
-    "rollup-plugin-prettier": "^0.6.0",
-    "rollup-plugin-terser": "^3.0.0"
+    "rollup-plugin-terser": "^7.0.2"
   },
   "files": [
     "src/*",
     "dist/*"
   ],
-  "browser": "./dist/browser/blobtree.js",
   "author": "Maxime Quiblier <maximequiblier@gmail.com>",
   "license": "MIT",
   "hash": "cbb66061ffd05bc5f6673756895b3f6f03e7202a"

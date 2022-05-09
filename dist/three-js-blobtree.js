@@ -1,14 +1,15 @@
-(function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('three')) :
-    typeof define === 'function' && define.amd ? define(['three'], factory) :
-    (global.Blobtree = factory(global.THREE));
-}(this, (function (three) { 'use strict';
+var Blobtree = (function (require$$0) {
+    'use strict';
 
-    three = three && three.hasOwnProperty('default') ? three['default'] : three;
+    function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
+
+    var require$$0__default = /*#__PURE__*/_interopDefaultLegacy(require$$0);
+
+    var THREE$r = require$$0__default["default"];
 
     function checkExample( example, subdirectory, trueName ) {
 
-        if ( three[example] === undefined )
+        if ( THREE$r[example] === undefined )
             throw `THREE is missing example '${example}' and, as such, webgl-modelers-plugin-blobtree can't work properly. You can find it` +
             ` in 'three/examples/js/${subdirectory !== undefined ? subdirectory + '/' : ''}${trueName || example}.js'`
 
@@ -21,7 +22,7 @@
      *  For now just a list of strings registered by the classes.
      *  @constructor
      */
-    var Types = {
+    var Types$l = {
         types : {}
     };
 
@@ -30,7 +31,7 @@
      *  @param {string} name The name of the type.
      *  @param class The class of the registered type.
      */
-    Types.register = function(name, cls){
+    Types$l.register = function(name, cls){
         if(this.types[name]){
             throw "Error : cannot register type " + name + ", this name is already registered.";
         }
@@ -42,7 +43,7 @@
      *  @param {Object} json A javascript Object resulting from a JSON interpretation.
      *  @param class The class of the registered type.
      */
-    Types.fromJSON = function(json){
+    Types$l.fromJSON = function(json){
         var cls = this.types[json.type];
         if(!cls){
             throw "Error : type found in JSON (" + json.type + " is not registered in the Blobtree library.";
@@ -50,7 +51,10 @@
         return cls.fromJSON(json);
     };
 
-    var Types_1 = Types;
+    var Types_1 = Types$l;
+
+    const THREE$q = require$$0__default["default"];
+    const Types$k = Types_1;
 
     var elementIds = 0;
 
@@ -58,28 +62,28 @@
      *  A superclass for Node and Primitive in the blobtree.
      *  @constructor
      */
-    var Element = function () {
+    var Element$3 = function () {
 
         this.id = elementIds++;
 
-        this.aabb = new three.Box3();
+        this.aabb = new THREE$q.Box3();
         this.valid_aabb = false;
 
         /** @type {Blobtree.Node} */
         this.parentNode = null;
     };
 
-    Element.prototype.constructor = Element;
+    Element$3.prototype.constructor = Element$3;
 
-    Element.type = "Element";
-    Types_1.register(Element.type, Element);
+    Element$3.type = "Element";
+    Types$k.register(Element$3.type, Element$3);
 
     /**
      *  @abstract
      *  Return a Javscript Object respecting JSON convention.
      *  All classes must
      */
-    Element.prototype.toJSON = function(){
+    Element$3.prototype.toJSON = function(){
         return {
             type:this.getType()
         };
@@ -88,22 +92,22 @@
      *  @abstract
      *  Clone the object.
      */
-    Element.prototype.clone = function(){
-        return Types_1.fromJSON(this.toJSON());
+    Element$3.prototype.clone = function(){
+        return Types$k.fromJSON(this.toJSON());
     };
 
 
     /**
      *  @return {Blobtree.Node} The parent node of this primitive.
      */
-    Element.prototype.getParentNode = function() {
+    Element$3.prototype.getParentNode = function() {
         return this.parentNode;
     };
     /**
      *  @return {string} Type of the element
      */
-    Element.prototype.getType = function() {
-        return Element.type;
+    Element$3.prototype.getType = function() {
+        return Element$3.type;
     };
 
     /**
@@ -112,7 +116,7 @@
      *  @protected
      *  @abstract
      */
-    Element.prototype.computeHelpVariables = function() {
+    Element$3.prototype.computeHelpVariables = function() {
         this.computeAABB();
     };
 
@@ -122,7 +126,7 @@
      *  By default, the AABB returned is the unionns of all vertices AABB (This is
      *  good for almost all basic primitives).
      */
-    Element.prototype.computeAABB = function() {
+    Element$3.prototype.computeAABB = function() {
         throw "Error : computeAABB is abstract, should have been overwritten";
     };
 
@@ -131,7 +135,7 @@
      *  isValidAABB before to ensure the current AABB does correspond to the primitive
      *  settings.
      */
-    Element.prototype.getAABB = function() {
+    Element$3.prototype.getAABB = function() {
         return this.aabb;
     };
 
@@ -139,14 +143,14 @@
      *  @return {boolean} True if the current aabb is valid, ie it does
      *  correspond to the internal primitive parameters.
      */
-    Element.prototype.isValidAABB = function() {
+    Element$3.prototype.isValidAABB = function() {
         return this.valid_aabb;
     };
 
     /**
      *  Invalid the bounding boxes recursively up to the root
      */
-    Element.prototype.invalidAABB = function()
+    Element$3.prototype.invalidAABB = function()
     {
         this.valid_aabb = false;
         if(this.parentNode !== null && this.parentNode.isValidAABB()){
@@ -158,7 +162,7 @@
      *  Note : This function was made for Node to recursively invalidate
      *  children AABB. Default is to invalidate only this AABB.
      */
-    Element.prototype.invalidAll = function() {
+    Element$3.prototype.invalidAll = function() {
         this.invalidAABB();
     };
 
@@ -169,10 +173,8 @@
      *                  if its bounding box is valid (valid_aabb is true).
      *
      */
-    Element.prototype.prepareForEval = function() {
-        var res = {del_obj:[], new_areas:[]};
+    Element$3.prototype.prepareForEval = function() {
         throw "ERROR : prepareForEval is a virtual function, should be re-implemented in all element(error occured in Element.js";
-        return res;
     };
 
     /**
@@ -187,12 +189,11 @@
      *  @param {Material} res.m Material, must be allocated and defined if wanted
      *  @param {THREE.Vector3} res.g Gradient, must be allocated and defined if wanted
      */
-    Element.prototype.value = function(p,res) {
+    Element$3.prototype.value = function(p,res) {
         throw "ERROR : value is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
-        return 0.0;
     };
 
-    Element.prototype.numericalGradient = (function(){
+    Element$3.prototype.numericalGradient = (function(){
         var tmp = {v:0};
         var coord = ['x','y','z'];
         return function(p, res, epsilon) {
@@ -219,7 +220,7 @@
      *  @return {Array.<Object>} The Areas object corresponding to the node/primitive, in an array
      *
      */
-    Element.prototype.getAreas = function() {
+    Element$3.prototype.getAreas = function() {
         return [];
     };
 
@@ -228,9 +229,8 @@
      *  This function is called when a point is outside of the potential influence of a primitive/node.
      *  @return {number} The next step length to do with respect to this primitive/node
      */
-    Element.prototype.distanceTo = function(p) {
+    Element$3.prototype.distanceTo = function(p) {
         throw "ERROR : distanceTo is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
-        return 0.5;
     };
 
     /**
@@ -238,9 +238,8 @@
      *  This function is called when a point is within the potential influence of a primitive/node.
      *  @return {number} The next step length to do with respect to this primitive/node.
      */
-    Element.prototype.heuristicStepWithin = function() {
+    Element$3.prototype.heuristicStepWithin = function() {
         throw "ERROR : heuristicStepWithin is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
-        return 0.1;
     };
 
     /**
@@ -253,7 +252,7 @@
      *  @param {Array.<Blobtree.Element>} trimmed Array of trimmed Elements
      *  @param {Array.<Blobtree.Node>} parents Array of fathers from which each trimmed element has been removed.
      */
-    Element.prototype.trim = function(aabb, trimmed, parents){
+    Element$3.prototype.trim = function(aabb, trimmed, parents){
 
     };
 
@@ -262,37 +261,40 @@
      *  @param {Object} cls the class of the elements we want to count
      *  @return {number}
      */
-    Element.prototype.count = function(cls){
+    Element$3.prototype.count = function(cls){
         return 0;
     };
 
-    var Element_1 = Element;
+    var Element_1 = Element$3;
+
+    const Element$2 = Element_1;
+    const Types$j = Types_1;
 
     /**
      *  This class implements an abstract Node class for implicit blobtree.
      *  @constructor
      *  @extends {Element}
      */
-    var Node = function ()
+    var Node$5 = function ()
     {
-        Element_1.call(this);
+        Element$2.call(this);
 
         /** @type {Array.<!Element>} */
         this.children = [];
     };
 
-    Node.prototype = Object.create(Element_1.prototype);
-    Node.prototype.constructor = Node;
+    Node$5.prototype = Object.create(Element$2.prototype);
+    Node$5.prototype.constructor = Node$5;
 
-    Node.type = "Node";
-    Types_1.register(Node.type, Node);
+    Node$5.type = "Node";
+    Types$j.register(Node$5.type, Node$5);
 
-    Node.prototype.getType = function(){
-        return Node.type;
+    Node$5.prototype.getType = function(){
+        return Node$5.type;
     };
 
-    Node.prototype.toJSON = function(){
-        var res = Element_1.prototype.toJSON.call(this);
+    Node$5.prototype.toJSON = function(){
+        var res = Element$2.prototype.toJSON.call(this);
         res.children = [];
         for(var i=0; i<this.children.length; ++i){
             res.children.push(this.children[i].toJSON());
@@ -303,8 +305,8 @@
     /**
      *  Clone current node and itss hierarchy
      */
-    Node.prototype.clone = function(){
-        return Types_1.fromJSON(this.toJSON());
+    Node$5.prototype.clone = function(){
+        return Types$j.fromJSON(this.toJSON());
     };
 
     /**
@@ -315,7 +317,7 @@
      *                  if its bounding box is valid (valid_aabb is true).
      *
      */
-    Node.prototype.prepareForEval = function()
+    Node$5.prototype.prepareForEval = function()
     {
         console.error("prepareForEval is a pure virtual function, should be reimplemented in every node class");
     };
@@ -323,7 +325,7 @@
     /**
      *  Invalid the bounding boxes recursively down for all children
      */
-    Node.prototype.invalidAll = function() {
+    Node$5.prototype.invalidAll = function() {
         this.invalidAABB();
         if( this.children ) {
             for(var i=0; i<this.children.length; i++) {
@@ -336,7 +338,7 @@
      *  Destroy the node and its children. The node is removed from the blobtree
      *  (basically clean up the links between blobtree elements).
      */
-    Node.prototype.destroy = function() {
+    Node$5.prototype.destroy = function() {
         // need to Copy the array since indices will change.
         var arr_c = this.children.slice(0,this.children.length);
         for(var i=0; i<arr_c.length; i++) {
@@ -362,7 +364,7 @@
      *
      *  @param {Element} c The child to add.
      */
-    Node.prototype.addChild = function(c)
+    Node$5.prototype.addChild = function(c)
     {
         if(c.parentNode !== null){
             c.parentNode.removeChild(c);
@@ -384,7 +386,7 @@
      *          To move a node to another parent : use addChild.
      *  @param {Element} c The child to remove.
      */
-    Node.prototype.removeChild = function(c)
+    Node$5.prototype.removeChild = function(c)
     {
         var i=0;
         var cdn = this.children; // minimize the code
@@ -395,7 +397,7 @@
         if(i != cdn.length){
             cdn[i] = cdn[cdn.length-1];
             cdn.pop();
-        }else{
+        }else {
             throw "c does not belong to the children of this node";
         }
 
@@ -405,7 +407,7 @@
     };
 
     // Abstract
-    Node.prototype.computeAABB = function() {
+    Node$5.prototype.computeAABB = function() {
         this.aabb.makeEmpty();
         for (var i=0; i<this.children.length; i++) {
             this.children[i].computeAABB();
@@ -414,7 +416,7 @@
     };
 
     // Abstract
-    Node.prototype.getAreas = function() {
+    Node$5.prototype.getAreas = function() {
         if(!this.valid_aabb){
             throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
         }
@@ -426,7 +428,7 @@
     };
 
     // Abstract
-    Node.prototype.distanceTo = function(p) {
+    Node$5.prototype.distanceTo = function(p) {
         var res = 10000000;
         for (var i=0; i<this.children.length; i++) {
             res = Math.min(res,this.children[i].distanceTo(p));
@@ -435,7 +437,7 @@
     };
 
     // Abstract
-    Node.prototype.heuristicStepWithin = function() {
+    Node$5.prototype.heuristicStepWithin = function() {
         var res = 10000000;
         for (var i=0; i<this.children.length; i++) {
             res = Math.min(res,this.children[i].heuristicStepWithin());
@@ -444,7 +446,7 @@
     };
 
     // [Abstract]
-    Node.prototype.trim = function(aabb, trimmed, parents)
+    Node$5.prototype.trim = function(aabb, trimmed, parents)
     {
         var idx = trimmed.length;
         for (var i=0; i<this.children.length; i++) {
@@ -464,7 +466,7 @@
     };
 
     // [Abstract]
-    Node.prototype.count = function(cls){
+    Node$5.prototype.count = function(cls){
         var count = 0;
 
         if( this instanceof cls ) {
@@ -478,9 +480,16 @@
         return count;
     };
 
-    var Node_1 = Node;
+    var Node_1 = Node$5;
 
-    var Convergence = {};
+    /**
+     * @author Maxime Quiblier
+     *
+     */
+
+    const THREE$p = require$$0__default["default"];
+
+    var Convergence$3 = {};
 
     // Limitations: 3D only, but can easily be rewritten for nD
     // The algorithm stops when :
@@ -491,13 +500,13 @@
     // @todo write documentation to talk about failure cases.
     //
     // Variable used in function. This avoid reallocation.
-        Convergence.last_mov_pt = new three.Vector3();
-        Convergence.grad = new three.Vector3();
-        Convergence.eval_res_g = new three.Vector3(0,0,0);
-        Convergence.eval_res = {v:0, g:null};
-        Convergence.vec = new three.Vector3();
+        Convergence$3.last_mov_pt = new THREE$p.Vector3();
+        Convergence$3.grad = new THREE$p.Vector3();
+        Convergence$3.eval_res_g = new THREE$p.Vector3(0,0,0);
+        Convergence$3.eval_res = {v:0, g:null};
+        Convergence$3.vec = new THREE$p.Vector3();
 
-    Convergence.safeNewton3D = function(    pot,              // Scalar Field to eval
+    Convergence$3.safeNewton3D = function(    pot,              // Scalar Field to eval
                                             starting_point,   // 3D point where we start, must comply to THREE.Vector3 API
                                             value,            // iso value we are looking for
                                             epsilon,          // Geometrical limit to stop
@@ -634,7 +643,7 @@
     *   @todo write documentation to talk about failure cases.
     *   @todo Should not normalise search_dir. Change that here and in all part of code where this is used.
     */
-    Convergence.safeNewton1D = function(
+    Convergence$3.safeNewton1D = function(
                                             pot,
                                             origin,
                                             search_dir_unit,
@@ -660,7 +669,7 @@
         }
 
         var curr_point_absc = starting_point_absc;
-        var eval_pt = new three.Vector3();
+        var eval_pt = new THREE$p.Vector3();
 
         // Newton step until we overpass the surface
         // the minimum step is set to epsilon, that ensure we will cross the surface.
@@ -716,7 +725,7 @@
         }
     };
 
-    Convergence.dichotomy1D = function(
+    Convergence$3.dichotomy1D = function(
                                             pot,
                                             origin,
                                             search_dir_unit,
@@ -731,8 +740,8 @@
 
         this.eval_res.g = null; // deactive gradient computation
 
-        var previousPos = new three.Vector3().copy(origin);
-        var currentStep = new three.Vector3();
+        var previousPos = new THREE$p.Vector3().copy(origin);
+        var currentStep = new THREE$p.Vector3();
         // intersection
         // dichotomia: first step is going back half of the previous distance
         startStepLength /= 2;
@@ -792,7 +801,9 @@
 
     };
 
-    var Convergence_1 = Convergence;
+    var Convergence_1 = Convergence$3;
+
+    const THREE$o = require$$0__default["default"];
 
     /**
      *  Material object for blobtree. It is an internal material, that should especially
@@ -814,7 +825,7 @@
      *  @param {THREE.Color?} params.emissive       Emissive color for the material.
      *                                              Defaults to pitch black. (no light emission)
      */
-    var Material$1 = function (params) {
+    var Material$b = function (params) {
 
         params = params || {};
 
@@ -822,14 +833,14 @@
             throw "Error : Blobtree Material now takes only 1 argument.";
         }
 
-        this.color = new three.Color(params.color !== undefined ? params.color : 0xaaaaaa);
+        this.color = new THREE$o.Color(params.color !== undefined ? params.color : 0xaaaaaa);
         this.roughness = params.roughness !== undefined ? params.roughness : 0;
         this.metalness = params.metalness !== undefined ? params.metalness : 0;
-        this.emissive = new three.Color( params.emissive !== undefined ? params.emissive : 0x000000 );
+        this.emissive = new THREE$o.Color( params.emissive !== undefined ? params.emissive : 0x000000 );
 
     };
 
-    Material$1.prototype.toJSON = function()
+    Material$b.prototype.toJSON = function()
     {
         return {
             color: "#" + this.color.getHexString(),
@@ -839,10 +850,10 @@
         };
     };
 
-    Material$1.fromJSON = function(json)
+    Material$b.fromJSON = function(json)
     {
-        return new Material$1({
-            color: new three.Color( json.color ),
+        return new Material$b({
+            color: new THREE$o.Color( json.color ),
             roughness: json.roughness,
             metalness: json.metalness,
             emissive: json.emissive, // If undefined, will default to pitch black. If not, will load the hex string.
@@ -853,9 +864,9 @@
      *  Return a clone of the material
      *  @return {!Material} The new material
      */
-    Material$1.prototype.clone = function()
+    Material$b.prototype.clone = function()
     {
-        return new Material$1({
+        return new Material$b({
             color: this.color,
             roughness: this.roughness,
             metalness: this.metalness,
@@ -867,7 +878,7 @@
      *  Copy the given material parameters
      *  @param {!Material} mat Material to be copied
      */
-    Material$1.prototype.copy = function(mat)
+    Material$b.prototype.copy = function(mat)
     {
         this.color.copy(mat.color);
         this.roughness = mat.roughness;
@@ -882,7 +893,7 @@
      *  @param {number!} r roughness
      *  @param {number!} m Metalness
      */
-    Material$1.prototype.set = function(c, r, m)
+    Material$b.prototype.set = function(c, r, m)
     {
         this.color.copy(c);
         this.roughness = r;
@@ -898,7 +909,7 @@
      *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
      *  @param {THREE.Color?} params.emissive       Emissive color for the material.
      */
-    Material$1.prototype.setParams = function (params)
+    Material$b.prototype.setParams = function (params)
     {
         this.color.copy(params.color ? params.color : this.color);
         this.roughness = params.roughness !== undefined ? params.roughness : this.roughness;
@@ -907,19 +918,19 @@
     };
 
     /** @return {THREE.Color} */
-    Material$1.prototype.getColor = function()       { return this.color;    };
+    Material$b.prototype.getColor = function()       { return this.color;    };
 
     /** @return {number} */
-    Material$1.prototype.getRoughness = function()   { return this.roughness;};
+    Material$b.prototype.getRoughness = function()   { return this.roughness;};
 
     /** @return {number} */
-    Material$1.prototype.getMetalness = function()  { return this.metalness;  };
+    Material$b.prototype.getMetalness = function()  { return this.metalness;  };
 
     /** @return {THREE.Color} */
-    Material$1.prototype.getEmissive = function() { return this.emissive; };
+    Material$b.prototype.getEmissive = function() { return this.emissive; };
 
 
-    Material$1.prototype.equals = function(m)  {
+    Material$b.prototype.equals = function(m)  {
         return this.color.equals(m.color) &&
             this.metalness=== m.metalness &&
             this.roughness === m.roughness &&
@@ -932,7 +943,7 @@
      *  @param {!Material} m The material to interpolate with this
      *  @param {number} s the interpolation coefficient
      */
-    Material$1.prototype.lerp = function(m,s)
+    Material$b.prototype.lerp = function(m,s)
     {
         this.color.lerp(m.color,s);
         this.roughness = (1-s)*this.roughness + s*m.roughness;
@@ -951,7 +962,7 @@
      *  @param {number} denum Normalizing the result (division)
      *  @return {Material} this
      */
-    Material$1.prototype.triMean = function(m1,m2,m3,a1,a2,a3,denum)
+    Material$b.prototype.triMean = function(m1,m2,m3,a1,a2,a3,denum)
     {
         this.color.r = (a1*m1.color.r + a2*m2.color.r + a3*m3.color.r)/denum;
         this.color.g = (a1*m1.color.g + a2*m2.color.g + a3*m3.color.g)/denum;
@@ -975,7 +986,7 @@
      *  @param {Array.<number>|Float32Array} v_arr Array of values being the corresponding weights
      *  @param {number=} n Can be set if you want to mean only the n first element of the arrays
      */
-    Material$1.prototype.weightedMean = function(m_arr,v_arr, n)
+    Material$b.prototype.weightedMean = function(m_arr,v_arr, n)
     {
         this.color.setRGB(0,0,0);
         this.roughness = 0;
@@ -1007,7 +1018,7 @@
             this.emissive.r /= sum_v;
             this.emissive.g /= sum_v;
             this.emissive.b /= sum_v;
-        }else{
+        }else {
             this.color.setScalar( 0 );
             this.roughness = 0;
             this.metalness = 0;
@@ -1031,7 +1042,7 @@
      *
      *  @return {boolean} true if and only if all arguments are arrays of the same length and containing the same material values.
      */
-    Material$1.areEqualsArrays = function(arr1, arr2, arr3, arr4, arr5){
+    Material$b.areEqualsArrays = function(arr1, arr2, arr3, arr4, arr5){
 
         console.warn("Material.areEqualsArrays is deprecated, please use your own comparison function using Material.equals.");
 
@@ -1057,9 +1068,14 @@
         return res;
     };
 
-    Material$1.defaultMaterial = new Material$1();
+    Material$b.defaultMaterial = new Material$b();
 
-    var Material_1 = Material$1;
+    var Material_1 = Material$b;
+
+    const THREE$n = require$$0__default["default"];
+    const Types$i = Types_1;
+    const Node$4 = Node_1;
+    const Material$a = Material_1;
 
     /**
      *  This class implement a n-ary blend node which use a Ricci Blend.
@@ -1071,9 +1087,9 @@
      *  @param {number} ricci_n The value for ricci
      *  @param {Array.<Node>} children The children to add to this node. Just a convenient parameter, you can do it manually using addChild
      */
-    var RicciNode = function (ricci_n, children) {
+    var RicciNode$2 = function (ricci_n, children) {
 
-        Node_1.call(this);
+        Node$4.call(this);
 
         this.ricci_n = ricci_n;
 
@@ -1090,39 +1106,39 @@
 
         // temp vars to speed up evaluation by avoiding allocations
         this.tmp_res = {v:0,g:null,m:null};
-        this.tmp_g = new three.Vector3();
-        this.tmp_m = new Material_1();
+        this.tmp_g = new THREE$n.Vector3();
+        this.tmp_m = new Material$a();
     };
 
-    RicciNode.prototype = Object.create( Node_1.prototype );
-    RicciNode.prototype.constructor = RicciNode;
+    RicciNode$2.prototype = Object.create( Node$4.prototype );
+    RicciNode$2.prototype.constructor = RicciNode$2;
 
-    RicciNode.type = "RicciNode";
-    Types_1.register(RicciNode.type, RicciNode);
+    RicciNode$2.type = "RicciNode";
+    Types$i.register(RicciNode$2.type, RicciNode$2);
 
-    RicciNode.prototype.getType = function(){
-        return RicciNode.type;
+    RicciNode$2.prototype.getType = function(){
+        return RicciNode$2.type;
     };
 
-    RicciNode.prototype.toJSON = function(){
-        var res = Node_1.prototype.toJSON.call(this);
+    RicciNode$2.prototype.toJSON = function(){
+        var res = Node$4.prototype.toJSON.call(this);
         res.ricci = this.ricci_n;
 
         return res;
     };
-    RicciNode.fromJSON = function(json){
-        var res = new RicciNode(json.ricci);
+    RicciNode$2.fromJSON = function(json){
+        var res = new RicciNode$2(json.ricci);
         for(var i=0; i<json.children.length; ++i){
-            res.addChild(Types_1.fromJSON(json.children[i]));
+            res.addChild(Types$i.fromJSON(json.children[i]));
         }
         return res;
     };
 
     // [Abstract] see Node for a complete description
-    RicciNode.prototype.prepareForEval = function()
+    RicciNode$2.prototype.prepareForEval = function()
     {
         if(!this.valid_aabb){
-            this.aabb = new three.Box3();  // Create empty BBox
+            this.aabb = new THREE$n.Box3();  // Create empty BBox
             for(var i=0; i<this.children.length; ++i){
                 var c = this.children[i];
                 c.prepareForEval();
@@ -1136,14 +1152,14 @@
                 this.tmp_v_arr = new Float32Array(this.children.length*2);
                 this.tmp_m_arr.length = this.children.length*2;
                 for(var i=0; i<this.tmp_m_arr.length; ++i){
-                    this.tmp_m_arr[i] = new Material_1({roughness:0, metalness:0});
+                    this.tmp_m_arr[i] = new Material$a({roughness:0, metalness:0});
                 }
             }
         }
     };
 
     // [Abstract] see Node for more details.
-    RicciNode.prototype.value = function(p,res)
+    RicciNode$2.prototype.value = function(p,res)
     {
         // TODO : check that all bounding box of all children and subchildrens are valid
         //        This enable not to do it in prim and limit the number of assert call (and string built)
@@ -1155,7 +1171,7 @@
         // Init res
         res.v = 0;
         if(res.m)  {
-            res.m.copy(Material_1.defaultMaterial);
+            res.m.copy(Material$a.defaultMaterial);
         }if(res.g) {
             res.g.set(0,0,0);
         }else if (res.step !== undefined) {
@@ -1244,18 +1260,24 @@
         }
     };
 
-    RicciNode.prototype.setRicciN = function(n)
+    RicciNode$2.prototype.setRicciN = function(n)
     {
         if(this.ricci_n != n){
             this.ricci_n = n;
             this.invalidAABB();
         }
     };
-    RicciNode.prototype.getRicciN = function(){
+    RicciNode$2.prototype.getRicciN = function(){
         return this.ricci_n;
     };
 
-    var RicciNode_1 = RicciNode;
+    var RicciNode_1 = RicciNode$2;
+
+    const THREE$m = require$$0__default["default"];
+    const Types$h = Types_1;
+    const RicciNode$1 = RicciNode_1;
+
+    const Convergence$2 = Convergence_1;
 
     /**
      *  The root of any implicit blobtree. Does behave computationaly like a RicciNode with n = 64.
@@ -1263,9 +1285,9 @@
      *  @constructor
      *  @extends RicciNode
      */
-    var RootNode = function() {
+    var RootNode$1 = function() {
         // Default RootNode is a riccinode with ricci_n = 64 (almost a max)
-        RicciNode_1.call(this, 64);
+        RicciNode$1.call(this, 64);
 
         this.valid_aabb = true;
 
@@ -1278,45 +1300,45 @@
 
     };
 
-    RootNode.prototype = Object.create(RicciNode_1.prototype);
-    RootNode.prototype.constructor = RootNode;
+    RootNode$1.prototype = Object.create(RicciNode$1.prototype);
+    RootNode$1.prototype.constructor = RootNode$1;
 
-    RootNode.type = "RootNode";
-    Types_1.register(RootNode.type, RootNode);
+    RootNode$1.type = "RootNode";
+    Types$h.register(RootNode$1.type, RootNode$1);
 
-    RootNode.prototype.getType = function(){
-        return RootNode.type;
+    RootNode$1.prototype.getType = function(){
+        return RootNode$1.type;
     };
 
-    RootNode.prototype.toJSON = function(){
-        var res = RicciNode_1.prototype.toJSON.call(this);
+    RootNode$1.prototype.toJSON = function(){
+        var res = RicciNode$1.prototype.toJSON.call(this);
         res.iso = this.iso_value;
         return res;
     };
-    RootNode.fromJSON = function(json){
-        var res = new RootNode(json.ricci);
+    RootNode$1.fromJSON = function(json){
+        var res = new RootNode$1(json.ricci);
         for(var i=0; i<json.children.length; ++i){
-            res.addChild(Types_1.fromJSON(json.children[i]));
+            res.addChild(Types$h.fromJSON(json.children[i]));
         }
         return res;
     };
 
-    RootNode.prototype.getIsoValue = function() {
+    RootNode$1.prototype.getIsoValue = function() {
         return this.iso_value;
     };
-    RootNode.prototype.setIsoValue = function(v) {
+    RootNode$1.prototype.setIsoValue = function(v) {
         this.iso_value = v;
     };
     /**
      *  @return {number} The neutral value of this tree, ie the value of the field in empty region of space.
      *                   This is an API for external use and future development. For now it is hard set to 0.
      */
-    RootNode.prototype.getNeutralValue = function() {
+    RootNode$1.prototype.getNeutralValue = function() {
         return 0;
     };
 
     // [Abstract] see Node.invalidAABB
-    RootNode.prototype.invalidAABB = function() {
+    RootNode$1.prototype.invalidAABB = function() {
         this.valid_aabb = false;
     };
 
@@ -1326,7 +1348,7 @@
      *  For example, this is very useful for evaluation optim
      *  @param {THREE.Box3} aabb
      */
-    RootNode.prototype.internalTrim = function(aabb)
+    RootNode$1.prototype.internalTrim = function(aabb)
     {
         if( !(this.trimmed.length === 0 && this.trim_parents.length === 0) ){
             throw "Error : you should not call internal trim if you have not untrimmed before. Call untrim or use externalTrim";
@@ -1341,14 +1363,14 @@
      *  @param {Array.<Element>} trimmed Array of trimmed Elements
      *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
      */
-    RootNode.prototype.externalTrim = function(aabb, trimmed, parents){
+    RootNode$1.prototype.externalTrim = function(aabb, trimmed, parents){
         this.trim(aabb, trimmed, parents);
     };
 
     /**
      *  Reset the full blobtree
      */
-    RootNode.prototype.internalUntrim = function(){
+    RootNode$1.prototype.internalUntrim = function(){
         this.untrim(this.trimmed, this.trim_parents);
         this.trimmed.length = 0;
         this.trim_parents.length = 0;
@@ -1360,7 +1382,7 @@
      *  @param {Array.<Element>} trimmed Array of trimmed Elements
      *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
      */
-    RootNode.prototype.untrim = function(trimmed, parents){
+    RootNode$1.prototype.untrim = function(trimmed, parents){
         if( !(trimmed.length === parents.length) ){
             throw "Error : trimmed and parents arrays should have the same length";
         }
@@ -1373,7 +1395,7 @@
      *  Tell if the blobtree is empty
      *  @return true if blobtree is empty
      */
-    RootNode.prototype.isEmpty = function(){
+    RootNode$1.prototype.isEmpty = function(){
         return this.children.length == 0;
     };
 
@@ -1393,21 +1415,21 @@
      *
      *  @return {boolean} True if an intersection has been found.
      */
-    RootNode.prototype.intersectRayBlob = function()
+    RootNode$1.prototype.intersectRayBlob = function()
     {
-        var curPos = new three.Vector3();
-        var marchingVector = new three.Vector3();
-        var currentStep = new three.Vector3();
+        var curPos = new THREE$m.Vector3();
+        var marchingVector = new THREE$m.Vector3();
+        var currentStep = new THREE$m.Vector3();
 
-        var g = new three.Vector3();
+        var g = new THREE$m.Vector3();
         var tmp_res = {
             v:0,
             g : g,
             step:0
         };
         var conv_res = {
-            p : new three.Vector3(),
-            g : new three.Vector3(),
+            p : new THREE$m.Vector3(),
+            g : new THREE$m.Vector3(),
             p_absc : 0.0
         };
         var previousStepLength=0;
@@ -1455,7 +1477,7 @@
                                             // );
                 // res.distance = dist + conv_res.absc;
 
-                Convergence_1.safeNewton1D(
+                Convergence$2.safeNewton1D(
                                             this,
                                             curPos,
                                             marchingVector.multiplyScalar(-1.0),
@@ -1495,13 +1517,13 @@
      *  TODO : check, it is probably an optimized intersection for blob intersection
      *         in X, Y or Z directions.
      */
-    RootNode.prototype.intersectOrthoRayBlob = function() {
+    RootNode$1.prototype.intersectOrthoRayBlob = function() {
     // curpos and marching vector are only instanciated once,
     // we are using closure method
-        var curPos = new three.Vector3();
-        var resumePos = new three.Vector3();
+        var curPos = new THREE$m.Vector3();
+        var resumePos = new THREE$m.Vector3();
         var tmp_res = {step:0};
-        var g = new three.Vector3();
+        var g = new THREE$m.Vector3();
         var dicho_res = {};
         var previousStepLength=0;
         var previousDist=0;
@@ -1611,7 +1633,12 @@
         };
     }();
 
-    var RootNode_1 = RootNode;
+    var RootNode_1 = RootNode$1;
+
+    const THREE$l = require$$0__default["default"];
+    const Types$g = Types_1;
+    const Node$3 = Node_1;
+    const Material$9 = Material_1;
 
     /**
      *  This class implement a difference blending node.
@@ -1625,7 +1652,7 @@
      */
     var DifferenceNode = function (node0, node1, alpha) {
 
-        Node_1.call(this);
+        Node$3.call(this);
 
         this.addChild(node0);
         this.addChild(node1);
@@ -1636,12 +1663,12 @@
         this.clamped = 0.0;
 
         // Tmp vars to speed up computation (no reallocations)
-        this.tmp_res0 = {v:0, g:new three.Vector3(0,0,0), m:new Material_1()};
-        this.tmp_res1 = {v:0, g:new three.Vector3(0,0,0), m:new Material_1()};
-        this.g0 = new three.Vector3();
-        this.m0 = new Material_1();
-        this.g1 = new three.Vector3();
-        this.m1 = new Material_1();
+        this.tmp_res0 = {v:0, g:new THREE$l.Vector3(0,0,0), m:new Material$9()};
+        this.tmp_res1 = {v:0, g:new THREE$l.Vector3(0,0,0), m:new Material$9()};
+        this.g0 = new THREE$l.Vector3();
+        this.m0 = new Material$9();
+        this.g1 = new THREE$l.Vector3();
+        this.m1 = new Material$9();
 
         this.tmp_v_arr = new Float32Array(2);
         this.tmp_m_arr = [
@@ -1652,11 +1679,11 @@
 
     };
 
-    DifferenceNode.prototype = Object.create( Node_1.prototype );
+    DifferenceNode.prototype = Object.create( Node$3.prototype );
     DifferenceNode.prototype.constructor = DifferenceNode;
 
     DifferenceNode.type = "DifferenceNode";
-    Types_1.register(DifferenceNode.type, DifferenceNode);
+    Types$g.register(DifferenceNode.type, DifferenceNode);
 
     DifferenceNode.prototype.getAlpha = function(){
         return this.alpha;
@@ -1669,15 +1696,15 @@
     };
 
     DifferenceNode.prototype.toJSON = function(){
-        var res = Node_1.prototype.toJSON.call(this);
+        var res = Node$3.prototype.toJSON.call(this);
         res.alpha = this.alpha;
         return res;
     };
 
     DifferenceNode.fromJSON = function(json){
         var res = new DifferenceNode();
-        this.children[0] = Types_1.fromJSON(json.children[0]);
-        this.children[1] = Types_1.fromJSON(json.children[1]);
+        this.children[0] = Types$g.fromJSON(json.children[0]);
+        this.children[1] = Types$g.fromJSON(json.children[1]);
         return res;
     };
 
@@ -1698,7 +1725,7 @@
     // [Abstract] see Node for more details.
     DifferenceNode.prototype.value = function(p,res)
     {
-        var l = this.children.length;
+        this.children.length;
         var v_arr = this.tmp_v_arr;
         var m_arr = this.tmp_m_arr;
 
@@ -1715,9 +1742,9 @@
         tmp1.v = 0;
         tmp0.v = 0;
         if(res.m)  {
-            res.m.copy(Material_1.defaultMaterial);
-            tmp1.m.copy(Material_1.defaultMaterial);
-            tmp0.m.copy(Material_1.defaultMaterial);
+            res.m.copy(Material$9.defaultMaterial);
+            tmp1.m.copy(Material$9.defaultMaterial);
+            tmp0.m.copy(Material$9.defaultMaterial);
         }if(res.g) {
             res.g.set(0,0,0);
             tmp1.g.set(0,0,0);
@@ -1742,13 +1769,13 @@
                     if(res.m){
                         res.m.copy(tmp0.m);
                     }
-                }else{
+                }else {
                     var v_pow = Math.pow(tmp1.v,this.alpha);
                     res.v = Math.max(this.clamped,tmp0.v - tmp1.v*Math.pow(tmp1.v,this.alpha-1.0));
                     if(res.g){
                         if(res.v === this.clamped){
                             res.g.set(0,0,0);
-                        }else{
+                        }else {
                             tmp1.g.multiplyScalar(v_pow);
                             res.g.subVectors(tmp0.g, tmp1.g);
                         }
@@ -1780,6 +1807,11 @@
 
     var DifferenceNode_1 = DifferenceNode;
 
+    const THREE$k = require$$0__default["default"];
+    const Types$f = Types_1;
+    const Node$2 = Node_1;
+    const Material$8 = Material_1;
+
     /**
      *  This class implement a Min node.
      *  It will return the minimum value of the field of each primitive.
@@ -1791,7 +1823,7 @@
      */
     var MinNode = function (children) {
 
-        Node_1.call(this);
+        Node$2.call(this);
 
         if(children){
             var self = this;
@@ -1802,16 +1834,16 @@
 
         // temp vars to speed up evaluation by avoiding allocations
         this.tmp_res = {v:0,g:null,m:null};
-        this.tmp_g = new three.Vector3();
-        this.tmp_m = new Material_1();
+        this.tmp_g = new THREE$k.Vector3();
+        this.tmp_m = new Material$8();
 
     };
 
-    MinNode.prototype = Object.create( Node_1.prototype );
+    MinNode.prototype = Object.create( Node$2.prototype );
     MinNode.prototype.constructor = MinNode;
 
     MinNode.type = "MinNode";
-    Types_1.register(MinNode.type, MinNode);
+    Types$f.register(MinNode.type, MinNode);
 
     MinNode.prototype.getType = function(){
         return MinNode.type;
@@ -1820,7 +1852,7 @@
     MinNode.fromJSON = function(json){
         var res = new MinNode();
         for(var i=0; i<json.children.length; ++i){
-            res.addChild(Types_1.fromJSON(json.children[i]));
+            res.addChild(Types$f.fromJSON(json.children[i]));
         }
         return res;
     };
@@ -1829,7 +1861,7 @@
     MinNode.prototype.prepareForEval = function()
     {
         if(!this.valid_aabb){
-            this.aabb = new three.Box3();  // Create empty BBox
+            this.aabb = new THREE$k.Box3();  // Create empty BBox
             for(var i=0; i<this.children.length; ++i){
                 var c = this.children[i];
                 c.prepareForEval();
@@ -1854,7 +1886,7 @@
         // Init res
         res.v = 0;
         if(res.m)  {
-            res.m.copy(Material_1.defaultMaterial);
+            res.m.copy(Material$8.defaultMaterial);
         }if(res.g) {
             res.g.set(0,0,0);
         }else if (res.step !== undefined) {
@@ -1901,27 +1933,30 @@
 
     var MinNode_1 = MinNode;
 
+    const Element$1 = Element_1;
+    const Types$e = Types_1;
+
     /**
      *  Represent a blobtree primitive.
      *
      *  @constructor
      *  @extends {Element}
      */
-    var Primitive = function() {
-        Element_1.call(this);
+    var Primitive$1 = function() {
+        Element$1.call(this);
 
         /** @type {!Array.<!Material>} */
         this.materials = [];
     };
 
-    Primitive.prototype = Object.create(Element_1.prototype);
-    Primitive.prototype.constructor = Primitive;
+    Primitive$1.prototype = Object.create(Element$1.prototype);
+    Primitive$1.prototype.constructor = Primitive$1;
 
-    Primitive.type = "Primitive";
-    Types_1.register(Primitive.type, Primitive);
+    Primitive$1.type = "Primitive";
+    Types$e.register(Primitive$1.type, Primitive$1);
 
-    Primitive.prototype.toJSON= function(mats) {
-        var res = Element_1.prototype.toJSON.call(this);
+    Primitive$1.prototype.toJSON= function(mats) {
+        var res = Element$1.prototype.toJSON.call(this);
         res.materials = [];
         for(var i=0; i<this.materials.length; ++i){
             res.materials.push(this.materials[i].toJSON());
@@ -1932,7 +1967,7 @@
     /**
     *  @param {Array.<!Material>} mats Array of materials to set. they will be copied to the primitive materials
     */
-    Primitive.prototype.setMaterials = function(mats) {
+    Primitive$1.prototype.setMaterials = function(mats) {
         if(mats.length !== this.materials.length){
             throw "Error : trying to set " + mats.length + " materials on a primitive with only " + this.materials.length;
         }
@@ -1947,12 +1982,12 @@
     /**
     *  @return {Array.<!Material>} Current primitive materials
     */
-    Primitive.prototype.getMaterials = function() {
+    Primitive$1.prototype.getMaterials = function() {
          return this.materials;
     };
 
     // Abstract : default AABB computation for primitive
-    Primitive.prototype.computeAABB = function() {
+    Primitive$1.prototype.computeAABB = function() {
         throw "Primitive.prototype.computeAABB  Must be reimplemented in all inherited class.";
     };
 
@@ -1961,29 +1996,28 @@
      *  Destroy the current primitive and remove it from the blobtree (basically
      *  clean up the links between blobtree elements).
      */
-    Primitive.prototype.destroy = function() {
+    Primitive$1.prototype.destroy = function() {
         if(this.parentNode !== null){
             this.parentNode.removeChild(this);
         }
     };
 
     // Abstract
-    Primitive.prototype.getAreas = function() {
+    Primitive$1.prototype.getAreas = function() {
         throw "ERROR : getAreas is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
-        return [];
     };
 
     // Abstract
-    Primitive.prototype.computeHelpVariables = function() {
+    Primitive$1.prototype.computeHelpVariables = function() {
         throw "ERROR : computeHelpVariables is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
     }; // to override
 
     // [Abstract]
-    Primitive.prototype.count = function(cls){
+    Primitive$1.prototype.count = function(cls){
         return this instanceof cls ? 1 : 0;
     };
 
-    var Primitive_1 = Primitive;
+    var Primitive_1 = Primitive$1;
 
     /**
      *  @global ScalisMath Contains some maths constant and functions for Scalis primitives.
@@ -1994,24 +2028,24 @@
      *  @property {number} KIS2 Kernel Inverse Scale Squared
      *  @property {} Poly6Eval
      */
-    var ScalisMath = {};
+    var ScalisMath$6 = {};
 
-    ScalisMath.KS = 2.0;
-    ScalisMath.KIS = 1/ScalisMath.KS;
-    ScalisMath.KS2 = 4.0;
-    ScalisMath.KIS2 = 1/(ScalisMath.KS*ScalisMath.KS);
+    ScalisMath$6.KS = 2.0;
+    ScalisMath$6.KIS = 1/ScalisMath$6.KS;
+    ScalisMath$6.KS2 = 4.0;
+    ScalisMath$6.KIS2 = 1/(ScalisMath$6.KS*ScalisMath$6.KS);
     /**
      *  Compact Polynomial of degree 6 evaluation function
      *  @param {number} r Radius (ie distance)
      */
-    ScalisMath.Poly6Eval = function(r)
+    ScalisMath$6.Poly6Eval = function(r)
     {
-        var aux = 1.0-ScalisMath.KIS2*r*r;
+        var aux = 1.0-ScalisMath$6.KIS2*r*r;
 
         if(aux > 0.0)
         {
             return aux*aux*aux;
-        }else{
+        }else {
             return 0.0;
         }
     };
@@ -2020,14 +2054,14 @@
      *  (avoid square roots in some cases)
      *  @param {number} r2 Radius squared (ie distance squared)
      */
-    ScalisMath.Poly6EvalSq = function(r2)
+    ScalisMath$6.Poly6EvalSq = function(r2)
     {
-        var aux = 1.0-ScalisMath.KIS2*r2;
+        var aux = 1.0-ScalisMath$6.KIS2*r2;
 
         if(aux > 0.0)
         {
             return aux*aux*aux;
-        }else{
+        }else {
             return 0.0;
         }
     };
@@ -2041,7 +2075,7 @@
      *  @param {number} dist    Distance
      *  @return {number} The iso value at a given distance for a given polynomial degree and scale
      */
-    ScalisMath.GetIsoValueAtDistanceGeom0D = function(degree, scale, dist)
+    ScalisMath$6.GetIsoValueAtDistanceGeom0D = function(degree, scale, dist)
     {
         if(degree%2!==0){
             throw "degree should be even";
@@ -2063,13 +2097,13 @@
      * @type {number} Normalization Factor for polynomial 4 in 0 dimension
      * @const
      */
-    ScalisMath.Poly4NF0D = 1.0/ScalisMath.GetIsoValueAtDistanceGeom0D(4,ScalisMath.KS,1.0);
+    ScalisMath$6.Poly4NF0D = 1.0/ScalisMath$6.GetIsoValueAtDistanceGeom0D(4,ScalisMath$6.KS,1.0);
     /**
      * @global
      * @type {number} Normalization Factor for polynomial 6 in 0 dimension
      * @const
      */
-    ScalisMath.Poly6NF0D = 1.0/ScalisMath.GetIsoValueAtDistanceGeom0D(6,ScalisMath.KS,1.0);
+    ScalisMath$6.Poly6NF0D = 1.0/ScalisMath$6.GetIsoValueAtDistanceGeom0D(6,ScalisMath$6.KS,1.0);
 
     /**
      *  Compute the iso value at a given distance for a given polynomial degree
@@ -2080,7 +2114,7 @@
      *  @param {number} dist    Distance
      *  @return {number} The iso value at a given distance for a given polynomial degree and scale
      */
-    ScalisMath.GetIsoValueAtDistanceGeom1D = function (degree, scale, dist)
+    ScalisMath$6.GetIsoValueAtDistanceGeom1D = function (degree, scale, dist)
     {
         if(degree%2!==0){
             throw "degree should be even";
@@ -2108,13 +2142,13 @@
      * @type {number} Normalization Factor for polynomial 4 in 1 dimension
      * @const
      */
-    ScalisMath.Poly4NF1D = 1.0/ScalisMath.GetIsoValueAtDistanceGeom1D(4,ScalisMath.KS,1.0);
+    ScalisMath$6.Poly4NF1D = 1.0/ScalisMath$6.GetIsoValueAtDistanceGeom1D(4,ScalisMath$6.KS,1.0);
     /**
      * @global
      * @type {number} Normalization Factor for polynomial 6 in 1 dimension
      * @const
      */
-    ScalisMath.Poly6NF1D = 1.0/ScalisMath.GetIsoValueAtDistanceGeom1D(6,ScalisMath.KS,1.0);
+    ScalisMath$6.Poly6NF1D = 1.0/ScalisMath$6.GetIsoValueAtDistanceGeom1D(6,ScalisMath$6.KS,1.0);
 
     /**
      *  Compute the iso value at a given distance for a given polynomial degree
@@ -2125,7 +2159,7 @@
      *  @param {number} dist    Distance
      *  @return {number} The iso value at a given distance for a given polynomial degree and scale
      */
-    ScalisMath.GetIsoValueAtDistanceGeom2D = function (degree, scale, dist)
+    ScalisMath$6.GetIsoValueAtDistanceGeom2D = function (degree, scale, dist)
     {
         if(dist < scale)
         {
@@ -2143,15 +2177,18 @@
      * @type {number} Normalization Factor for polynomial 4 in 2 dimension
      * @const
      */
-    ScalisMath.Poly4NF2D = 1.0/ScalisMath.GetIsoValueAtDistanceGeom2D(4,ScalisMath.KS,1.0);
+    ScalisMath$6.Poly4NF2D = 1.0/ScalisMath$6.GetIsoValueAtDistanceGeom2D(4,ScalisMath$6.KS,1.0);
     /**
      * @global
      * @type {number} Normalization Factor for polynomial 6 in 2 dimension
      * @const
      */
-    ScalisMath.Poly6NF2D = 1.0/ScalisMath.GetIsoValueAtDistanceGeom2D(6,ScalisMath.KS,1.0);
+    ScalisMath$6.Poly6NF2D = 1.0/ScalisMath$6.GetIsoValueAtDistanceGeom2D(6,ScalisMath$6.KS,1.0);
 
-    var ScalisMath_1 = ScalisMath;
+    var ScalisMath_1 = ScalisMath$6;
+
+    const Types$d = Types_1;
+    const Primitive = Primitive_1;
 
     /**
      *  Represent an implicit primitive respecting the SCALIS model developped by Cedrric Zanni
@@ -2159,11 +2196,11 @@
      *  @constructor
      *  @extends {Primitive}
      */
-    var ScalisPrimitive = function() {
-        Primitive_1.call(this);
+    var ScalisPrimitive$3 = function() {
+        Primitive.call(this);
 
         // Type of volume (convolution or distance funtion)
-        this.volType = ScalisPrimitive.DIST;
+        this.volType = ScalisPrimitive$3.DIST;
 
         /** @type {!Array.<!ScalisVertex>}
          *  @private
@@ -2171,21 +2208,21 @@
         this.v = []; // vertex array
     };
 
-    ScalisPrimitive.DIST = "dist";
-    ScalisPrimitive.CONVOL = "convol";
+    ScalisPrimitive$3.DIST = "dist";
+    ScalisPrimitive$3.CONVOL = "convol";
 
-    ScalisPrimitive.prototype = Object.create(Primitive_1.prototype);
-    ScalisPrimitive.prototype.constructor = ScalisPrimitive;
+    ScalisPrimitive$3.prototype = Object.create(Primitive.prototype);
+    ScalisPrimitive$3.prototype.constructor = ScalisPrimitive$3;
 
-    ScalisPrimitive.type = "ScalisPrimitive";
-    Types_1.register(ScalisPrimitive.type, ScalisPrimitive);
+    ScalisPrimitive$3.type = "ScalisPrimitive";
+    Types$d.register(ScalisPrimitive$3.type, ScalisPrimitive$3);
 
-    ScalisPrimitive.prototype.getType = function(){
-        return ScalisPrimitive.type;
+    ScalisPrimitive$3.prototype.getType = function(){
+        return ScalisPrimitive$3.type;
     };
 
-    ScalisPrimitive.prototype.toJSON= function() {
-        var res = Primitive_1.prototype.toJSON.call(this);
+    ScalisPrimitive$3.prototype.toJSON= function() {
+        var res = Primitive.prototype.toJSON.call(this);
         res.v = [];
         res.volType = this.volType;
         for(var i=0; i<this.v.length; ++i){
@@ -2198,14 +2235,14 @@
      *  @abstract Specify if the voltype can be changed
      *  @return {boolean} True if and only if the VolType can be changed.
      */
-    ScalisPrimitive.prototype.mutableVolType = function() {
+    ScalisPrimitive$3.prototype.mutableVolType = function() {
         return false;
     };
 
     /**
      *  @param {string} vt New VolType to set (Only for SCALIS primitives)
      */
-    ScalisPrimitive.prototype.setVolType = function(vt) {
+    ScalisPrimitive$3.prototype.setVolType = function(vt) {
         if(vt !== this.volType){
             this.volType = vt;
             this.invalidAABB();
@@ -2214,19 +2251,23 @@
     /**
      *  @return {string} Current volType
      */
-    ScalisPrimitive.prototype.getVolType = function() {
+    ScalisPrimitive$3.prototype.getVolType = function() {
         return this.volType;
     };
 
     // Abstract : default AABB computation for ScalisPrimitive
-    ScalisPrimitive.prototype.computeAABB = function() {
+    ScalisPrimitive$3.prototype.computeAABB = function() {
         this.aabb.makeEmpty();
         for (var i=0; i<this.v.length; i++) {
             this.aabb.union(this.v[i].getAABB());
         }
     };
 
-    var ScalisPrimitive_1 = ScalisPrimitive;
+    var ScalisPrimitive_1 = ScalisPrimitive$3;
+
+    const THREE$j = require$$0__default["default"];
+
+    const ScalisMath$5 = ScalisMath_1;
 
     var verticesIds = 0;
 
@@ -2236,7 +2277,7 @@
      *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
      *  @param {number} thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
      */
-    var ScalisVertex$1 = function(pos, thickness) {
+    var ScalisVertex$4 = function(pos, thickness) {
         this.pos       = pos.clone();
         this.thickness = thickness;
 
@@ -2246,7 +2287,7 @@
         // The primitive using this vertex
         this.prim = null;
 
-        this.aabb = new three.Box3();
+        this.aabb = new THREE$j.Box3();
         this.valid_aabb = false;
     };
 
@@ -2254,13 +2295,13 @@
      *  Set an internal pointer to the primitive using this vertex.
      *  Should be called from primitive constructor.
      */
-    ScalisVertex$1.prototype.setPrimitive = function(prim){
+    ScalisVertex$4.prototype.setPrimitive = function(prim){
         if(this.prim === null){
             this.prim = prim;
         }
     };
 
-    ScalisVertex$1.prototype.toJSON = function() {
+    ScalisVertex$4.prototype.toJSON = function() {
         return {
             position:{
                 x:this.pos.x,
@@ -2270,15 +2311,15 @@
             thickness:this.thickness
         };
     };
-    ScalisVertex$1.fromJSON = function(json) {
-        return new ScalisVertex$1(new three.Vector3(json.position.x,json.position.y,json.position.z), json.thickness);
+    ScalisVertex$4.fromJSON = function(json) {
+        return new ScalisVertex$4(new THREE$j.Vector3(json.position.x,json.position.y,json.position.z), json.thickness);
     };
 
     /**
      *  Set a new position.
      *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
      */
-    ScalisVertex$1.prototype.setPos = function(pos) {
+    ScalisVertex$4.prototype.setPos = function(pos) {
         this.valid_aabb = false;
         this.pos.copy(pos);
         this.prim.invalidAABB();
@@ -2288,7 +2329,7 @@
      *  Set a new thickness
      *  @param {number} thickness The new thickness
      */
-    ScalisVertex$1.prototype.setThickness = function(thickness) {
+    ScalisVertex$4.prototype.setThickness = function(thickness) {
         this.valid_aabb = false;
         this.thickness = thickness;
         this.prim.invalidAABB();
@@ -2299,7 +2340,7 @@
      *  @param {number} thickness The new thickness
      *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
      */
-    ScalisVertex$1.prototype.setAll = function(pos, thickness)
+    ScalisVertex$4.prototype.setAll = function(pos, thickness)
     {
         this.valid_aabb = false;
         this.pos = pos;
@@ -2311,7 +2352,7 @@
      *  Get the current position
      *  @return {!THREE.Vector3} Current position, as a THREE.Vector3
      */
-    ScalisVertex$1.prototype.getPos = function() {
+    ScalisVertex$4.prototype.getPos = function() {
         return this.pos;
     };
 
@@ -2319,7 +2360,7 @@
      *  Get the current Thickness
      *  @return {number} Current Thickness
      */
-    ScalisVertex$1.prototype.getThickness = function() {
+    ScalisVertex$4.prototype.getThickness = function() {
         return this.thickness;
     };
 
@@ -2327,7 +2368,7 @@
      *  Get the current AxisAlignedBoundingBox
      *  @return {THREE.Box3} The AABB of this vertex.
      */
-    ScalisVertex$1.prototype.getAABB = function() {
+    ScalisVertex$4.prototype.getAABB = function() {
         if (!this.valid_aabb) {
             this.computeAABB();
             this.valid_aabb = true;
@@ -2339,15 +2380,15 @@
      *  Compute the current AABB.
      *  @protected
      */
-    ScalisVertex$1.prototype.computeAABB = function() {
+    ScalisVertex$4.prototype.computeAABB = function() {
         var pos = this.getPos();
-        var boundSupport = this.getThickness()*ScalisMath_1.KS;
-        this.aabb.set(new three.Vector3(
+        var boundSupport = this.getThickness()*ScalisMath$5.KS;
+        this.aabb.set(new THREE$j.Vector3(
                         pos.x-boundSupport,
                         pos.y-boundSupport,
                         pos.z-boundSupport
                       ),
-                      new three.Vector3(
+                      new THREE$j.Vector3(
                           pos.x+boundSupport,
                           pos.y+boundSupport,
                           pos.z+boundSupport
@@ -2359,11 +2400,11 @@
      *  Check equality between 2 vertices
      *  @return {boolean}
      */
-    ScalisVertex$1.prototype.equals = function(other) {
+    ScalisVertex$4.prototype.equals = function(other) {
         return this.pos.equals(other.pos) && this.thickness === other.thickness;
     };
 
-    var ScalisVertex_1 = ScalisVertex$1;
+    var ScalisVertex_1 = ScalisVertex$4;
 
     /**
      *  Bounding area for a primitive
@@ -2376,7 +2417,7 @@
      *
      * @constructor
      */
-    var Area = function()
+    var Area$4 = function()
     {
 
     };
@@ -2389,7 +2430,7 @@
      *  @param {!{radius:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *
      */
-    Area.prototype.sphereIntersect = function(sphere)
+    Area$4.prototype.sphereIntersect = function(sphere)
     {
         throw "Error : sphereIntersect is abstract, should have been overwritten";
     };
@@ -2403,7 +2444,7 @@
      *  @param {!THREE.Vector3} p A point in space
      *
      */
-    Area.prototype.contains = function(p)
+    Area$4.prototype.contains = function(p)
     {
         throw "Error : contains is abstract, should have been overwritten";
     };
@@ -2426,7 +2467,7 @@
      *                      This function will return factor*1.3
      *
      */
-    Area.prototype.getAcc = function(sphere, factor)
+    Area$4.prototype.getAcc = function(sphere, factor)
     {
         throw "Error : getAcc is abstract, should have been overwritten";
     };
@@ -2437,7 +2478,7 @@
      *  @param {!{radius:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
-    Area.prototype.getNiceAcc = function(sphere)
+    Area$4.prototype.getNiceAcc = function(sphere)
     {
         throw "Error : getNiceAcc is abstract, should have been overwritten";
     };
@@ -2447,7 +2488,7 @@
      *  @param {!{radius:number,c:!THREE.Vector3}} sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The Current accuracy needed in the intersection zone
      */
-    Area.prototype.getCurrAcc = function(sphere)
+    Area$4.prototype.getCurrAcc = function(sphere)
     {
         throw "Error : getCurrAcc is abstract, should have been overwritten";
     };
@@ -2458,7 +2499,7 @@
      *  @param {!{radius:number,c:!THREE.Vector3}} sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
-    Area.prototype.getRawAcc = function(sphere)
+    Area$4.prototype.getRawAcc = function(sphere)
     {
         throw "Error : getRawAcc is abstract, should have been overwritten";
     };
@@ -2467,7 +2508,7 @@
      *  @abstract
      *  @return {number} the minimum accuracy needed in the whole area
      */
-    Area.prototype.getMinAcc = function()
+    Area$4.prototype.getMinAcc = function()
     {
         throw "Error : getRawAcc is abstract, should have been overwritten";
     };
@@ -2475,12 +2516,12 @@
      *  @abstract
      *  @return {number} the minimum raw accuracy needed in the whole area
      */
-    Area.prototype.getMinRawAcc = function()
+    Area$4.prototype.getMinRawAcc = function()
     {
         throw "Error : getRawAcc is abstract, should have been overwritten";
     };
 
-    var Area_1 = Area;
+    var Area_1 = Area$4;
 
     /**
      * @global
@@ -2494,13 +2535,17 @@
      * @property {number} curr Current accuracy factor, should be between Accuracies.nice and Accuracies.raw.
      *                         It will be the one used by rendering algorithms to decide to stop even if nice accuracy has not been reached.
      */
-    var Accuracies = {};
+    var Accuracies$4 = {};
 
-    Accuracies.nice = 0.3;
-    Accuracies.raw = 1.0;
-    Accuracies.curr = 0.3;
+    Accuracies$4.nice = 0.3;
+    Accuracies$4.raw = 1.0;
+    Accuracies$4.curr = 0.3;
 
-    var Accuracies_1 = Accuracies;
+    var Accuracies_1 = Accuracies$4;
+
+    const THREE$i = require$$0__default["default"];
+    const Area$3 = Area_1;
+    const Accuracies$3 = Accuracies_1;
 
     /**
      *  AreaSphere is a general representation of a spherical area.
@@ -2516,18 +2561,18 @@
      *                            Be careful not to set it too small as it can increase the complexity of some algorithms up to the crashing point.
      *
      */
-    var AreaSphere = function( p, r, accFactor )
+    var AreaSphere$3 = function( p, r, accFactor )
     {
-        Area_1.call(this);
+        Area$3.call(this);
 
-        this.p = new three.Vector3(p.x,p.y,p.z);
+        this.p = new THREE$i.Vector3(p.x,p.y,p.z);
         this.r = r;
 
         this.accFactor = accFactor || 1.0;
     };
 
-    AreaSphere.prototype = Object.create(Area_1.prototype);
-    AreaSphere.prototype.constructor = AreaSphere;
+    AreaSphere$3.prototype = Object.create(Area$3.prototype);
+    AreaSphere$3.prototype.constructor = AreaSphere$3;
 
     /**
      *  Test intersection of the shape with a sphere
@@ -2535,8 +2580,8 @@
      *
      *  @param {!{r:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      */
-    AreaSphere.prototype.sphereIntersect = (function(){
-        var v = new three.Vector3();
+    AreaSphere$3.prototype.sphereIntersect = (function(){
+        var v = new THREE$i.Vector3();
         return function(sphere)
         {
             v.subVectors(sphere.center,this.p);
@@ -2553,8 +2598,8 @@
      *  @param {!Object} p A point in space, must comply to THREE.Vector3 API.
      *
      */
-    AreaSphere.prototype.contains = (function(){
-        var v = new three.Vector3();
+    AreaSphere$3.prototype.contains = (function(){
+        var v = new THREE$i.Vector3();
         return function(p)
         {
             v.subVectors(p,this.p);
@@ -2571,7 +2616,7 @@
      *  @param {!{r:number,c:!THREE.Vector3}}  sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @param {number}  factor  the ratio to determine the wanted accuracy.
      */
-    AreaSphere.prototype.getAcc = function(sphere, factor)
+    AreaSphere$3.prototype.getAcc = function(sphere, factor)
     {
         return this.radius*factor;
     };
@@ -2581,43 +2626,43 @@
      *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
-    AreaSphere.prototype.getNiceAcc = function(sphere)
+    AreaSphere$3.prototype.getNiceAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.nice*this.accFactor);
+        return this.getAcc(sphere,Accuracies$3.nice*this.accFactor);
     };
     /**
      *  Convenience function, just call getAcc with Curr Accuracy parameters.
      *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The Curr accuracy needed in the intersection zone
      */
-    AreaSphere.prototype.getCurrAcc = function(sphere)
+    AreaSphere$3.prototype.getCurrAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.curr*this.accFactor);
+        return this.getAcc(sphere,Accuracies$3.curr*this.accFactor);
     };
     /**
      *  Convenience function, just call getAcc with Raw Accuracy parameters.
      *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
-    AreaSphere.prototype.getRawAcc = function(sphere)
+    AreaSphere$3.prototype.getRawAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.raw*this.accFactor);
+        return this.getAcc(sphere,Accuracies$3.raw*this.accFactor);
     };
 
     /**
      *  @return {number} the minimum accuracy needed for this primitive
      */
-    AreaSphere.prototype.getMinAcc = function()
+    AreaSphere$3.prototype.getMinAcc = function()
     {
-        return Accuracies_1.curr*this.r*this.accFactor;
+        return Accuracies$3.curr*this.r*this.accFactor;
     };
 
     /**
      *  @return {number} the minimum raw accuracy needed for this primitive
      */
-    AreaSphere.prototype.getMinRawAcc = function()
+    AreaSphere$3.prototype.getMinRawAcc = function()
     {
-        return Accuracies_1.raw*this.r*this.accFactor;
+        return Accuracies$3.raw*this.r*this.accFactor;
     };
 
     /**
@@ -2628,7 +2673,7 @@
      *  @param {number} t Coordinate on the axis
      *  @return {number} The step you can safely do in axis direction
      */
-    AreaSphere.prototype.getAxisProjectionMinStep = function(axis,t){
+    AreaSphere$3.prototype.getAxisProjectionMinStep = function(axis,t){
         var step = 100000000;
         var diff = t-this.p[axis];
         if(diff<-2*this.r){
@@ -2636,19 +2681,27 @@
                 step,
                 Math.max(
                     Math.abs(diff+this.r),
-                    Accuracies_1.curr*this.r*this.accFactor
+                    Accuracies$3.curr*this.r*this.accFactor
                 )
             );
         }else if(diff<2*this.r){
             step = Math.min(
                 step,
-                Accuracies_1.curr*this.r*this.accFactor
+                Accuracies$3.curr*this.r*this.accFactor
             );
         }// else the area is behind us
         return step;
     };
 
-    var AreaSphere_1 = AreaSphere;
+    var AreaSphere_1 = AreaSphere$3;
+
+    const THREE$h = require$$0__default["default"];
+    const Types$c = Types_1;
+    const Material$7 = Material_1;
+    const ScalisPrimitive$2 = ScalisPrimitive_1;
+    const ScalisVertex$3 = ScalisVertex_1;
+    const ScalisMath$4 = ScalisMath_1;
+    const AreaSphere$2 = AreaSphere_1;
 
     // AreaScalisPoint is deprecated since the more genreal AreaSphere is now supposed to do the job.
     // Uncomment if you see any difference.
@@ -2668,8 +2721,8 @@
      *                          Gives afiner control of the created implicit field.
      *  @param {!Material} mat Material for the point
      */
-    var ScalisPoint = function(vertex, volType, density, mat) {
-        ScalisPrimitive_1.call(this);
+    var ScalisPoint$1 = function(vertex, volType, density, mat) {
+        ScalisPrimitive$2.call(this);
 
         this.v.push(vertex);
         this.v[0].setPrimitive(this);
@@ -2680,34 +2733,34 @@
 
         // Temporary for eval
         // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
-        this.v_to_p =  new three.Vector3();
+        this.v_to_p =  new THREE$h.Vector3();
     };
 
-    ScalisPoint.prototype = Object.create(ScalisPrimitive_1.prototype);
-    ScalisPoint.prototype.constructor = ScalisPoint;
+    ScalisPoint$1.prototype = Object.create(ScalisPrimitive$2.prototype);
+    ScalisPoint$1.prototype.constructor = ScalisPoint$1;
 
-    ScalisPoint.type = "ScalisPoint";
-    Types_1.register(ScalisPoint.type, ScalisPoint);
+    ScalisPoint$1.type = "ScalisPoint";
+    Types$c.register(ScalisPoint$1.type, ScalisPoint$1);
 
-    ScalisPoint.prototype.getType = function(){
-        return ScalisPoint.type;
+    ScalisPoint$1.prototype.getType = function(){
+        return ScalisPoint$1.type;
     };
 
-    ScalisPoint.prototype.toJSON = function() {
-        var res = ScalisPrimitive_1.prototype.toJSON.call(this);
+    ScalisPoint$1.prototype.toJSON = function() {
+        var res = ScalisPrimitive$2.prototype.toJSON.call(this);
         res.density = this.density;
         return res;
     };
-    ScalisPoint.fromJSON = function(json){
-        var v = ScalisVertex_1.fromJSON(json.v[0]);
-        var m = Material_1.fromJSON(json.materials[0]);
-        return new ScalisPoint(v, json.volType, json.density, m);
+    ScalisPoint$1.fromJSON = function(json){
+        var v = ScalisVertex$3.fromJSON(json.v[0]);
+        var m = Material$7.fromJSON(json.materials[0]);
+        return new ScalisPoint$1(v, json.volType, json.density, m);
     };
 
     /**
      *  @param {number} d New density to set
      */
-    ScalisPoint.prototype.setDensity = function(d) {
+    ScalisPoint$1.prototype.setDensity = function(d) {
         this.density = d;
         this.invalidAABB();
     };
@@ -2715,7 +2768,7 @@
     /**
      *  @return {number} Current density
      */
-    ScalisPoint.prototype.getDensity = function() {
+    ScalisPoint$1.prototype.getDensity = function() {
         return this.density;
     };
 
@@ -2723,18 +2776,18 @@
      *  Set material for this point
      *  @param {!Material} m
      */
-    ScalisPoint.prototype.setMaterial = function(m) {
+    ScalisPoint$1.prototype.setMaterial = function(m) {
         this.materials[0].copy(m);
         this.invalidAABB();
     };
 
     // [Abstract] see ScalisPrimitive.computeHelpVariables
-    ScalisPoint.prototype.computeHelpVariables = function() {
+    ScalisPoint$1.prototype.computeHelpVariables = function() {
         this.computeAABB();
     };
 
     // [Abstract] see ScalisPrimitive.prepareForEval
-    ScalisPoint.prototype.prepareForEval = function() {
+    ScalisPoint$1.prototype.prepareForEval = function() {
         if(!this.valid_aabb)
         {
             this.computeHelpVariables();
@@ -2743,14 +2796,13 @@
     };
 
     // [Abstract] see ScalisPrimitive.getArea
-    ScalisPoint.prototype.getAreas = function() {
+    ScalisPoint$1.prototype.getAreas = function() {
         if(!this.valid_aabb) {
             throw "ERROR : Cannot get area of invalid primitive";
-            return [];
-        }else{
+        }else {
             return [{
                 aabb:this.aabb,
-                bv: new AreaSphere_1(this.v[0].getPos(),ScalisMath_1.KS*this.v[0].getThickness(), ScalisMath_1.KIS),
+                bv: new AreaSphere$2(this.v[0].getPos(),ScalisMath$4.KS*this.v[0].getThickness(), ScalisMath$4.KIS),
                 // AreaScalisPoint is deprecated and AreaSphere should be used instead. Uncomment if you notice accuracy issues.
                 // bv: new AreaScalisPoint(this.v[0].getPos(),this.v[0].getThickness()),
                 obj: this
@@ -2759,12 +2811,12 @@
     };
 
     // [Abstract] see ScalisPrimitive.heuristicStepWithin
-    ScalisPoint.prototype.heuristicStepWithin = function() {
+    ScalisPoint$1.prototype.heuristicStepWithin = function() {
         return this.v[0].getThickness() / 3;
     };
 
     // [Abstract] see ScalisPrimitive.value
-    ScalisPoint.prototype.value = function(p,res) {
+    ScalisPoint$1.prototype.value = function(p,res) {
         if(!this.valid_aabb){
             throw "Error : PrepareForEval should have been called";
         }
@@ -2774,17 +2826,17 @@
         // Eval itself
         this.v_to_p.subVectors(p,this.v[0].getPos());
         var r2 = this.v_to_p.lengthSq()/(thickness*thickness);
-        var tmp = 1.0-ScalisMath_1.KIS2*r2;
+        var tmp = 1.0-ScalisMath$4.KIS2*r2;
         if(tmp > 0.0)
         {
-            res.v = this.density*tmp*tmp*tmp*ScalisMath_1.Poly6NF0D;
+            res.v = this.density*tmp*tmp*tmp*ScalisMath$4.Poly6NF0D;
 
             if(res.g)
             {
                 // Gradient computation is easy since the
                 // gradient is radial. We use the analitical solution
                 // to directionnal gradient (differential in this.v_to_p length)
-                var tmp2 = -this.density * ScalisMath_1.KIS2 * 6.0 * this.v_to_p.length() * tmp * tmp * ScalisMath_1.Poly6NF0D/(thickness*thickness);
+                var tmp2 = -this.density * ScalisMath$4.KIS2 * 6.0 * this.v_to_p.length() * tmp * tmp * ScalisMath$4.Poly6NF0D/(thickness*thickness);
                 res.g.copy(this.v_to_p).normalize().multiplyScalar(tmp2);
             }
             if(res.m)  { res.m.copy(this.materials[0]); }
@@ -2793,20 +2845,25 @@
         {
             res.v = 0.0;
             if(res.g) { res.g.set(0,0,0); }
-            if(res.m)  { res.m.copy(Material_1.defaultMaterial); }
+            if(res.m)  { res.m.copy(Material$7.defaultMaterial); }
         }
 
     };
 
     // [Abstract]
-    ScalisPoint.prototype.distanceTo = function(p) {
+    ScalisPoint$1.prototype.distanceTo = function(p) {
         // return distance point/segment
         // don't take thickness into account
         return p.distanceTo(this.v[0].getPos());
         // return p.distanceTo(this.v[0].getPos()) - this.v[0].getThickness();
     };
 
-    var ScalisPoint_1 = ScalisPoint;
+    var ScalisPoint_1 = ScalisPoint$1;
+
+    const THREE$g = require$$0__default["default"];
+    const ScalisMath$3 = ScalisMath_1;
+    const Area$2 = Area_1;
+    const Accuracies$2 = Accuracies_1;
 
     /**
      *  Bounding area for the segment.
@@ -2830,21 +2887,21 @@
      *
      * @constructor
      */
-    var AreaScalisSeg = function(p0, p1, thick0, thick1)
+    var AreaScalisSeg$2 = function(p0, p1, thick0, thick1)
     {
-        Area_1.call(this);
+        Area$2.call(this);
 
-        this.p0 = new three.Vector3(p0.x,p0.y,p0.z);
-        this.p1 = new three.Vector3(p1.x,p1.y,p1.z);
+        this.p0 = new THREE$g.Vector3(p0.x,p0.y,p0.z);
+        this.p1 = new THREE$g.Vector3(p1.x,p1.y,p1.z);
         this.thick0 = thick0;
         this.thick1 = thick1;
 
-        this.unit_dir = new three.Vector3().subVectors(p1,p0);
+        this.unit_dir = new THREE$g.Vector3().subVectors(p1,p0);
         this.length = this.unit_dir.length();
         this.unit_dir.normalize();
 
         // tmp var for functions below
-        this.vector = new three.Vector3();
+        this.vector = new THREE$g.Vector3();
         this.p0_to_p = this.vector; // basically the same as above + smart name
         this.p0_to_p_sqrnorm = 0;
         this.x_p_2D = 0;
@@ -2858,8 +2915,8 @@
         this.abs_diff_thick = Math.abs(this.ortho_vec_x);
     };
 
-    AreaScalisSeg.prototype = Object.create(Area_1.prototype);
-    AreaScalisSeg.prototype.constructor = AreaScalisSeg;
+    AreaScalisSeg$2.prototype = Object.create(Area$2.prototype);
+    AreaScalisSeg$2.prototype.constructor = AreaScalisSeg$2;
 
     /**
      *  Compute some of the tmp variables.
@@ -2868,7 +2925,7 @@
      *
      *  @protected
      */
-    AreaScalisSeg.prototype.proj_computation = function(p)
+    AreaScalisSeg$2.prototype.proj_computation = function(p)
     {
         this.p0_to_p = this.vector;
         this.p0_to_p.subVectors(p, this.p0);
@@ -2892,25 +2949,25 @@
      *  TODO :
      *      Check the Maths (Ask Cedric Zanni?)
      */
-    AreaScalisSeg.prototype.sphereIntersect = function(sphere)
+    AreaScalisSeg$2.prototype.sphereIntersect = function(sphere)
     {
         this.proj_computation(sphere.center);
 
         if(this.p_proj_x<0.0){
-            return (Math.sqrt(this.p0_to_p_sqrnorm)-sphere.radius < this.thick0*ScalisMath_1.KS);
-        }else{
+            return (Math.sqrt(this.p0_to_p_sqrnorm)-sphere.radius < this.thick0*ScalisMath$3.KS);
+        }else {
             if(this.p_proj_x>this.length)
             {
                 this.vector.subVectors(sphere.center, this.p1);
-                return (Math.sqrt(this.vector.lengthSq())-sphere.radius < this.thick1*ScalisMath_1.KS);
-            }else{
+                return (Math.sqrt(this.vector.lengthSq())-sphere.radius < this.thick1*ScalisMath$3.KS);
+            }else {
                 var sub1 = this.x_p_2D-this.p_proj_x;
                 //var sub2 = this.y_p_2D-this.p_proj_y; //this.p_proj_y is set at 0 by definition
                 //var dist = Math.sqrt(sub1*sub1 +this.y_p_2DSq);//sub2*sub2);
                 var dist = sub1*sub1 +this.y_p_2DSq;//sub2*sub2);
                 var tt = this.p_proj_x/this.length;
                 var inter_w = this.thick0*(1.0-tt) + tt*this.thick1;
-                var tmp = sphere.radius + inter_w*ScalisMath_1.KS;
+                var tmp = sphere.radius + inter_w*ScalisMath$3.KS;
                 //return (dist-sphere.radius < inter_w*ScalisMath.KS);
                 return (dist<tmp*tmp);
             }
@@ -2920,7 +2977,7 @@
     /**
      *  Sea documentation in parent class Area
      */
-    AreaScalisSeg.prototype.contains = function(p)
+    AreaScalisSeg$2.prototype.contains = function(p)
     {
         this.proj_computation(p);
         // P proj is the point at the intersection of:
@@ -2929,21 +2986,21 @@
         //              - the line defined by P and the vector orthogonal to the weight line
         if(this.p_proj_x<0.0){
             // Proj is before the line segment beginning defined by P0: spherical containment
-            return this.p0_to_p_sqrnorm < this.thick0*this.thick0*ScalisMath_1.KS2;
-        }else{
+            return this.p0_to_p_sqrnorm < this.thick0*this.thick0*ScalisMath$3.KS2;
+        }else {
             if(this.p_proj_x>this.length)
             {
                 // Proj is after the line segment beginning defined by P1: spherical containment
                 this.vector.subVectors(p, this.p1);
-                return this.vector.lengthSq() < this.thick1*this.thick1*ScalisMath_1.KS2;
-            }else{
+                return this.vector.lengthSq() < this.thick1*this.thick1*ScalisMath$3.KS2;
+            }else {
                 // Proj is in between the line segment P1-P0: Linear kind of containment
                 var sub1 = this.x_p_2D-this.p_proj_x;
                 var sub2 = this.y_p_2D-this.p_proj_y;
                 var dist2 = sub1*sub1+sub2*sub2;
                 var tt = this.p_proj_x/this.length;
                 var inter_w = this.thick0*(1.0-tt) + tt*this.thick1;
-                return dist2 < inter_w*inter_w*ScalisMath_1.KS2;
+                return dist2 < inter_w*inter_w*ScalisMath$3.KS2;
             }
         }
     };
@@ -2953,7 +3010,7 @@
      *  TODO :
      *      check the Maths
      */
-    AreaScalisSeg.prototype.getAcc = function(sphere, factor)
+    AreaScalisSeg$2.prototype.getAcc = function(sphere, factor)
     {
         this.proj_computation(sphere.center);
     /*
@@ -2999,7 +3056,7 @@
         }else if(absc>this.length)
         {
             return this.thick1*factor;
-        }else{
+        }else {
 
             var tt = absc/this.length;
             var inter_w = this.thick0*(1.0-tt) + tt*this.thick1;
@@ -3010,38 +3067,38 @@
     /**
      *  Sea documentation in parent class Area
      */
-    AreaScalisSeg.prototype.getNiceAcc = function(sphere)
+    AreaScalisSeg$2.prototype.getNiceAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.nice);
+        return this.getAcc(sphere,Accuracies$2.nice);
     };
     /**
      *  Sea documentation in parent class Area
      */
-    AreaScalisSeg.prototype.getCurrAcc = function(sphere)
+    AreaScalisSeg$2.prototype.getCurrAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.curr);
+        return this.getAcc(sphere,Accuracies$2.curr);
     };
     /**
      *  Sea documentation in parent class Area
      */
-    AreaScalisSeg.prototype.getRawAcc = function(sphere)
+    AreaScalisSeg$2.prototype.getRawAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.raw);
+        return this.getAcc(sphere,Accuracies$2.raw);
     };
 
     /**
      *  Sea documentation in parent class Area
      */
-    AreaScalisSeg.prototype.getMinAcc = function()
+    AreaScalisSeg$2.prototype.getMinAcc = function()
     {
-        return Accuracies_1.curr*Math.min(this.thick0, this.thick1);
+        return Accuracies$2.curr*Math.min(this.thick0, this.thick1);
     };
     /**
      *  Sea documentation in parent class Area
      */
-    AreaScalisSeg.prototype.getMinRawAcc = function()
+    AreaScalisSeg$2.prototype.getMinRawAcc = function()
     {
-        return Accuracies_1.raw*Math.min(this.thick0, this.thick1);
+        return Accuracies$2.raw*Math.min(this.thick0, this.thick1);
     };
 
     /**
@@ -3052,7 +3109,7 @@
      *  @param {number} t Coordinate on the axis
      *  @return {number} The step you can safely do in axis direction
      */
-    AreaScalisSeg.prototype.getAxisProjectionMinStep = function(axis,t){
+    AreaScalisSeg$2.prototype.getAxisProjectionMinStep = function(axis,t){
         var step = Number.MAX_VALUE;
         var p0 = this.p0[axis] < this.p1[axis] ? this.p0 : this.p1;
         var p1, thick0, thick1;
@@ -3060,7 +3117,7 @@
             p1 = this.p1;
             thick0 = this.thick0;
             thick1 = this.thick1;
-        }else{
+        }else {
             p1 = this.p0;
             thick0 = this.thick1;
             thick1 = this.thick0;
@@ -3068,28 +3125,36 @@
 
         var diff = t-p0[axis];
         if(diff<-2*thick0){
-            step = Math.min(step,Math.max(Math.abs(diff+2*thick0),Accuracies_1.curr*thick0));
+            step = Math.min(step,Math.max(Math.abs(diff+2*thick0),Accuracies$2.curr*thick0));
         }else if(diff<2*thick0){
-            step = Math.min(step,Accuracies_1.curr*thick0);
+            step = Math.min(step,Accuracies$2.curr*thick0);
         }// else the vertex is behind us
         diff = t-p1[axis];
         if(diff<-2*thick1){
-            step = Math.min(step,Math.max(Math.abs(diff+2*thick1),Accuracies_1.curr*thick1));
+            step = Math.min(step,Math.max(Math.abs(diff+2*thick1),Accuracies$2.curr*thick1));
         }else if(diff<2*thick1){
-            step = Math.min(step,Accuracies_1.curr*thick1);
+            step = Math.min(step,Accuracies$2.curr*thick1);
         }// else the vertex is behind us
 
         var tbis = t-p0[axis];
         var axis_l = p1[axis]-p0[axis];
         if(tbis>0 && tbis<axis_l && axis_l!==0){
             // t is in p0p1
-            step = Math.min(step,Accuracies_1.curr*(thick0 + (tbis/axis_l)*(thick1 - thick0)));
+            step = Math.min(step,Accuracies$2.curr*(thick0 + (tbis/axis_l)*(thick1 - thick0)));
         }
 
         return step;
     };
 
-    var AreaScalisSeg_1 = AreaScalisSeg;
+    var AreaScalisSeg_1 = AreaScalisSeg$2;
+
+    const THREE$f = require$$0__default["default"];
+    const Types$b = Types_1;
+    const Material$6 = Material_1;
+    const ScalisPrimitive$1 = ScalisPrimitive_1;
+    const ScalisVertex$2 = ScalisVertex_1;
+    const ScalisMath$2 = ScalisMath_1;
+    const AreaScalisSeg$1 = AreaScalisSeg_1;
 
     /**
      *  Implicit segment class in the blobtree.
@@ -3108,8 +3173,8 @@
      *                                   Use [Material.defaultMaterial.clone(), Material.defaultMaterial.clone()] by default.
      *
      */
-    var ScalisSegment = function(v0, v1, volType, density, mats) {
-        ScalisPrimitive_1.call(this);
+    var ScalisSegment$1 = function(v0, v1, volType, density, mats) {
+        ScalisPrimitive$1.call(this);
 
         this.v.length   = 2;
         this.v[0]       = v0;
@@ -3126,24 +3191,24 @@
         // CONVOL
         this.clipped_l1 = 1.0;
         this.clipped_l2 = 0.0;
-        this.vector = new three.Vector3();
-        this.cycle  = new three.Vector3();
-        this.proj   = new three.Vector3();
+        this.vector = new THREE$f.Vector3();
+        this.cycle  = new THREE$f.Vector3();
+        this.proj   = new THREE$f.Vector3();
         // helper attributes
         this.v0_p = this.v[0].getPos();
         this.v1_p = this.v[1].getPos(); // this one is probably useless to be kept for eval since not used....
-        this.dir = new three.Vector3();
+        this.dir = new THREE$f.Vector3();
         this.lengthSq = 0;
         this.length = 0;
-        this.unit_dir = new three.Vector3();
+        this.unit_dir = new THREE$f.Vector3();
         // weight_p1 is convol's weight_p2 ( >_< )
         this.weight_p1 = 0;
         // c0 and c1 are convol's weight_coeff
         this.c0 = 0;
         this.c1 = 0;
 
-        this.increase_unit_dir = new three.Vector3();
-        this.p_min = new three.Vector3();
+        this.increase_unit_dir = new THREE$f.Vector3();
+        this.p_min = new THREE$f.Vector3();
         this.weight_min = 0;
         this.inv_weight_min = 0;
         this.unit_delta_weight = 0;
@@ -3151,48 +3216,48 @@
         this.maxboundSq = 0;
         this.cyl_bd0 = 0;
         this.cyl_bd1 = 0;
-        this.f0f1f2 = new three.Vector3();
+        this.f0f1f2 = new THREE$f.Vector3();
 
-        this.tmpVec1 = new three.Vector3();
-        this.tmpVec2 = new three.Vector3();
+        this.tmpVec1 = new THREE$f.Vector3();
+        this.tmpVec2 = new THREE$f.Vector3();
 
         this.computeHelpVariables();
     };
 
-    ScalisSegment.prototype = Object.create(ScalisPrimitive_1.prototype);
-    ScalisSegment.constructor = ScalisSegment;
+    ScalisSegment$1.prototype = Object.create(ScalisPrimitive$1.prototype);
+    ScalisSegment$1.constructor = ScalisSegment$1;
 
-    ScalisSegment.type = "ScalisSegment";
-    Types_1.register(ScalisSegment.type, ScalisSegment);
+    ScalisSegment$1.type = "ScalisSegment";
+    Types$b.register(ScalisSegment$1.type, ScalisSegment$1);
 
-    ScalisSegment.prototype.getType = function(){
-        return ScalisSegment.type;
+    ScalisSegment$1.prototype.getType = function(){
+        return ScalisSegment$1.type;
     };
 
-    ScalisSegment.prototype.toJSON = function() {
-        var res = ScalisPrimitive_1.prototype.toJSON.call(this);
+    ScalisSegment$1.prototype.toJSON = function() {
+        var res = ScalisPrimitive$1.prototype.toJSON.call(this);
         res.density = this.density;
         return res;
     };
-    ScalisSegment.fromJSON = function(json){
-        var v0 = ScalisVertex_1.fromJSON(json.v[0]);
-        var v1 = ScalisVertex_1.fromJSON(json.v[1]);
+    ScalisSegment$1.fromJSON = function(json){
+        var v0 = ScalisVertex$2.fromJSON(json.v[0]);
+        var v1 = ScalisVertex$2.fromJSON(json.v[1]);
         var m = [
-            Material_1.fromJSON(json.materials[0]),
-            Material_1.fromJSON(json.materials[1])
+            Material$6.fromJSON(json.materials[0]),
+            Material$6.fromJSON(json.materials[1])
         ];
-        return new ScalisSegment(v0, v1, json.volType, json.density, m);
+        return new ScalisSegment$1(v0, v1, json.volType, json.density, m);
     };
 
     //  [Abstract] See ScalisPrimitive.mutableVolType for more details
-    ScalisSegment.prototype.mutableVolType = function() {
+    ScalisSegment$1.prototype.mutableVolType = function() {
         return true;
     };
 
     /**
      *  @param {number} d The new density
      */
-    ScalisSegment.prototype.setDensity = function(d) {
+    ScalisSegment$1.prototype.setDensity = function(d) {
         this.density = d;
         this.invalidAABB();
     };
@@ -3200,14 +3265,14 @@
     /**
      *  @return {number} The current density
      */
-    ScalisSegment.prototype.getDensity = function() {
+    ScalisSegment$1.prototype.getDensity = function() {
         return this.density;
     };
 
     // [Abstract] See Primitive.setVolType for more details
-    ScalisSegment.prototype.setVolType = function(vt)
+    ScalisSegment$1.prototype.setVolType = function(vt)
     {
-        if( !(vt == ScalisPrimitive_1.CONVOL || vt == ScalisPrimitive_1.DIST) ){
+        if( !(vt == ScalisPrimitive$1.CONVOL || vt == ScalisPrimitive$1.DIST) ){
             throw "ERROR : volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST";
         }
 
@@ -3218,13 +3283,13 @@
     };
 
     // [Abstract] See Primitive.getVolType for more details
-    ScalisSegment.prototype.getVolType = function()
+    ScalisSegment$1.prototype.getVolType = function()
     {
         return this.volType;
     };
 
     // [Abstract] See Primitive.prepareForEval for more details
-    ScalisSegment.prototype.prepareForEval = function() {
+    ScalisSegment$1.prototype.prepareForEval = function() {
         if(!this.valid_aabb)
         {
             this.computeHelpVariables();
@@ -3233,17 +3298,16 @@
     };
 
     // [Abstract] See Primtive.getArea for more details
-    ScalisSegment.prototype.getAreas = function() {
+    ScalisSegment$1.prototype.getAreas = function() {
         if(!this.valid_aabb){
             throw "ERROR : Cannot get area of invalid primitive";
-            return [];
-        }else{
+        }else {
             return [{
                 aabb:this.aabb,
                 //new THREE.Box3(-256, -256, -256, 256,256,256),
                 //new THREE.Box3(this.aabb.min_x-min_thick,this.aabb.min_y-min_thick,this.aabb.min_z-min_thick,
                 //this.aabb.max_x+min_thick,this.aabb.max_y+min_thick,this.aabb.max_z+min_thick),
-                bv: new AreaScalisSeg_1(
+                bv: new AreaScalisSeg$1(
                     this.v[0].getPos(),
                     this.v[1].getPos(),
                     this.v[0].getThickness(),
@@ -3256,7 +3320,7 @@
     };
 
     // [Abstract] See Primitive.computeHelpVariables for more details
-    ScalisSegment.prototype.computeHelpVariables = function() {
+    ScalisSegment$1.prototype.computeHelpVariables = function() {
         this.v0_p = this.v[0].getPos();
         this.v1_p = this.v[1].getPos(); // this one is probably useless to be kept for eval since not used....
 
@@ -3271,8 +3335,8 @@
 
         // Bounding property
         // bounding box is axis aligned so the bounding is not very tight.
-        var bound_supp0 = this.v[0].getThickness()*ScalisMath_1.KS;
-        var bound_supp1 = this.v[1].getThickness()*ScalisMath_1.KS;
+        var bound_supp0 = this.v[0].getThickness()*ScalisMath$2.KS;
+        var bound_supp1 = this.v[1].getThickness()*ScalisMath$2.KS;
 
         this.maxbound = Math.max(bound_supp0,bound_supp1);
         this.maxboundSq = this.maxbound*this.maxbound;
@@ -3305,17 +3369,16 @@
     };
 
     // [Abstract] See Primitive.value for more details
-    ScalisSegment.prototype.value = function(p,res) {
+    ScalisSegment$1.prototype.value = function(p,res) {
         switch(this.volType){
-        case ScalisPrimitive_1.DIST:
+        case ScalisPrimitive$1.DIST:
             this.evalDist(p,res);
             break;
-        case ScalisPrimitive_1.CONVOL:
+        case ScalisPrimitive$1.CONVOL:
             this.evalConvol(p,res);
             break;
         default:
             throw "Unknown volType, cannot evaluate.";
-            break;
         }
     };
 
@@ -3327,9 +3390,9 @@
     /**
      *  value function for Distance volume type (distance field).
      */
-    ScalisSegment.prototype.evalDist = (function(){
+    ScalisSegment$1.prototype.evalDist = (function(){
         var ev_eps = {v:0};
-        var p_eps = new three.Vector3();
+        var p_eps = new THREE$f.Vector3();
         return function(p,res) {
 
             var p0_to_p = this.vector;
@@ -3358,7 +3421,7 @@
             //var proj_p_l = proj_to_point.length();
 
             var weight_proj = this.c0 + t*this.c1;
-            res.v = this.density*ScalisMath_1.Poly6Eval(proj_p_l/weight_proj)*ScalisMath_1.Poly6NF0D;
+            res.v = this.density*ScalisMath$2.Poly6Eval(proj_p_l/weight_proj)*ScalisMath$2.Poly6NF0D;
 
             ///////////////////////////////////////////////////////////////////////
             // Material computation : by orthogonal projection
@@ -3395,7 +3458,7 @@
      * @param {THREE.Vector3} p Evaluation point
      * @param {Object} res Resulting material will be in res.m
      */
-    ScalisSegment.prototype.evalMat = function(p,res){
+    ScalisSegment$1.prototype.evalMat = function(p,res){
         var p0_to_p = this.vector;
         p0_to_p.subVectors(p,this.v[0].getPos());
         var udir_dot = this.unit_dir.dot(p0_to_p);
@@ -3425,7 +3488,7 @@
      *  @param {!THREE.Vector3} w special_coeff
      *  @return {boolean}
      */
-    ScalisSegment.prototype.HomotheticClippingSpecial = function(w)
+    ScalisSegment$1.prototype.HomotheticClippingSpecial = function(w)
     {
         // we search solution t \in [0,1] such that at^2-2bt+c<=0
         var a = -w.z;
@@ -3453,7 +3516,7 @@
     };
 
     // [Abstract] see ScalisPrimitive.heuristicStepWithin
-    ScalisSegment.prototype.heuristicStepWithin = function() {
+    ScalisSegment$1.prototype.heuristicStepWithin = function() {
             return this.weight_min / 3;
     };
 
@@ -3462,7 +3525,7 @@
     /**
      *  value function for Convol volume type (Homothetic convolution).
      */
-    ScalisSegment.prototype.evalConvol = function(p, res) {
+    ScalisSegment$1.prototype.evalConvol = function(p, res) {
         if(!this.valid_aabb){
             throw "Error : prepareForEval should have been called";
         }
@@ -3479,16 +3542,16 @@
 
         var special_coeff = this.tmpVec2;
         special_coeff.set(
-            this.weight_min*this.weight_min - ScalisMath_1.KIS2 * d2,
-                -this.unit_delta_weight*this.weight_min - ScalisMath_1.KIS2 * uv ,
-            this.unit_delta_weight*this.unit_delta_weight - ScalisMath_1.KIS2 );
+            this.weight_min*this.weight_min - ScalisMath$2.KIS2 * d2,
+                -this.unit_delta_weight*this.weight_min - ScalisMath$2.KIS2 * uv ,
+            this.unit_delta_weight*this.unit_delta_weight - ScalisMath$2.KIS2 );
 
         // clipped_l1, clipped_l2 are members of segment
         if(this.HomotheticClippingSpecial(special_coeff))
         {
             var inv_local_min_weight = 1.0 / (this.weight_min + this.clipped_l1 * this.unit_delta_weight);
-            special_coeff.x = 1.0 - ScalisMath_1.KIS2 * ( this.clipped_l1*(this.clipped_l1-2.0*uv) + d2 ) * inv_local_min_weight*inv_local_min_weight;
-            special_coeff.y = - this.unit_delta_weight - ScalisMath_1.KIS2*(uv-this.clipped_l1) * inv_local_min_weight;
+            special_coeff.x = 1.0 - ScalisMath$2.KIS2 * ( this.clipped_l1*(this.clipped_l1-2.0*uv) + d2 ) * inv_local_min_weight*inv_local_min_weight;
+            special_coeff.y = - this.unit_delta_weight - ScalisMath$2.KIS2*(uv-this.clipped_l1) * inv_local_min_weight;
 
             if (res.g) //both grad and value
             {
@@ -3497,7 +3560,7 @@
                                                                         inv_local_min_weight,
                                                                         this.unit_delta_weight,
                                                                         special_coeff);
-                }else{
+                }else {
                     this.HomotheticCompactPolynomial_approx_segment_FGradF_i6( (this.clipped_l2-this.clipped_l1) *
                                                                                inv_local_min_weight,
                                                                                this.unit_delta_weight,
@@ -3506,24 +3569,24 @@
                 }
 
 
-                res.v = ScalisMath_1.Poly6NF1D * this.f0f1f2.x;
+                res.v = ScalisMath$2.Poly6NF1D * this.f0f1f2.x;
                 this.f0f1f2.y *= inv_local_min_weight;
                 res.g
                     .copy(this.increase_unit_dir)
                     .multiplyScalar(this.f0f1f2.z + this.clipped_l1 * this.f0f1f2.y)
                     .sub(p_min_to_point.multiplyScalar(this.f0f1f2.y))
-                    .multiplyScalar(ScalisMath_1.Poly6NF1D*6.0*ScalisMath_1.KIS2*inv_local_min_weight);
+                    .multiplyScalar(ScalisMath$2.Poly6NF1D*6.0*ScalisMath$2.KIS2*inv_local_min_weight);
             }
             else //value only
             {
                 if(this.unit_delta_weight >= 0.06) { // ensure a maximum relative error of ??? (for degree i up to 8)
-                    res.v=ScalisMath_1.Poly6NF1D *
+                    res.v=ScalisMath$2.Poly6NF1D *
                         this.HomotheticCompactPolynomial_segment_F_i6( (this.clipped_l2-this.clipped_l1) *
                                                                        inv_local_min_weight,
                                                                        this.unit_delta_weight,
                                                                        special_coeff);
-                }else{
-                    res.v=ScalisMath_1.Poly6NF1D *
+                }else {
+                    res.v=ScalisMath$2.Poly6NF1D *
                         this.HomotheticCompactPolynomial_approx_segment_F_i6( (this.clipped_l2-this.clipped_l1) *
                                                                               inv_local_min_weight,
                                                                               this.unit_delta_weight,
@@ -3548,13 +3611,13 @@
      *  Agency: Softhis
      *  http://www.softhis.com
      */
-    ScalisSegment.prototype.clamp = function (a,b,c){return Math.max(b,Math.min(c,a));};
+    ScalisSegment$1.prototype.clamp = function (a,b,c){return Math.max(b,Math.min(c,a));};
 
     // [Abstract] see ScalisPrimitive.distanceTo
-    ScalisSegment.prototype.distanceTo = function ()
+    ScalisSegment$1.prototype.distanceTo = function ()
     {
-        var tmpVector = new three.Vector3();
-        var tmpVectorProj = new three.Vector3();
+        var tmpVector = new THREE$f.Vector3();
+        var tmpVectorProj = new THREE$f.Vector3();
         return function(p) {
             // var thickness = Math.min(this.c0,this.c0+this.c1);
 
@@ -3580,7 +3643,7 @@
      *  @param {!Object} w
      *  @return {number} the value
      */
-    ScalisSegment.prototype.HomotheticCompactPolynomial_segment_F_i6 = function( l,  d,  w)
+    ScalisSegment$1.prototype.HomotheticCompactPolynomial_segment_F_i6 = function( l,  d,  w)
     {
         var t6247 = d * l + 0.1e1;
         var t6241 = 0.1e1 / t6247;
@@ -3620,7 +3683,7 @@
      *  @param {number} q
      *  @param {!Object} w
      */
-    ScalisSegment.prototype.HomotheticCompactPolynomial_approx_segment_F_i6 = function ( l,  d,  q,  w)
+    ScalisSegment$1.prototype.HomotheticCompactPolynomial_approx_segment_F_i6 = function ( l,  d,  q,  w)
     {
         var t6386 = q * d;
         var t6361 = t6386 + 0.1e1;
@@ -3662,7 +3725,7 @@
      *  @param {!Object} w
      *
      */
-    ScalisSegment.prototype.HomotheticCompactPolynomial_segment_FGradF_i6 = function( l,  d,  w)
+    ScalisSegment$1.prototype.HomotheticCompactPolynomial_segment_FGradF_i6 = function( l,  d,  w)
     {
         var t6320 = d * l + 0.1e1;
         var t6314 = 0.1e1 / t6320;
@@ -3714,7 +3777,7 @@
      *  @param {number} d
      *  @param {!Object} w
      */
-    ScalisSegment.prototype.HomotheticCompactPolynomial_approx_segment_FGradF_i6 = function ( l,  d,  q,  w)
+    ScalisSegment$1.prototype.HomotheticCompactPolynomial_approx_segment_FGradF_i6 = function ( l,  d,  q,  w)
     {
         var t6478 = q * d;
         var t6443 = t6478 + 0.1e1;
@@ -3765,11 +3828,14 @@
     // End of organic evaluation functions
     ////////////////////////////////////////////////////////////////////////////
 
-    var ScalisSegment_1 = ScalisSegment;
+    var ScalisSegment_1 = ScalisSegment$1;
+
+    const THREE$e = require$$0__default["default"];
+
 
     var EPSILON = 0.000001;
 
-    var TriangleUtils = {};
+    var TriangleUtils$2 = {};
 
     /*
       ! Triangle extends Primitive and must have the following properties in constructor: !
@@ -3812,7 +3878,6 @@
         var res =ind;
         if (lengthArray === 0 ){
             throw "Lenght of the array should not be null";
-            return res;
         }
         if (lengthArray ===1){
             return 0;
@@ -3830,7 +3895,7 @@
      *  Compute some internal vars for triangle
      *  @param {!Object} triangle The triangle to compute vars for (blobtree or skel)
      */
-    TriangleUtils.computeVectorsDirs = function(triangle){
+    TriangleUtils$2.computeVectorsDirs = function(triangle){
 
         var v0_p = triangle.v[0].getPos();
         var v1_p = triangle.v[1].getPos();
@@ -3878,9 +3943,9 @@
         idx = cleanIndex(sortingArr[0].idx+2,3);
         var point_2 = triangle.v[idx].getPos();
         var weight_2 = triangle.v[idx].getThickness();
-        var dir_1 = new three.Vector3();
+        var dir_1 = new THREE$e.Vector3();
         dir_1 = dir_1.subVectors(point_1, triangle.point_min);
-        var dir_2 = new three.Vector3();
+        var dir_2 = new THREE$e.Vector3();
         dir_2 = dir_2.subVectors(point_2, triangle.point_min);
         var delta_1 = weight_1 - triangle.weight_min;
         var delta_2 = weight_2 - triangle.weight_min;
@@ -3898,7 +3963,7 @@
                     triangle.main_dir.multiplyScalar( -1.0);
                 }
                 var coord_iso_zero_dir = - triangle.weight_min / delta_2;
-                triangle.point_iso_zero = new three.Vector3( triangle.point_min.x + coord_iso_zero_dir*dir_2.x,
+                triangle.point_iso_zero = new THREE$e.Vector3( triangle.point_min.x + coord_iso_zero_dir*dir_2.x,
                                                     triangle.point_min.y + coord_iso_zero_dir*dir_2.y,
                                                     triangle.point_min.z + coord_iso_zero_dir*dir_2.z);
             }
@@ -3914,7 +3979,7 @@
                     triangle.main_dir.multiplyScalar( -1.0);
                 }
                 var coord_iso_zero_dir = - triangle.weight_min / delta_1;
-                triangle.point_iso_zero = new three.Vector3(triangle.point_min.x + coord_iso_zero_dir*dir_1.x,
+                triangle.point_iso_zero = new THREE$e.Vector3(triangle.point_min.x + coord_iso_zero_dir*dir_1.x,
                                                     triangle.point_min.y + coord_iso_zero_dir*dir_1.y,
                                                     triangle.point_min.z + coord_iso_zero_dir*dir_1.z);
             }
@@ -3927,12 +3992,12 @@
         { // WARNING : numerically instable if delta_ close to zero !
             // find the point were weight equal zero along the two edges that leave from point_min
             var coord_iso_zero_dir1 = - triangle.weight_min / delta_1;
-            var point_iso_zero1 = new three.Vector3(triangle.point_min.x + coord_iso_zero_dir1*dir_1.x,
+            var point_iso_zero1 = new THREE$e.Vector3(triangle.point_min.x + coord_iso_zero_dir1*dir_1.x,
                                                 triangle.point_min.y + coord_iso_zero_dir1*dir_1.y,
                                                 triangle.point_min.z + coord_iso_zero_dir1*dir_1.z);
             triangle.point_iso_zero = point_iso_zero1;
             var coord_iso_zero_dir2 = - triangle.weight_min / delta_2;
-            var point_iso_zero2 = new three.Vector3(triangle.point_min.x + coord_iso_zero_dir2*dir_2.x,
+            var point_iso_zero2 = new THREE$e.Vector3(triangle.point_min.x + coord_iso_zero_dir2*dir_2.x,
                                                 triangle.point_min.y + coord_iso_zero_dir2*dir_2.y,
                                                 triangle.point_min.z + coord_iso_zero_dir2*dir_2.z);
 
@@ -3986,7 +4051,7 @@
         triangle.longest_dir_special = longest_dir.divideScalar(triangle.coord_max);
 
         // Length of the longest segment during numerical integration
-        var tmp = new three.Vector3();
+        var tmp = new THREE$e.Vector3();
         tmp.subVectors(triangle.half_dir_1, triangle.longest_dir_special.clone().multiplyScalar(triangle.coord_middle));
         triangle.max_seg_length = tmp.length();
         triangle.unsigned_ortho_dir = triangle.ortho_dir.clone();
@@ -4001,10 +4066,10 @@
      *     v parametrisation of the point to compute along the axis V0->V2
      *  @return {{pos:!THREE.Vector3, thick:number}} An object with the computed pos and thickness
      */
-    TriangleUtils.getParametrisedVertexAttr = function(triangle, u, v){
-        var meanThick = TriangleUtils.getMeanThick(triangle, u, v);
+    TriangleUtils$2.getParametrisedVertexAttr = function(triangle, u, v){
+        var meanThick = TriangleUtils$2.getMeanThick(triangle, u, v);
         // create new point
-        var pos = new three.Vector3();
+        var pos = new THREE$e.Vector3();
         var uAdd = pos.subVectors(triangle.v[1].getPos(), triangle.v[0].getPos()).multiplyScalar(u);
         var vAdd = pos.clone().subVectors(triangle.v[2].getPos(), triangle.v[0].getPos()).multiplyScalar(v);
         pos.addVectors(triangle.v[0].getPos(), uAdd);
@@ -4019,7 +4084,7 @@
      *  @param {number} v v coordinate
      *  @return {number}
      */
-    TriangleUtils.getMeanThick = function(triangle, u, v){
+    TriangleUtils$2.getMeanThick = function(triangle, u, v){
         return triangle.v[0].getThickness()*(1-u-v) + triangle.v[1].getThickness()*u + triangle.v[2].getThickness()*v;
     };
 
@@ -4029,7 +4094,7 @@
      *  @param {number} v v coordinate
      *  @return {!Material} Interpolated material
      */
-    TriangleUtils.getMeanMat = function(triangle, u, v){
+    TriangleUtils$2.getMeanMat = function(triangle, u, v){
         var res = new Material();
         var m_arr = triangle.materials === null?
             [triangle.v[0].getMaterial(),triangle.v[0].getMaterial(),triangle.v[0].getMaterial()] :
@@ -4072,10 +4137,10 @@
      *
      *  @return {{u:number,v:number}} Coordinate of barycenter
      */
-    TriangleUtils.getTriBaryCoord = function(p0p1, p2p0, p0, p){
+    TriangleUtils$2.getTriBaryCoord = function(p0p1, p2p0, p0, p){
         var U = p0p1;
         var V = p2p0.clone().multiplyScalar(-1);
-        var W = new three.Vector3().subVectors(p, p0);
+        var W = new THREE$e.Vector3().subVectors(p, p0);
 
         // b == d
         var a = U.lengthSq();
@@ -4088,23 +4153,30 @@
         return {"u":u, "v":v};
     };
 
-    TriangleUtils.getUVCoord = function(U, V, p0, p){
-        var W = new three.Vector3();
+    TriangleUtils$2.getUVCoord = function(U, V, p0, p){
+        var W = new THREE$e.Vector3();
         W.crossVectors(U,V);
-        var mat = new three.Matrix4();
+        var mat = new THREE$e.Matrix4();
         mat.set(U.x, V.x, W.x,0,
                 U.y, V.y, W.y,0,
                 U.z, V.z, W.z,0,
                   0,   0,   0,1);
-        var mat1 = new three.Matrix4();
+        var mat1 = new THREE$e.Matrix4();
         mat1.copy(mat).invert();
-        var vec = new three.Vector3().subVectors(p, p0);
+        var vec = new THREE$e.Vector3().subVectors(p, p0);
         vec.applyMatrix4(mat1);
 
         return {u:vec.x,v:vec.y};
     };
 
-    var TriangleUtils_1 = TriangleUtils;
+    var TriangleUtils_1 = TriangleUtils$2;
+
+    const THREE$d = require$$0__default["default"];
+    const ScalisMath$1 = ScalisMath_1;
+    const Area$1 = Area_1;
+    const TriangleUtils$1 = TriangleUtils_1;
+    const Accuracies$1 = Accuracies_1;
+    const AreaScalisSeg = AreaScalisSeg_1;
 
     /**
      *  Bounding area for the triangle.
@@ -4126,11 +4198,11 @@
      *
      * @constructor
      */
-    var AreaScalisTri = function(v,unit_normal,main_dir,segParams,min_thick,max_thick)
+    var AreaScalisTri$1 = function(v,unit_normal,main_dir,segParams,min_thick,max_thick)
     {
-        Area_1.call(this);
+        Area$1.call(this);
 
-        this.tmpVect = new three.Vector3();
+        this.tmpVect = new THREE$d.Vector3();
         this.min_thick = min_thick;
         this.max_thick = max_thick;
         this.v = v;
@@ -4168,19 +4240,19 @@
         // Compute the prism vertices
         this.tmpVect.copy(this.unit_normal);
         var pri = [];
-        pri.push(this.tmpVect.clone().addVectors(this.v[0].getPos(), this.tmpVect.multiplyScalar(this.v[0].getThickness()*ScalisMath_1.KS)));
+        pri.push(this.tmpVect.clone().addVectors(this.v[0].getPos(), this.tmpVect.multiplyScalar(this.v[0].getThickness()*ScalisMath$1.KS)));
         this.tmpVect.copy(this.unit_normal);
-        pri.push(this.tmpVect.clone().addVectors(this.v[1].getPos(), this.tmpVect.multiplyScalar(this.v[1].getThickness()*ScalisMath_1.KS)));
+        pri.push(this.tmpVect.clone().addVectors(this.v[1].getPos(), this.tmpVect.multiplyScalar(this.v[1].getThickness()*ScalisMath$1.KS)));
         this.tmpVect.copy(this.unit_normal);
-        pri.push(this.tmpVect.clone().addVectors(this.v[2].getPos(), this.tmpVect.multiplyScalar(this.v[2].getThickness()*ScalisMath_1.KS)));
+        pri.push(this.tmpVect.clone().addVectors(this.v[2].getPos(), this.tmpVect.multiplyScalar(this.v[2].getThickness()*ScalisMath$1.KS)));
         this.tmpVect.copy(this.unit_normal);
-        pri.push(this.tmpVect.clone().addVectors(this.v[0].getPos(), this.tmpVect.multiplyScalar(-this.v[0].getThickness()*ScalisMath_1.KS)));
+        pri.push(this.tmpVect.clone().addVectors(this.v[0].getPos(), this.tmpVect.multiplyScalar(-this.v[0].getThickness()*ScalisMath$1.KS)));
         this.tmpVect.copy(this.unit_normal);
-        pri.push(this.tmpVect.clone().addVectors(this.v[1].getPos(), this.tmpVect.multiplyScalar(-this.v[1].getThickness()*ScalisMath_1.KS)));
+        pri.push(this.tmpVect.clone().addVectors(this.v[1].getPos(), this.tmpVect.multiplyScalar(-this.v[1].getThickness()*ScalisMath$1.KS)));
         this.tmpVect.copy(this.unit_normal);
-        pri.push(this.tmpVect.clone().addVectors(this.v[2].getPos(), this.tmpVect.multiplyScalar(-this.v[2].getThickness()*ScalisMath_1.KS)));
+        pri.push(this.tmpVect.clone().addVectors(this.v[2].getPos(), this.tmpVect.multiplyScalar(-this.v[2].getThickness()*ScalisMath$1.KS)));
         // Compute the normals of top and bottom faces of the prism
-        var tmp2 = new three.Vector3();
+        var tmp2 = new THREE$d.Vector3();
         this.tmpVect.subVectors(pri[1], pri[0]);
         tmp2.subVectors(pri[2], pri[0]);
         var n4 = this.tmpVect.clone().crossVectors(this.tmpVect, tmp2).normalize();
@@ -4200,7 +4272,7 @@
         this.segAreas = [];
         for(var i=0; i<3; ++i){
             this.segAreas.push(
-                new AreaScalisSeg_1(
+                new AreaScalisSeg(
                     this.segParams[i].v[0].getPos(),this.segParams[i].v[1].getPos(),
                     this.segParams[i].v[0].getThickness(), this.segParams[i].v[1].getThickness(),
                     this.segParams[i].norm, this.segParams[i].dir)
@@ -4209,8 +4281,8 @@
 
     };
 
-    AreaScalisTri.prototype = Object.create(Area_1.prototype);
-    AreaScalisTri.prototype.constructor = AreaScalisTri;
+    AreaScalisTri$1.prototype = Object.create(Area$1.prototype);
+    AreaScalisTri$1.prototype.constructor = AreaScalisTri$1;
 
 
     /**
@@ -4220,7 +4292,7 @@
      *
      *  @protected
      */
-    AreaScalisTri.prototype.proj_computation = function(p, segParams){
+    AreaScalisTri$1.prototype.proj_computation = function(p, segParams){
         this.segAttr.p0_to_p = this.tmpVect;
         this.segAttr.p0_to_p.subVectors(p, segParams.v[0].getPos());
         this.segAttr.p0_to_p_sqrnorm = this.segAttr.p0_to_p.lengthSq();
@@ -4245,11 +4317,11 @@
      *  @param {!{r:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *
      */
-    AreaScalisTri.prototype.sphereIntersect = function(sphere)
+    AreaScalisTri$1.prototype.sphereIntersect = function(sphere)
     {
         // First: Test the intersection of the sphere to all three segments as they are included in the triangle bv
         for(var i=0; i<3; i++) {
-            var intersectSeg = this.sphereIntersectSegment(sphere, this.segParams[i], ScalisMath_1.KS);
+            var intersectSeg = this.sphereIntersectSegment(sphere, this.segParams[i], ScalisMath$1.KS);
             // The sphere intersecting ones the angle means the sphere intersect the Bounding Volume
             if (intersectSeg) {return true;}
         }
@@ -4275,7 +4347,7 @@
      *  @param {number} KS Kernel Scale, ie ScalisMath.KS (Why is it a parameter, its global!?)
      *
      */
-    AreaScalisTri.prototype.sphereIntersectSegment = function(sphere, segParams, KS)
+    AreaScalisTri$1.prototype.sphereIntersectSegment = function(sphere, segParams, KS)
     {
         this.proj_computation(sphere.center, segParams);
 
@@ -4283,12 +4355,12 @@
         var thick1 = segParams.v[1].getThickness();
         if(this.segAttr.p_proj_x<0.0){
             return (Math.sqrt(this.segAttr.p0_to_p_sqrnorm)-sphere.r < thick0*KS);
-        }else{
+        }else {
             if( this.segAttr.p_proj_x > segParams.norm)
             {
                 this.segAttr.p0_to_p.subVectors(sphere.center, segParams.v[1].getPos());
                 return this.segAttr.p0_to_p.length()-sphere.r < thick1*KS;
-            }else{
+            }else {
                 var sub1 = this.segAttr.x_p_2D - this.segAttr.p_proj_x;
                 var dist = sub1*sub1 + this.segAttr.y_p_2DSq;
                 var tt = this.segAttr.p_proj_x/segParams.norm;
@@ -4307,7 +4379,7 @@
      *  @param {!THREE.Vector3} p A point in space
      *
      */
-    AreaScalisTri.prototype.contains = function(p)
+    AreaScalisTri$1.prototype.contains = function(p)
     {
         var sphere = {r:0, c:p};
         return this.sphereIntersect(sphere);
@@ -4321,9 +4393,9 @@
      *
      *  @return {!Object} Object containing intersect (boolean) and currAcc (number) attributes
      */
-    AreaScalisTri.prototype.getAccSegment = function(sphere, segParams)
+    AreaScalisTri$1.prototype.getAccSegment = function(sphere, segParams)
     {
-        var allReturn = {intersect:false, currAcc:Accuracies_1.nice*this.min_thick};
+        var allReturn = {intersect:false, currAcc:Accuracies$1.nice*this.min_thick};
         if (this.sphereIntersectSegment(sphere, segParams, 1)) {
             // Thales between two triangles that have the same angles gives us the dist of:
             // side A = sphere.r*this.abs_diff_thick/this.length;
@@ -4345,7 +4417,7 @@
             }else if(absc>=segParams.norm)
             {
                 allReturn.currAcc   = thick1;
-            }else{
+            }else {
                 var tt = absc/segParams.norm;
                 allReturn.currAcc = thick0*(1.0-tt) + tt*thick1;
             }
@@ -4358,7 +4430,7 @@
      *  Get accuracy for the inner triangle (do not consider segment edges)
      *  @param {!{r:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      */
-    AreaScalisTri.prototype.getAccTri = function(sphere)
+    AreaScalisTri$1.prototype.getAccTri = function(sphere)
     {
         // Inequal thickness triangle case:
         if (!this.equal_weights) {
@@ -4376,8 +4448,8 @@
             // Cf. http://geomalgorithms.com/a04-_planes.html
             var proj_ortho_point = this.tmpVect.clone().addVectors(sphere.center, this.unit_normal.clone().multiplyScalar(-y_p_2D));
             // Get the thickness at this point
-            var params = TriangleUtils_1.getTriBaryCoord(this.p0p1, this.p2p0, this.v[0].getPos(), proj_ortho_point);
-            var thick_ortho_point = TriangleUtils_1.getMeanThick(this, params.u, params.v);
+            var params = TriangleUtils$1.getTriBaryCoord(this.p0p1, this.p2p0, this.v[0].getPos(), proj_ortho_point);
+            var thick_ortho_point = TriangleUtils$1.getMeanThick(this, params.u, params.v);
             // Ortho vector to the weight varies along where the sphere is relative to the plane
             thick_ortho_point = y_p_2D>=0? thick_ortho_point: -thick_ortho_point;
             var ortho_vec_x = this.v[0].getThickness() - thick_ortho_point;
@@ -4392,10 +4464,10 @@
             var dirVect = this.tmpVect.subVectors(v0, proj_ortho_point).normalize();
             var p_proj = this.tmpVect.addVectors(proj_ortho_point, dirVect.multiplyScalar(x_p_2D-p_proj_x));
             // Get the barycentric parameters of the non orthogonal point
-            params = TriangleUtils_1.getTriBaryCoord(this.p0p1, this.p2p0, this.v[0].getPos(), p_proj);
+            params = TriangleUtils$1.getTriBaryCoord(this.p0p1, this.p2p0, this.v[0].getPos(), p_proj);
             if (params.u<=1 && params.v <=1 && params.u+ params.v <=1 && params.u >= 0 && params.v >= 0 ) {
                 // Return the barycentered thickness (yes barycentered is a proper english terminology)
-                return TriangleUtils_1.getMeanThick(this, params.u, params.v);
+                return TriangleUtils$1.getMeanThick(this, params.u, params.v);
             } else {
                 return this.max_thick*10000;
             }
@@ -4415,7 +4487,7 @@
      *  @param {!{r:number,c:!THREE.Vector3}} sphere  A aphere object, must define sphere.r (radius) and sphere.center (center, as a THREE.Vector3)
      *  @param {number}  factor  the ratio to determine the wanted accuracy.
      */
-    AreaScalisTri.prototype.getAcc = function(sphere, factor) {
+    AreaScalisTri$1.prototype.getAcc = function(sphere, factor) {
 
         // First: Test the intersection of the sphere to all three segments to get the min Acc for segments
         for(var i=0, minForSeg=this.max_thick*100000; i<3; i++) {
@@ -4448,43 +4520,43 @@
      *  @param {!{r:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
-    AreaScalisTri.prototype.getNiceAcc = function(sphere)
+    AreaScalisTri$1.prototype.getNiceAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.nice);
+        return this.getAcc(sphere,Accuracies$1.nice);
     };
     /**
      *  Convenience function, just call getAcc with Curr Accuracy parameters.
      *  @param {!{r:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The Current accuracy needed in the intersection zone
      */
-    AreaScalisTri.prototype.getCurrAcc = function(sphere)
+    AreaScalisTri$1.prototype.getCurrAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.curr);
+        return this.getAcc(sphere,Accuracies$1.curr);
     };
     /**
      *  Convenience function, just call getAcc with Raw Accuracy parameters.
      *  @param {!{r:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
-    AreaScalisTri.prototype.getRawAcc = function(sphere)
+    AreaScalisTri$1.prototype.getRawAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.raw);
+        return this.getAcc(sphere,Accuracies$1.raw);
     };
 
     /**
      *  @return {number} the minimum accuracy needed for the triangle
      */
-    AreaScalisTri.prototype.getMinAcc = function()
+    AreaScalisTri$1.prototype.getMinAcc = function()
     {
-        return Accuracies_1.curr*this.min_thick;
+        return Accuracies$1.curr*this.min_thick;
     };
 
     /**
      *  @return {number} the minimum accuracy needed for the triangle
      */
-    AreaScalisTri.prototype.getMinRawAcc = function()
+    AreaScalisTri$1.prototype.getMinRawAcc = function()
     {
-        return Accuracies_1.raw*this.min_thick;
+        return Accuracies$1.raw*this.min_thick;
     };
 
     /**
@@ -4495,7 +4567,7 @@
      *  @param {number} t Coordinate on the axis
      *  @return {number} The step you can safely do in axis direction
      */
-    AreaScalisTri.prototype.getAxisProjectionMinStep = function(axis,t){
+    AreaScalisTri$1.prototype.getAxisProjectionMinStep = function(axis,t){
         var step = Number.MAX_VALUE;
         for(var i=0;i<3;++i){
             step = Math.min(step,this.segAreas[i].getAxisProjectionMinStep(axis,t));
@@ -4503,7 +4575,17 @@
         return step;
     };
 
-    var AreaScalisTri_1 = AreaScalisTri;
+    var AreaScalisTri_1 = AreaScalisTri$1;
+
+    const THREE$c = require$$0__default["default"];
+    const Types$a = Types_1;
+    const Material$5 = Material_1;
+    const ScalisPrimitive = ScalisPrimitive_1;
+    const ScalisVertex$1 = ScalisVertex_1;
+    const ScalisMath = ScalisMath_1;
+    const AreaScalisTri = AreaScalisTri_1;
+
+    const TriangleUtils = TriangleUtils_1;
 
     // Number of sample in the Simpsons integration.
     var sampleNumber = 10;
@@ -4520,16 +4602,16 @@
      *  @param {!Array.<!Material>} mats the triangle materials per vertices
      *  @extends ScalisPrimitive
      */
-    var ScalisTriangle = function(v, volType, density, mats) {
+    var ScalisTriangle$1 = function(v, volType, density, mats) {
         // Calling parent class initialize function
-        ScalisPrimitive_1.call(this);
+        ScalisPrimitive.call(this);
 
         if(density !== 1.0){
             throw "Error in ScalisTriangle : cannot use a density different from 1.0, not implemented.";
         }
 
         this.volType = volType;
-        this.materials     = mats !== null? mats : [Material_1.defaultMaterial.clone(), Material_1.defaultMaterial.clone(), Material_1.defaultMaterial.clone()];
+        this.materials     = mats !== null? mats : [Material$5.defaultMaterial.clone(), Material$5.defaultMaterial.clone(), Material$5.defaultMaterial.clone()];
 
         this.v = v;
         this.v[0].setPrimitive(this);
@@ -4543,24 +4625,24 @@
         this.res_gseg = {};
         this.tmp_res_gseg = {};
 
-        this.p0p1  = new three.Vector3();
-        this.p1p2 = new three.Vector3();
-        this.p2p0 = new three.Vector3();
-        this.unit_normal = new three.Vector3();
-        this.unit_p0p1 = new three.Vector3();
-        this.unit_p1p2 = new three.Vector3();
-        this.unit_p2p0 = new three.Vector3();
+        this.p0p1  = new THREE$c.Vector3();
+        this.p1p2 = new THREE$c.Vector3();
+        this.p2p0 = new THREE$c.Vector3();
+        this.unit_normal = new THREE$c.Vector3();
+        this.unit_p0p1 = new THREE$c.Vector3();
+        this.unit_p1p2 = new THREE$c.Vector3();
+        this.unit_p2p0 = new THREE$c.Vector3();
         this.length_p0p1 = 0;
         this.length_p1p2 = 0;
         this.length_p2p0 = 0;
         this.diffThick_p0p1 = 0;
         this.diffThick_p0p1 = 0;
         this.diffThick_p0p1 = 0;
-        this.main_dir       = new three.Vector3();
-        this.point_iso_zero = new three.Vector3();
-        this.ortho_dir      = new three.Vector3();
-        this.unsigned_ortho_dir= new three.Vector3();
-        this.proj_dir       = new three.Vector3();
+        this.main_dir       = new THREE$c.Vector3();
+        this.point_iso_zero = new THREE$c.Vector3();
+        this.ortho_dir      = new THREE$c.Vector3();
+        this.unsigned_ortho_dir= new THREE$c.Vector3();
+        this.proj_dir       = new THREE$c.Vector3();
         this.equal_weights = false; // Use to skip computations for a specific case
 
         this.coord_max           = 0;
@@ -4568,46 +4650,46 @@
         this.unit_delta_weight   = 0;
         this.longest_dir_special = 0;
         this.max_seg_length      = 0;
-        this.half_dir_1 = new three.Vector3();
-        this.point_half = new three.Vector3();
-        this.half_dir_2 = new three.Vector3();
-        this.point_min = new three.Vector3();
+        this.half_dir_1 = new THREE$c.Vector3();
+        this.point_half = new THREE$c.Vector3();
+        this.half_dir_2 = new THREE$c.Vector3();
+        this.point_min = new THREE$c.Vector3();
         this.weight_min = 0;
 
         this.valid_aabb = false;
     };
 
     // inherits from Primitive
-    ScalisTriangle.prototype = Object.create(ScalisPrimitive_1.prototype);
-    ScalisTriangle.prototype.constructor = ScalisTriangle;
+    ScalisTriangle$1.prototype = Object.create(ScalisPrimitive.prototype);
+    ScalisTriangle$1.prototype.constructor = ScalisTriangle$1;
 
-    ScalisTriangle.type = "ScalisTriangle";
-    Types_1.register(ScalisTriangle.type, ScalisTriangle);
+    ScalisTriangle$1.type = "ScalisTriangle";
+    Types$a.register(ScalisTriangle$1.type, ScalisTriangle$1);
 
-    ScalisTriangle.prototype.getType = function(){
-        return ScalisTriangle.type;
+    ScalisTriangle$1.prototype.getType = function(){
+        return ScalisTriangle$1.type;
     };
 
-    ScalisTriangle.prototype.toJSON = function() {
-        var res = ScalisPrimitive_1.prototype.toJSON.call(this);
+    ScalisTriangle$1.prototype.toJSON = function() {
+        var res = ScalisPrimitive.prototype.toJSON.call(this);
         return res;
     };
-    ScalisTriangle.fromJSON = function(json){
+    ScalisTriangle$1.fromJSON = function(json){
         var v = [
-            ScalisVertex_1.fromJSON(json.v[0]),
-            ScalisVertex_1.fromJSON(json.v[1]),
-            ScalisVertex_1.fromJSON(json.v[2])
+            ScalisVertex$1.fromJSON(json.v[0]),
+            ScalisVertex$1.fromJSON(json.v[1]),
+            ScalisVertex$1.fromJSON(json.v[2])
         ];
         var m = [
-            Material_1.fromJSON(json.materials[0]),
-            Material_1.fromJSON(json.materials[1]),
-            Material_1.fromJSON(json.materials[2])
+            Material$5.fromJSON(json.materials[0]),
+            Material$5.fromJSON(json.materials[1]),
+            Material$5.fromJSON(json.materials[2])
         ];
-        return new ScalisTriangle(v, json.volType, 1.0, m);
+        return new ScalisTriangle$1(v, json.volType, 1.0, m);
     };
 
     // [Abstract] See Primitive.prepareForEval for more details
-    ScalisTriangle.prototype.prepareForEval = function() {
+    ScalisTriangle$1.prototype.prepareForEval = function() {
         if(!this.valid_aabb)
         {
             this.computeHelpVariables();
@@ -4617,11 +4699,11 @@
 
 
     // [Abstract] See Primtive.getArea for more details
-    ScalisTriangle.prototype.getAreas = function() {
+    ScalisTriangle$1.prototype.getAreas = function() {
         if(!this.valid_aabb){
             console.log("ERROR : Cannot get area of invalid primitive");
             return [];
-        }else{
+        }else {
             var segParams = [];
             segParams.push({"norm":         this.length_p0p1,
                             "diffThick":    this.diffThick_p0p1,
@@ -4643,7 +4725,7 @@
                             "ortho_vec_y":  this.length_p2p0});
             return [{
                 aabb:this.aabb,
-                bv: new AreaScalisTri_1(this.v,
+                bv: new AreaScalisTri(this.v,
                                     this.unit_normal,
                                     this.main_dir,
                                     segParams,
@@ -4655,21 +4737,21 @@
     };
 
     // [Abstract] See Primitive.computeHelpVariables for more details
-    ScalisTriangle.prototype.computeHelpVariables = function() {
-        TriangleUtils_1.computeVectorsDirs(this);
+    ScalisTriangle$1.prototype.computeHelpVariables = function() {
+        TriangleUtils.computeVectorsDirs(this);
         // Compute the AABB from the union of the BBox of the vertices
         this.computeAABB();
     };
 
     // [Abstract] See ScalisPrimitive.mutableVolType for more details
-    ScalisTriangle.prototype.mutableVolType = function() {
+    ScalisTriangle$1.prototype.mutableVolType = function() {
         return true;
     };
 
     // [Abstract] See Primitive.setVolType for more details
-    ScalisTriangle.prototype.setVolType = function(vt)
+    ScalisTriangle$1.prototype.setVolType = function(vt)
     {
-        if( !(vt == ScalisPrimitive_1.CONVOL || vt == ScalisPrimitive_1.DIST) ){
+        if( !(vt == ScalisPrimitive.CONVOL || vt == ScalisPrimitive.DIST) ){
             throw "ERROR : volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST";
         }
 
@@ -4680,7 +4762,7 @@
     };
 
     // [Abstract] See Primitive.getVolType for more details
-    ScalisTriangle.prototype.getVolType = function()
+    ScalisTriangle$1.prototype.getVolType = function()
     {
         return this.volType;
     };
@@ -4695,16 +4777,16 @@
      *  Agency: Softhis
      *  http://www.softhis.com
      */
-    ScalisTriangle.prototype.clamp = function (a,b,c){
+    ScalisTriangle$1.prototype.clamp = function (a,b,c){
         return Math.max(b,Math.min(c,a));
     };
 
     // [Abstract] See Primitive.distanceTo for more details
-    ScalisTriangle.prototype.distanceTo = (function() {
-        var p0p = new three.Vector3();
-        var p1p = new three.Vector3();
-        var p2p = new three.Vector3();
-        var tmp = new three.Vector3();
+    ScalisTriangle$1.prototype.distanceTo = (function() {
+        var p0p = new THREE$c.Vector3();
+        var p1p = new THREE$c.Vector3();
+        var p2p = new THREE$c.Vector3();
+        var tmp = new THREE$c.Vector3();
         return function(p) {
 
             p0p.subVectors(p,this.v[0].getPos());
@@ -4716,7 +4798,7 @@
             {
                 // p is in the triangle
                 return Math.abs(p0p.dot(this.unit_normal));
-            }else{
+            }else {
                 var t0 = p0p.dot(this.p0p1) / this.length_p0p1;
                 // clamp is our own function declared there
                 t0=this.clamp(t0,0,1);
@@ -4747,21 +4829,20 @@
     })();
 
     // [Abstract] See Primitive.heuristicStepWithin for more details
-    ScalisTriangle.prototype.heuristicStepWithin = function() {
+    ScalisTriangle$1.prototype.heuristicStepWithin = function() {
         return this.weight_min/3;
     };
 
     // [Abstract] See Primitive.value for more details
-    ScalisTriangle.prototype.value = function(p,res) {
+    ScalisTriangle$1.prototype.value = function(p,res) {
         switch(this.volType){
-            case ScalisPrimitive_1.DIST:
+            case ScalisPrimitive.DIST:
                 return this.evalDist(p,res);
-            case ScalisPrimitive_1.CONVOL:
+            case ScalisPrimitive.CONVOL:
                 // for now rings are just evaluated as distance surface
                 return this.evalConvol(p,res);
             default:
                 throw "Unknown volType, use Orga";
-            break;
         }
     };
 
@@ -4769,9 +4850,9 @@
      *  value function for Distance volume type (distance field).
      */
     // jshint maxstatements:150
-    ScalisTriangle.prototype.evalDist = (function(){
+    ScalisTriangle$1.prototype.evalDist = (function(){
         var ev_eps = {v:0};
-        var p_eps = new three.Vector3();
+        var p_eps = new THREE$c.Vector3();
         return function(p,res)
         {
         /*
@@ -4784,7 +4865,7 @@
         */
                 // First compute the distance to the triangle and find the nearest point
                 // Code taken from EuclideanDistance functor, can be optimized.
-                var p0_to_p = new three.Vector3();
+                var p0_to_p = new THREE$c.Vector3();
                 p0_to_p.subVectors(p,this.v[0].getPos());
                 var normal_inv = this.unit_normal.clone().multiplyScalar(-1);
                 ///////////////////////////////////////////////////////////////////////
@@ -4809,41 +4890,41 @@
                     var d2 = -p.dot(n2);
                     var d3 = -this.point_iso_zero.dot(n3);
 
-                    var d1n2n3 = new three.Vector3();
+                    var d1n2n3 = new THREE$c.Vector3();
                     d1n2n3.crossVectors(n2,n3);
                     d1n2n3.multiplyScalar(-d1);
-                    var d2n3n1 = new three.Vector3();
+                    var d2n3n1 = new THREE$c.Vector3();
                     d2n3n1.crossVectors(n3,n1);
                     d2n3n1.multiplyScalar(-d2);
-                    var d3n1n2 = new three.Vector3();
+                    var d3n1n2 = new THREE$c.Vector3();
                     d3n1n2.crossVectors(n1,n2);
                     d3n1n2.multiplyScalar(-d3);
-                    var n2cn3 = new three.Vector3();
+                    var n2cn3 = new THREE$c.Vector3();
                     n2cn3.crossVectors(n2,n3);
-                    var Z = new three.Vector3(  d1n2n3.x+d2n3n1.x+d3n1n2.x,
+                    var Z = new THREE$c.Vector3(  d1n2n3.x+d2n3n1.x+d3n1n2.x,
                                                 d1n2n3.y+d2n3n1.y+d3n1n2.y,
                                                 d1n2n3.z+d2n3n1.z+d3n1n2.z);
                     Z.divideScalar(n1.dot(n2cn3));
 
                     // Now we want to project in the direction orthogonal to (pZ) and ortho_dir
-                    var pz = new three.Vector3(Z.x-p.x,Z.y-p.y,Z.z-p.z);
+                    var pz = new THREE$c.Vector3(Z.x-p.x,Z.y-p.y,Z.z-p.z);
 
                     // set proj_dir
-                    this.proj_dir = new three.Vector3();
+                    this.proj_dir = new THREE$c.Vector3();
                     this.proj_dir.crossVectors(pz,this.unsigned_ortho_dir);
                     this.proj_dir.normalize(); // should be useless
                 }
 
                 // Project along the given direction
-                var non_ortho_proj = new three.Vector3();
+                var non_ortho_proj = new THREE$c.Vector3();
                 non_ortho_proj.copy(this.proj_dir);
                 non_ortho_proj.multiplyScalar( -p0_to_p.dot(normal_inv)/this.proj_dir.dot(normal_inv));
                 non_ortho_proj.add(p);
 
-                var tmp_vec = new three.Vector3();
-                var tmp_vec0 = new three.Vector3();
-                var tmp_vec1 = new three.Vector3();
-                var tmp_vec2 = new three.Vector3();
+                var tmp_vec = new THREE$c.Vector3();
+                var tmp_vec0 = new THREE$c.Vector3();
+                var tmp_vec1 = new THREE$c.Vector3();
+                var tmp_vec2 = new THREE$c.Vector3();
                 tmp_vec0.subVectors(non_ortho_proj,this.v[0].getPos());
                 tmp_vec1.subVectors(non_ortho_proj,this.v[1].getPos());
                 tmp_vec2.subVectors(non_ortho_proj,this.v[2].getPos());
@@ -4860,19 +4941,19 @@
                     var p1 = this.v[1].getPos();
                     var p2 = this.v[2].getPos();
 
-                    var tmp_vec_bis = new three.Vector3();
+                    var tmp_vec_bis = new THREE$c.Vector3();
                     tmp_vec.subVectors(p1,p0);
                     tmp_vec_bis.subVectors(p2,p0);
-                    var n = new three.Vector3();
+                    var n = new THREE$c.Vector3();
                     n.crossVectors(tmp_vec,tmp_vec_bis);
                     tmp_vec.subVectors(p2,p1);
-                    var n1 = new three.Vector3();
+                    var n1 = new THREE$c.Vector3();
                     n1.crossVectors(tmp_vec,tmp_vec1);
                     tmp_vec.subVectors(p0,p2);
-                    var n2 = new three.Vector3();
+                    var n2 = new THREE$c.Vector3();
                     n2.crossVectors(tmp_vec,tmp_vec2);
                     tmp_vec.subVectors(p1,p0);
-                    var n3 = new three.Vector3();
+                    var n3 = new THREE$c.Vector3();
                     n3.crossVectors(tmp_vec,tmp_vec0);
 
                     var nsq = n.lengthSq();
@@ -4882,7 +4963,7 @@
 
                     var inter_weight = (a1*this.v[0].getThickness()+a2*this.v[1].getThickness()+a3*this.v[2].getThickness())/nsq;
 
-                    res.v = ScalisMath_1.Poly6Eval(Math.sqrt(res.v)/inter_weight)*ScalisMath_1.Poly6NF0D;
+                    res.v = ScalisMath.Poly6Eval(Math.sqrt(res.v)/inter_weight)*ScalisMath.Poly6NF0D;
 
                     if(res.m){
                         res.m.triMean(this.materials[0],this.materials[1],this.materials[2],a1,a2,a3,nsq);
@@ -4949,7 +5030,7 @@
                         seg_case = 2;
                     }
 
-                    res.v = ScalisMath_1.Poly6Eval(Math.sqrt(this.res_gseg.sqrdist)/this.res_gseg.weight_proj)*ScalisMath_1.Poly6NF0D;
+                    res.v = ScalisMath.Poly6Eval(Math.sqrt(this.res_gseg.sqrdist)/this.res_gseg.weight_proj)*ScalisMath.Poly6NF0D;
 
 
 
@@ -4973,7 +5054,6 @@
                             break;
                             default:
                                 throw "Error : seg_case unknown";
-                            break;
                         }
                     }
                     //////////////////////////////////////////////////////////////
@@ -5022,7 +5102,7 @@
      *  @param {!Object} res {proj_to_p, weight_proj}
      *
      */
-    ScalisTriangle.prototype.GenericSegmentComputation = function(
+    ScalisTriangle$1.prototype.GenericSegmentComputation = function(
                                                 point,
                                                 p1,
                                                 p1p2,
@@ -5032,7 +5112,7 @@
                                                 delta_weight, // = weight_2-weight_1
                                                 res)
     {
-        var origin_to_p = new three.Vector3();
+        var origin_to_p = new THREE$c.Vector3();
         origin_to_p.subVectors(point,p1);
 
         var orig_p_scal_dir = origin_to_p.dot(p1p2);
@@ -5046,7 +5126,7 @@
             t = (t<0.0) ? 0.0 : ((t>1.0) ? 1.0 : t) ; // clipping (nearest point on segment not line)
         }
 
-        res.proj_to_p = new three.Vector3(  t*p1p2.x - origin_to_p.x,
+        res.proj_to_p = new THREE$c.Vector3(  t*p1p2.x - origin_to_p.x,
                                             t*p1p2.y - origin_to_p.y,
                                             t*p1p2.z - origin_to_p.z);
         res.weight_proj = weight_1 + t*delta_weight;
@@ -5062,13 +5142,13 @@
     /**
      *  value function for Distance volume type (distance field).
      */
-    ScalisTriangle.prototype.evalConvol = (function() {
+    ScalisTriangle$1.prototype.evalConvol = (function() {
 
-        var g = new three.Vector3();
-        var m = new Material_1();
+        var g = new THREE$c.Vector3();
+        var m = new Material$5();
         var tmpRes = {v:0,g:null,m:null};
-        var g2 = new three.Vector3();
-        var m2 = new Material_1();
+        var g2 = new THREE$c.Vector3();
+        var m2 = new Material$5();
         var tmpRes2 = {v:0,g:null,m:null};
 
         return function (p, res) {
@@ -5093,7 +5173,7 @@
                 var t = d_step_size;
                 d_step_size *= 2.0;
                 var res_odd = 0.0;
-                var grad_odd = new three.Vector3();
+                var grad_odd = new THREE$c.Vector3();
 
                 for (var i = 1; i < nb_samples; i += 2) {
                     this.computeLineIntegral(this.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
@@ -5105,7 +5185,7 @@
                 }
 
                 var res_even = 0.0;
-                var grad_even = new three.Vector3();
+                var grad_even = new THREE$c.Vector3();
                 t = 0.0;
                 for (var i = 2; i < nb_samples; i += 2) {
                     t += d_step_size;
@@ -5123,10 +5203,10 @@
                 var res_high = this.computeLineIntegral(t_high, p, tmpRes2);
 
                 res.v = res_low.v + 4.0 * res_odd + 2.0 * res_even + res_low.v;
-                var factor = ( local_t_max / (3.0 * (nb_samples)) ) * ScalisMath_1.Poly6NF2D;
+                var factor = ( local_t_max / (3.0 * (nb_samples)) ) * ScalisMath.Poly6NF2D;
                 res.v *= factor;
                 if (res.g) {
-                    var grad_res = new three.Vector3();
+                    var grad_res = new THREE$c.Vector3();
                     grad_res.addVectors(grad_res, res_low.g);
                     grad_res.addVectors(grad_res, grad_odd.multiplyScalar(4.0));
                     grad_res.addVectors(grad_res, grad_even.multiplyScalar(2.0));
@@ -5135,7 +5215,7 @@
                 }
             } else {
                 res.v = 0.0;
-                res.g = new three.Vector3();
+                res.g = new THREE$c.Vector3();
             }
             if (res.m) {
                 tmpRes.g = null;
@@ -5148,7 +5228,7 @@
      *  @param {number} t
      *  @return {number} Warped value
      */
-    ScalisTriangle.prototype.warpAbscissa = function (t) {
+    ScalisTriangle$1.prototype.warpAbscissa = function (t) {
         // Compute approx of ln(d*l+1)/d
         var dt = t * this.unit_delta_weight;
         var inv_dtp2 = 1.0 / (dt + 2.0);
@@ -5167,7 +5247,7 @@
      *  @param {number} t
      *  @return {number} Unwarped value
      */
-    ScalisTriangle.prototype.unwarpAbscissa = function (t) {
+    ScalisTriangle$1.prototype.unwarpAbscissa = function (t) {
         // Compute approx of (exp(d*l)-1)/d
         var dt = t * this.unit_delta_weight;
         return t * ( 1.0 + dt *( 1.0/2.0 + dt * ( 1.0/6.0 + dt * ( 1.0/24.0 + dt * ( 1.0/120.0 + dt * 1.0/720.0 ))))) ;
@@ -5179,10 +5259,10 @@
      *  @param {Object} res result containing the wanted elements like res.v for the value, res.g for the gradient, res.m for the material.
      *  @return the res parameter, filled with proper values
      */
-    ScalisTriangle.prototype.computeLineIntegral = function (t, p, res) {
+    ScalisTriangle$1.prototype.computeLineIntegral = function (t, p, res) {
 
         var weight = this.weight_min + t * this.unit_delta_weight;
-        var p_1 = new three.Vector3();
+        var p_1 = new THREE$c.Vector3();
         p_1.addVectors(this.point_min, this.longest_dir_special.clone().multiplyScalar(t));
 
         var length = (t<this.coord_middle) ? (t/this.coord_middle) * this.max_seg_length
@@ -5213,7 +5293,7 @@
      *
      *  @protected
      */
-    ScalisTriangle.prototype.homotheticClippingSpecial = function(w, length, clipped)
+    ScalisTriangle$1.prototype.homotheticClippingSpecial = function(w, length, clipped)
     {
         // we search solution t \in [0,1] such that at^2-2bt+c<=0
         var a = -w.z;
@@ -5250,26 +5330,26 @@
      *
      *  @protected
      */
-    ScalisTriangle.prototype.consWeightEvalForSeg = function( p_1, w_1, unit_dir, length, point, res) {
-        var p_min_to_point = new three.Vector3();
+    ScalisTriangle$1.prototype.consWeightEvalForSeg = function( p_1, w_1, unit_dir, length, point, res) {
+        var p_min_to_point = new THREE$c.Vector3();
         p_min_to_point.subVectors( point, p_1 );
         var uv = unit_dir.dot(p_min_to_point);
         var d2 = p_min_to_point.lengthSq();
 
-        var special_coeff = new three.Vector3();
-        special_coeff.set( w_1*w_1  - ScalisMath_1.KIS2 * d2,
-                           - ScalisMath_1.KIS2 * uv,
-                           - ScalisMath_1.KIS2 );
+        var special_coeff = new THREE$c.Vector3();
+        special_coeff.set( w_1*w_1  - ScalisMath.KIS2 * d2,
+                           - ScalisMath.KIS2 * uv,
+                           - ScalisMath.KIS2 );
         var clipped = {l1: 0, l2:0};
         if(this.homotheticClippingSpecial(special_coeff, length, clipped))
         {
             var inv_local_min_weight = 1.0 / w_1;
-            special_coeff.x = 1.0 - ScalisMath_1.KIS2 * ( clipped.l1*(clipped.l1-2.0*uv) + d2 ) * inv_local_min_weight*inv_local_min_weight;
-            special_coeff.y = - ScalisMath_1.KIS2*(uv-clipped.l1) * inv_local_min_weight;
+            special_coeff.x = 1.0 - ScalisMath.KIS2 * ( clipped.l1*(clipped.l1-2.0*uv) + d2 ) * inv_local_min_weight*inv_local_min_weight;
+            special_coeff.y = - ScalisMath.KIS2*(uv-clipped.l1) * inv_local_min_weight;
 
             res.v = this.homotheticCompactPolynomial_segment_F_i6_cste( (clipped.l2-clipped.l1) * inv_local_min_weight,
                                                                                                       special_coeff );
-        }else{
+        }else {
             res = 0;
         }
 
@@ -5286,25 +5366,25 @@
      *
      *  @protected
      */
-    ScalisTriangle.prototype.consWeightEvalGradForSeg = function( p_1, w_1, unit_dir, length, point, res) {
+    ScalisTriangle$1.prototype.consWeightEvalGradForSeg = function( p_1, w_1, unit_dir, length, point, res) {
 
-        var p_min_to_point = new three.Vector3();
+        var p_min_to_point = new THREE$c.Vector3();
         p_min_to_point.subVectors( point, p_1 );
         var uv = unit_dir.dot(p_min_to_point);
         var d2 = p_min_to_point.lengthSq();
 
-        var special_coeff = new three.Vector3();
-        special_coeff.set( w_1*w_1  - ScalisMath_1.KIS2 * d2 ,
-                           - ScalisMath_1.KIS2 * uv ,
-                           - ScalisMath_1.KIS2 );
+        var special_coeff = new THREE$c.Vector3();
+        special_coeff.set( w_1*w_1  - ScalisMath.KIS2 * d2 ,
+                           - ScalisMath.KIS2 * uv ,
+                           - ScalisMath.KIS2 );
         var clipped = {l1: 0, l2:0};
         if(this.homotheticClippingSpecial(special_coeff, length, clipped))
         {
             var inv_local_min_weight = 1.0 / w_1;
-            special_coeff.x = 1.0 - ScalisMath_1.KIS2 * ( clipped.l1*(clipped.l1-2.0*uv) + d2 ) * inv_local_min_weight*inv_local_min_weight;
-            special_coeff.y = - ScalisMath_1.KIS2*(uv-clipped.l1) * inv_local_min_weight;
+            special_coeff.x = 1.0 - ScalisMath.KIS2 * ( clipped.l1*(clipped.l1-2.0*uv) + d2 ) * inv_local_min_weight*inv_local_min_weight;
+            special_coeff.y = - ScalisMath.KIS2*(uv-clipped.l1) * inv_local_min_weight;
 
-            var F0F1F2 = new three.Vector3();
+            var F0F1F2 = new THREE$c.Vector3();
             this.homotheticCompactPolynomial_segment_FGradF_i6_cste( (clipped.l2-clipped.l1) * inv_local_min_weight,
                                                                                                     special_coeff, F0F1F2);
             res.v = F0F1F2.x;
@@ -5313,8 +5393,8 @@
             vect.multiplyScalar( F0F1F2.z + clipped.l1 * F0F1F2.y);
             p_min_to_point.multiplyScalar(- F0F1F2.y);
             p_min_to_point.addVectors(p_min_to_point,vect);
-            res.g =  p_min_to_point.multiplyScalar(6.0*ScalisMath_1.KIS2*inv_local_min_weight);
-        }else{
+            res.g =  p_min_to_point.multiplyScalar(6.0*ScalisMath.KIS2*inv_local_min_weight);
+        }else {
             res.v = 0;
             res.g.set(0,0,0);
         }
@@ -5328,8 +5408,8 @@
      *                           values are between 0.0 and length/weight_min
      *  @return {boolean} true if clipping occured
      */
-    ScalisTriangle.prototype.ComputeTParam = function(point, clipped) {
-        var p_min_to_point = new three.Vector3();
+    ScalisTriangle$1.prototype.ComputeTParam = function(point, clipped) {
+        var p_min_to_point = new THREE$c.Vector3();
         p_min_to_point.subVectors( point, this.point_min );
 
         var coord_main_dir = p_min_to_point.dot(this.main_dir);
@@ -5338,10 +5418,10 @@
         //WARNING : Assume that the compact support is defined in the same way as HomotheticCompactPolynomial kernels
         var dist_sqr = coord_main_dir*coord_main_dir + coord_normal*coord_normal;
 
-        var special_coeff = new three.Vector3();
-        special_coeff.set( this.weight_min*this.weight_min - ScalisMath_1.KIS2 * dist_sqr,
-                          -this.unit_delta_weight*this.weight_min - ScalisMath_1.KIS2 * coord_main_dir,
-                           this.unit_delta_weight*this.unit_delta_weight - ScalisMath_1.KIS2);
+        var special_coeff = new THREE$c.Vector3();
+        special_coeff.set( this.weight_min*this.weight_min - ScalisMath.KIS2 * dist_sqr,
+                          -this.unit_delta_weight*this.weight_min - ScalisMath.KIS2 * coord_main_dir,
+                           this.unit_delta_weight*this.unit_delta_weight - ScalisMath.KIS2);
 
         return this.homotheticClippingSpecial(special_coeff, this.coord_max, clipped);
     };
@@ -5353,7 +5433,7 @@
      *  @param {!THREE.Vector3} w Some coefficient, as a THREE.Vector3
      *  @return {number} the value
      */
-    ScalisTriangle.prototype.homotheticCompactPolynomial_segment_F_i6_cste = function(l, w) {
+    ScalisTriangle$1.prototype.homotheticCompactPolynomial_segment_F_i6_cste = function(l, w) {
         var t7068 = w.z;
         var t7078 = t7068 * l;
         var t7069 = w.y;
@@ -5382,7 +5462,7 @@
      *  @param {!THREE.Vector3} w a THREE.Vector3
      *
      */
-    ScalisTriangle.prototype.homotheticCompactPolynomial_segment_FGradF_i6_cste = function(l, w, res) {
+    ScalisTriangle$1.prototype.homotheticCompactPolynomial_segment_FGradF_i6_cste = function(l, w, res) {
         var t7086 = w.z;
         var t7095 = t7086 * l;
         var t7087 = w.y;
@@ -5404,31 +5484,33 @@
         res.z = (t7087 * t7093 + t7080 / 0.6e1 - t7085 / 0.6e1) * t7084;
     };
 
-    var ScalisTriangle_1 = ScalisTriangle;
+    var ScalisTriangle_1 = ScalisTriangle$1;
+
+    const Types$9 = Types_1;
 
     /**
      *  A superclass for Node and Primitive in the blobtree.
      *  @constructor
      */
-    var DistanceFunctor = function () {
+    var DistanceFunctor$1 = function () {
     };
 
-    DistanceFunctor.prototype.constructor = DistanceFunctor;
+    DistanceFunctor$1.prototype.constructor = DistanceFunctor$1;
 
-    DistanceFunctor.type = "DistanceFunctor";
-    Types_1.register(DistanceFunctor.type, DistanceFunctor);
+    DistanceFunctor$1.type = "DistanceFunctor";
+    Types$9.register(DistanceFunctor$1.type, DistanceFunctor$1);
     /**
      *  @return {string} Type of the element
      */
-    DistanceFunctor.prototype.getType = function() {
-        return DistanceFunctor.type;
+    DistanceFunctor$1.prototype.getType = function() {
+        return DistanceFunctor$1.type;
     };
 
     /**
      *  @abstract
      *  Return a Javscript Object respecting JSON convention.
      */
-    DistanceFunctor.prototype.toJSON = function(){
+    DistanceFunctor$1.prototype.toJSON = function(){
         return {
             type:this.getType()
         };
@@ -5437,19 +5519,19 @@
      *  @abstract
      *  @param {Object} json Json description of the object
      */
-    DistanceFunctor.prototype.fromJSON = function(json){
-        return Types_1.fromJSON(json);
+    DistanceFunctor$1.prototype.fromJSON = function(json){
+        return Types$9.fromJSON(json);
     };
 
     /**
      *  @param {number} d The distance to be considered.
      *  @return {number} Scalar field value according to given distance d.
      */
-    DistanceFunctor.prototype.value = function(d) {
+    DistanceFunctor$1.prototype.value = function(d) {
         throw "Error : not implemented. Must be reimplemented in children classes.";
     };
 
-    DistanceFunctor.prototype.value = function(d) {
+    DistanceFunctor$1.prototype.value = function(d) {
         throw "Error : not implemented. Must be reimplemented in children classes.";
     };
 
@@ -5458,7 +5540,7 @@
      *  @param {number} d The distance to be considered.
      *  @param {number} epsilon The numerica step for this gradient computation. Default to 0.00001.
      */
-    DistanceFunctor.prototype.numericalGradient = function(d,epsilon){
+    DistanceFunctor$1.prototype.numericalGradient = function(d,epsilon){
         var eps = epsilon ? epsilon : 0.00001;
         return (this.value(d+eps)-this.value(d-eps))/(2*eps);
     };
@@ -5469,7 +5551,7 @@
      *  @return {number} One dimensional gradient at d.
      *
      */
-    DistanceFunctor.prototype.gradient = function(d){
+    DistanceFunctor$1.prototype.gradient = function(d){
         return this.numericalGradient(d,0.00001);
     };
 
@@ -5477,12 +5559,15 @@
      *  @return {number} Distance above which all values will be 0. Should be reimplemented and default to infinity.
      *
      */
-    DistanceFunctor.prototype.getSupport = function(d){
+    DistanceFunctor$1.prototype.getSupport = function(d){
         return Infinity;
     };
 
 
-    var DistanceFunctor_1 = DistanceFunctor;
+    var DistanceFunctor_1 = DistanceFunctor$1;
+
+    const Types$8 = Types_1;
+    const DistanceFunctor = DistanceFunctor_1;
 
     /**
      *  Specialised Distance Functor using a 6 degree polynomial function.
@@ -5493,11 +5578,11 @@
         this.scale = scale || 1.0;
     };
 
-    Poly6DistanceFunctor.prototype = Object.create(DistanceFunctor_1.prototype);
+    Poly6DistanceFunctor.prototype = Object.create(DistanceFunctor.prototype);
     Poly6DistanceFunctor.prototype.constructor = Poly6DistanceFunctor;
 
     Poly6DistanceFunctor.type = "Poly6DistanceFunctor";
-    Types_1.register(Poly6DistanceFunctor.type, Poly6DistanceFunctor);
+    Types$8.register(Poly6DistanceFunctor.type, Poly6DistanceFunctor);
 
     /**
      *  @return {string} Type of the element
@@ -5527,7 +5612,7 @@
         if(aux > 0.0)
         {
             return aux*aux*aux;
-        }else{
+        }else {
             return 0.0;
         }
     };
@@ -5553,6 +5638,9 @@
 
     var Poly6DistanceFunctor_1 = Poly6DistanceFunctor;
 
+    const Node$1 = Node_1;
+    const Types$7 = Types_1;
+
     /**
      *  This class implements an abstract Node class for Signed Distance Field.
      *  The considered primtive is at distance = 0.
@@ -5560,9 +5648,9 @@
      *  @constructor
      *  @extends {Node}
      */
-    var SDFNode = function ()
+    var SDFNode$1 = function ()
     {
-        Node_1.call(this);
+        Node$1.call(this);
 
         // Default bounding box for a SDF is infinite.
         this.aabb.set(
@@ -5571,18 +5659,18 @@
         );
     };
 
-    SDFNode.prototype = Object.create(Node_1.prototype);
-    SDFNode.prototype.constructor = SDFNode;
+    SDFNode$1.prototype = Object.create(Node$1.prototype);
+    SDFNode$1.prototype.constructor = SDFNode$1;
 
-    SDFNode.type = "SDFNode";
-    Types_1.register(SDFNode.type, SDFNode);
+    SDFNode$1.type = "SDFNode";
+    Types$7.register(SDFNode$1.type, SDFNode$1);
 
-    SDFNode.prototype.getType = function(){
-        return SDFNode.type;
+    SDFNode$1.prototype.getType = function(){
+        return SDFNode$1.type;
     };
 
     // Abstract
-    SDFNode.prototype.computeAABB = function() {
+    SDFNode$1.prototype.computeAABB = function() {
         // Nothing to do, SDF have infinite bounding box
     };
 
@@ -5592,7 +5680,7 @@
      *  @param {number} d Distance
      *  @abstract
      */
-    SDFNode.prototype.computeDistanceAABB = function(d) {
+    SDFNode$1.prototype.computeDistanceAABB = function(d) {
         throw "computeDistanceAABB is an abstract function of SDFNode. Please reimplement it in children classes.";
     };
 
@@ -5601,7 +5689,7 @@
      *  usually apply a compact kernel to the distance field.
      *  @abstract
      */
-    SDFNode.prototype.getAreas = function() {
+    SDFNode$1.prototype.getAreas = function() {
         throw "No Areas for SDFNode, except for the SDFRootNode.";
     };
 
@@ -5610,16 +5698,21 @@
      *  an accurate distance to the surface.
      *  @abstract
      */
-    SDFNode.prototype.distanceTo = function(p) {
+    SDFNode$1.prototype.distanceTo = function(p) {
         throw "distanceTo should be reimplemented in every children classes of SDFNode.";
     };
 
     // Abstract
-    SDFNode.prototype.heuristicStepWithin = function() {
+    SDFNode$1.prototype.heuristicStepWithin = function() {
         throw "heuristicStepWithin may not make sens for all SDFNode, except for the SDFRootNode.";
     };
 
-    var SDFNode_1 = SDFNode;
+    var SDFNode_1 = SDFNode$1;
+
+    const THREE$b = require$$0__default["default"];
+    const Types$6 = Types_1;
+    const SDFNode = SDFNode_1;
+    const Material$4 = Material_1;
 
     /**
      *  This class implements a SDF Root Node, which is basically a Signed Distance Field
@@ -5635,25 +5728,25 @@
      */
     var SDFRootNode = function (f, material, child) {
 
-        SDFNode_1.call(this);
+        SDFNode.call(this);
 
         this.f = f;
 
-        this.material = material ? material.clone() : new Material_1();
+        this.material = material ? material.clone() : new Material$4();
 
         this.addChild(child);
 
         // Tmp vars to speed up computation (no reallocations)
         // TODO : should be pushed in the function static variables since there can be no SDFRoot below the SDFRoot.
         this.tmp_res = {v:0, g:null};
-        this.tmp_g = new three.Vector3(0,0,0);
+        this.tmp_g = new THREE$b.Vector3(0,0,0);
     };
 
-    SDFRootNode.prototype = Object.create( SDFNode_1.prototype );
+    SDFRootNode.prototype = Object.create( SDFNode.prototype );
     SDFRootNode.prototype.constructor = SDFRootNode;
 
     SDFRootNode.type = "SDFRootNode";
-    Types_1.register(SDFRootNode.type, SDFRootNode);
+    Types$6.register(SDFRootNode.type, SDFRootNode);
 
     SDFRootNode.prototype.getType = function(){
         return SDFRootNode.type;
@@ -5661,20 +5754,20 @@
 
     SDFRootNode.prototype.addChild = function(c){
         if(this.children.length === 0){
-            SDFNode_1.prototype.addChild.call(this,c);
-        }else{
+            SDFNode.prototype.addChild.call(this,c);
+        }else {
             throw "Error : SDFRootNode can have only one child.";
         }
     };
 
     SDFRootNode.prototype.toJSON = function(){
-        var res = SDFNode_1.prototype.toJSON.call(this);
+        var res = SDFNode.prototype.toJSON.call(this);
         res.f = this.f.toJSON();
 
         return res;
     };
     SDFRootNode.fromJSON = function(json){
-        var res = new SDFRootNode(Types_1.fromJSON(res.f), Types_1.fromJSON(json.children[0]));
+        var res = new SDFRootNode(Types$6.fromJSON(res.f), Types$6.fromJSON(json.children[0]));
         return res;
     };
 
@@ -5682,7 +5775,7 @@
     SDFRootNode.prototype.prepareForEval = function()
     {
         if(!this.valid_aabb){
-            this.aabb = new three.Box3();  // Create empty BBox
+            this.aabb = new THREE$b.Box3();  // Create empty BBox
             for(var i=0; i<this.children.length; ++i){
                 var c = this.children[i];
                 c.prepareForEval();
@@ -5699,7 +5792,7 @@
     SDFRootNode.prototype.getAreas = function() {
         if(!this.valid_aabb) {
             throw "ERROR : Cannot get area of invalid node";
-        }else{
+        }else {
             return this.children[0].getAreas(this.f.getSupport());
         }
     };
@@ -5713,7 +5806,7 @@
         // Init res
         res.v = 0;
         if(res.m)  {
-            res.m.copy(Material_1.defaultMaterial);
+            res.m.copy(Material$4.defaultMaterial);
         }if(res.g) ;else if (res.step !== undefined) {
             // that, is the max distance
             // we want a value that won't miss any 'min'
@@ -5739,15 +5832,18 @@
 
     var SDFRootNode_1 = SDFRootNode;
 
+    const Element = Element_1;
+    const Types$5 = Types_1;
+
     /**
      *  This class implements an abstract primitve class for signed distance field.
      *  SDFPrimitive subclasses must define a scalar field being the distance to a geometry.
      *  @constructor
      *  @extends {Element}
      */
-    var SDFPrimitive = function ()
+    var SDFPrimitive$4 = function ()
     {
-        Element_1.call(this);
+        Element.call(this);
 
         // Default bounding box for a SDF is infinite.
         this.aabb.set(
@@ -5756,18 +5852,18 @@
         );
     };
 
-    SDFPrimitive.prototype = Object.create(Element_1.prototype);
-    SDFPrimitive.prototype.constructor = SDFPrimitive;
+    SDFPrimitive$4.prototype = Object.create(Element.prototype);
+    SDFPrimitive$4.prototype.constructor = SDFPrimitive$4;
 
-    SDFPrimitive.type = "SDFPrimitive";
-    Types_1.register(SDFPrimitive.type, SDFPrimitive);
+    SDFPrimitive$4.type = "SDFPrimitive";
+    Types$5.register(SDFPrimitive$4.type, SDFPrimitive$4);
 
-    SDFPrimitive.prototype.SDFPrimitive = function(){
-        return SDFPrimitive.type;
+    SDFPrimitive$4.prototype.SDFPrimitive = function(){
+        return SDFPrimitive$4.type;
     };
 
     // Abstract
-    SDFPrimitive.prototype.computeAABB = function() {
+    SDFPrimitive$4.prototype.computeAABB = function() {
         // Nothing to do, SDF have infinite bounding box
     };
 
@@ -5777,14 +5873,14 @@
      *  @param {number} d Distance
      *  @abstract
      */
-    SDFPrimitive.prototype.computeDistanceAABB = function(d) {
+    SDFPrimitive$4.prototype.computeDistanceAABB = function(d) {
         throw "computeDistanceAABB is an abstract function of SDFPrimitive. Please reimplement it in children classes.";
     };
 
     /**
      *  SDF Field are infinite, so Areas do not make sens.
      */
-    SDFPrimitive.prototype.getAreas = function() {
+    SDFPrimitive$4.prototype.getAreas = function() {
         throw "No Areas for SDFPrimitive.";
     };
 
@@ -5793,7 +5889,7 @@
      *  an accurate distance to the surface.
      *  @abstract
      */
-    SDFPrimitive.prototype.distanceTo = (function(){
+    SDFPrimitive$4.prototype.distanceTo = (function(){
         var res = {v:0};
         return function(p) {
             this.value(p,res);
@@ -5802,11 +5898,16 @@
     })();
 
     // Abstract
-    SDFPrimitive.prototype.heuristicStepWithin = function() {
+    SDFPrimitive$4.prototype.heuristicStepWithin = function() {
         throw "Not implemented";
     };
 
-    var SDFPrimitive_1 = SDFPrimitive;
+    var SDFPrimitive_1 = SDFPrimitive$4;
+
+    const THREE$a = require$$0__default["default"];
+    const Types$4 = Types_1;
+    const SDFPrimitive$3 = SDFPrimitive_1;
+    const AreaSphere$1 = AreaSphere_1;
 
     /**
      *  @constructor
@@ -5816,24 +5917,24 @@
      *  @param {number} acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
      */
     var SDFPoint = function(p, acc) {
-        SDFPrimitive_1.call(this);
+        SDFPrimitive$3.call(this);
 
         this.p = p.clone();
         this.acc = acc || 1.0;
     };
 
-    SDFPoint.prototype = Object.create(SDFPrimitive_1.prototype);
+    SDFPoint.prototype = Object.create(SDFPrimitive$3.prototype);
     SDFPoint.prototype.constructor = SDFPoint;
 
     SDFPoint.type = "SDFPoint";
-    Types_1.register(SDFPoint.type, SDFPoint);
+    Types$4.register(SDFPoint.type, SDFPoint);
 
     SDFPoint.prototype.getType = function(){
         return SDFPoint.type;
     };
 
     SDFPoint.prototype.toJSON = function() {
-        var res = SDFPrimitive_1.prototype.toJSON.call(this);
+        var res = SDFPrimitive$3.prototype.toJSON.call(this);
         res.p = {
             x:this.p.x,
             y:this.p.y,
@@ -5843,7 +5944,7 @@
         return res;
     };
     SDFPoint.fromJSON = function(json){
-        return new SDFPoint(new three.Vector3(json.p.x,json.p.y, json.p.z), json.acc);
+        return new SDFPoint(new THREE$a.Vector3(json.p.x,json.p.y, json.p.z), json.acc);
     };
 
     /**
@@ -5878,9 +5979,9 @@
 
     // [Abstract]
     SDFPoint.prototype.computeDistanceAABB = function(d) {
-        return new three.Box3(
-            this.p.clone().add(new three.Vector3(-d,-d,-d)),
-            this.p.clone().add(new three.Vector3(d,d,d))
+        return new THREE$a.Box3(
+            this.p.clone().add(new THREE$a.Vector3(-d,-d,-d)),
+            this.p.clone().add(new THREE$a.Vector3(d,d,d))
         );
     };
     // [Abstract]
@@ -5895,11 +5996,10 @@
     SDFPoint.prototype.getAreas = function(d) {
         if(!this.valid_aabb) {
             throw "ERROR : Cannot get area of invalid primitive";
-            return [];
-        }else{
+        }else {
             return [{
                 aabb:this.computeDistanceAABB(d),
-                bv: new AreaSphere_1(
+                bv: new AreaSphere$1(
                     this.p,
                     d,
                     this.acc
@@ -5911,7 +6011,7 @@
 
     // [Abstract] see SDFPrimitive.value
     SDFPoint.prototype.value = (function(){
-        var v = new three.Vector3();
+        var v = new THREE$a.Vector3();
 
         return function(p,res) {
             if(!this.valid_aabb){
@@ -5930,6 +6030,10 @@
 
     var SDFPoint_1 = SDFPoint;
 
+    const THREE$9 = require$$0__default["default"];
+    const Area = Area_1;
+    const Accuracies = Accuracies_1;
+
     /**
      *  General representation of a "Capsule" area, ie, 2 sphere connected by a cone.
      *  You can find more on Capsule geometry here https://github.com/maximeq/three-js-capsule-geometry
@@ -5945,9 +6049,9 @@
      *
      * @constructor
      */
-    var AreaCapsule = function(p1, p2, r1, r2, accFactor1, accFactor2 )
+    var AreaCapsule$2 = function(p1, p2, r1, r2, accFactor1, accFactor2 )
     {
-        Area_1.call(this);
+        Area.call(this);
 
         this.p1 = p1.clone();
         this.p2 = p2.clone();
@@ -5957,12 +6061,12 @@
         this.accFactor1 = accFactor1 || 1.0;
         this.accFactor2 = accFactor2 || 1.0;
 
-        this.unit_dir = new three.Vector3().subVectors(p2,p1);
+        this.unit_dir = new THREE$9.Vector3().subVectors(p2,p1);
         this.length = this.unit_dir.length();
         this.unit_dir.normalize();
 
         // tmp var for functions below
-        this.vector = new three.Vector3();
+        this.vector = new THREE$9.Vector3();
         this.p1_to_p = this.vector; // basically the same as above + smart name
         this.p1_to_p_sqrnorm = 0;
         this.x_p_2D = 0;
@@ -5976,8 +6080,8 @@
         this.abs_diff_thick = Math.abs(this.ortho_vec_x);
     };
 
-    AreaCapsule.prototype = Object.create(Area_1.prototype);
-    AreaCapsule.prototype.constructor = AreaCapsule;
+    AreaCapsule$2.prototype = Object.create(Area.prototype);
+    AreaCapsule$2.prototype.constructor = AreaCapsule$2;
 
     /**
      *  Compute some of the tmp variables. Used to factorized other functions code.
@@ -5985,7 +6089,7 @@
      *
      *  @protected
      */
-    AreaCapsule.prototype.proj_computation = function(p)
+    AreaCapsule$2.prototype.proj_computation = function(p)
     {
         this.p1_to_p = this.vector;
         this.p1_to_p.subVectors(p, this.p1);
@@ -6008,18 +6112,18 @@
      *  [Abstract]
      *  @todo Check the Maths (Ask Cedric Zanni?)
      */
-    AreaCapsule.prototype.sphereIntersect = function(sphere)
+    AreaCapsule$2.prototype.sphereIntersect = function(sphere)
     {
         this.proj_computation(sphere.center);
 
         if(this.p_proj_x<0.0){
             return (Math.sqrt(this.p1_to_p_sqrnorm)-sphere.radius < this.r1);
-        }else{
+        }else {
             if(this.p_proj_x>this.length)
             {
                 this.vector.subVectors(sphere.center, this.p2);
                 return (Math.sqrt(this.vector.lengthSq())-sphere.radius < this.r2);
-            }else{
+            }else {
                 var sub1 = this.x_p_2D-this.p_proj_x;
                 //var sub2 = this.y_p_2D-this.p_proj_y; //this.p_proj_y is set at 0 by definition
                 //var dist = Math.sqrt(sub1*sub1 +this.y_p_2DSq);//sub2*sub2);
@@ -6036,7 +6140,7 @@
     /**
      *  Sea documentation in parent class Area
      */
-    AreaCapsule.prototype.contains = function(p)
+    AreaCapsule$2.prototype.contains = function(p)
     {
         this.proj_computation(p);
         // P proj is the point at the intersection of:
@@ -6046,13 +6150,13 @@
         if(this.p_proj_x<0.0){
             // Proj is before the line segment beginning defined by P0: spherical containment
             return this.p1_to_p_sqrnorm < this.r1*this.r1;
-        }else{
+        }else {
             if(this.p_proj_x>this.length)
             {
                 // Proj is after the line segment beginning defined by P1: spherical containment
                 this.vector.subVectors(p, this.p2);
                 return this.vector.lengthSq() < this.r2*this.r2;
-            }else{
+            }else {
                 // Proj is in between the line segment P1-P0: Linear kind of containment
                 var sub1 = this.x_p_2D-this.p_proj_x;
                 var sub2 = this.y_p_2D-this.p_proj_y;
@@ -6075,7 +6179,7 @@
      *
      *  @todo Check the Maths
      */
-    AreaCapsule.prototype.getAcc = function(sphere, factor)
+    AreaCapsule$2.prototype.getAcc = function(sphere, factor)
     {
         this.proj_computation(sphere.center);
 
@@ -6098,7 +6202,7 @@
         }else if(absc>this.length)
         {
             return this.r2*this.accFactor2*factor;
-        }else{
+        }else {
 
             var tt = absc/this.length;
             var inter_w = this.r1*this.accFactor1*(1.0-tt) + tt*this.r2*this.accFactor2;
@@ -6111,42 +6215,42 @@
      *  @param {!{r:number,c:!THREE.Vector3}}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
-    AreaCapsule.prototype.getNiceAcc = function(sphere)
+    AreaCapsule$2.prototype.getNiceAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.nice);
+        return this.getAcc(sphere,Accuracies.nice);
     };
     /**
      *  Convenience function, just call getAcc with Curr Accuracy parameters.
      *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The Curr accuracy needed in the intersection zone
      */
-    AreaCapsule.prototype.getCurrAcc = function(sphere)
+    AreaCapsule$2.prototype.getCurrAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.curr);
+        return this.getAcc(sphere,Accuracies.curr);
     };
     /**
      *  Convenience function, just call getAcc with Raw Accuracy parameters.
      *  @param {!{r:number,c:!THREE.Vector3}}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
-    AreaCapsule.prototype.getRawAcc = function(sphere)
+    AreaCapsule$2.prototype.getRawAcc = function(sphere)
     {
-        return this.getAcc(sphere,Accuracies_1.raw);
+        return this.getAcc(sphere,Accuracies.raw);
     };
 
     /**
      *  Sea documentation in parent class Area
      */
-    AreaCapsule.prototype.getMinAcc = function()
+    AreaCapsule$2.prototype.getMinAcc = function()
     {
-        return Accuracies_1.curr*Math.min(this.r1*this.accFactor1, this.r2*this.accFactor2);
+        return Accuracies.curr*Math.min(this.r1*this.accFactor1, this.r2*this.accFactor2);
     };
     /**
      *  Sea documentation in parent class Area
      */
-    AreaCapsule.prototype.getMinRawAcc = function()
+    AreaCapsule$2.prototype.getMinRawAcc = function()
     {
-        return Accuracies_1.raw*Math.min(this.r1*this.accFactor1, this.r2*this.accFactor2);
+        return Accuracies.raw*Math.min(this.r1*this.accFactor1, this.r2*this.accFactor2);
     };
 
     /**
@@ -6157,7 +6261,7 @@
      *  @param {number} t Coordinate on the axis
      *  @return {number} The step you can safely do in axis direction
      */
-    AreaCapsule.prototype.getAxisProjectionMinStep = function(axis,t){
+    AreaCapsule$2.prototype.getAxisProjectionMinStep = function(axis,t){
         var step = Number.MAX_VALUE;
         var p1 = this.p1[axis] < this.p2[axis] ? this.p1 : this.p2;
         var p2, r1, r2;
@@ -6165,7 +6269,7 @@
             p2 = this.p2;
             r1 = this.r1*this.accFactor1;
             r2 = this.r2*this.accFactor2;
-        }else{
+        }else {
             p2 = this.p1;
             r1 = this.r2;
             r2 = this.r1*this.accFactor1;
@@ -6173,28 +6277,33 @@
 
         var diff = t-p1[axis];
         if(diff<-2*r1){
-            step = Math.min(step,Math.max(Math.abs(diff+2*r1),Accuracies_1.curr*r1));
+            step = Math.min(step,Math.max(Math.abs(diff+2*r1),Accuracies.curr*r1));
         }else if(diff<2*r1){
-            step = Math.min(step,Accuracies_1.curr*r1);
+            step = Math.min(step,Accuracies.curr*r1);
         }// else the sphere is behind us
         diff = t-p2[axis];
         if(diff<-2*r2){
-            step = Math.min(step,Math.max(Math.abs(diff+2*r2),Accuracies_1.curr*r2));
+            step = Math.min(step,Math.max(Math.abs(diff+2*r2),Accuracies.curr*r2));
         }else if(diff<2*r2){
-            step = Math.min(step,Accuracies_1.curr*r2);
+            step = Math.min(step,Accuracies.curr*r2);
         }// else the sphere is behind us
 
         var tbis = t-p1[axis];
         var axis_l = p2[axis]-p1[axis];
         if(tbis>0 && tbis<axis_l && axis_l!==0){
             // t is in p1p2
-            step = Math.min(step,Accuracies_1.curr*(r1 + (tbis/axis_l)*(r2 - r1)));
+            step = Math.min(step,Accuracies.curr*(r1 + (tbis/axis_l)*(r2 - r1)));
         }
 
         return step;
     };
 
-    var AreaCapsule_1 = AreaCapsule;
+    var AreaCapsule_1 = AreaCapsule$2;
+
+    const THREE$8 = require$$0__default["default"];
+    const Types$3 = Types_1;
+    const SDFPrimitive$2 = SDFPrimitive_1;
+    const AreaCapsule$1 = AreaCapsule_1;
 
     /**
      *
@@ -6206,28 +6315,28 @@
      *  @param {number} acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
      */
     var SDFSegment = function(p1, p2, acc) {
-        SDFPrimitive_1.call(this);
+        SDFPrimitive$2.call(this);
 
         this.p1 = p1.clone();
         this.p2 = p2.clone();
         this.acc = acc || 1.0;
 
         // Helper for evaluation
-        this.l = new three.Line3(this.p1, this.p2);
+        this.l = new THREE$8.Line3(this.p1, this.p2);
     };
 
-    SDFSegment.prototype = Object.create(SDFPrimitive_1.prototype);
+    SDFSegment.prototype = Object.create(SDFPrimitive$2.prototype);
     SDFSegment.prototype.constructor = SDFSegment;
 
     SDFSegment.type = "SDFSegment";
-    Types_1.register(SDFSegment.type, SDFSegment);
+    Types$3.register(SDFSegment.type, SDFSegment);
 
     SDFSegment.prototype.getType = function(){
         return SDFSegment.type;
     };
 
     SDFSegment.prototype.toJSON = function() {
-        var res = SDFPrimitive_1.prototype.toJSON.call(this);
+        var res = SDFPrimitive$2.prototype.toJSON.call(this);
         res.p1 = {
             x:this.p1.x,
             y:this.p1.y,
@@ -6242,10 +6351,10 @@
         return res;
     };
     SDFSegment.fromJSON = function(json){
-        var v = ScalisVertex.fromJSON(json.v[0]);
+        ScalisVertex.fromJSON(json.v[0]);
         return new SDFSegment(
-            new three.Vector3(json.p1.x,json.p1.y, json.p1.z),
-            new three.Vector3(json.p2.x,json.p2.y, json.p2.z),
+            new THREE$8.Vector3(json.p1.x,json.p1.y, json.p1.z),
+            new THREE$8.Vector3(json.p2.x,json.p2.y, json.p2.z),
             json.acc
         );
     };
@@ -6295,13 +6404,13 @@
 
     // [Abstract]
     SDFSegment.prototype.computeDistanceAABB = function(d) {
-        var b1 = new three.Box3(
-            this.p1.clone().add(new three.Vector3(-d,-d,-d)),
-            this.p1.clone().add(new three.Vector3(d,d,d))
+        var b1 = new THREE$8.Box3(
+            this.p1.clone().add(new THREE$8.Vector3(-d,-d,-d)),
+            this.p1.clone().add(new THREE$8.Vector3(d,d,d))
         );
-        var b2 = new three.Box3(
-            this.p2.clone().add(new three.Vector3(-d,-d,-d)),
-            this.p2.clone().add(new three.Vector3(d,d,d))
+        var b2 = new THREE$8.Box3(
+            this.p2.clone().add(new THREE$8.Vector3(-d,-d,-d)),
+            this.p2.clone().add(new THREE$8.Vector3(d,d,d))
         );
         return b1.union(b2);
     };
@@ -6318,11 +6427,10 @@
     SDFSegment.prototype.getAreas = function(d) {
         if(!this.valid_aabb) {
             throw "ERROR : Cannot get area of invalid primitive";
-            return [];
-        }else{
+        }else {
             return [{
                 aabb:this.computeDistanceAABB(d),
-                bv: new AreaCapsule_1(
+                bv: new AreaCapsule$1(
                     this.p1,
                     this.p2,
                     d,
@@ -6337,8 +6445,8 @@
 
     // [Abstract] see SDFPrimitive.value
     SDFSegment.prototype.value = (function(){
-        var v = new three.Vector3();
-        var lc = new three.Vector3();
+        var v = new THREE$8.Vector3();
+        var lc = new THREE$8.Vector3();
         return function(p,res) {
             this.l.closestPointToPoint(p,true,v);
             res.v = lc.subVectors(p,v).length();
@@ -6350,6 +6458,11 @@
 
     var SDFSegment_1 = SDFSegment;
 
+    const THREE$7 = require$$0__default["default"];
+    const Types$2 = Types_1;
+    const SDFPrimitive$1 = SDFPrimitive_1;
+    const AreaSphere = AreaSphere_1;
+
     /**
      *  @constructor
      *  @extends SDFPrimitive
@@ -6358,24 +6471,24 @@
      *  @param {number} r Radius of the sphere
      */
     var SDFSphere = function(p, r) {
-        SDFPrimitive_1.call(this);
+        SDFPrimitive$1.call(this);
 
         this.p = p.clone();
         this.r = r;
     };
 
-    SDFSphere.prototype = Object.create(SDFPrimitive_1.prototype);
+    SDFSphere.prototype = Object.create(SDFPrimitive$1.prototype);
     SDFSphere.prototype.constructor = SDFSphere;
 
     SDFSphere.type = "SDFSphere";
-    Types_1.register(SDFSphere.type, SDFSphere);
+    Types$2.register(SDFSphere.type, SDFSphere);
 
     SDFSphere.prototype.getType = function(){
         return SDFSphere.type;
     };
 
     SDFSphere.prototype.toJSON = function() {
-        var res = SDFPrimitive_1.prototype.toJSON.call(this);
+        var res = SDFPrimitive$1.prototype.toJSON.call(this);
         res.p = {
             x:this.p.x,
             y:this.p.y,
@@ -6385,7 +6498,7 @@
         return res;
     };
     SDFSphere.fromJSON = function(json){
-        return new SDFSphere(new three.Vector3(json.p.x,json.p.y, json.p.z), json.r);
+        return new SDFSphere(new THREE$7.Vector3(json.p.x,json.p.y, json.p.z), json.r);
     };
 
     /**
@@ -6420,9 +6533,9 @@
 
     // [Abstract]
     SDFSphere.prototype.computeDistanceAABB = function(d) {
-        return new three.Box3(
-            this.p.clone().add(new three.Vector3(-this.r-d,-this.r-d,-this.r-d)),
-            this.p.clone().add(new three.Vector3(this.r+d,this.r+d,this.r+d))
+        return new THREE$7.Box3(
+            this.p.clone().add(new THREE$7.Vector3(-this.r-d,-this.r-d,-this.r-d)),
+            this.p.clone().add(new THREE$7.Vector3(this.r+d,this.r+d,this.r+d))
         );
     };
     // [Abstract]
@@ -6437,11 +6550,10 @@
     SDFSphere.prototype.getAreas = function(d) {
         if(!this.valid_aabb) {
             throw "ERROR : Cannot get area of invalid primitive";
-            return [];
-        }else{
+        }else {
             return [{
                 aabb:this.computeDistanceAABB(d),
-                bv: new AreaSphere_1(
+                bv: new AreaSphere(
                     this.p,
                     this.r+d,
                     this.r/(this.r+d) // Adjust accuray factor according to the radius and not only to the required d
@@ -6453,7 +6565,7 @@
 
     // [Abstract] see SDFPrimitive.value
     SDFSphere.prototype.value = (function(){
-        var v = new three.Vector3();
+        var v = new THREE$7.Vector3();
 
         return function(p,res) {
             if(!this.valid_aabb){
@@ -6472,6 +6584,11 @@
 
     var SDFSphere_1 = SDFSphere;
 
+    const THREE$6 = require$$0__default["default"];
+    const Types$1 = Types_1;
+    const SDFPrimitive = SDFPrimitive_1;
+    const AreaCapsule = AreaCapsule_1;
+
     /**
      *  This primitive implements a distance field to an extanded "capsule geometry", which is actually a weighted segment.
      *  You can find more on Capsule geometry here https://github.com/maximeq/three-js-capsule-geometry
@@ -6485,7 +6602,7 @@
      *  @param {number} r2 Radius of the sphere centered in p2
      */
     var SDFCapsule = function(p1, p2, r1, r2) {
-        SDFPrimitive_1.call(this);
+        SDFPrimitive.call(this);
 
         this.p1 = p1.clone();
         this.p2 = p2.clone();
@@ -6495,24 +6612,24 @@
         // Helper for evaluation
         this.r1 = this.r1;
         this.rdiff = this.r2 - this.r1;
-        this.unit_dir = new three.Vector3().subVectors(this.p2, this.p1);
+        this.unit_dir = new THREE$6.Vector3().subVectors(this.p2, this.p1);
         this.lengthSq = this.unit_dir.lengthSq();
         this.length = this.unit_dir.length();
         this.unit_dir.normalize();
     };
 
-    SDFCapsule.prototype = Object.create(SDFPrimitive_1.prototype);
+    SDFCapsule.prototype = Object.create(SDFPrimitive.prototype);
     SDFCapsule.prototype.constructor = SDFCapsule;
 
     SDFCapsule.type = "SDFCapsule";
-    Types_1.register(SDFCapsule.type, SDFCapsule);
+    Types$1.register(SDFCapsule.type, SDFCapsule);
 
     SDFCapsule.prototype.getType = function(){
         return SDFCapsule.type;
     };
 
     SDFCapsule.prototype.toJSON = function() {
-        var res = SDFPrimitive_1.prototype.toJSON.call(this);
+        var res = SDFPrimitive.prototype.toJSON.call(this);
         res.p1 = {
             x:this.p1.x,
             y:this.p1.y,
@@ -6528,10 +6645,10 @@
         return res;
     };
     SDFCapsule.fromJSON = function(json){
-        var v = ScalisVertex.fromJSON(json.v[0]);
+        ScalisVertex.fromJSON(json.v[0]);
         return new SDFCapsule(
-            new three.Vector3(json.p1.x,json.p1.y, json.p1.z),
-            new three.Vector3(json.p2.x,json.p2.y, json.p2.z),
+            new THREE$6.Vector3(json.p1.x,json.p1.y, json.p1.z),
+            new THREE$6.Vector3(json.p2.x,json.p2.y, json.p2.z),
             json.r1,
             json.r2
         );
@@ -6595,13 +6712,13 @@
 
     // [Abstract]
     SDFCapsule.prototype.computeDistanceAABB = function(d) {
-        var b1 = new three.Box3(
-            this.p1.clone().add(new three.Vector3(-this.r1-d,-this.r1-d,-this.r1-d)),
-            this.p1.clone().add(new three.Vector3(this.r1+d,this.r1+d,this.r1+d))
+        var b1 = new THREE$6.Box3(
+            this.p1.clone().add(new THREE$6.Vector3(-this.r1-d,-this.r1-d,-this.r1-d)),
+            this.p1.clone().add(new THREE$6.Vector3(this.r1+d,this.r1+d,this.r1+d))
         );
-        var b2 = new three.Box3(
-            this.p2.clone().add(new three.Vector3(-this.r2-d,-this.r2-d,-this.r2-d)),
-            this.p2.clone().add(new three.Vector3(this.r2+d,this.r2+d,this.r2+d))
+        var b2 = new THREE$6.Box3(
+            this.p2.clone().add(new THREE$6.Vector3(-this.r2-d,-this.r2-d,-this.r2-d)),
+            this.p2.clone().add(new THREE$6.Vector3(this.r2+d,this.r2+d,this.r2+d))
         );
         return b1.union(b2);
     };
@@ -6617,11 +6734,10 @@
     SDFCapsule.prototype.getAreas = function(d) {
         if(!this.valid_aabb) {
             throw "ERROR : Cannot get area of invalid primitive";
-            return [];
-        }else{
+        }else {
             return [{
                 aabb:this.computeDistanceAABB(d),
-                bv: new AreaCapsule_1(
+                bv: new AreaCapsule(
                     this.p1,
                     this.p2,
                     this.r1+d,
@@ -6636,8 +6752,8 @@
 
     // [Abstract] see SDFPrimitive.value
     SDFCapsule.prototype.value = (function(){
-        var v = new three.Vector3();
-        var proj = new three.Vector3();
+        var v = new THREE$6.Vector3();
+        var proj = new THREE$6.Vector3();
 
         return function(p,res) {
             v.subVectors(p,this.p1);
@@ -6659,7 +6775,7 @@
             // var proj_y = 0.0; // by construction
 
             // Easy way to compute the distance now that we ave the projection on the segment
-            var a = three.Math.clamp(proj_x/this.length,0,1.0);
+            var a = THREE$6.Math.clamp(proj_x/this.length,0,1.0);
             proj.copy(this.p1).lerp(this.p2,a); // compute the actual 3D projection
             var l = v.subVectors(p,proj).length();
             res.v = l - (a*this.r2+(1.0-a)*this.r1);
@@ -6671,11 +6787,11 @@
 
     var SDFCapsule_1 = SDFCapsule;
 
-    var Tables = {};
+    var Tables$2 = {};
 
     // edgevmap[i][0] = first vertex index of the ith edge of a cube
     // edgevmap[i][0] = second vertex index of the ith edge of a cube
-    Tables.EdgeVMap = [
+    Tables$2.EdgeVMap = [
         [0,4],
         [1,5],
         [2,6],
@@ -6692,7 +6808,7 @@
         [6,7]
     ];
 
-    Tables.VertexTopo = [
+    Tables$2.VertexTopo = [
         [0,0,0], //0 (MC = 0)
         [0,0,1], //1 (MC = 4)
         [0,1,0], //2 (MC = 3)
@@ -6703,14 +6819,14 @@
         [1,1,1]  //7 (MC = 6)
     ];
 
-    var MCTables = Tables;
+    var MCTables = Tables$2;
 
-    const { Box2 } = three;
-    const THREE$1 = three;
+    const { Box2 } = require$$0__default["default"];
+    const THREE$5 = require$$0__default["default"];
+    const Material$3 = Material_1;
+    const Convergence$1 = Convergence_1;
 
-
-
-
+    const Tables$1 = MCTables;
 
     /**
      *  Axis Aligned Bounding Box in 2D carrying accuracy data
@@ -6826,7 +6942,7 @@
      *  @constructor
      */
 
-    var SlidingMarchingCubes = function(blobtree, params) {
+    var SlidingMarchingCubes$2 = function(blobtree, params) {
         var params = params || {};
 
         this.blobtree = blobtree;
@@ -6901,14 +7017,14 @@
             false
         ];
 
-        this.vertex = new THREE$1.Vector3(0, 0, 0); // vertex associated to the cell if any
-        this.vertex_n = new THREE$1.Vector3(0, 0, 0); // vertex normal
-        this.vertex_m = new Material_1(); // vertex material
+        this.vertex = new THREE$5.Vector3(0, 0, 0); // vertex associated to the cell if any
+        this.vertex_n = new THREE$5.Vector3(0, 0, 0); // vertex normal
+        this.vertex_m = new Material$3(); // vertex material
 
         // Vars and tmp vars for extension checks
         this.extended = false;
-        this.dis_o_aabb = new THREE$1.Box3();
-        this.ext_p = new THREE$1.Vector3();
+        this.dis_o_aabb = new THREE$5.Box3();
+        this.ext_p = new THREE$5.Vector3();
 
         /**
          *  Resulting mesh data
@@ -6920,7 +7036,7 @@
      *  Initialize the internal Geometry structure.
      *  @private
      */
-    SlidingMarchingCubes.prototype.initGeometry = function() {
+    SlidingMarchingCubes$2.prototype.initGeometry = function() {
         this.geometry = {
             position: [],
             normal: [],
@@ -6950,31 +7066,31 @@
      *  used in compute function.
      *  @private
      */
-    SlidingMarchingCubes.prototype.buildResultingBufferGeometry = function() {
-        var res = new THREE$1.BufferGeometry();
+    SlidingMarchingCubes$2.prototype.buildResultingBufferGeometry = function() {
+        var res = new THREE$5.BufferGeometry();
         res.setAttribute(
             "position",
-            new THREE$1.BufferAttribute(new Float32Array(this.geometry.position), 3)
+            new THREE$5.BufferAttribute(new Float32Array(this.geometry.position), 3)
         );
         res.setAttribute(
             "normal",
-            new THREE$1.BufferAttribute(new Float32Array(this.geometry.normal), 3)
+            new THREE$5.BufferAttribute(new Float32Array(this.geometry.normal), 3)
         );
         res.setAttribute(
             "color",
-            new THREE$1.BufferAttribute(new Float32Array(this.geometry.color), 3)
+            new THREE$5.BufferAttribute(new Float32Array(this.geometry.color), 3)
         );
         res.setAttribute(
             "roughness",
-            new THREE$1.BufferAttribute(new Float32Array(this.geometry.roughness), 1)
+            new THREE$5.BufferAttribute(new Float32Array(this.geometry.roughness), 1)
         );
         res.setAttribute(
             "metalness",
-            new THREE$1.BufferAttribute(new Float32Array(this.geometry.metalness), 1)
+            new THREE$5.BufferAttribute(new Float32Array(this.geometry.metalness), 1)
         );
 
         res.setIndex(
-            new THREE$1.BufferAttribute(
+            new THREE$5.BufferAttribute(
                 this.geometry.nVertices > 65535
                     ? new Uint32Array(this.geometry.faces)
                     : new Uint16Array(this.geometry.faces),
@@ -6989,7 +7105,7 @@
      *  Set values in this.values_xy[1] to 0
      *  @private
      */
-    SlidingMarchingCubes.prototype.setFrontToZero = function() {
+    SlidingMarchingCubes$2.prototype.setFrontToZero = function() {
         // init to 0, can be omptim later
         for (var i = 0; i < this.values_xy[1].length; ++i) {
             this.values_xy[1][i] = 0;
@@ -7001,7 +7117,7 @@
      *  -1 is a marker to state the value has not been computed nor interpolated
      *  @private
      */
-    SlidingMarchingCubes.prototype.setFrontToMinus = function() {
+    SlidingMarchingCubes$2.prototype.setFrontToMinus = function() {
         // init to 0, can be omptim later
         for (var i = 0; i < this.values_xy[1].length; ++i) {
             this.values_xy[1][i] = -1;
@@ -7012,7 +7128,7 @@
      *  Set values in this.values_xy[1] to 0 wherever it is -1.
      *  @private
      */
-    SlidingMarchingCubes.prototype.setFrontToZeroIfMinus = function() {
+    SlidingMarchingCubes$2.prototype.setFrontToZeroIfMinus = function() {
         // init to 0, can be omptim later
         for (var i = 0; i < this.values_xy[1].length; ++i) {
             if (this.values_xy[1][i] === -1) {
@@ -7035,7 +7151,7 @@
      *
      *  @private
      */
-    SlidingMarchingCubes.prototype.interpolateInBox = function(
+    SlidingMarchingCubes$2.prototype.interpolateInBox = function(
         cx,
         cy,
         cz,
@@ -7109,16 +7225,16 @@
      *
      *  @private
      */
-    SlidingMarchingCubes.prototype.computeFrontValAt = function(cx, cy, cz, x, y) {
+    SlidingMarchingCubes$2.prototype.computeFrontValAt = function(cx, cy, cz, x, y) {
         this.computeFrontValAtClosure(cx, cy, cz, x, y);
     };
     /**
      *  Function using closure to have static variable. Wrapped in computeFrontValAt
      *  for profiling purpose.
      */
-    SlidingMarchingCubes.prototype.computeFrontValAtClosure = (function() {
+    SlidingMarchingCubes$2.prototype.computeFrontValAtClosure = (function() {
         var eval_res = { v: 0 };
-        var p = new THREE$1.Vector3();
+        var p = new THREE$5.Vector3();
         return function(cx, cy, cz, x, y) {
             var index = y * this.reso[0] + x;
             eval_res.v = this.blobtree.getNeutralValue();
@@ -7138,7 +7254,7 @@
      *  @param {!THREE.Vector2} min 2D box min
      *  @param {!THREE.Vector2} max 2D box max
      */
-    SlidingMarchingCubes.prototype.computeFrontValAtBoxCorners = function(
+    SlidingMarchingCubes$2.prototype.computeFrontValAtBoxCorners = function(
         cx,
         cy,
         cz,
@@ -7159,7 +7275,7 @@
      *  @param {!THREE.Vector2} min 2D box min
      *  @param {!THREE.Vector2} max 2D box max
      */
-    SlidingMarchingCubes.prototype.computeFrontValInBox = function(
+    SlidingMarchingCubes$2.prototype.computeFrontValInBox = function(
         cx,
         cy,
         cz,
@@ -7178,7 +7294,7 @@
      *  @param {!THREE.Vector2} min 2D box min
      *  @param {!THREE.Vector2} max 2D box max
      */
-    SlidingMarchingCubes.prototype.setFrontValZeroInBox = function(min, max) {
+    SlidingMarchingCubes$2.prototype.setFrontValZeroInBox = function(min, max) {
         for (var ix = min.x; ix <= max.x; ++ix) {
             for (var iy = min.y; iy <= max.y; ++iy) {
                 this.values_xy[1][iy * this.reso[0] + ix] = 0;
@@ -7193,7 +7309,7 @@
      *  @param {!THREE.Vector2} max 2D box max
      *  @return {number} The mask
      */
-    SlidingMarchingCubes.prototype.computeBoxMask = function(min, max) {
+    SlidingMarchingCubes$2.prototype.computeBoxMask = function(min, max) {
         var mask = 0;
         mask |=
             this.values_xy[1][min.y * this.reso[0] + min.x] >
@@ -7224,7 +7340,7 @@
      *  @param {!THREE.Vector2} max 2D box max
      *  @return {number}
      */
-    SlidingMarchingCubes.prototype.checkZeroBox = function(min, max) {
+    SlidingMarchingCubes$2.prototype.checkZeroBox = function(min, max) {
         return (
             this.values_xy[1][min.y * this.reso[0] + min.x] +
             this.values_xy[1][min.y * this.reso[0] + max.x] +
@@ -7245,7 +7361,7 @@
      *  @param {!Array.<!Box2Acc>} boxes2D 2D boxes intersecting box. Used to compute accuracy for split boxes.
      *  @param {!Box2Acc} box The 2D box in which we compute values
      */
-    SlidingMarchingCubes.prototype.recursiveBoxComputation = function(
+    SlidingMarchingCubes$2.prototype.recursiveBoxComputation = function(
         cx,
         cy,
         cz,
@@ -7255,7 +7371,7 @@
         // split the current box in 2 boxes in the largest dimension
 
         var new_boxes = null;
-        var diff = new THREE$1.Vector2(
+        var diff = new THREE$5.Vector2(
             Math.round(box.max.x - box.min.x),
             Math.round(box.max.y - box.min.y)
         );
@@ -7266,12 +7382,12 @@
             new_boxes = [
                 new Box2Acc(
                     box.min,
-                    new THREE$1.Vector2(x_cut, box.max.y),
+                    new THREE$5.Vector2(x_cut, box.max.y),
                     10000,
                     10000
                 ),
                 new Box2Acc(
-                    new THREE$1.Vector2(x_cut, box.min.y),
+                    new THREE$5.Vector2(x_cut, box.min.y),
                     box.max,
                     10000,
                     10000
@@ -7288,12 +7404,12 @@
                 new_boxes = [
                     new Box2Acc(
                         box.min,
-                        new THREE$1.Vector2(box.max.x, y_cut),
+                        new THREE$5.Vector2(box.max.x, y_cut),
                         10000,
                         10000
                     ),
                     new Box2Acc(
-                        new THREE$1.Vector2(box.min.x, y_cut),
+                        new THREE$5.Vector2(box.min.x, y_cut),
                         box.max,
                         10000,
                         10000
@@ -7333,7 +7449,7 @@
         for (var k = 0; k < new_boxes.length; ++k) {
             var b = new_boxes[k];
 
-            var bsize = b.getSize(new THREE$1.Vector3());
+            var bsize = b.getSize(new THREE$5.Vector3());
 
             if (boxes2D_rec[k].length === 0) {
                 this.setFrontValZeroInBox(b.min, b.max);
@@ -7400,7 +7516,7 @@
      *  @param {number} cy Y coordinate of the front buffer corner
      *  @param {number} cz Z coordinate of the front buffer corner
      */
-    SlidingMarchingCubes.prototype.computeFrontValues = function(cx, cy, cz) {
+    SlidingMarchingCubes$2.prototype.computeFrontValues = function(cx, cy, cz) {
         this.setFrontToMinus();
 
         var areas = this.blobtree.getAreas();
@@ -7432,8 +7548,8 @@
             );
             boxes2D.push(
                 new Box2Acc(
-                    new THREE$1.Vector2(x_min, y_min),
-                    new THREE$1.Vector2(x_max, y_max),
+                    new THREE$5.Vector2(x_min, y_min),
+                    new THREE$5.Vector2(x_max, y_max),
                     nice_acc,
                     raw_acc
                 )
@@ -7443,8 +7559,8 @@
 
         bigbox.intersect(
             new Box2Acc(
-                new THREE$1.Vector2(0, 0),
-                new THREE$1.Vector2(this.reso[0], this.reso[1]),
+                new THREE$5.Vector2(0, 0),
+                new THREE$5.Vector2(this.reso[0], this.reso[1]),
                 bigbox.getNiceAcc(),
                 bigbox.getRawAcc()
             )
@@ -7461,7 +7577,7 @@
      *   @param {THREE.Box3} bbox the zone for which we want the minAcc
      *   @return {number} the min acc for this zone
      */
-    SlidingMarchingCubes.prototype.getMinAcc = function(bbox) {
+    SlidingMarchingCubes$2.prototype.getMinAcc = function(bbox) {
         var areas = this.blobtree.getAreas();
         var minAcc = Number.MAX_VALUE;
 
@@ -7485,7 +7601,7 @@
      *   @param {THREE.Box3} bbox the zone for which we want the minAcc
      *   @return {number} the max acc for this zone
      */
-    SlidingMarchingCubes.prototype.getMaxAcc = function(bbox) {
+    SlidingMarchingCubes$2.prototype.getMaxAcc = function(bbox) {
         var areas = this.blobtree.getAreas();
         var maxAcc = 0;
 
@@ -7512,7 +7628,7 @@
      *                            to ensure overlap with a mesh resulting from a computation
      *                            in a neighbouring aabb (Especially usefull for parallelism).
      */
-    SlidingMarchingCubes.prototype.compute = function(o_aabb, extended) {
+    SlidingMarchingCubes$2.prototype.compute = function(o_aabb, extended) {
         this.initGeometry();
 
         var timer_begin = new Date();
@@ -7528,7 +7644,7 @@
         this.extended = extended !== undefined ? extended : false;
 
         if (this.extended) {
-            var adims = aabb.getSize(new THREE$1.Vector3());
+            var adims = aabb.getSize(new THREE$5.Vector3());
             var minAcc = Math.min(
                 Math.min(this.getMinAcc(aabb), adims[0]),
                 Math.min(adims[1], adims[2])
@@ -7563,7 +7679,7 @@
         // if no areas, blobtree is empty so stop and send an empty mesh.
         if (this.areas.length === 0) {
             this.progress(100);
-            return new THREE$1.BufferGeometry();
+            return new THREE$5.BufferGeometry();
         }
 
         this.min_acc = this.areas.length !== 0 ? this.areas[0].bv.getMinAcc() : 1;
@@ -7575,10 +7691,10 @@
         this.min_acc = this.min_acc * this.detail_ratio;
 
         var corner = aabb.min;
-        var dims = aabb.getSize(new THREE$1.Vector3());
+        var dims = aabb.getSize(new THREE$5.Vector3());
 
         this.steps.z = new Float32Array(Math.ceil(dims.z / this.min_acc) + 2);
-        var z = corner.z;
+        corner.z;
         this.steps.z[0] = corner.z;
         var index = 1;
         var areas = this.blobtree.getAreas();
@@ -7612,8 +7728,8 @@
         if (this.extended) {
             var i = 0;
             this.dis_o_aabb.set(
-                new THREE$1.Vector3(-1, -1, -1),
-                new THREE$1.Vector3(-1, -1, -1)
+                new THREE$5.Vector3(-1, -1, -1),
+                new THREE$5.Vector3(-1, -1, -1)
             );
             while (i < this.reso[2] && this.dis_o_aabb.min.z === -1) {
                 if (this.steps.z[i] >= o_aabb.min.z) {
@@ -7660,7 +7776,7 @@
         this.vertices_xy[1] = new Int32Array(this.reso[0] * this.reso[1]);
 
         // Aabb for trimming the blobtree
-        var trim_aabb = new THREE$1.Box3();
+        var trim_aabb = new THREE$5.Box3();
         this.computeFrontValues(corner.x, corner.y, corner.z);
 
         var percent = 0;
@@ -7676,8 +7792,8 @@
 
             var z1 = this.steps.z[iz + 1];
             trim_aabb.set(
-                new THREE$1.Vector3(corner.x, corner.y, z1 - this.min_acc / 64),
-                new THREE$1.Vector3(
+                new THREE$5.Vector3(corner.x, corner.y, z1 - this.min_acc / 64),
+                new THREE$5.Vector3(
                     corner.x + this.reso[0] * this.min_acc,
                     corner.y + this.reso[1] * this.min_acc,
                     z1 + this.min_acc / 64
@@ -7738,7 +7854,7 @@
      *  @param {number} y
      *  @param {THREE.Vector3} corner Bottom left corner of front array.
      */
-    SlidingMarchingCubes.prototype.fetchAndTriangulate = function(x, y, z, corner) {
+    SlidingMarchingCubes$2.prototype.fetchAndTriangulate = function(x, y, z, corner) {
         var idx_y_0 = y * this.reso[0] + x;
         var idx_y_1 = (y + 1) * this.reso[0] + x;
         this.values[0] = this.values_xy[0][idx_y_0]; //v_000;
@@ -7775,7 +7891,7 @@
      *  @param {number} v3 Index of vertex 3 in this.geometry
      *  @param {number} v4 Index of vertex 4 in this.geometry
      */
-    SlidingMarchingCubes.prototype.pushDirectFaces = function(v1, v2, v3, v4) {
+    SlidingMarchingCubes$2.prototype.pushDirectFaces = function(v1, v2, v3, v4) {
         this.geometry.addFace(v1, v2, v3);
         this.geometry.addFace(v3, v4, v1);
     };
@@ -7786,7 +7902,7 @@
      *  @param {number} v3 Index of vertex 3 in this.geometry
      *  @param {number} v4 Index of vertex 4 in this.geometry
      */
-    SlidingMarchingCubes.prototype.pushUndirectFaces = function(v1, v2, v3, v4) {
+    SlidingMarchingCubes$2.prototype.pushUndirectFaces = function(v1, v2, v3, v4) {
         this.geometry.addFace(v3, v2, v1);
         this.geometry.addFace(v1, v4, v3);
     };
@@ -7797,7 +7913,7 @@
      *  @param {number} y Current cell y coordinate in the grid (integer)
      *  @param {number} z Current cell z coordinate in the grid (integer)
      */
-    SlidingMarchingCubes.prototype.triangulate = function(x, y, z) {
+    SlidingMarchingCubes$2.prototype.triangulate = function(x, y, z) {
         var idx_y_0 = y * this.reso[0] + x;
         if (this.edge_cross[0] && y !== 0 && z !== 0) {
             // x edge is crossed
@@ -7844,14 +7960,14 @@
      *  Compute the vertex in the current cube.
      *  Use this.x, this.y, this.z
      */
-    SlidingMarchingCubes.prototype.computeVertex = (function() {
+    SlidingMarchingCubes$2.prototype.computeVertex = (function() {
         // Function static variable
         var eval_res = {
             v: null,
-            g: new THREE$1.Vector3(0, 0, 0),
-            m: new Material_1()
+            g: new THREE$5.Vector3(0, 0, 0),
+            m: new Material$3()
         };
-        var conv_res = new THREE$1.Vector3();
+        var conv_res = new THREE$5.Vector3();
 
         return function() {
             eval_res.v = this.blobtree.getNeutralValue();
@@ -7874,10 +7990,10 @@
                 // }
 
                 //Now find the point of intersection
-                var e0 = MCTables.EdgeVMap[i][0]; //Unpack vertices
-                var e1 = MCTables.EdgeVMap[i][1];
-                var p0 = MCTables.VertexTopo[e0];
-                var p1 = MCTables.VertexTopo[e1];
+                var e0 = Tables$1.EdgeVMap[i][0]; //Unpack vertices
+                var e1 = Tables$1.EdgeVMap[i][1];
+                var p0 = Tables$1.VertexTopo[e0];
+                var p1 = Tables$1.VertexTopo[e1];
                 var g0 = this.values[e0]; //Unpack grid values
                 var g1 = this.values[e1];
 
@@ -7912,7 +8028,7 @@
             // Note : it cost 15 to 20% performance lost
             //        and the result does not seem 15 et 20% better...
             if (this.convergence) {
-                Convergence_1.safeNewton3D(
+                Convergence$1.safeNewton3D(
                     this.blobtree, // Scalar Field to eval
                     this.vertex, // 3D point where we start, must comply to THREE.Vector3 API
                     this.blobtree.getIsoValue(), // iso value we are looking for
@@ -7936,7 +8052,7 @@
      *  Compute mask of the current cube.
      *  Use this.values, set this.mask
      */
-    SlidingMarchingCubes.prototype.computeMask = function() {
+    SlidingMarchingCubes$2.prototype.computeMask = function() {
         this.mask = 0;
 
         //For each this, compute cube mask
@@ -7946,7 +8062,12 @@
         }
     };
 
-    var SlidingMarchingCubes_1 = SlidingMarchingCubes;
+    var SlidingMarchingCubes_1 = SlidingMarchingCubes$2;
+
+    const THREE$4 = require$$0__default["default"];
+    const Types = Types_1;
+    const Node = Node_1;
+    const Material$2 = Material_1;
 
     /**
      *  This class implement a Min node.
@@ -7957,9 +8078,9 @@
      *
      *  @param {Array.<Node>} children The children to add to this node. Just a convenient parameter, you can do it manually using addChild.
      */
-    var MaxNode = function (children) {
+    var MaxNode$1 = function (children) {
 
-        Node_1.call(this);
+        Node.call(this);
 
         if(children){
             var self = this;
@@ -7970,34 +8091,34 @@
 
         // temp vars to speed up evaluation by avoiding allocations
         this.tmp_res = {v:0,g:null,m:null};
-        this.tmp_g = new three.Vector3();
-        this.tmp_m = new Material_1();
+        this.tmp_g = new THREE$4.Vector3();
+        this.tmp_m = new Material$2();
 
     };
 
-    MaxNode.prototype = Object.create( Node_1.prototype );
-    MaxNode.prototype.constructor = MaxNode;
+    MaxNode$1.prototype = Object.create( Node.prototype );
+    MaxNode$1.prototype.constructor = MaxNode$1;
 
-    MaxNode.type = "MaxNode";
-    Types_1.register(MaxNode.type, MaxNode);
+    MaxNode$1.type = "MaxNode";
+    Types.register(MaxNode$1.type, MaxNode$1);
 
-    MaxNode.prototype.getType = function(){
-        return MaxNode.type;
+    MaxNode$1.prototype.getType = function(){
+        return MaxNode$1.type;
     };
 
-    MaxNode.fromJSON = function(json){
-        var res = new MaxNode();
+    MaxNode$1.fromJSON = function(json){
+        var res = new MaxNode$1();
         for(var i=0; i<json.children.length; ++i){
-            res.addChild(Types_1.fromJSON(json.children[i]));
+            res.addChild(Types.fromJSON(json.children[i]));
         }
         return res;
     };
 
     // [Abstract] see Node for a complete description
-    MaxNode.prototype.prepareForEval = function()
+    MaxNode$1.prototype.prepareForEval = function()
     {
         if(!this.valid_aabb){
-            this.aabb = new three.Box3();  // Create empty BBox
+            this.aabb = new THREE$4.Box3();  // Create empty BBox
             for(var i=0; i<this.children.length; ++i){
                 var c = this.children[i];
                 c.prepareForEval();
@@ -8009,7 +8130,7 @@
     };
 
     // [Abstract] see Node for more details.
-    MaxNode.prototype.value = function(p,res)
+    MaxNode$1.prototype.value = function(p,res)
     {
         // TODO : check that all bounding box of all children and subchildrens are valid
         //        This enable not to do it in prim and limit the number of assert call (and string built)
@@ -8022,7 +8143,7 @@
         // Init res
         res.v = 0;
         if(res.m)  {
-            res.m.copy(Material_1.defaultMaterial);
+            res.m.copy(Material$2.defaultMaterial);
         }if(res.g) {
             res.g.set(0,0,0);
         }else if (res.step !== undefined) {
@@ -8058,19 +8179,21 @@
 
     };
 
-    var MaxNode_1 = MaxNode;
+    var MaxNode_1 = MaxNode$1;
+
+    const THREE$3 = require$$0__default["default"];
 
     // Does not work yet, so just suppose that Blobtree is defined externally
     // const Blobtree = require('three-js-blobtree");
 
+    const RootNode = RootNode_1;
+    const RicciNode = RicciNode_1;
+    const MaxNode = MaxNode_1;
+    const ScalisPoint = ScalisPoint_1;
+    const ScalisSegment = ScalisSegment_1;
+    const ScalisTriangle = ScalisTriangle_1;
 
-
-
-
-
-
-
-
+    const SlidingMarchingCubes$1 = SlidingMarchingCubes_1;
 
     /**
      *  This class will polygonize nodes independantly when they blend with a MaxNode or a RicciNode
@@ -8097,7 +8220,7 @@
         this.minAccs = [];
 
         this.subPolygonizer = params.subPolygonizer  ? params.subPolygonizer : {
-            class:SlidingMarchingCubes_1,
+            class:SlidingMarchingCubes$1,
             detailRatio:1.0
         };
 
@@ -8144,44 +8267,44 @@
         var self = this;
         var addToSubtrees = function(n){
             var subtree = null;
-            if(n instanceof RootNode_1){
+            if(n instanceof RootNode){
                 subtree = n.clone();
-            }else{
-                subtree = new RootNode_1();
+            }else {
+                subtree = new RootNode();
                 subtree.addChild(n.clone());
             }
             self.subtrees.push(subtree);
             subtree.prepareForEval();
             self.minAccs.push(getBlobtreeMinAcc(subtree));
             self.progCoeff.push(
-                subtree.count(ScalisPoint_1) + subtree.count(ScalisSegment_1) + subtree.count(ScalisTriangle_1)
+                subtree.count(ScalisPoint) + subtree.count(ScalisSegment) + subtree.count(ScalisTriangle)
             );
             self.totalCoeff += self.progCoeff[self.progCoeff.length-1];
         };
 
         var recurse = function(n){
-            if(n instanceof RicciNode_1){
+            if(n instanceof RicciNode){
                 if(n.getRicciN() < self.ricciThreshold){
                     // This node must be copied and generated using SMC
                     if(n.children.length !== 0){
                         addToSubtrees(n);
                     }
-                }else{
+                }else {
                     for(var i=0; i<n.children.length; ++i){
                         recurse(n.children[i]);
                     }
                 }
-            }else if(n instanceof MaxNode_1){
+            }else if(n instanceof MaxNode){
                 for(var i=0; i<n.children.length; ++i){
                     recurse(n.children[i]);
                 }
-            }else if(n instanceof ScalisPoint_1){
+            }else if(n instanceof ScalisPoint){
                 addToSubtrees(n);
-            }else if(n instanceof ScalisSegment_1){
+            }else if(n instanceof ScalisSegment){
                 addToSubtrees(n);
-            }else if(n instanceof ScalisTriangle_1){
+            }else if(n instanceof ScalisTriangle){
                 addToSubtrees(n);
-            }else{
+            }else {
                 addToSubtrees(n);
             }
         };
@@ -8220,7 +8343,7 @@
             prog += this.progCoeff[i];
         }
 
-        var res = three.BufferGeometryUtils.mergeBufferGeometries(geometries);
+        var res = THREE$3.BufferGeometryUtils.mergeBufferGeometries(geometries);
 
         this.progress(100);
 
@@ -8228,6 +8351,16 @@
     };
 
     var SplitMaxPolygonizer_1 = SplitMaxPolygonizer;
+
+    const THREE$2 = require$$0__default["default"];
+
+    const Material$1 = Material_1;
+    const Tables = MCTables;
+    const Convergence = Convergence_1;
+
+    const SlidingMarchingCubes = SlidingMarchingCubes_1;
+
+
 
     /**
      *  A special SlidingMarchingCubes with a different function
@@ -8239,17 +8372,17 @@
      *                    Usually a blobtree containing blobtree.
      */
     var SplitSMC = function(blobtree, params){
-        SlidingMarchingCubes_1.call(this, blobtree, params);
+        SlidingMarchingCubes.call(this, blobtree, params);
 
         if(params.metaBlobtree){
             this.metaBlobtree = params.metaBlobtree;
             this.metaBlobtree.prepareForEval();
-        }else{
+        }else {
             throw "Error : SplitSMC needs a meta blobtree in params (from which normals will be computed).";
         }
     };
 
-    SplitSMC.prototype = Object.create(SlidingMarchingCubes_1.prototype);
+    SplitSMC.prototype = Object.create(SlidingMarchingCubes.prototype);
     SplitSMC.prototype.constructor = SplitSMC;
 
     /**
@@ -8258,8 +8391,8 @@
      */
     SplitSMC.prototype.computeVertex = (function() {
         // Function static variable
-        var eval_res = {v:null, g:new three.Vector3(0,0,0), m:new Material_1()};
-        var conv_res = new three.Vector3();
+        var eval_res = {v:null, g:new THREE$2.Vector3(0,0,0), m:new Material$1()};
+        var conv_res = new THREE$2.Vector3();
 
         return function()
         {
@@ -8285,10 +8418,10 @@
                 // }
 
                 //Now find the point of intersection
-                var e0 = MCTables.EdgeVMap[i][0];       //Unpack vertices
-                var e1 = MCTables.EdgeVMap[i][1];
-                var p0 = MCTables.VertexTopo[e0];
-                var p1 = MCTables.VertexTopo[e1];
+                var e0 = Tables.EdgeVMap[i][0];       //Unpack vertices
+                var e1 = Tables.EdgeVMap[i][1];
+                var p0 = Tables.VertexTopo[e0];
+                var p1 = Tables.VertexTopo[e1];
                 var g0 = this.values[e0];                //Unpack grid values
                 var g1 = this.values[e1];
 
@@ -8321,7 +8454,7 @@
             // Note : it cost 15 to 20% performance lost
             //        and the result does not seem 15 et 20% better...
             if(this.convergence){
-                Convergence_1.safeNewton3D(
+                Convergence.safeNewton3D(
                     this.blobtree,      // Scalar Field to eval
                     this.vertex,                  // 3D point where we start, must comply to THREE.Vector3 API
                     this.blobtree.getIsoValue(),               // iso value we are looking for
@@ -8343,10 +8476,12 @@
 
     var SplitSMC_1 = SplitSMC;
 
+    var THREE$1 = require$$0__default["default"];
+
     // require("three/examples/js/utils/BufferGeometryUtils");
 
 
-    if (three.REVISION !== "122") {
+    if (THREE$1.REVISION !== "122") {
         console.warn("Blobtree library is currently made for THREE revision 122. Using any other revision may lead to unexpected behavior.");
     }
 
@@ -8406,10 +8541,11 @@
     catch(e) {}
     */
 
-    three.Blobtree = Blobtree$1;
+    THREE$1.Blobtree = Blobtree$1;
 
     var blobtree = Blobtree$1;
 
     return blobtree;
 
-})));
+})(THREE);
+//# sourceMappingURL=three-js-blobtree.js.map
