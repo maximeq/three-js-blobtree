@@ -1,5 +1,4 @@
-
-const THREE = require("three");
+const mergeBufferGeometries = require("three/examples/jsm/utils/BufferGeometryUtils").mergeBufferGeometries
 
 // Does not work yet, so just suppose that Blobtree is defined externally
 // const Blobtree = require('three-js-blobtree");
@@ -161,7 +160,7 @@ SplitMaxPolygonizer.prototype.compute = function() {
         prog += this.progCoeff[i];
     }
 
-    var res = THREE.BufferGeometryUtils.mergeBufferGeometries(geometries);
+    var res = mergeBufferGeometries(geometries);
 
     this.progress(100);
 

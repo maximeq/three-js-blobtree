@@ -9,7 +9,7 @@ const DIST = './dist'
 // external libs which must not be bundled
 const externals = p => {
     return [
-        /^@dualbox\/three$/,
+        /^three$/,
         /three\/examples\/jsm/,
         /three\.module/,
     ]
@@ -23,7 +23,7 @@ const globals = p => {
 
 export default {
     // entrypoint
-    input: './src/blobtree.js',
+    input: './src/check-wrapper.js',
 
     // common options
     plugins: [

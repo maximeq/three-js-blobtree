@@ -42,7 +42,7 @@ Distribution files can be found in ./dist/browser, to be included in your HTML :
     <body>
         <!-- Don't forget to include THREE, its is not shipped with the lib -->
         <script src="three.js"></script>
-        <script src="dist/browser/blobtree.js"></script>
+        <script src="dist/three-js-blobtree.js"></script>
         <script>
             alert('Blobtree.version: ' + Blobtre.version)
         </script>

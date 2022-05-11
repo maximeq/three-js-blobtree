@@ -8,3 +8,4 @@ examples/*/*.obj
 *.lock
 **.lock
 package-lock.json
+**.DS_Store

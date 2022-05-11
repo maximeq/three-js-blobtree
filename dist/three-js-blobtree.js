@@ -1,21 +1,59 @@
-var Blobtree = (function (require$$0) {
+var Blobtree = (function (exports, require$$0, require$$0$1) {
     'use strict';
 
     function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
-    var require$$0__default = /*#__PURE__*/_interopDefaultLegacy(require$$0);
-
-    var THREE$r = require$$0__default["default"];
-
-    function checkExample( example, subdirectory, trueName ) {
-
-        if ( THREE$r[example] === undefined )
-            throw `THREE is missing example '${example}' and, as such, webgl-modelers-plugin-blobtree can't work properly. You can find it` +
-            ` in 'three/examples/js/${subdirectory !== undefined ? subdirectory + '/' : ''}${trueName || example}.js'`
-
+    function _interopNamespace(e) {
+        if (e && e.__esModule) return e;
+        var n = Object.create(null);
+        if (e) {
+            Object.keys(e).forEach(function (k) {
+                if (k !== 'default') {
+                    var d = Object.getOwnPropertyDescriptor(e, k);
+                    Object.defineProperty(n, k, d.get ? d : {
+                        enumerable: true,
+                        get: function () { return e[k]; }
+                    });
+                }
+            });
+        }
+        n["default"] = e;
+        return Object.freeze(n);
     }
 
-    checkExample('BufferGeometryUtils', 'utils');
+    var require$$0__default = /*#__PURE__*/_interopDefaultLegacy(require$$0);
+    var require$$0__default$1 = /*#__PURE__*/_interopDefaultLegacy(require$$0$1);
+    var require$$0__namespace = /*#__PURE__*/_interopNamespace(require$$0$1);
+
+    function checkDependancy(packageName, dependancyName, dependancy) {
+        let duplicationMessage = `${packageName}: ${dependancyName} is duplicated. Your bundle includes ${dependancyName} twice. Please repair your bundle.`;
+        try {
+            if (THREE[dependancyName] === undefined) {
+                THREE[dependancyName] = dependancy;
+                return;
+            }
+
+            if (THREE[dependancyName] !== dependancy) {
+                throw duplicationMessage;
+            }
+        } catch (error) {
+            if (error !== duplicationMessage) {
+                console.warn(
+                    `${packageName}: Duplication check unavailable.` + error
+                );
+            } else {
+                throw error;
+            }
+        }
+    }
+
+    function checkThreeRevision(packageName, revision) {
+        if (THREE.REVISION != revision) {
+            console.warn(
+                `${packageName} is currently made for THREE revision ${revision}. Using any other revision may lead to unexpected behavior (current: ${THREE.REVISION}).`
+            );
+        }
+    }
 
     /**
      *  Keep track of all Types added to the Blobtree library.
@@ -53,7 +91,7 @@ var Blobtree = (function (require$$0) {
 
     var Types_1 = Types$l;
 
-    const THREE$q = require$$0__default["default"];
+    const THREE$o = require$$0__default["default"];
     const Types$k = Types_1;
 
     var elementIds = 0;
@@ -66,7 +104,7 @@ var Blobtree = (function (require$$0) {
 
         this.id = elementIds++;
 
-        this.aabb = new THREE$q.Box3();
+        this.aabb = new THREE$o.Box3();
         this.valid_aabb = false;
 
         /** @type {Blobtree.Node} */
@@ -487,7 +525,7 @@ var Blobtree = (function (require$$0) {
      *
      */
 
-    const THREE$p = require$$0__default["default"];
+    const THREE$n = require$$0__default["default"];
 
     var Convergence$3 = {};
 
@@ -500,11 +538,11 @@ var Blobtree = (function (require$$0) {
     // @todo write documentation to talk about failure cases.
     //
     // Variable used in function. This avoid reallocation.
-        Convergence$3.last_mov_pt = new THREE$p.Vector3();
-        Convergence$3.grad = new THREE$p.Vector3();
-        Convergence$3.eval_res_g = new THREE$p.Vector3(0,0,0);
+        Convergence$3.last_mov_pt = new THREE$n.Vector3();
+        Convergence$3.grad = new THREE$n.Vector3();
+        Convergence$3.eval_res_g = new THREE$n.Vector3(0,0,0);
         Convergence$3.eval_res = {v:0, g:null};
-        Convergence$3.vec = new THREE$p.Vector3();
+        Convergence$3.vec = new THREE$n.Vector3();
 
     Convergence$3.safeNewton3D = function(    pot,              // Scalar Field to eval
                                             starting_point,   // 3D point where we start, must comply to THREE.Vector3 API
@@ -669,7 +707,7 @@ var Blobtree = (function (require$$0) {
         }
 
         var curr_point_absc = starting_point_absc;
-        var eval_pt = new THREE$p.Vector3();
+        var eval_pt = new THREE$n.Vector3();
 
         // Newton step until we overpass the surface
         // the minimum step is set to epsilon, that ensure we will cross the surface.
@@ -740,8 +778,8 @@ var Blobtree = (function (require$$0) {
 
         this.eval_res.g = null; // deactive gradient computation
 
-        var previousPos = new THREE$p.Vector3().copy(origin);
-        var currentStep = new THREE$p.Vector3();
+        var previousPos = new THREE$n.Vector3().copy(origin);
+        var currentStep = new THREE$n.Vector3();
         // intersection
         // dichotomia: first step is going back half of the previous distance
         startStepLength /= 2;
@@ -803,7 +841,7 @@ var Blobtree = (function (require$$0) {
 
     var Convergence_1 = Convergence$3;
 
-    const THREE$o = require$$0__default["default"];
+    const THREE$m = require$$0__default["default"];
 
     /**
      *  Material object for blobtree. It is an internal material, that should especially
@@ -833,10 +871,10 @@ var Blobtree = (function (require$$0) {
             throw "Error : Blobtree Material now takes only 1 argument.";
         }
 
-        this.color = new THREE$o.Color(params.color !== undefined ? params.color : 0xaaaaaa);
+        this.color = new THREE$m.Color(params.color !== undefined ? params.color : 0xaaaaaa);
         this.roughness = params.roughness !== undefined ? params.roughness : 0;
         this.metalness = params.metalness !== undefined ? params.metalness : 0;
-        this.emissive = new THREE$o.Color( params.emissive !== undefined ? params.emissive : 0x000000 );
+        this.emissive = new THREE$m.Color( params.emissive !== undefined ? params.emissive : 0x000000 );
 
     };
 
@@ -853,7 +891,7 @@ var Blobtree = (function (require$$0) {
     Material$b.fromJSON = function(json)
     {
         return new Material$b({
-            color: new THREE$o.Color( json.color ),
+            color: new THREE$m.Color( json.color ),
             roughness: json.roughness,
             metalness: json.metalness,
             emissive: json.emissive, // If undefined, will default to pitch black. If not, will load the hex string.
@@ -1072,7 +1110,7 @@ var Blobtree = (function (require$$0) {
 
     var Material_1 = Material$b;
 
-    const THREE$n = require$$0__default["default"];
+    const THREE$l = require$$0__default["default"];
     const Types$i = Types_1;
     const Node$4 = Node_1;
     const Material$a = Material_1;
@@ -1106,7 +1144,7 @@ var Blobtree = (function (require$$0) {
 
         // temp vars to speed up evaluation by avoiding allocations
         this.tmp_res = {v:0,g:null,m:null};
-        this.tmp_g = new THREE$n.Vector3();
+        this.tmp_g = new THREE$l.Vector3();
         this.tmp_m = new Material$a();
     };
 
@@ -1138,7 +1176,7 @@ var Blobtree = (function (require$$0) {
     RicciNode$2.prototype.prepareForEval = function()
     {
         if(!this.valid_aabb){
-            this.aabb = new THREE$n.Box3();  // Create empty BBox
+            this.aabb = new THREE$l.Box3();  // Create empty BBox
             for(var i=0; i<this.children.length; ++i){
                 var c = this.children[i];
                 c.prepareForEval();
@@ -1273,7 +1311,7 @@ var Blobtree = (function (require$$0) {
 
     var RicciNode_1 = RicciNode$2;
 
-    const THREE$m = require$$0__default["default"];
+    const THREE$k = require$$0__default["default"];
     const Types$h = Types_1;
     const RicciNode$1 = RicciNode_1;
 
@@ -1417,19 +1455,19 @@ var Blobtree = (function (require$$0) {
      */
     RootNode$1.prototype.intersectRayBlob = function()
     {
-        var curPos = new THREE$m.Vector3();
-        var marchingVector = new THREE$m.Vector3();
-        var currentStep = new THREE$m.Vector3();
+        var curPos = new THREE$k.Vector3();
+        var marchingVector = new THREE$k.Vector3();
+        var currentStep = new THREE$k.Vector3();
 
-        var g = new THREE$m.Vector3();
+        var g = new THREE$k.Vector3();
         var tmp_res = {
             v:0,
             g : g,
             step:0
         };
         var conv_res = {
-            p : new THREE$m.Vector3(),
-            g : new THREE$m.Vector3(),
+            p : new THREE$k.Vector3(),
+            g : new THREE$k.Vector3(),
             p_absc : 0.0
         };
         var previousStepLength=0;
@@ -1520,10 +1558,10 @@ var Blobtree = (function (require$$0) {
     RootNode$1.prototype.intersectOrthoRayBlob = function() {
     // curpos and marching vector are only instanciated once,
     // we are using closure method
-        var curPos = new THREE$m.Vector3();
-        var resumePos = new THREE$m.Vector3();
+        var curPos = new THREE$k.Vector3();
+        var resumePos = new THREE$k.Vector3();
         var tmp_res = {step:0};
-        var g = new THREE$m.Vector3();
+        var g = new THREE$k.Vector3();
         var dicho_res = {};
         var previousStepLength=0;
         var previousDist=0;
@@ -1635,7 +1673,7 @@ var Blobtree = (function (require$$0) {
 
     var RootNode_1 = RootNode$1;
 
-    const THREE$l = require$$0__default["default"];
+    const THREE$j = require$$0__default["default"];
     const Types$g = Types_1;
     const Node$3 = Node_1;
     const Material$9 = Material_1;
@@ -1663,11 +1701,11 @@ var Blobtree = (function (require$$0) {
         this.clamped = 0.0;
 
         // Tmp vars to speed up computation (no reallocations)
-        this.tmp_res0 = {v:0, g:new THREE$l.Vector3(0,0,0), m:new Material$9()};
-        this.tmp_res1 = {v:0, g:new THREE$l.Vector3(0,0,0), m:new Material$9()};
-        this.g0 = new THREE$l.Vector3();
+        this.tmp_res0 = {v:0, g:new THREE$j.Vector3(0,0,0), m:new Material$9()};
+        this.tmp_res1 = {v:0, g:new THREE$j.Vector3(0,0,0), m:new Material$9()};
+        this.g0 = new THREE$j.Vector3();
         this.m0 = new Material$9();
-        this.g1 = new THREE$l.Vector3();
+        this.g1 = new THREE$j.Vector3();
         this.m1 = new Material$9();
 
         this.tmp_v_arr = new Float32Array(2);
@@ -1807,7 +1845,7 @@ var Blobtree = (function (require$$0) {
 
     var DifferenceNode_1 = DifferenceNode;
 
-    const THREE$k = require$$0__default["default"];
+    const THREE$i = require$$0__default["default"];
     const Types$f = Types_1;
     const Node$2 = Node_1;
     const Material$8 = Material_1;
@@ -1834,7 +1872,7 @@ var Blobtree = (function (require$$0) {
 
         // temp vars to speed up evaluation by avoiding allocations
         this.tmp_res = {v:0,g:null,m:null};
-        this.tmp_g = new THREE$k.Vector3();
+        this.tmp_g = new THREE$i.Vector3();
         this.tmp_m = new Material$8();
 
     };
@@ -1861,7 +1899,7 @@ var Blobtree = (function (require$$0) {
     MinNode.prototype.prepareForEval = function()
     {
         if(!this.valid_aabb){
-            this.aabb = new THREE$k.Box3();  // Create empty BBox
+            this.aabb = new THREE$i.Box3();  // Create empty BBox
             for(var i=0; i<this.children.length; ++i){
                 var c = this.children[i];
                 c.prepareForEval();
@@ -2265,7 +2303,7 @@ var Blobtree = (function (require$$0) {
 
     var ScalisPrimitive_1 = ScalisPrimitive$3;
 
-    const THREE$j = require$$0__default["default"];
+    const THREE$h = require$$0__default["default"];
 
     const ScalisMath$5 = ScalisMath_1;
 
@@ -2287,7 +2325,7 @@ var Blobtree = (function (require$$0) {
         // The primitive using this vertex
         this.prim = null;
 
-        this.aabb = new THREE$j.Box3();
+        this.aabb = new THREE$h.Box3();
         this.valid_aabb = false;
     };
 
@@ -2312,7 +2350,7 @@ var Blobtree = (function (require$$0) {
         };
     };
     ScalisVertex$4.fromJSON = function(json) {
-        return new ScalisVertex$4(new THREE$j.Vector3(json.position.x,json.position.y,json.position.z), json.thickness);
+        return new ScalisVertex$4(new THREE$h.Vector3(json.position.x,json.position.y,json.position.z), json.thickness);
     };
 
     /**
@@ -2383,12 +2421,12 @@ var Blobtree = (function (require$$0) {
     ScalisVertex$4.prototype.computeAABB = function() {
         var pos = this.getPos();
         var boundSupport = this.getThickness()*ScalisMath$5.KS;
-        this.aabb.set(new THREE$j.Vector3(
+        this.aabb.set(new THREE$h.Vector3(
                         pos.x-boundSupport,
                         pos.y-boundSupport,
                         pos.z-boundSupport
                       ),
-                      new THREE$j.Vector3(
+                      new THREE$h.Vector3(
                           pos.x+boundSupport,
                           pos.y+boundSupport,
                           pos.z+boundSupport
@@ -2543,7 +2581,7 @@ var Blobtree = (function (require$$0) {
 
     var Accuracies_1 = Accuracies$4;
 
-    const THREE$i = require$$0__default["default"];
+    const THREE$g = require$$0__default["default"];
     const Area$3 = Area_1;
     const Accuracies$3 = Accuracies_1;
 
@@ -2565,7 +2603,7 @@ var Blobtree = (function (require$$0) {
     {
         Area$3.call(this);
 
-        this.p = new THREE$i.Vector3(p.x,p.y,p.z);
+        this.p = new THREE$g.Vector3(p.x,p.y,p.z);
         this.r = r;
 
         this.accFactor = accFactor || 1.0;
@@ -2581,7 +2619,7 @@ var Blobtree = (function (require$$0) {
      *  @param {!{r:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      */
     AreaSphere$3.prototype.sphereIntersect = (function(){
-        var v = new THREE$i.Vector3();
+        var v = new THREE$g.Vector3();
         return function(sphere)
         {
             v.subVectors(sphere.center,this.p);
@@ -2599,7 +2637,7 @@ var Blobtree = (function (require$$0) {
      *
      */
     AreaSphere$3.prototype.contains = (function(){
-        var v = new THREE$i.Vector3();
+        var v = new THREE$g.Vector3();
         return function(p)
         {
             v.subVectors(p,this.p);
@@ -2695,7 +2733,7 @@ var Blobtree = (function (require$$0) {
 
     var AreaSphere_1 = AreaSphere$3;
 
-    const THREE$h = require$$0__default["default"];
+    const THREE$f = require$$0__default["default"];
     const Types$c = Types_1;
     const Material$7 = Material_1;
     const ScalisPrimitive$2 = ScalisPrimitive_1;
@@ -2733,7 +2771,7 @@ var Blobtree = (function (require$$0) {
 
         // Temporary for eval
         // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
-        this.v_to_p =  new THREE$h.Vector3();
+        this.v_to_p =  new THREE$f.Vector3();
     };
 
     ScalisPoint$1.prototype = Object.create(ScalisPrimitive$2.prototype);
@@ -2860,7 +2898,7 @@ var Blobtree = (function (require$$0) {
 
     var ScalisPoint_1 = ScalisPoint$1;
 
-    const THREE$g = require$$0__default["default"];
+    const THREE$e = require$$0__default["default"];
     const ScalisMath$3 = ScalisMath_1;
     const Area$2 = Area_1;
     const Accuracies$2 = Accuracies_1;
@@ -2891,17 +2929,17 @@ var Blobtree = (function (require$$0) {
     {
         Area$2.call(this);
 
-        this.p0 = new THREE$g.Vector3(p0.x,p0.y,p0.z);
-        this.p1 = new THREE$g.Vector3(p1.x,p1.y,p1.z);
+        this.p0 = new THREE$e.Vector3(p0.x,p0.y,p0.z);
+        this.p1 = new THREE$e.Vector3(p1.x,p1.y,p1.z);
         this.thick0 = thick0;
         this.thick1 = thick1;
 
-        this.unit_dir = new THREE$g.Vector3().subVectors(p1,p0);
+        this.unit_dir = new THREE$e.Vector3().subVectors(p1,p0);
         this.length = this.unit_dir.length();
         this.unit_dir.normalize();
 
         // tmp var for functions below
-        this.vector = new THREE$g.Vector3();
+        this.vector = new THREE$e.Vector3();
         this.p0_to_p = this.vector; // basically the same as above + smart name
         this.p0_to_p_sqrnorm = 0;
         this.x_p_2D = 0;
@@ -3148,7 +3186,7 @@ var Blobtree = (function (require$$0) {
 
     var AreaScalisSeg_1 = AreaScalisSeg$2;
 
-    const THREE$f = require$$0__default["default"];
+    const THREE$d = require$$0__default["default"];
     const Types$b = Types_1;
     const Material$6 = Material_1;
     const ScalisPrimitive$1 = ScalisPrimitive_1;
@@ -3191,24 +3229,24 @@ var Blobtree = (function (require$$0) {
         // CONVOL
         this.clipped_l1 = 1.0;
         this.clipped_l2 = 0.0;
-        this.vector = new THREE$f.Vector3();
-        this.cycle  = new THREE$f.Vector3();
-        this.proj   = new THREE$f.Vector3();
+        this.vector = new THREE$d.Vector3();
+        this.cycle  = new THREE$d.Vector3();
+        this.proj   = new THREE$d.Vector3();
         // helper attributes
         this.v0_p = this.v[0].getPos();
         this.v1_p = this.v[1].getPos(); // this one is probably useless to be kept for eval since not used....
-        this.dir = new THREE$f.Vector3();
+        this.dir = new THREE$d.Vector3();
         this.lengthSq = 0;
         this.length = 0;
-        this.unit_dir = new THREE$f.Vector3();
+        this.unit_dir = new THREE$d.Vector3();
         // weight_p1 is convol's weight_p2 ( >_< )
         this.weight_p1 = 0;
         // c0 and c1 are convol's weight_coeff
         this.c0 = 0;
         this.c1 = 0;
 
-        this.increase_unit_dir = new THREE$f.Vector3();
-        this.p_min = new THREE$f.Vector3();
+        this.increase_unit_dir = new THREE$d.Vector3();
+        this.p_min = new THREE$d.Vector3();
         this.weight_min = 0;
         this.inv_weight_min = 0;
         this.unit_delta_weight = 0;
@@ -3216,10 +3254,10 @@ var Blobtree = (function (require$$0) {
         this.maxboundSq = 0;
         this.cyl_bd0 = 0;
         this.cyl_bd1 = 0;
-        this.f0f1f2 = new THREE$f.Vector3();
+        this.f0f1f2 = new THREE$d.Vector3();
 
-        this.tmpVec1 = new THREE$f.Vector3();
-        this.tmpVec2 = new THREE$f.Vector3();
+        this.tmpVec1 = new THREE$d.Vector3();
+        this.tmpVec2 = new THREE$d.Vector3();
 
         this.computeHelpVariables();
     };
@@ -3392,7 +3430,7 @@ var Blobtree = (function (require$$0) {
      */
     ScalisSegment$1.prototype.evalDist = (function(){
         var ev_eps = {v:0};
-        var p_eps = new THREE$f.Vector3();
+        var p_eps = new THREE$d.Vector3();
         return function(p,res) {
 
             var p0_to_p = this.vector;
@@ -3616,8 +3654,8 @@ var Blobtree = (function (require$$0) {
     // [Abstract] see ScalisPrimitive.distanceTo
     ScalisSegment$1.prototype.distanceTo = function ()
     {
-        var tmpVector = new THREE$f.Vector3();
-        var tmpVectorProj = new THREE$f.Vector3();
+        var tmpVector = new THREE$d.Vector3();
+        var tmpVectorProj = new THREE$d.Vector3();
         return function(p) {
             // var thickness = Math.min(this.c0,this.c0+this.c1);
 
@@ -3830,7 +3868,7 @@ var Blobtree = (function (require$$0) {
 
     var ScalisSegment_1 = ScalisSegment$1;
 
-    const THREE$e = require$$0__default["default"];
+    const THREE$c = require$$0__default["default"];
 
 
     var EPSILON = 0.000001;
@@ -3943,9 +3981,9 @@ var Blobtree = (function (require$$0) {
         idx = cleanIndex(sortingArr[0].idx+2,3);
         var point_2 = triangle.v[idx].getPos();
         var weight_2 = triangle.v[idx].getThickness();
-        var dir_1 = new THREE$e.Vector3();
+        var dir_1 = new THREE$c.Vector3();
         dir_1 = dir_1.subVectors(point_1, triangle.point_min);
-        var dir_2 = new THREE$e.Vector3();
+        var dir_2 = new THREE$c.Vector3();
         dir_2 = dir_2.subVectors(point_2, triangle.point_min);
         var delta_1 = weight_1 - triangle.weight_min;
         var delta_2 = weight_2 - triangle.weight_min;
@@ -3963,7 +4001,7 @@ var Blobtree = (function (require$$0) {
                     triangle.main_dir.multiplyScalar( -1.0);
                 }
                 var coord_iso_zero_dir = - triangle.weight_min / delta_2;
-                triangle.point_iso_zero = new THREE$e.Vector3( triangle.point_min.x + coord_iso_zero_dir*dir_2.x,
+                triangle.point_iso_zero = new THREE$c.Vector3( triangle.point_min.x + coord_iso_zero_dir*dir_2.x,
                                                     triangle.point_min.y + coord_iso_zero_dir*dir_2.y,
                                                     triangle.point_min.z + coord_iso_zero_dir*dir_2.z);
             }
@@ -3979,7 +4017,7 @@ var Blobtree = (function (require$$0) {
                     triangle.main_dir.multiplyScalar( -1.0);
                 }
                 var coord_iso_zero_dir = - triangle.weight_min / delta_1;
-                triangle.point_iso_zero = new THREE$e.Vector3(triangle.point_min.x + coord_iso_zero_dir*dir_1.x,
+                triangle.point_iso_zero = new THREE$c.Vector3(triangle.point_min.x + coord_iso_zero_dir*dir_1.x,
                                                     triangle.point_min.y + coord_iso_zero_dir*dir_1.y,
                                                     triangle.point_min.z + coord_iso_zero_dir*dir_1.z);
             }
@@ -3992,12 +4030,12 @@ var Blobtree = (function (require$$0) {
         { // WARNING : numerically instable if delta_ close to zero !
             // find the point were weight equal zero along the two edges that leave from point_min
             var coord_iso_zero_dir1 = - triangle.weight_min / delta_1;
-            var point_iso_zero1 = new THREE$e.Vector3(triangle.point_min.x + coord_iso_zero_dir1*dir_1.x,
+            var point_iso_zero1 = new THREE$c.Vector3(triangle.point_min.x + coord_iso_zero_dir1*dir_1.x,
                                                 triangle.point_min.y + coord_iso_zero_dir1*dir_1.y,
                                                 triangle.point_min.z + coord_iso_zero_dir1*dir_1.z);
             triangle.point_iso_zero = point_iso_zero1;
             var coord_iso_zero_dir2 = - triangle.weight_min / delta_2;
-            var point_iso_zero2 = new THREE$e.Vector3(triangle.point_min.x + coord_iso_zero_dir2*dir_2.x,
+            var point_iso_zero2 = new THREE$c.Vector3(triangle.point_min.x + coord_iso_zero_dir2*dir_2.x,
                                                 triangle.point_min.y + coord_iso_zero_dir2*dir_2.y,
                                                 triangle.point_min.z + coord_iso_zero_dir2*dir_2.z);
 
@@ -4051,7 +4089,7 @@ var Blobtree = (function (require$$0) {
         triangle.longest_dir_special = longest_dir.divideScalar(triangle.coord_max);
 
         // Length of the longest segment during numerical integration
-        var tmp = new THREE$e.Vector3();
+        var tmp = new THREE$c.Vector3();
         tmp.subVectors(triangle.half_dir_1, triangle.longest_dir_special.clone().multiplyScalar(triangle.coord_middle));
         triangle.max_seg_length = tmp.length();
         triangle.unsigned_ortho_dir = triangle.ortho_dir.clone();
@@ -4069,7 +4107,7 @@ var Blobtree = (function (require$$0) {
     TriangleUtils$2.getParametrisedVertexAttr = function(triangle, u, v){
         var meanThick = TriangleUtils$2.getMeanThick(triangle, u, v);
         // create new point
-        var pos = new THREE$e.Vector3();
+        var pos = new THREE$c.Vector3();
         var uAdd = pos.subVectors(triangle.v[1].getPos(), triangle.v[0].getPos()).multiplyScalar(u);
         var vAdd = pos.clone().subVectors(triangle.v[2].getPos(), triangle.v[0].getPos()).multiplyScalar(v);
         pos.addVectors(triangle.v[0].getPos(), uAdd);
@@ -4140,7 +4178,7 @@ var Blobtree = (function (require$$0) {
     TriangleUtils$2.getTriBaryCoord = function(p0p1, p2p0, p0, p){
         var U = p0p1;
         var V = p2p0.clone().multiplyScalar(-1);
-        var W = new THREE$e.Vector3().subVectors(p, p0);
+        var W = new THREE$c.Vector3().subVectors(p, p0);
 
         // b == d
         var a = U.lengthSq();
@@ -4154,16 +4192,16 @@ var Blobtree = (function (require$$0) {
     };
 
     TriangleUtils$2.getUVCoord = function(U, V, p0, p){
-        var W = new THREE$e.Vector3();
+        var W = new THREE$c.Vector3();
         W.crossVectors(U,V);
-        var mat = new THREE$e.Matrix4();
+        var mat = new THREE$c.Matrix4();
         mat.set(U.x, V.x, W.x,0,
                 U.y, V.y, W.y,0,
                 U.z, V.z, W.z,0,
                   0,   0,   0,1);
-        var mat1 = new THREE$e.Matrix4();
+        var mat1 = new THREE$c.Matrix4();
         mat1.copy(mat).invert();
-        var vec = new THREE$e.Vector3().subVectors(p, p0);
+        var vec = new THREE$c.Vector3().subVectors(p, p0);
         vec.applyMatrix4(mat1);
 
         return {u:vec.x,v:vec.y};
@@ -4171,7 +4209,7 @@ var Blobtree = (function (require$$0) {
 
     var TriangleUtils_1 = TriangleUtils$2;
 
-    const THREE$d = require$$0__default["default"];
+    const THREE$b = require$$0__default["default"];
     const ScalisMath$1 = ScalisMath_1;
     const Area$1 = Area_1;
     const TriangleUtils$1 = TriangleUtils_1;
@@ -4202,7 +4240,7 @@ var Blobtree = (function (require$$0) {
     {
         Area$1.call(this);
 
-        this.tmpVect = new THREE$d.Vector3();
+        this.tmpVect = new THREE$b.Vector3();
         this.min_thick = min_thick;
         this.max_thick = max_thick;
         this.v = v;
@@ -4252,7 +4290,7 @@ var Blobtree = (function (require$$0) {
         this.tmpVect.copy(this.unit_normal);
         pri.push(this.tmpVect.clone().addVectors(this.v[2].getPos(), this.tmpVect.multiplyScalar(-this.v[2].getThickness()*ScalisMath$1.KS)));
         // Compute the normals of top and bottom faces of the prism
-        var tmp2 = new THREE$d.Vector3();
+        var tmp2 = new THREE$b.Vector3();
         this.tmpVect.subVectors(pri[1], pri[0]);
         tmp2.subVectors(pri[2], pri[0]);
         var n4 = this.tmpVect.clone().crossVectors(this.tmpVect, tmp2).normalize();
@@ -4577,7 +4615,7 @@ var Blobtree = (function (require$$0) {
 
     var AreaScalisTri_1 = AreaScalisTri$1;
 
-    const THREE$c = require$$0__default["default"];
+    const THREE$a = require$$0__default["default"];
     const Types$a = Types_1;
     const Material$5 = Material_1;
     const ScalisPrimitive = ScalisPrimitive_1;
@@ -4625,24 +4663,24 @@ var Blobtree = (function (require$$0) {
         this.res_gseg = {};
         this.tmp_res_gseg = {};
 
-        this.p0p1  = new THREE$c.Vector3();
-        this.p1p2 = new THREE$c.Vector3();
-        this.p2p0 = new THREE$c.Vector3();
-        this.unit_normal = new THREE$c.Vector3();
-        this.unit_p0p1 = new THREE$c.Vector3();
-        this.unit_p1p2 = new THREE$c.Vector3();
-        this.unit_p2p0 = new THREE$c.Vector3();
+        this.p0p1  = new THREE$a.Vector3();
+        this.p1p2 = new THREE$a.Vector3();
+        this.p2p0 = new THREE$a.Vector3();
+        this.unit_normal = new THREE$a.Vector3();
+        this.unit_p0p1 = new THREE$a.Vector3();
+        this.unit_p1p2 = new THREE$a.Vector3();
+        this.unit_p2p0 = new THREE$a.Vector3();
         this.length_p0p1 = 0;
         this.length_p1p2 = 0;
         this.length_p2p0 = 0;
         this.diffThick_p0p1 = 0;
         this.diffThick_p0p1 = 0;
         this.diffThick_p0p1 = 0;
-        this.main_dir       = new THREE$c.Vector3();
-        this.point_iso_zero = new THREE$c.Vector3();
-        this.ortho_dir      = new THREE$c.Vector3();
-        this.unsigned_ortho_dir= new THREE$c.Vector3();
-        this.proj_dir       = new THREE$c.Vector3();
+        this.main_dir       = new THREE$a.Vector3();
+        this.point_iso_zero = new THREE$a.Vector3();
+        this.ortho_dir      = new THREE$a.Vector3();
+        this.unsigned_ortho_dir= new THREE$a.Vector3();
+        this.proj_dir       = new THREE$a.Vector3();
         this.equal_weights = false; // Use to skip computations for a specific case
 
         this.coord_max           = 0;
@@ -4650,10 +4688,10 @@ var Blobtree = (function (require$$0) {
         this.unit_delta_weight   = 0;
         this.longest_dir_special = 0;
         this.max_seg_length      = 0;
-        this.half_dir_1 = new THREE$c.Vector3();
-        this.point_half = new THREE$c.Vector3();
-        this.half_dir_2 = new THREE$c.Vector3();
-        this.point_min = new THREE$c.Vector3();
+        this.half_dir_1 = new THREE$a.Vector3();
+        this.point_half = new THREE$a.Vector3();
+        this.half_dir_2 = new THREE$a.Vector3();
+        this.point_min = new THREE$a.Vector3();
         this.weight_min = 0;
 
         this.valid_aabb = false;
@@ -4783,10 +4821,10 @@ var Blobtree = (function (require$$0) {
 
     // [Abstract] See Primitive.distanceTo for more details
     ScalisTriangle$1.prototype.distanceTo = (function() {
-        var p0p = new THREE$c.Vector3();
-        var p1p = new THREE$c.Vector3();
-        var p2p = new THREE$c.Vector3();
-        var tmp = new THREE$c.Vector3();
+        var p0p = new THREE$a.Vector3();
+        var p1p = new THREE$a.Vector3();
+        var p2p = new THREE$a.Vector3();
+        var tmp = new THREE$a.Vector3();
         return function(p) {
 
             p0p.subVectors(p,this.v[0].getPos());
@@ -4852,7 +4890,7 @@ var Blobtree = (function (require$$0) {
     // jshint maxstatements:150
     ScalisTriangle$1.prototype.evalDist = (function(){
         var ev_eps = {v:0};
-        var p_eps = new THREE$c.Vector3();
+        var p_eps = new THREE$a.Vector3();
         return function(p,res)
         {
         /*
@@ -4865,7 +4903,7 @@ var Blobtree = (function (require$$0) {
         */
                 // First compute the distance to the triangle and find the nearest point
                 // Code taken from EuclideanDistance functor, can be optimized.
-                var p0_to_p = new THREE$c.Vector3();
+                var p0_to_p = new THREE$a.Vector3();
                 p0_to_p.subVectors(p,this.v[0].getPos());
                 var normal_inv = this.unit_normal.clone().multiplyScalar(-1);
                 ///////////////////////////////////////////////////////////////////////
@@ -4890,41 +4928,41 @@ var Blobtree = (function (require$$0) {
                     var d2 = -p.dot(n2);
                     var d3 = -this.point_iso_zero.dot(n3);
 
-                    var d1n2n3 = new THREE$c.Vector3();
+                    var d1n2n3 = new THREE$a.Vector3();
                     d1n2n3.crossVectors(n2,n3);
                     d1n2n3.multiplyScalar(-d1);
-                    var d2n3n1 = new THREE$c.Vector3();
+                    var d2n3n1 = new THREE$a.Vector3();
                     d2n3n1.crossVectors(n3,n1);
                     d2n3n1.multiplyScalar(-d2);
-                    var d3n1n2 = new THREE$c.Vector3();
+                    var d3n1n2 = new THREE$a.Vector3();
                     d3n1n2.crossVectors(n1,n2);
                     d3n1n2.multiplyScalar(-d3);
-                    var n2cn3 = new THREE$c.Vector3();
+                    var n2cn3 = new THREE$a.Vector3();
                     n2cn3.crossVectors(n2,n3);
-                    var Z = new THREE$c.Vector3(  d1n2n3.x+d2n3n1.x+d3n1n2.x,
+                    var Z = new THREE$a.Vector3(  d1n2n3.x+d2n3n1.x+d3n1n2.x,
                                                 d1n2n3.y+d2n3n1.y+d3n1n2.y,
                                                 d1n2n3.z+d2n3n1.z+d3n1n2.z);
                     Z.divideScalar(n1.dot(n2cn3));
 
                     // Now we want to project in the direction orthogonal to (pZ) and ortho_dir
-                    var pz = new THREE$c.Vector3(Z.x-p.x,Z.y-p.y,Z.z-p.z);
+                    var pz = new THREE$a.Vector3(Z.x-p.x,Z.y-p.y,Z.z-p.z);
 
                     // set proj_dir
-                    this.proj_dir = new THREE$c.Vector3();
+                    this.proj_dir = new THREE$a.Vector3();
                     this.proj_dir.crossVectors(pz,this.unsigned_ortho_dir);
                     this.proj_dir.normalize(); // should be useless
                 }
 
                 // Project along the given direction
-                var non_ortho_proj = new THREE$c.Vector3();
+                var non_ortho_proj = new THREE$a.Vector3();
                 non_ortho_proj.copy(this.proj_dir);
                 non_ortho_proj.multiplyScalar( -p0_to_p.dot(normal_inv)/this.proj_dir.dot(normal_inv));
                 non_ortho_proj.add(p);
 
-                var tmp_vec = new THREE$c.Vector3();
-                var tmp_vec0 = new THREE$c.Vector3();
-                var tmp_vec1 = new THREE$c.Vector3();
-                var tmp_vec2 = new THREE$c.Vector3();
+                var tmp_vec = new THREE$a.Vector3();
+                var tmp_vec0 = new THREE$a.Vector3();
+                var tmp_vec1 = new THREE$a.Vector3();
+                var tmp_vec2 = new THREE$a.Vector3();
                 tmp_vec0.subVectors(non_ortho_proj,this.v[0].getPos());
                 tmp_vec1.subVectors(non_ortho_proj,this.v[1].getPos());
                 tmp_vec2.subVectors(non_ortho_proj,this.v[2].getPos());
@@ -4941,19 +4979,19 @@ var Blobtree = (function (require$$0) {
                     var p1 = this.v[1].getPos();
                     var p2 = this.v[2].getPos();
 
-                    var tmp_vec_bis = new THREE$c.Vector3();
+                    var tmp_vec_bis = new THREE$a.Vector3();
                     tmp_vec.subVectors(p1,p0);
                     tmp_vec_bis.subVectors(p2,p0);
-                    var n = new THREE$c.Vector3();
+                    var n = new THREE$a.Vector3();
                     n.crossVectors(tmp_vec,tmp_vec_bis);
                     tmp_vec.subVectors(p2,p1);
-                    var n1 = new THREE$c.Vector3();
+                    var n1 = new THREE$a.Vector3();
                     n1.crossVectors(tmp_vec,tmp_vec1);
                     tmp_vec.subVectors(p0,p2);
-                    var n2 = new THREE$c.Vector3();
+                    var n2 = new THREE$a.Vector3();
                     n2.crossVectors(tmp_vec,tmp_vec2);
                     tmp_vec.subVectors(p1,p0);
-                    var n3 = new THREE$c.Vector3();
+                    var n3 = new THREE$a.Vector3();
                     n3.crossVectors(tmp_vec,tmp_vec0);
 
                     var nsq = n.lengthSq();
@@ -5112,7 +5150,7 @@ var Blobtree = (function (require$$0) {
                                                 delta_weight, // = weight_2-weight_1
                                                 res)
     {
-        var origin_to_p = new THREE$c.Vector3();
+        var origin_to_p = new THREE$a.Vector3();
         origin_to_p.subVectors(point,p1);
 
         var orig_p_scal_dir = origin_to_p.dot(p1p2);
@@ -5126,7 +5164,7 @@ var Blobtree = (function (require$$0) {
             t = (t<0.0) ? 0.0 : ((t>1.0) ? 1.0 : t) ; // clipping (nearest point on segment not line)
         }
 
-        res.proj_to_p = new THREE$c.Vector3(  t*p1p2.x - origin_to_p.x,
+        res.proj_to_p = new THREE$a.Vector3(  t*p1p2.x - origin_to_p.x,
                                             t*p1p2.y - origin_to_p.y,
                                             t*p1p2.z - origin_to_p.z);
         res.weight_proj = weight_1 + t*delta_weight;
@@ -5144,10 +5182,10 @@ var Blobtree = (function (require$$0) {
      */
     ScalisTriangle$1.prototype.evalConvol = (function() {
 
-        var g = new THREE$c.Vector3();
+        var g = new THREE$a.Vector3();
         var m = new Material$5();
         var tmpRes = {v:0,g:null,m:null};
-        var g2 = new THREE$c.Vector3();
+        var g2 = new THREE$a.Vector3();
         var m2 = new Material$5();
         var tmpRes2 = {v:0,g:null,m:null};
 
@@ -5173,7 +5211,7 @@ var Blobtree = (function (require$$0) {
                 var t = d_step_size;
                 d_step_size *= 2.0;
                 var res_odd = 0.0;
-                var grad_odd = new THREE$c.Vector3();
+                var grad_odd = new THREE$a.Vector3();
 
                 for (var i = 1; i < nb_samples; i += 2) {
                     this.computeLineIntegral(this.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
@@ -5185,7 +5223,7 @@ var Blobtree = (function (require$$0) {
                 }
 
                 var res_even = 0.0;
-                var grad_even = new THREE$c.Vector3();
+                var grad_even = new THREE$a.Vector3();
                 t = 0.0;
                 for (var i = 2; i < nb_samples; i += 2) {
                     t += d_step_size;
@@ -5206,7 +5244,7 @@ var Blobtree = (function (require$$0) {
                 var factor = ( local_t_max / (3.0 * (nb_samples)) ) * ScalisMath.Poly6NF2D;
                 res.v *= factor;
                 if (res.g) {
-                    var grad_res = new THREE$c.Vector3();
+                    var grad_res = new THREE$a.Vector3();
                     grad_res.addVectors(grad_res, res_low.g);
                     grad_res.addVectors(grad_res, grad_odd.multiplyScalar(4.0));
                     grad_res.addVectors(grad_res, grad_even.multiplyScalar(2.0));
@@ -5215,7 +5253,7 @@ var Blobtree = (function (require$$0) {
                 }
             } else {
                 res.v = 0.0;
-                res.g = new THREE$c.Vector3();
+                res.g = new THREE$a.Vector3();
             }
             if (res.m) {
                 tmpRes.g = null;
@@ -5262,7 +5300,7 @@ var Blobtree = (function (require$$0) {
     ScalisTriangle$1.prototype.computeLineIntegral = function (t, p, res) {
 
         var weight = this.weight_min + t * this.unit_delta_weight;
-        var p_1 = new THREE$c.Vector3();
+        var p_1 = new THREE$a.Vector3();
         p_1.addVectors(this.point_min, this.longest_dir_special.clone().multiplyScalar(t));
 
         var length = (t<this.coord_middle) ? (t/this.coord_middle) * this.max_seg_length
@@ -5331,12 +5369,12 @@ var Blobtree = (function (require$$0) {
      *  @protected
      */
     ScalisTriangle$1.prototype.consWeightEvalForSeg = function( p_1, w_1, unit_dir, length, point, res) {
-        var p_min_to_point = new THREE$c.Vector3();
+        var p_min_to_point = new THREE$a.Vector3();
         p_min_to_point.subVectors( point, p_1 );
         var uv = unit_dir.dot(p_min_to_point);
         var d2 = p_min_to_point.lengthSq();
 
-        var special_coeff = new THREE$c.Vector3();
+        var special_coeff = new THREE$a.Vector3();
         special_coeff.set( w_1*w_1  - ScalisMath.KIS2 * d2,
                            - ScalisMath.KIS2 * uv,
                            - ScalisMath.KIS2 );
@@ -5368,12 +5406,12 @@ var Blobtree = (function (require$$0) {
      */
     ScalisTriangle$1.prototype.consWeightEvalGradForSeg = function( p_1, w_1, unit_dir, length, point, res) {
 
-        var p_min_to_point = new THREE$c.Vector3();
+        var p_min_to_point = new THREE$a.Vector3();
         p_min_to_point.subVectors( point, p_1 );
         var uv = unit_dir.dot(p_min_to_point);
         var d2 = p_min_to_point.lengthSq();
 
-        var special_coeff = new THREE$c.Vector3();
+        var special_coeff = new THREE$a.Vector3();
         special_coeff.set( w_1*w_1  - ScalisMath.KIS2 * d2 ,
                            - ScalisMath.KIS2 * uv ,
                            - ScalisMath.KIS2 );
@@ -5384,7 +5422,7 @@ var Blobtree = (function (require$$0) {
             special_coeff.x = 1.0 - ScalisMath.KIS2 * ( clipped.l1*(clipped.l1-2.0*uv) + d2 ) * inv_local_min_weight*inv_local_min_weight;
             special_coeff.y = - ScalisMath.KIS2*(uv-clipped.l1) * inv_local_min_weight;
 
-            var F0F1F2 = new THREE$c.Vector3();
+            var F0F1F2 = new THREE$a.Vector3();
             this.homotheticCompactPolynomial_segment_FGradF_i6_cste( (clipped.l2-clipped.l1) * inv_local_min_weight,
                                                                                                     special_coeff, F0F1F2);
             res.v = F0F1F2.x;
@@ -5409,7 +5447,7 @@ var Blobtree = (function (require$$0) {
      *  @return {boolean} true if clipping occured
      */
     ScalisTriangle$1.prototype.ComputeTParam = function(point, clipped) {
-        var p_min_to_point = new THREE$c.Vector3();
+        var p_min_to_point = new THREE$a.Vector3();
         p_min_to_point.subVectors( point, this.point_min );
 
         var coord_main_dir = p_min_to_point.dot(this.main_dir);
@@ -5418,7 +5456,7 @@ var Blobtree = (function (require$$0) {
         //WARNING : Assume that the compact support is defined in the same way as HomotheticCompactPolynomial kernels
         var dist_sqr = coord_main_dir*coord_main_dir + coord_normal*coord_normal;
 
-        var special_coeff = new THREE$c.Vector3();
+        var special_coeff = new THREE$a.Vector3();
         special_coeff.set( this.weight_min*this.weight_min - ScalisMath.KIS2 * dist_sqr,
                           -this.unit_delta_weight*this.weight_min - ScalisMath.KIS2 * coord_main_dir,
                            this.unit_delta_weight*this.unit_delta_weight - ScalisMath.KIS2);
@@ -5709,7 +5747,7 @@ var Blobtree = (function (require$$0) {
 
     var SDFNode_1 = SDFNode$1;
 
-    const THREE$b = require$$0__default["default"];
+    const THREE$9 = require$$0__default["default"];
     const Types$6 = Types_1;
     const SDFNode = SDFNode_1;
     const Material$4 = Material_1;
@@ -5739,7 +5777,7 @@ var Blobtree = (function (require$$0) {
         // Tmp vars to speed up computation (no reallocations)
         // TODO : should be pushed in the function static variables since there can be no SDFRoot below the SDFRoot.
         this.tmp_res = {v:0, g:null};
-        this.tmp_g = new THREE$b.Vector3(0,0,0);
+        this.tmp_g = new THREE$9.Vector3(0,0,0);
     };
 
     SDFRootNode.prototype = Object.create( SDFNode.prototype );
@@ -5775,7 +5813,7 @@ var Blobtree = (function (require$$0) {
     SDFRootNode.prototype.prepareForEval = function()
     {
         if(!this.valid_aabb){
-            this.aabb = new THREE$b.Box3();  // Create empty BBox
+            this.aabb = new THREE$9.Box3();  // Create empty BBox
             for(var i=0; i<this.children.length; ++i){
                 var c = this.children[i];
                 c.prepareForEval();
@@ -5904,7 +5942,7 @@ var Blobtree = (function (require$$0) {
 
     var SDFPrimitive_1 = SDFPrimitive$4;
 
-    const THREE$a = require$$0__default["default"];
+    const THREE$8 = require$$0__default["default"];
     const Types$4 = Types_1;
     const SDFPrimitive$3 = SDFPrimitive_1;
     const AreaSphere$1 = AreaSphere_1;
@@ -5944,7 +5982,7 @@ var Blobtree = (function (require$$0) {
         return res;
     };
     SDFPoint.fromJSON = function(json){
-        return new SDFPoint(new THREE$a.Vector3(json.p.x,json.p.y, json.p.z), json.acc);
+        return new SDFPoint(new THREE$8.Vector3(json.p.x,json.p.y, json.p.z), json.acc);
     };
 
     /**
@@ -5979,9 +6017,9 @@ var Blobtree = (function (require$$0) {
 
     // [Abstract]
     SDFPoint.prototype.computeDistanceAABB = function(d) {
-        return new THREE$a.Box3(
-            this.p.clone().add(new THREE$a.Vector3(-d,-d,-d)),
-            this.p.clone().add(new THREE$a.Vector3(d,d,d))
+        return new THREE$8.Box3(
+            this.p.clone().add(new THREE$8.Vector3(-d,-d,-d)),
+            this.p.clone().add(new THREE$8.Vector3(d,d,d))
         );
     };
     // [Abstract]
@@ -6011,7 +6049,7 @@ var Blobtree = (function (require$$0) {
 
     // [Abstract] see SDFPrimitive.value
     SDFPoint.prototype.value = (function(){
-        var v = new THREE$a.Vector3();
+        var v = new THREE$8.Vector3();
 
         return function(p,res) {
             if(!this.valid_aabb){
@@ -6030,7 +6068,7 @@ var Blobtree = (function (require$$0) {
 
     var SDFPoint_1 = SDFPoint;
 
-    const THREE$9 = require$$0__default["default"];
+    const THREE$7 = require$$0__default["default"];
     const Area = Area_1;
     const Accuracies = Accuracies_1;
 
@@ -6061,12 +6099,12 @@ var Blobtree = (function (require$$0) {
         this.accFactor1 = accFactor1 || 1.0;
         this.accFactor2 = accFactor2 || 1.0;
 
-        this.unit_dir = new THREE$9.Vector3().subVectors(p2,p1);
+        this.unit_dir = new THREE$7.Vector3().subVectors(p2,p1);
         this.length = this.unit_dir.length();
         this.unit_dir.normalize();
 
         // tmp var for functions below
-        this.vector = new THREE$9.Vector3();
+        this.vector = new THREE$7.Vector3();
         this.p1_to_p = this.vector; // basically the same as above + smart name
         this.p1_to_p_sqrnorm = 0;
         this.x_p_2D = 0;
@@ -6300,7 +6338,7 @@ var Blobtree = (function (require$$0) {
 
     var AreaCapsule_1 = AreaCapsule$2;
 
-    const THREE$8 = require$$0__default["default"];
+    const THREE$6 = require$$0__default["default"];
     const Types$3 = Types_1;
     const SDFPrimitive$2 = SDFPrimitive_1;
     const AreaCapsule$1 = AreaCapsule_1;
@@ -6322,7 +6360,7 @@ var Blobtree = (function (require$$0) {
         this.acc = acc || 1.0;
 
         // Helper for evaluation
-        this.l = new THREE$8.Line3(this.p1, this.p2);
+        this.l = new THREE$6.Line3(this.p1, this.p2);
     };
 
     SDFSegment.prototype = Object.create(SDFPrimitive$2.prototype);
@@ -6353,8 +6391,8 @@ var Blobtree = (function (require$$0) {
     SDFSegment.fromJSON = function(json){
         ScalisVertex.fromJSON(json.v[0]);
         return new SDFSegment(
-            new THREE$8.Vector3(json.p1.x,json.p1.y, json.p1.z),
-            new THREE$8.Vector3(json.p2.x,json.p2.y, json.p2.z),
+            new THREE$6.Vector3(json.p1.x,json.p1.y, json.p1.z),
+            new THREE$6.Vector3(json.p2.x,json.p2.y, json.p2.z),
             json.acc
         );
     };
@@ -6404,13 +6442,13 @@ var Blobtree = (function (require$$0) {
 
     // [Abstract]
     SDFSegment.prototype.computeDistanceAABB = function(d) {
-        var b1 = new THREE$8.Box3(
-            this.p1.clone().add(new THREE$8.Vector3(-d,-d,-d)),
-            this.p1.clone().add(new THREE$8.Vector3(d,d,d))
+        var b1 = new THREE$6.Box3(
+            this.p1.clone().add(new THREE$6.Vector3(-d,-d,-d)),
+            this.p1.clone().add(new THREE$6.Vector3(d,d,d))
         );
-        var b2 = new THREE$8.Box3(
-            this.p2.clone().add(new THREE$8.Vector3(-d,-d,-d)),
-            this.p2.clone().add(new THREE$8.Vector3(d,d,d))
+        var b2 = new THREE$6.Box3(
+            this.p2.clone().add(new THREE$6.Vector3(-d,-d,-d)),
+            this.p2.clone().add(new THREE$6.Vector3(d,d,d))
         );
         return b1.union(b2);
     };
@@ -6445,8 +6483,8 @@ var Blobtree = (function (require$$0) {
 
     // [Abstract] see SDFPrimitive.value
     SDFSegment.prototype.value = (function(){
-        var v = new THREE$8.Vector3();
-        var lc = new THREE$8.Vector3();
+        var v = new THREE$6.Vector3();
+        var lc = new THREE$6.Vector3();
         return function(p,res) {
             this.l.closestPointToPoint(p,true,v);
             res.v = lc.subVectors(p,v).length();
@@ -6458,7 +6496,7 @@ var Blobtree = (function (require$$0) {
 
     var SDFSegment_1 = SDFSegment;
 
-    const THREE$7 = require$$0__default["default"];
+    const THREE$5 = require$$0__default["default"];
     const Types$2 = Types_1;
     const SDFPrimitive$1 = SDFPrimitive_1;
     const AreaSphere = AreaSphere_1;
@@ -6498,7 +6536,7 @@ var Blobtree = (function (require$$0) {
         return res;
     };
     SDFSphere.fromJSON = function(json){
-        return new SDFSphere(new THREE$7.Vector3(json.p.x,json.p.y, json.p.z), json.r);
+        return new SDFSphere(new THREE$5.Vector3(json.p.x,json.p.y, json.p.z), json.r);
     };
 
     /**
@@ -6533,9 +6571,9 @@ var Blobtree = (function (require$$0) {
 
     // [Abstract]
     SDFSphere.prototype.computeDistanceAABB = function(d) {
-        return new THREE$7.Box3(
-            this.p.clone().add(new THREE$7.Vector3(-this.r-d,-this.r-d,-this.r-d)),
-            this.p.clone().add(new THREE$7.Vector3(this.r+d,this.r+d,this.r+d))
+        return new THREE$5.Box3(
+            this.p.clone().add(new THREE$5.Vector3(-this.r-d,-this.r-d,-this.r-d)),
+            this.p.clone().add(new THREE$5.Vector3(this.r+d,this.r+d,this.r+d))
         );
     };
     // [Abstract]
@@ -6565,7 +6603,7 @@ var Blobtree = (function (require$$0) {
 
     // [Abstract] see SDFPrimitive.value
     SDFSphere.prototype.value = (function(){
-        var v = new THREE$7.Vector3();
+        var v = new THREE$5.Vector3();
 
         return function(p,res) {
             if(!this.valid_aabb){
@@ -6584,7 +6622,7 @@ var Blobtree = (function (require$$0) {
 
     var SDFSphere_1 = SDFSphere;
 
-    const THREE$6 = require$$0__default["default"];
+    const THREE$4 = require$$0__default["default"];
     const Types$1 = Types_1;
     const SDFPrimitive = SDFPrimitive_1;
     const AreaCapsule = AreaCapsule_1;
@@ -6612,7 +6650,7 @@ var Blobtree = (function (require$$0) {
         // Helper for evaluation
         this.r1 = this.r1;
         this.rdiff = this.r2 - this.r1;
-        this.unit_dir = new THREE$6.Vector3().subVectors(this.p2, this.p1);
+        this.unit_dir = new THREE$4.Vector3().subVectors(this.p2, this.p1);
         this.lengthSq = this.unit_dir.lengthSq();
         this.length = this.unit_dir.length();
         this.unit_dir.normalize();
@@ -6647,8 +6685,8 @@ var Blobtree = (function (require$$0) {
     SDFCapsule.fromJSON = function(json){
         ScalisVertex.fromJSON(json.v[0]);
         return new SDFCapsule(
-            new THREE$6.Vector3(json.p1.x,json.p1.y, json.p1.z),
-            new THREE$6.Vector3(json.p2.x,json.p2.y, json.p2.z),
+            new THREE$4.Vector3(json.p1.x,json.p1.y, json.p1.z),
+            new THREE$4.Vector3(json.p2.x,json.p2.y, json.p2.z),
             json.r1,
             json.r2
         );
@@ -6712,13 +6750,13 @@ var Blobtree = (function (require$$0) {
 
     // [Abstract]
     SDFCapsule.prototype.computeDistanceAABB = function(d) {
-        var b1 = new THREE$6.Box3(
-            this.p1.clone().add(new THREE$6.Vector3(-this.r1-d,-this.r1-d,-this.r1-d)),
-            this.p1.clone().add(new THREE$6.Vector3(this.r1+d,this.r1+d,this.r1+d))
+        var b1 = new THREE$4.Box3(
+            this.p1.clone().add(new THREE$4.Vector3(-this.r1-d,-this.r1-d,-this.r1-d)),
+            this.p1.clone().add(new THREE$4.Vector3(this.r1+d,this.r1+d,this.r1+d))
         );
-        var b2 = new THREE$6.Box3(
-            this.p2.clone().add(new THREE$6.Vector3(-this.r2-d,-this.r2-d,-this.r2-d)),
-            this.p2.clone().add(new THREE$6.Vector3(this.r2+d,this.r2+d,this.r2+d))
+        var b2 = new THREE$4.Box3(
+            this.p2.clone().add(new THREE$4.Vector3(-this.r2-d,-this.r2-d,-this.r2-d)),
+            this.p2.clone().add(new THREE$4.Vector3(this.r2+d,this.r2+d,this.r2+d))
         );
         return b1.union(b2);
     };
@@ -6752,8 +6790,8 @@ var Blobtree = (function (require$$0) {
 
     // [Abstract] see SDFPrimitive.value
     SDFCapsule.prototype.value = (function(){
-        var v = new THREE$6.Vector3();
-        var proj = new THREE$6.Vector3();
+        var v = new THREE$4.Vector3();
+        var proj = new THREE$4.Vector3();
 
         return function(p,res) {
             v.subVectors(p,this.p1);
@@ -6775,7 +6813,7 @@ var Blobtree = (function (require$$0) {
             // var proj_y = 0.0; // by construction
 
             // Easy way to compute the distance now that we ave the projection on the segment
-            var a = THREE$6.Math.clamp(proj_x/this.length,0,1.0);
+            var a = THREE$4.Math.clamp(proj_x/this.length,0,1.0);
             proj.copy(this.p1).lerp(this.p2,a); // compute the actual 3D projection
             var l = v.subVectors(p,proj).length();
             res.v = l - (a*this.r2+(1.0-a)*this.r1);
@@ -6822,7 +6860,7 @@ var Blobtree = (function (require$$0) {
     var MCTables = Tables$2;
 
     const { Box2 } = require$$0__default["default"];
-    const THREE$5 = require$$0__default["default"];
+    const THREE$3 = require$$0__default["default"];
     const Material$3 = Material_1;
     const Convergence$1 = Convergence_1;
 
@@ -7017,14 +7055,14 @@ var Blobtree = (function (require$$0) {
             false
         ];
 
-        this.vertex = new THREE$5.Vector3(0, 0, 0); // vertex associated to the cell if any
-        this.vertex_n = new THREE$5.Vector3(0, 0, 0); // vertex normal
+        this.vertex = new THREE$3.Vector3(0, 0, 0); // vertex associated to the cell if any
+        this.vertex_n = new THREE$3.Vector3(0, 0, 0); // vertex normal
         this.vertex_m = new Material$3(); // vertex material
 
         // Vars and tmp vars for extension checks
         this.extended = false;
-        this.dis_o_aabb = new THREE$5.Box3();
-        this.ext_p = new THREE$5.Vector3();
+        this.dis_o_aabb = new THREE$3.Box3();
+        this.ext_p = new THREE$3.Vector3();
 
         /**
          *  Resulting mesh data
@@ -7067,30 +7105,30 @@ var Blobtree = (function (require$$0) {
      *  @private
      */
     SlidingMarchingCubes$2.prototype.buildResultingBufferGeometry = function() {
-        var res = new THREE$5.BufferGeometry();
+        var res = new THREE$3.BufferGeometry();
         res.setAttribute(
             "position",
-            new THREE$5.BufferAttribute(new Float32Array(this.geometry.position), 3)
+            new THREE$3.BufferAttribute(new Float32Array(this.geometry.position), 3)
         );
         res.setAttribute(
             "normal",
-            new THREE$5.BufferAttribute(new Float32Array(this.geometry.normal), 3)
+            new THREE$3.BufferAttribute(new Float32Array(this.geometry.normal), 3)
         );
         res.setAttribute(
             "color",
-            new THREE$5.BufferAttribute(new Float32Array(this.geometry.color), 3)
+            new THREE$3.BufferAttribute(new Float32Array(this.geometry.color), 3)
         );
         res.setAttribute(
             "roughness",
-            new THREE$5.BufferAttribute(new Float32Array(this.geometry.roughness), 1)
+            new THREE$3.BufferAttribute(new Float32Array(this.geometry.roughness), 1)
         );
         res.setAttribute(
             "metalness",
-            new THREE$5.BufferAttribute(new Float32Array(this.geometry.metalness), 1)
+            new THREE$3.BufferAttribute(new Float32Array(this.geometry.metalness), 1)
         );
 
         res.setIndex(
-            new THREE$5.BufferAttribute(
+            new THREE$3.BufferAttribute(
                 this.geometry.nVertices > 65535
                     ? new Uint32Array(this.geometry.faces)
                     : new Uint16Array(this.geometry.faces),
@@ -7234,7 +7272,7 @@ var Blobtree = (function (require$$0) {
      */
     SlidingMarchingCubes$2.prototype.computeFrontValAtClosure = (function() {
         var eval_res = { v: 0 };
-        var p = new THREE$5.Vector3();
+        var p = new THREE$3.Vector3();
         return function(cx, cy, cz, x, y) {
             var index = y * this.reso[0] + x;
             eval_res.v = this.blobtree.getNeutralValue();
@@ -7371,7 +7409,7 @@ var Blobtree = (function (require$$0) {
         // split the current box in 2 boxes in the largest dimension
 
         var new_boxes = null;
-        var diff = new THREE$5.Vector2(
+        var diff = new THREE$3.Vector2(
             Math.round(box.max.x - box.min.x),
             Math.round(box.max.y - box.min.y)
         );
@@ -7382,12 +7420,12 @@ var Blobtree = (function (require$$0) {
             new_boxes = [
                 new Box2Acc(
                     box.min,
-                    new THREE$5.Vector2(x_cut, box.max.y),
+                    new THREE$3.Vector2(x_cut, box.max.y),
                     10000,
                     10000
                 ),
                 new Box2Acc(
-                    new THREE$5.Vector2(x_cut, box.min.y),
+                    new THREE$3.Vector2(x_cut, box.min.y),
                     box.max,
                     10000,
                     10000
@@ -7404,12 +7442,12 @@ var Blobtree = (function (require$$0) {
                 new_boxes = [
                     new Box2Acc(
                         box.min,
-                        new THREE$5.Vector2(box.max.x, y_cut),
+                        new THREE$3.Vector2(box.max.x, y_cut),
                         10000,
                         10000
                     ),
                     new Box2Acc(
-                        new THREE$5.Vector2(box.min.x, y_cut),
+                        new THREE$3.Vector2(box.min.x, y_cut),
                         box.max,
                         10000,
                         10000
@@ -7449,7 +7487,7 @@ var Blobtree = (function (require$$0) {
         for (var k = 0; k < new_boxes.length; ++k) {
             var b = new_boxes[k];
 
-            var bsize = b.getSize(new THREE$5.Vector3());
+            var bsize = b.getSize(new THREE$3.Vector3());
 
             if (boxes2D_rec[k].length === 0) {
                 this.setFrontValZeroInBox(b.min, b.max);
@@ -7548,8 +7586,8 @@ var Blobtree = (function (require$$0) {
             );
             boxes2D.push(
                 new Box2Acc(
-                    new THREE$5.Vector2(x_min, y_min),
-                    new THREE$5.Vector2(x_max, y_max),
+                    new THREE$3.Vector2(x_min, y_min),
+                    new THREE$3.Vector2(x_max, y_max),
                     nice_acc,
                     raw_acc
                 )
@@ -7559,8 +7597,8 @@ var Blobtree = (function (require$$0) {
 
         bigbox.intersect(
             new Box2Acc(
-                new THREE$5.Vector2(0, 0),
-                new THREE$5.Vector2(this.reso[0], this.reso[1]),
+                new THREE$3.Vector2(0, 0),
+                new THREE$3.Vector2(this.reso[0], this.reso[1]),
                 bigbox.getNiceAcc(),
                 bigbox.getRawAcc()
             )
@@ -7644,7 +7682,7 @@ var Blobtree = (function (require$$0) {
         this.extended = extended !== undefined ? extended : false;
 
         if (this.extended) {
-            var adims = aabb.getSize(new THREE$5.Vector3());
+            var adims = aabb.getSize(new THREE$3.Vector3());
             var minAcc = Math.min(
                 Math.min(this.getMinAcc(aabb), adims[0]),
                 Math.min(adims[1], adims[2])
@@ -7679,7 +7717,7 @@ var Blobtree = (function (require$$0) {
         // if no areas, blobtree is empty so stop and send an empty mesh.
         if (this.areas.length === 0) {
             this.progress(100);
-            return new THREE$5.BufferGeometry();
+            return new THREE$3.BufferGeometry();
         }
 
         this.min_acc = this.areas.length !== 0 ? this.areas[0].bv.getMinAcc() : 1;
@@ -7691,7 +7729,7 @@ var Blobtree = (function (require$$0) {
         this.min_acc = this.min_acc * this.detail_ratio;
 
         var corner = aabb.min;
-        var dims = aabb.getSize(new THREE$5.Vector3());
+        var dims = aabb.getSize(new THREE$3.Vector3());
 
         this.steps.z = new Float32Array(Math.ceil(dims.z / this.min_acc) + 2);
         corner.z;
@@ -7728,8 +7766,8 @@ var Blobtree = (function (require$$0) {
         if (this.extended) {
             var i = 0;
             this.dis_o_aabb.set(
-                new THREE$5.Vector3(-1, -1, -1),
-                new THREE$5.Vector3(-1, -1, -1)
+                new THREE$3.Vector3(-1, -1, -1),
+                new THREE$3.Vector3(-1, -1, -1)
             );
             while (i < this.reso[2] && this.dis_o_aabb.min.z === -1) {
                 if (this.steps.z[i] >= o_aabb.min.z) {
@@ -7776,7 +7814,7 @@ var Blobtree = (function (require$$0) {
         this.vertices_xy[1] = new Int32Array(this.reso[0] * this.reso[1]);
 
         // Aabb for trimming the blobtree
-        var trim_aabb = new THREE$5.Box3();
+        var trim_aabb = new THREE$3.Box3();
         this.computeFrontValues(corner.x, corner.y, corner.z);
 
         var percent = 0;
@@ -7792,8 +7830,8 @@ var Blobtree = (function (require$$0) {
 
             var z1 = this.steps.z[iz + 1];
             trim_aabb.set(
-                new THREE$5.Vector3(corner.x, corner.y, z1 - this.min_acc / 64),
-                new THREE$5.Vector3(
+                new THREE$3.Vector3(corner.x, corner.y, z1 - this.min_acc / 64),
+                new THREE$3.Vector3(
                     corner.x + this.reso[0] * this.min_acc,
                     corner.y + this.reso[1] * this.min_acc,
                     z1 + this.min_acc / 64
@@ -7964,10 +8002,10 @@ var Blobtree = (function (require$$0) {
         // Function static variable
         var eval_res = {
             v: null,
-            g: new THREE$5.Vector3(0, 0, 0),
+            g: new THREE$3.Vector3(0, 0, 0),
             m: new Material$3()
         };
-        var conv_res = new THREE$5.Vector3();
+        var conv_res = new THREE$3.Vector3();
 
         return function() {
             eval_res.v = this.blobtree.getNeutralValue();
@@ -8064,7 +8102,7 @@ var Blobtree = (function (require$$0) {
 
     var SlidingMarchingCubes_1 = SlidingMarchingCubes$2;
 
-    const THREE$4 = require$$0__default["default"];
+    const THREE$2 = require$$0__default["default"];
     const Types = Types_1;
     const Node = Node_1;
     const Material$2 = Material_1;
@@ -8091,7 +8129,7 @@ var Blobtree = (function (require$$0) {
 
         // temp vars to speed up evaluation by avoiding allocations
         this.tmp_res = {v:0,g:null,m:null};
-        this.tmp_g = new THREE$4.Vector3();
+        this.tmp_g = new THREE$2.Vector3();
         this.tmp_m = new Material$2();
 
     };
@@ -8118,7 +8156,7 @@ var Blobtree = (function (require$$0) {
     MaxNode$1.prototype.prepareForEval = function()
     {
         if(!this.valid_aabb){
-            this.aabb = new THREE$4.Box3();  // Create empty BBox
+            this.aabb = new THREE$2.Box3();  // Create empty BBox
             for(var i=0; i<this.children.length; ++i){
                 var c = this.children[i];
                 c.prepareForEval();
@@ -8181,7 +8219,7 @@ var Blobtree = (function (require$$0) {
 
     var MaxNode_1 = MaxNode$1;
 
-    const THREE$3 = require$$0__default["default"];
+    const mergeBufferGeometries = require$$0__default$1["default"].mergeBufferGeometries;
 
     // Does not work yet, so just suppose that Blobtree is defined externally
     // const Blobtree = require('three-js-blobtree");
@@ -8343,7 +8381,7 @@ var Blobtree = (function (require$$0) {
             prog += this.progCoeff[i];
         }
 
-        var res = THREE$3.BufferGeometryUtils.mergeBufferGeometries(geometries);
+        var res = mergeBufferGeometries(geometries);
 
         this.progress(100);
 
@@ -8352,7 +8390,7 @@ var Blobtree = (function (require$$0) {
 
     var SplitMaxPolygonizer_1 = SplitMaxPolygonizer;
 
-    const THREE$2 = require$$0__default["default"];
+    const THREE$1 = require$$0__default["default"];
 
     const Material$1 = Material_1;
     const Tables = MCTables;
@@ -8391,8 +8429,8 @@ var Blobtree = (function (require$$0) {
      */
     SplitSMC.prototype.computeVertex = (function() {
         // Function static variable
-        var eval_res = {v:null, g:new THREE$2.Vector3(0,0,0), m:new Material$1()};
-        var conv_res = new THREE$2.Vector3();
+        var eval_res = {v:null, g:new THREE$1.Vector3(0,0,0), m:new Material$1()};
+        var conv_res = new THREE$1.Vector3();
 
         return function()
         {
@@ -8476,76 +8514,90 @@ var Blobtree = (function (require$$0) {
 
     var SplitSMC_1 = SplitSMC;
 
-    var THREE$1 = require$$0__default["default"];
+    const version = "1.0.0";
 
-    // require("three/examples/js/utils/BufferGeometryUtils");
+    var Blobtree$1 = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        version: version,
+        Types: Types_1,
+        Element: Element_1,
+        Node: Node_1,
+        RootNode: RootNode_1,
+        RicciNode: RicciNode_1,
+        DifferenceNode: DifferenceNode_1,
+        MinNode: MinNode_1,
+        MaxNode: MinNode_1,
+        Primitive: Primitive_1,
+        ScalisMath: ScalisMath_1,
+        ScalisPrimitive: ScalisPrimitive_1,
+        ScalisPoint: ScalisPoint_1,
+        ScalisSegment: ScalisSegment_1,
+        ScalisTriangle: ScalisTriangle_1,
+        ScalisVertex: ScalisVertex_1,
+        DistanceFunctor: DistanceFunctor_1,
+        Poly6DistanceFunctor: Poly6DistanceFunctor_1,
+        SDFRootNode: SDFRootNode_1,
+        SDFPrimitive: SDFPrimitive_1,
+        SDFPoint: SDFPoint_1,
+        SDFSegment: SDFSegment_1,
+        SDFSphere: SDFSphere_1,
+        SDFCapsule: SDFCapsule_1,
+        Material: Material_1,
+        Accuracies: Accuracies_1,
+        Area: Area_1,
+        AreaScalisSeg: AreaScalisSeg_1,
+        AreaScalisTri: AreaScalisTri_1,
+        AreaSphere: AreaSphere_1,
+        AreaCapsule: AreaCapsule_1,
+        SlidingMarchingCubes: SlidingMarchingCubes_1,
+        SplitMaxPolygonizer: SplitMaxPolygonizer_1,
+        SplitSMC: SplitSMC_1
+    });
 
+    const PACKAGE_NAME = "three-js-blobtree";
 
-    if (THREE$1.REVISION !== "122") {
-        console.warn("Blobtree library is currently made for THREE revision 122. Using any other revision may lead to unexpected behavior.");
-    }
+    checkThreeRevision(PACKAGE_NAME, 130);
+    checkDependancy(PACKAGE_NAME, "BufferGeometryUtils", require$$0__namespace);
+    checkDependancy(PACKAGE_NAME, "Blobtree", Blobtree$1);
 
-    var Blobtree$1 = {};
-    Blobtree$1.version = "1.0.0";
+    exports.Accuracies = Accuracies_1;
+    exports.Area = Area_1;
+    exports.AreaCapsule = AreaCapsule_1;
+    exports.AreaScalisSeg = AreaScalisSeg_1;
+    exports.AreaScalisTri = AreaScalisTri_1;
+    exports.AreaSphere = AreaSphere_1;
+    exports.DifferenceNode = DifferenceNode_1;
+    exports.DistanceFunctor = DistanceFunctor_1;
+    exports.Element = Element_1;
+    exports.Material = Material_1;
+    exports.MaxNode = MinNode_1;
+    exports.MinNode = MinNode_1;
+    exports.Node = Node_1;
+    exports.Poly6DistanceFunctor = Poly6DistanceFunctor_1;
+    exports.Primitive = Primitive_1;
+    exports.RicciNode = RicciNode_1;
+    exports.RootNode = RootNode_1;
+    exports.SDFCapsule = SDFCapsule_1;
+    exports.SDFPoint = SDFPoint_1;
+    exports.SDFPrimitive = SDFPrimitive_1;
+    exports.SDFRootNode = SDFRootNode_1;
+    exports.SDFSegment = SDFSegment_1;
+    exports.SDFSphere = SDFSphere_1;
+    exports.ScalisMath = ScalisMath_1;
+    exports.ScalisPoint = ScalisPoint_1;
+    exports.ScalisPrimitive = ScalisPrimitive_1;
+    exports.ScalisSegment = ScalisSegment_1;
+    exports.ScalisTriangle = ScalisTriangle_1;
+    exports.ScalisVertex = ScalisVertex_1;
+    exports.SlidingMarchingCubes = SlidingMarchingCubes_1;
+    exports.SplitMaxPolygonizer = SplitMaxPolygonizer_1;
+    exports.SplitSMC = SplitSMC_1;
+    exports.Types = Types_1;
+    exports.version = version;
 
-    Blobtree$1.Types              = Types_1;
+    Object.defineProperty(exports, '__esModule', { value: true });
 
-    Blobtree$1.Element            = Element_1;
-    Blobtree$1.Node               = Node_1;
-    Blobtree$1.RootNode           = RootNode_1;
+    return exports;
 
-    Blobtree$1.RicciNode          = RicciNode_1;
-    Blobtree$1.DifferenceNode     = DifferenceNode_1;
-    Blobtree$1.MinNode            = MinNode_1;
-    Blobtree$1.MaxNode            = MinNode_1;
-
-    Blobtree$1.Primitive          = Primitive_1;
-
-    Blobtree$1.ScalisMath         = ScalisMath_1;
-    Blobtree$1.ScalisPrimitive    = ScalisPrimitive_1;
-    Blobtree$1.ScalisPoint        = ScalisPoint_1;
-    Blobtree$1.ScalisSegment      = ScalisSegment_1;
-    Blobtree$1.ScalisTriangle     = ScalisTriangle_1;
-    Blobtree$1.ScalisVertex       = ScalisVertex_1;
-
-    Blobtree$1.DistanceFunctor    = DistanceFunctor_1;
-    Blobtree$1.Poly6DistanceFunctor = Poly6DistanceFunctor_1;
-
-    Blobtree$1.SDFRootNode        = SDFRootNode_1;
-    Blobtree$1.SDFPrimitive       = SDFPrimitive_1;
-    Blobtree$1.SDFPoint           = SDFPoint_1;
-    Blobtree$1.SDFSegment         = SDFSegment_1;
-    Blobtree$1.SDFSphere          = SDFSphere_1;
-    Blobtree$1.SDFCapsule         = SDFCapsule_1;
-
-    Blobtree$1.Material           = Material_1;
-
-    Blobtree$1.Accuracies         = Accuracies_1;
-
-    Blobtree$1.Area               = Area_1;
-    Blobtree$1.AreaScalisSeg      = AreaScalisSeg_1;
-    Blobtree$1.AreaScalisTri      = AreaScalisTri_1;
-    Blobtree$1.AreaSphere         = AreaSphere_1;
-    Blobtree$1.AreaCapsule        = AreaCapsule_1;
-
-    Blobtree$1.SlidingMarchingCubes = SlidingMarchingCubes_1;
-    Blobtree$1.SplitMaxPolygonizer = SplitMaxPolygonizer_1;
-    Blobtree$1.SplitSMC = SplitSMC_1;
-
-    /*
-    try {
-        if( window ) {
-            window.Blobtree = Blobtree;
-        }
-    }
-    catch(e) {}
-    */
-
-    THREE$1.Blobtree = Blobtree$1;
-
-    var blobtree = Blobtree$1;
-
-    return blobtree;
-
-})(THREE);
+})({}, THREE, THREE);
 //# sourceMappingURL=three-js-blobtree.js.map
