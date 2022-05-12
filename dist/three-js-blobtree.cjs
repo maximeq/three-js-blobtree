@@ -7,27 +7,8 @@ var require$$0$1 = require('three/examples/jsm/utils/BufferGeometryUtils');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
-function _interopNamespace(e) {
-    if (e && e.__esModule) return e;
-    var n = Object.create(null);
-    if (e) {
-        Object.keys(e).forEach(function (k) {
-            if (k !== 'default') {
-                var d = Object.getOwnPropertyDescriptor(e, k);
-                Object.defineProperty(n, k, d.get ? d : {
-                    enumerable: true,
-                    get: function () { return e[k]; }
-                });
-            }
-        });
-    }
-    n["default"] = e;
-    return Object.freeze(n);
-}
-
 var require$$0__default = /*#__PURE__*/_interopDefaultLegacy(require$$0);
 var require$$0__default$1 = /*#__PURE__*/_interopDefaultLegacy(require$$0$1);
-var require$$0__namespace = /*#__PURE__*/_interopNamespace(require$$0$1);
 
 function checkDependancy(packageName, dependancyName, dependancy) {
     let duplicationMessage = `${packageName}: ${dependancyName} is duplicated. Your bundle includes ${dependancyName} twice. Please repair your bundle.`;
@@ -53,8 +34,8 @@ function checkDependancy(packageName, dependancyName, dependancy) {
 
 function checkThreeRevision(packageName, revision) {
     if (THREE.REVISION != revision) {
-        console.warn(
-            `${packageName} is currently made for THREE revision ${revision}. Using any other revision may lead to unexpected behavior (current: ${THREE.REVISION}).`
+        console.error(
+            `${packageName} depends on THREE revision ${revision}, but current revision is ${THREE.REVISION}.`
         );
     }
 }
@@ -8561,7 +8542,7 @@ var Blobtree$1 = /*#__PURE__*/Object.freeze({
 const PACKAGE_NAME = "three-js-blobtree";
 
 checkThreeRevision(PACKAGE_NAME, 130);
-checkDependancy(PACKAGE_NAME, "BufferGeometryUtils", require$$0__namespace);
+checkDependancy(PACKAGE_NAME, "BufferGeometryUtils", require$$0$1.BufferGeometryUtils);
 checkDependancy(PACKAGE_NAME, "Blobtree", Blobtree$1);
 
 exports.Accuracies = Accuracies_1;

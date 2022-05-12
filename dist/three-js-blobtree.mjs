@@ -1,6 +1,5 @@
-import require$$0$1 from 'three';
-import * as require$$0 from 'three/examples/jsm/utils/BufferGeometryUtils';
-import require$$0__default from 'three/examples/jsm/utils/BufferGeometryUtils';
+import require$$0 from 'three';
+import require$$0$1, { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils';
 
 function checkDependancy(packageName, dependancyName, dependancy) {
     let duplicationMessage = `${packageName}: ${dependancyName} is duplicated. Your bundle includes ${dependancyName} twice. Please repair your bundle.`;
@@ -26,8 +25,8 @@ function checkDependancy(packageName, dependancyName, dependancy) {
 
 function checkThreeRevision(packageName, revision) {
     if (THREE.REVISION != revision) {
-        console.warn(
-            `${packageName} is currently made for THREE revision ${revision}. Using any other revision may lead to unexpected behavior (current: ${THREE.REVISION}).`
+        console.error(
+            `${packageName} depends on THREE revision ${revision}, but current revision is ${THREE.REVISION}.`
         );
     }
 }
@@ -68,7 +67,7 @@ Types$l.fromJSON = function(json){
 
 var Types_1 = Types$l;
 
-const THREE$o = require$$0$1;
+const THREE$o = require$$0;
 const Types$k = Types_1;
 
 var elementIds = 0;
@@ -502,7 +501,7 @@ var Node_1 = Node$5;
  *
  */
 
-const THREE$n = require$$0$1;
+const THREE$n = require$$0;
 
 var Convergence$3 = {};
 
@@ -818,7 +817,7 @@ Convergence$3.dichotomy1D = function(
 
 var Convergence_1 = Convergence$3;
 
-const THREE$m = require$$0$1;
+const THREE$m = require$$0;
 
 /**
  *  Material object for blobtree. It is an internal material, that should especially
@@ -1087,7 +1086,7 @@ Material$b.defaultMaterial = new Material$b();
 
 var Material_1 = Material$b;
 
-const THREE$l = require$$0$1;
+const THREE$l = require$$0;
 const Types$i = Types_1;
 const Node$4 = Node_1;
 const Material$a = Material_1;
@@ -1288,7 +1287,7 @@ RicciNode$2.prototype.getRicciN = function(){
 
 var RicciNode_1 = RicciNode$2;
 
-const THREE$k = require$$0$1;
+const THREE$k = require$$0;
 const Types$h = Types_1;
 const RicciNode$1 = RicciNode_1;
 
@@ -1650,7 +1649,7 @@ RootNode$1.prototype.intersectOrthoRayBlob = function() {
 
 var RootNode_1 = RootNode$1;
 
-const THREE$j = require$$0$1;
+const THREE$j = require$$0;
 const Types$g = Types_1;
 const Node$3 = Node_1;
 const Material$9 = Material_1;
@@ -1822,7 +1821,7 @@ DifferenceNode.prototype.trim = function(aabb, trimmed, parents)
 
 var DifferenceNode_1 = DifferenceNode;
 
-const THREE$i = require$$0$1;
+const THREE$i = require$$0;
 const Types$f = Types_1;
 const Node$2 = Node_1;
 const Material$8 = Material_1;
@@ -2280,7 +2279,7 @@ ScalisPrimitive$3.prototype.computeAABB = function() {
 
 var ScalisPrimitive_1 = ScalisPrimitive$3;
 
-const THREE$h = require$$0$1;
+const THREE$h = require$$0;
 
 const ScalisMath$5 = ScalisMath_1;
 
@@ -2558,7 +2557,7 @@ Accuracies$4.curr = 0.3;
 
 var Accuracies_1 = Accuracies$4;
 
-const THREE$g = require$$0$1;
+const THREE$g = require$$0;
 const Area$3 = Area_1;
 const Accuracies$3 = Accuracies_1;
 
@@ -2710,7 +2709,7 @@ AreaSphere$3.prototype.getAxisProjectionMinStep = function(axis,t){
 
 var AreaSphere_1 = AreaSphere$3;
 
-const THREE$f = require$$0$1;
+const THREE$f = require$$0;
 const Types$c = Types_1;
 const Material$7 = Material_1;
 const ScalisPrimitive$2 = ScalisPrimitive_1;
@@ -2875,7 +2874,7 @@ ScalisPoint$1.prototype.distanceTo = function(p) {
 
 var ScalisPoint_1 = ScalisPoint$1;
 
-const THREE$e = require$$0$1;
+const THREE$e = require$$0;
 const ScalisMath$3 = ScalisMath_1;
 const Area$2 = Area_1;
 const Accuracies$2 = Accuracies_1;
@@ -3163,7 +3162,7 @@ AreaScalisSeg$2.prototype.getAxisProjectionMinStep = function(axis,t){
 
 var AreaScalisSeg_1 = AreaScalisSeg$2;
 
-const THREE$d = require$$0$1;
+const THREE$d = require$$0;
 const Types$b = Types_1;
 const Material$6 = Material_1;
 const ScalisPrimitive$1 = ScalisPrimitive_1;
@@ -3845,7 +3844,7 @@ ScalisSegment$1.prototype.HomotheticCompactPolynomial_approx_segment_FGradF_i6 =
 
 var ScalisSegment_1 = ScalisSegment$1;
 
-const THREE$c = require$$0$1;
+const THREE$c = require$$0;
 
 
 var EPSILON = 0.000001;
@@ -4186,7 +4185,7 @@ TriangleUtils$2.getUVCoord = function(U, V, p0, p){
 
 var TriangleUtils_1 = TriangleUtils$2;
 
-const THREE$b = require$$0$1;
+const THREE$b = require$$0;
 const ScalisMath$1 = ScalisMath_1;
 const Area$1 = Area_1;
 const TriangleUtils$1 = TriangleUtils_1;
@@ -4592,7 +4591,7 @@ AreaScalisTri$1.prototype.getAxisProjectionMinStep = function(axis,t){
 
 var AreaScalisTri_1 = AreaScalisTri$1;
 
-const THREE$a = require$$0$1;
+const THREE$a = require$$0;
 const Types$a = Types_1;
 const Material$5 = Material_1;
 const ScalisPrimitive = ScalisPrimitive_1;
@@ -5724,7 +5723,7 @@ SDFNode$1.prototype.heuristicStepWithin = function() {
 
 var SDFNode_1 = SDFNode$1;
 
-const THREE$9 = require$$0$1;
+const THREE$9 = require$$0;
 const Types$6 = Types_1;
 const SDFNode = SDFNode_1;
 const Material$4 = Material_1;
@@ -5919,7 +5918,7 @@ SDFPrimitive$4.prototype.heuristicStepWithin = function() {
 
 var SDFPrimitive_1 = SDFPrimitive$4;
 
-const THREE$8 = require$$0$1;
+const THREE$8 = require$$0;
 const Types$4 = Types_1;
 const SDFPrimitive$3 = SDFPrimitive_1;
 const AreaSphere$1 = AreaSphere_1;
@@ -6045,7 +6044,7 @@ SDFPoint.prototype.value = (function(){
 
 var SDFPoint_1 = SDFPoint;
 
-const THREE$7 = require$$0$1;
+const THREE$7 = require$$0;
 const Area = Area_1;
 const Accuracies = Accuracies_1;
 
@@ -6315,7 +6314,7 @@ AreaCapsule$2.prototype.getAxisProjectionMinStep = function(axis,t){
 
 var AreaCapsule_1 = AreaCapsule$2;
 
-const THREE$6 = require$$0$1;
+const THREE$6 = require$$0;
 const Types$3 = Types_1;
 const SDFPrimitive$2 = SDFPrimitive_1;
 const AreaCapsule$1 = AreaCapsule_1;
@@ -6473,7 +6472,7 @@ SDFSegment.prototype.value = (function(){
 
 var SDFSegment_1 = SDFSegment;
 
-const THREE$5 = require$$0$1;
+const THREE$5 = require$$0;
 const Types$2 = Types_1;
 const SDFPrimitive$1 = SDFPrimitive_1;
 const AreaSphere = AreaSphere_1;
@@ -6599,7 +6598,7 @@ SDFSphere.prototype.value = (function(){
 
 var SDFSphere_1 = SDFSphere;
 
-const THREE$4 = require$$0$1;
+const THREE$4 = require$$0;
 const Types$1 = Types_1;
 const SDFPrimitive = SDFPrimitive_1;
 const AreaCapsule = AreaCapsule_1;
@@ -6836,8 +6835,8 @@ Tables$2.VertexTopo = [
 
 var MCTables = Tables$2;
 
-const { Box2 } = require$$0$1;
-const THREE$3 = require$$0$1;
+const { Box2 } = require$$0;
+const THREE$3 = require$$0;
 const Material$3 = Material_1;
 const Convergence$1 = Convergence_1;
 
@@ -8079,7 +8078,7 @@ SlidingMarchingCubes$2.prototype.computeMask = function() {
 
 var SlidingMarchingCubes_1 = SlidingMarchingCubes$2;
 
-const THREE$2 = require$$0$1;
+const THREE$2 = require$$0;
 const Types = Types_1;
 const Node = Node_1;
 const Material$2 = Material_1;
@@ -8196,7 +8195,7 @@ MaxNode$1.prototype.value = function(p,res)
 
 var MaxNode_1 = MaxNode$1;
 
-const mergeBufferGeometries = require$$0__default.mergeBufferGeometries;
+const mergeBufferGeometries = require$$0$1.mergeBufferGeometries;
 
 // Does not work yet, so just suppose that Blobtree is defined externally
 // const Blobtree = require('three-js-blobtree");
@@ -8367,7 +8366,7 @@ SplitMaxPolygonizer.prototype.compute = function() {
 
 var SplitMaxPolygonizer_1 = SplitMaxPolygonizer;
 
-const THREE$1 = require$$0$1;
+const THREE$1 = require$$0;
 
 const Material$1 = Material_1;
 const Tables = MCTables;
@@ -8534,7 +8533,7 @@ var Blobtree$1 = /*#__PURE__*/Object.freeze({
 const PACKAGE_NAME = "three-js-blobtree";
 
 checkThreeRevision(PACKAGE_NAME, 130);
-checkDependancy(PACKAGE_NAME, "BufferGeometryUtils", require$$0);
+checkDependancy(PACKAGE_NAME, "BufferGeometryUtils", BufferGeometryUtils);
 checkDependancy(PACKAGE_NAME, "Blobtree", Blobtree$1);
 
 export { Accuracies_1 as Accuracies, Area_1 as Area, AreaCapsule_1 as AreaCapsule, AreaScalisSeg_1 as AreaScalisSeg, AreaScalisTri_1 as AreaScalisTri, AreaSphere_1 as AreaSphere, DifferenceNode_1 as DifferenceNode, DistanceFunctor_1 as DistanceFunctor, Element_1 as Element, Material_1 as Material, MinNode_1 as MaxNode, MinNode_1 as MinNode, Node_1 as Node, Poly6DistanceFunctor_1 as Poly6DistanceFunctor, Primitive_1 as Primitive, RicciNode_1 as RicciNode, RootNode_1 as RootNode, SDFCapsule_1 as SDFCapsule, SDFPoint_1 as SDFPoint, SDFPrimitive_1 as SDFPrimitive, SDFRootNode_1 as SDFRootNode, SDFSegment_1 as SDFSegment, SDFSphere_1 as SDFSphere, ScalisMath_1 as ScalisMath, ScalisPoint_1 as ScalisPoint, ScalisPrimitive_1 as ScalisPrimitive, ScalisSegment_1 as ScalisSegment, ScalisTriangle_1 as ScalisTriangle, ScalisVertex_1 as ScalisVertex, SlidingMarchingCubes_1 as SlidingMarchingCubes, SplitMaxPolygonizer_1 as SplitMaxPolygonizer, SplitSMC_1 as SplitSMC, Types_1 as Types, version };
