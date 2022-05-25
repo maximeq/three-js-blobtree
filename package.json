@@ -13,7 +13,7 @@
     },
     "dependencies": {
         "three": "0.130.x",
-        "dioxygen-resources": "file:../dioxygen-resources"
+        "three-js-checker": "1.0.x"
     },
     "devDependencies": {
         "@rollup/plugin-commonjs": "^22.0.0",

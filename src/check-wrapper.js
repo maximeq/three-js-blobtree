@@ -1,4 +1,4 @@
-import { checkDependancy, checkThreeRevision } from "dioxygen-resources";
+import { checkDependancy, checkThreeRevision } from "three-js-checker";
 import * as Blobtree from "./export";
 import {BufferGeometryUtils} from "three/examples/jsm/utils/BufferGeometryUtils";
 
