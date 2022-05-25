@@ -1,6 +1,6 @@
 {
     "name": "three-js-blobtree",
-    "version": "1.130.0",
+    "version": "2.130.0",
     "description": "Library to handle implicit surfaces in THREE.JS using a blobtree.",
     "main": "dist/three-js-blobtree.cjs",
     "module": "src/check-wrapper.js",
