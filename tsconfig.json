@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "module": "es6",
+        "target": "ESNext",
+        "checkJs": true,
+        "moduleResolution": "node",
+        "allowJs": true,
+        "declaration": true,
+        "emitDeclarationOnly":true,
+        "declarationMap": true,
+        "outDir": "dist/"
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "**/node_modules/*"]
+}
