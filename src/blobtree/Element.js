@@ -4,10 +4,8 @@ const THREE = require("three");
 const Types = require("./Types.js");
 
 // Types
-// eslint-disable-next-line
-const Material = require("../blobtree/Material.js");
-// eslint-disable-next-line
-const Node = require("../blobtree/Node.js");
+/** @typedef {import('./Material.js')} Material */
+/** @typedef {import('./Node.js')} Node */
 /** @typedef {*} Json */
 
 let elementIds = 0;
