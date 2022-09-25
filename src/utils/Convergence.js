@@ -7,7 +7,13 @@
 
 const THREE = require("three");
 
-var Convergence = {};
+// Types
+// eslint-disable-next-line
+const BlobtreeElement = require("../blobtree/Element.js");
+// eslint-disable-next-line
+const Material = require("../blobtree/Material.js");
+
+const Convergence = {};
 
 // Limitations: 3D only, but can easily be rewritten for nD
 // The algorithm stops when :
@@ -20,10 +26,21 @@ var Convergence = {};
 // Variable used in function. This avoid reallocation.
     Convergence.last_mov_pt = new THREE.Vector3();
     Convergence.grad = new THREE.Vector3();
-    Convergence.eval_res_g = new THREE.Vector3(0,0,0);
-    Convergence.eval_res = {v:0, g:null};
+Convergence.eval_res_g = new THREE.Vector3(0, 0, 0);
+    /** @type {{v:number, m:Material g:THREE.Vector3}} */
+    Convergence.eval_res = {v:0, m:null, g:null};
     Convergence.vec = new THREE.Vector3();
 
+/**
+ * @param {BlobtreeElement} pot
+ * @param {THREE.Vector3} starting_point
+ * @param {number} value
+ * @param {number} epsilon
+ * @param {number} n_max_step
+ * @param {number} r_max
+ * @param {THREE.Vector3} res
+ * @returns
+ */
 Convergence.safeNewton3D = function(    pot,              // Scalar Field to eval
                                         starting_point,   // 3D point where we start, must comply to THREE.Vector3 API
                                         value,            // iso value we are looking for
@@ -135,27 +152,34 @@ Convergence.safeNewton3D = function(    pot,              // Scalar Field to eva
         */
 };
 
+/**
+ *
+ * @typedef {Object} safeNewton1DResult
+ * @property {THREE.Vector3} p
+ * @property {THREE.Vector3} g
+ * @property {number} p_absc
+ *
+ */
 
-/** \brief This algorithm uses Newton convergence to find a point epsilon close to
+/** This algorithm uses Newton convergence to find a point epsilon close to
 *        a point "p" such that the given potential "pot" evaluated at "p" is "value".
 *        The search is constrained on line defined by (origin, search_dir), and between bounds
 *        defined by min_absc and max_absc which are the abscissae on the line with respect
 *        to origin and search_dir. search_dir should be normalized.
 *        The starting point is given with an abscissa : origin + starting_point_absc*search_dir
 *
-*   \param pot
-*   \param origin Point choosen as origin in the search line frame.
-*   \param search_dir unit vector that, together with origin, defines the searching line
-*   \param min_absc Minimum abscissa on the line : the algorithm will not search for a point below this abscissa.
-*   \param max_absc Maximum abscissa on the line : the algorithm will not search for a point above this abscissa.
-*   \param starting_point_absc Abscissa of the starting point, with respect to the search dir.
-*   \param value The potential value we are looking for on the line with respect to pot.Eval(..)
-*   \param epsilon We want the result to be at least epsilon close to the surface with respect to the
+*   @param {BlobtreeElement} pot
+*   @param {THREE.Vector3} origin Point choosen as origin in the search line frame.
+*   @param {THREE.Vector3} search_dir_unit unit vector that, together with origin, defines the searching line. Should be normalized
+*   @param {number} min_absc_inside Minimum abscissa on the line : the algorithm will not search for a point below this abscissa.
+*   @param {number} max_absc_outside Maximum abscissa on the line : the algorithm will not search for a point above this abscissa.
+*   @param {number} starting_point_absc Abscissa of the starting point, with respect to the search dir.
+*   @param {number} value The potential value we are looking for on the line with respect to pot.Eval(..)
+*   @param {number} epsilon We want the result to be at least epsilon close to the surface with respect to the
 *                   distance Vector.norm(), we suppose this norm to be the one associated with the dot product Vector.operator |
-*   \param n_max_step Maximum of newton step before giving up.
+*   @param {number} n_max_step Maximum of newton step before giving up.
 *
-*    \return true if a point p such that |pot.Eval(p) - value| < epsilon was found.
-*           false and the current searching point otherwise.
+*   @param {safeNewton1DResult} res
 *
 *
 *   @todo write documentation to talk about failure cases.
@@ -187,7 +211,6 @@ Convergence.safeNewton1D = function(
     }
 
     var curr_point_absc = starting_point_absc;
-    var curr_field_value = 0;    // contain the field value at curr_point
     var eval_pt = new THREE.Vector3();
 
     // Newton step until we overpass the surface

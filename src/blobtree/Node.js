@@ -8,7 +8,7 @@ const Types = require("./Types.js");
  *  @constructor
  *  @extends {Element}
  */
-var Node = function ()
+const Node = function ()
 {
     Element.call(this);
 

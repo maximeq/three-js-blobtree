@@ -3,20 +3,26 @@
 const THREE = require("three");
 const Types = require("./Types.js");
 
-var elementIds = 0;
+// Types
+// eslint-disable-next-line
+const Material = require("../blobtree/Material.js");
+const Node = require("../blobtree/Node.js");
+
+let elementIds = 0;
 
 /**
  *  A superclass for Node and Primitive in the blobtree.
+ *  @class
  *  @constructor
  */
-var Element = function () {
+const Element = function () {
 
     this.id = elementIds++;
 
     this.aabb = new THREE.Box3();
     this.valid_aabb = false;
 
-    /** @type {Blobtree.Node} */
+    /** @type {Node} */
     this.parentNode = null;
 };
 
@@ -45,7 +51,7 @@ Element.prototype.clone = function(){
 
 
 /**
- *  @return {Blobtree.Node} The parent node of this primitive.
+ *  @return {Node} The parent node of this primitive.
  */
 Element.prototype.getParentNode = function() {
     return this.parentNode;
@@ -114,16 +120,21 @@ Element.prototype.invalidAll = function() {
 };
 
 /**
+ * @typedef prepareForEvalResult
+ * @property {Array<Object>} del_obj
+ * @property {Array<Object>} new_areas
+ */
+
+/**
  *  @abstract
  *  Prepare the element for a call to value.
  *  Important note: For now, a primitive is considered prepared for eval if and only
  *                  if its bounding box is valid (valid_aabb is true).
- *
+ *  @return {prepareForEvalResult}
  */
 Element.prototype.prepareForEval = function() {
-    var res = {del_obj:[], new_areas:[]};
-    throw "ERROR : prepareForEval is a virtual function, should be re-implemented in all element(error occured in Element.js";
-    return res;
+    // let res = {del_obj:[], new_areas:[]};
+    throw new Error("ERROR : prepareForEval is a virtual function, should be re-implemented in all element(error occured in Element.js");
 };
 
 /**
@@ -131,25 +142,29 @@ Element.prototype.prepareForEval = function() {
  *  Compute the value and/or gradient and/or material
  *  of the element at position p in space. return computations in res (see below)
  *
- *  @param {!THREE.Vector3} p Point where we want to evaluate the primitive field
- *  @param {!Object} res Computed values will be stored here. Each values should exist and
+ *  @param {THREE.Vector3} p Point where we want to evaluate the primitive field
+ *  @param {Object} res Computed values will be stored here. Each values should exist and
  *                       be allocated already.
  *  @param {number} res.v Value, must be defined
  *  @param {Material} res.m Material, must be allocated and defined if wanted
  *  @param {THREE.Vector3} res.g Gradient, must be allocated and defined if wanted
  */
 Element.prototype.value = function(p,res) {
-    throw "ERROR : value is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
-    return 0.0;
+    throw new Error("ERROR : value is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");
 };
 
+/**
+ * @param {THREE.Vector3} p The point where we want the numerical gradient
+ * @param {THREE.Vector3} res The resulting gradient
+ * @param {number} epsilon The step value for the numerical evaluation
+ */
 Element.prototype.numericalGradient = (function(){
-    var tmp = {v:0};
-    var coord = ['x','y','z'];
+    let tmp = {v:0};
+    let coord = ['x','y','z'];
     return function(p, res, epsilon) {
-        var eps = epsilon || 0.00001;
+        let eps = epsilon || 0.00001;
 
-        for(var i=0; i<3; ++i){
+        for(let i=0; i<3; ++i){
             p[coord[i]] = p[coord[i]]+eps;
             this.value(p,tmp);
             res[coord[i]] = tmp.v;
@@ -180,8 +195,7 @@ Element.prototype.getAreas = function() {
  *  @return {number} The next step length to do with respect to this primitive/node
  */
 Element.prototype.distanceTo = function(p) {
-    throw "ERROR : distanceTo is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
-    return 0.5;
+    throw new Error("ERROR : distanceTo is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");
 };
 
 /**
@@ -190,8 +204,7 @@ Element.prototype.distanceTo = function(p) {
  *  @return {number} The next step length to do with respect to this primitive/node.
  */
 Element.prototype.heuristicStepWithin = function() {
-    throw "ERROR : heuristicStepWithin is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
-    return 0.1;
+    throw new Error("ERROR : heuristicStepWithin is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");
 };
 
 /**
@@ -200,20 +213,20 @@ Element.prototype.heuristicStepWithin = function() {
  *  Default behaviour is doing nothing, leaves cannot be sub-trimmed, only nodes.
  *  Note : only the root can untrim
  *
- *  @param {THREE.Box3} aabb
- *  @param {Array.<Blobtree.Element>} trimmed Array of trimmed Elements
- *  @param {Array.<Blobtree.Node>} parents Array of fathers from which each trimmed element has been removed.
+ *  @param {THREE.Box3} _aabb
+ *  @param {Array.<Element>} _trimmed Array of trimmed Elements
+ *  @param {Array.<Node>} _parents Array of fathers from which each trimmed element has been removed.
  */
-Element.prototype.trim = function(aabb, trimmed, parents){
-
+Element.prototype.trim = function(_aabb, _trimmed, _parents){
+    // Do nothing by default
 };
 
 /**
  *  count the number of elements of class cls in this node and subnodes
- *  @param {Object} cls the class of the elements we want to count
- *  @return {number}
+ *  @param {Function} _cls the class of the elements we want to count
+ *  @return {number} The number of element of class cls
  */
-Element.prototype.count = function(cls){
+Element.prototype.count = function(_cls){
     return 0;
 };
 
