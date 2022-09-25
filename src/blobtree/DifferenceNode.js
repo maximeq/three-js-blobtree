@@ -3,7 +3,6 @@
 const THREE = require("three");
 const Types = require("./Types.js");
 const Node = require("./Node.js");
-const Convergence = require("../utils/Convergence.js");
 const Material = require("./Material.js");
 
 /**
@@ -91,7 +90,6 @@ DifferenceNode.prototype.prepareForEval = function()
 // [Abstract] see Node for more details.
 DifferenceNode.prototype.value = function(p,res)
 {
-    var l = this.children.length;
     var v_arr = this.tmp_v_arr;
     var m_arr = this.tmp_m_arr;
 

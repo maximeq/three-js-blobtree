@@ -2,10 +2,12 @@
 
 const THREE = require("three");
 
+const Material = require("../blobtree/Material");
 
-var EPSILON = 0.000001;
 
-var TriangleUtils = {};
+const EPSILON = 0.000001;
+
+const TriangleUtils = {};
 
 /*
   ! Triangle extends Primitive and must have the following properties in constructor: !
@@ -43,14 +45,18 @@ var TriangleUtils = {};
 
 */
 
-// intermediary functions used in computeVectorsDirs
-var cleanIndex = function(ind, lengthArray) {
-    var res =ind;
-    if (lengthArray === 0 ){
-        throw "Lenght of the array should not be null";
-        return res;
+/**
+ * intermediary functions used in computeVectorsDirs
+ * @param {number} ind
+ * @param {number} lengthArray
+ * @return {number}
+ */
+let cleanIndex = function(ind, lengthArray) {
+    let res = ind;
+    if (lengthArray === 0) {
+        throw new Error("Lenght of the array should not be 0");
     }
-    if (lengthArray ===1){
+    if (lengthArray === 1) {
         return 0;
     }
     // negative index are looped back at the end of the array
@@ -63,14 +69,57 @@ var cleanIndex = function(ind, lengthArray) {
 };
 
 /**
+ * A number, or a string containing a number.
+ * @typedef {Object} VertexLike
+ * @property {() => THREE.Vector3} getPos
+ * @property {() => number} getThickness
+ */
+
+/**
+ * A number, or a string containing a number.
+ * @typedef {Object} TriangleLike
+ * @property {Array<VertexLike>} v
+ * @property {THREE.Vector3} p0p1
+ * @property {THREE.Vector3} p1p2
+ * @property {THREE.Vector3} p2p0
+ * @property {THREE.Vector3} unit_p0p1
+ * @property {THREE.Vector3} unit_p1p2
+ * @property {THREE.Vector3} unit_p2p0
+ * @property {THREE.Vector3} unit_normal
+ * @property {number} length_p0p1
+ * @property {number} length_p1p2
+ * @property {number} length_p2p0
+ * @property {THREE.Vector3} unit_p0p1
+ * @property {number} diffThick_p0p1
+ * @property {number} diffThick_p1p2
+ * @property {number} diffThick_p2p0
+ * @property {THREE.Vector3} ortho_dir
+ * @property {THREE.Vector3} point_min
+ * @property {number} weight_min
+ * @property {THREE.Vector3} main_dir
+ * @property {THREE.Vector3} point_iso_zero
+ * @property {THREE.Vector3} proj_dir
+ * @property {boolean} equal_weights
+ * @property {THREE.Vector3} half_dir_1
+ * @property {THREE.Vector3} point_half
+ * @property {THREE.Vector3} half_dir_2
+ * @property {number} coord_max
+ * @property {number} coord_middle
+ * @property {number} unit_delta_weight
+ * @property {THREE.Vector3} longest_dir_special
+ * @property {number} max_seg_length = tmp.length();
+ * @property {THREE.Vector3} unsigned_ortho_dir = triangle.ortho_dir.clone();
+ */
+
+/**
  *  Compute some internal vars for triangle
- *  @param {!Object} triangle The triangle to compute vars for (blobtree or skel)
+ *  @param {TriangleLike} triangle The triangle to compute vars for (blobtree or skel)
  */
 TriangleUtils.computeVectorsDirs = function(triangle){
 
-    var v0_p = triangle.v[0].getPos();
-    var v1_p = triangle.v[1].getPos();
-    var v2_p = triangle.v[2].getPos();
+    let v0_p = triangle.v[0].getPos();
+    let v1_p = triangle.v[1].getPos();
+    let v2_p = triangle.v[2].getPos();
 
     triangle.p0p1.subVectors(v1_p,v0_p);
     triangle.p1p2.subVectors(v2_p,v1_p);
@@ -88,7 +137,7 @@ TriangleUtils.computeVectorsDirs = function(triangle){
     triangle.length_p1p2 = triangle.p1p2.length();
     triangle.unit_p1p2.copy(triangle.p1p2);
     triangle.unit_p1p2.divideScalar(triangle.length_p1p2);
-    triangle.diffThick_p1p2 = triangle.v[1].getThickness()-triangle.v[2].getThickness();
+    triangle.diffThick_p1p2 = triangle.v[1].getThickness() - triangle.v[2].getThickness();
 
     triangle.length_p2p0 = triangle.p2p0.length();
     triangle.unit_p2p0.copy(triangle.p2p0);
@@ -98,28 +147,29 @@ TriangleUtils.computeVectorsDirs = function(triangle){
     // Precomputation Used in mech computation
     // So we first find the direction of maximum weight variation.
 
-    var sortingArr = [];
+    /** @type Array<{vert: THREE.Vector3, thick: number, idx: number}> */
+    let sortingArr = [];
     sortingArr.push({ vert: triangle.v[0].getPos(), thick: triangle.v[0].getThickness(), idx:0});
     sortingArr.push({ vert: triangle.v[1].getPos(), thick: triangle.v[1].getThickness(), idx:1});
-    sortingArr.push({ vert: triangle.v[2].getPos(), thick: triangle.v[2].getThickness(), idx:2});
+    sortingArr.push({ vert: triangle.v[2].getPos(), thick: triangle.v[2].getThickness(), idx: 2 });
 
     // sort by the min thickness
     sortingArr.sort(function(a, b) { return a.thick - b.thick;});
     triangle.point_min = sortingArr[0].vert;
     triangle.weight_min = sortingArr[0].thick;
     // Cycle throught the other points
-    var idx = cleanIndex(sortingArr[0].idx+1,3);
-    var point_1 = triangle.v[idx].getPos();
-    var weight_1 = triangle.v[idx].getThickness();
+    let idx = cleanIndex(sortingArr[0].idx+1,3);
+    let point_1 = triangle.v[idx].getPos();
+    let weight_1 = triangle.v[idx].getThickness();
     idx = cleanIndex(sortingArr[0].idx+2,3);
-    var point_2 = triangle.v[idx].getPos();
-    var weight_2 = triangle.v[idx].getThickness();
-    var dir_1 = new THREE.Vector3();
+    let point_2 = triangle.v[idx].getPos();
+    let weight_2 = triangle.v[idx].getThickness();
+    let dir_1 = new THREE.Vector3();
     dir_1 = dir_1.subVectors(point_1, triangle.point_min);
-    var dir_2 = new THREE.Vector3();
+    let dir_2 = new THREE.Vector3();
     dir_2 = dir_2.subVectors(point_2, triangle.point_min);
-    var delta_1 = weight_1 - triangle.weight_min;
-    var delta_2 = weight_2 - triangle.weight_min;
+    let delta_1 = weight_1 - triangle.weight_min;
+    let delta_2 = weight_2 - triangle.weight_min;
     if(delta_1 < EPSILON || delta_2 < EPSILON)
     {
         if(delta_1 < delta_2)
@@ -133,7 +183,7 @@ TriangleUtils.computeVectorsDirs = function(triangle){
             if( (triangle.main_dir.dot(dir_2)) < 0.0) {
                 triangle.main_dir.multiplyScalar( -1.0);
             }
-            var coord_iso_zero_dir = - triangle.weight_min / delta_2;
+            let coord_iso_zero_dir = - triangle.weight_min / delta_2;
             triangle.point_iso_zero = new THREE.Vector3( triangle.point_min.x + coord_iso_zero_dir*dir_2.x,
                                                 triangle.point_min.y + coord_iso_zero_dir*dir_2.y,
                                                 triangle.point_min.z + coord_iso_zero_dir*dir_2.z);
@@ -149,7 +199,7 @@ TriangleUtils.computeVectorsDirs = function(triangle){
             if( (triangle.main_dir.dot(dir_1)) < 0.0) {
                 triangle.main_dir.multiplyScalar( -1.0);
             }
-            var coord_iso_zero_dir = - triangle.weight_min / delta_1;
+            let coord_iso_zero_dir = - triangle.weight_min / delta_1;
             triangle.point_iso_zero = new THREE.Vector3(triangle.point_min.x + coord_iso_zero_dir*dir_1.x,
                                                 triangle.point_min.y + coord_iso_zero_dir*dir_1.y,
                                                 triangle.point_min.z + coord_iso_zero_dir*dir_1.z);
@@ -162,13 +212,13 @@ TriangleUtils.computeVectorsDirs = function(triangle){
     else
     { // WARNING : numerically instable if delta_ close to zero !
         // find the point were weight equal zero along the two edges that leave from point_min
-        var coord_iso_zero_dir1 = - triangle.weight_min / delta_1;
-        var point_iso_zero1 = new THREE.Vector3(triangle.point_min.x + coord_iso_zero_dir1*dir_1.x,
+        let coord_iso_zero_dir1 = - triangle.weight_min / delta_1;
+        let point_iso_zero1 = new THREE.Vector3(triangle.point_min.x + coord_iso_zero_dir1*dir_1.x,
                                             triangle.point_min.y + coord_iso_zero_dir1*dir_1.y,
                                             triangle.point_min.z + coord_iso_zero_dir1*dir_1.z);
         triangle.point_iso_zero = point_iso_zero1;
-        var coord_iso_zero_dir2 = - triangle.weight_min / delta_2;
-        var point_iso_zero2 = new THREE.Vector3(triangle.point_min.x + coord_iso_zero_dir2*dir_2.x,
+        let coord_iso_zero_dir2 = - triangle.weight_min / delta_2;
+        let point_iso_zero2 = new THREE.Vector3(triangle.point_min.x + coord_iso_zero_dir2*dir_2.x,
                                             triangle.point_min.y + coord_iso_zero_dir2*dir_2.y,
                                             triangle.point_min.z + coord_iso_zero_dir2*dir_2.z);
 
@@ -184,14 +234,14 @@ TriangleUtils.computeVectorsDirs = function(triangle){
         }
     }
 
-    var coord_1 = dir_1.dot(triangle.main_dir);    // not normalized !
-    var coord_2 = dir_2.dot(triangle.main_dir);    // not normalized !
+    let coord_1 = dir_1.dot(triangle.main_dir);    // not normalized !
+    let coord_2 = dir_2.dot(triangle.main_dir);    // not normalized !
 
     // due to previous approximation for stability
     coord_1 = (coord_1<0.0) ? 0.0 : coord_1;
     coord_2 = (coord_2<0.0) ? 0.0 : coord_2;
 
-    var longest_dir = null;
+    let longest_dir = null;
     if(coord_1 > coord_2)
     {
         longest_dir = dir_1;
@@ -222,7 +272,7 @@ TriangleUtils.computeVectorsDirs = function(triangle){
     triangle.longest_dir_special = longest_dir.divideScalar(triangle.coord_max);
 
     // Length of the longest segment during numerical integration
-    var tmp = new THREE.Vector3();
+    let tmp = new THREE.Vector3();
     tmp.subVectors(triangle.half_dir_1, triangle.longest_dir_special.clone().multiplyScalar(triangle.coord_middle));
     triangle.max_seg_length = tmp.length();
     triangle.unsigned_ortho_dir = triangle.ortho_dir.clone();
@@ -238,11 +288,11 @@ TriangleUtils.computeVectorsDirs = function(triangle){
  *  @return {{pos:!THREE.Vector3, thick:number}} An object with the computed pos and thickness
  */
 TriangleUtils.getParametrisedVertexAttr = function(triangle, u, v){
-    var meanThick = TriangleUtils.getMeanThick(triangle, u, v);
+    let meanThick = TriangleUtils.getMeanThick(triangle, u, v);
     // create new point
-    var pos = new THREE.Vector3();
-    var uAdd = pos.subVectors(triangle.v[1].getPos(), triangle.v[0].getPos()).multiplyScalar(u);
-    var vAdd = pos.clone().subVectors(triangle.v[2].getPos(), triangle.v[0].getPos()).multiplyScalar(v);
+    let pos = new THREE.Vector3();
+    let uAdd = pos.subVectors(triangle.v[1].getPos(), triangle.v[0].getPos()).multiplyScalar(u);
+    let vAdd = pos.clone().subVectors(triangle.v[2].getPos(), triangle.v[0].getPos()).multiplyScalar(v);
     pos.addVectors(triangle.v[0].getPos(), uAdd);
     pos.addVectors(pos, vAdd);
 
@@ -266,8 +316,8 @@ TriangleUtils.getMeanThick = function(triangle, u, v){
  *  @return {!Material} Interpolated material
  */
 TriangleUtils.getMeanMat = function(triangle, u, v){
-    var res = new Material();
-    var m_arr = triangle.materials === null?
+    let res = new Material();
+    let m_arr = triangle.materials === null?
         [triangle.v[0].getMaterial(),triangle.v[0].getMaterial(),triangle.v[0].getMaterial()] :
         [triangle.materials[0],triangle.materials[1],triangle.materials[2]];
     res.weightedMean(
@@ -309,32 +359,32 @@ TriangleUtils.getMeanMat = function(triangle, u, v){
  *  @return {{u:number,v:number}} Coordinate of barycenter
  */
 TriangleUtils.getTriBaryCoord = function(p0p1, p2p0, p0, p){
-    var U = p0p1;
-    var V = p2p0.clone().multiplyScalar(-1);
-    var W = new THREE.Vector3().subVectors(p, p0);
+    let U = p0p1;
+    let V = p2p0.clone().multiplyScalar(-1);
+    let W = new THREE.Vector3().subVectors(p, p0);
 
     // b == d
-    var a = U.lengthSq();
-    var b = U.dot(V);
-    var c = W.dot(U);
-    var d = V.lengthSq();
-    var e = W.dot(V);
-    var v = (a*e-b*c)/(a*d-b*b);
-    var u = (c-v*b)/a;
+    let a = U.lengthSq();
+    let b = U.dot(V);
+    let c = W.dot(U);
+    let d = V.lengthSq();
+    let e = W.dot(V);
+    let v = (a*e-b*c)/(a*d-b*b);
+    let u = (c-v*b)/a;
     return {"u":u, "v":v};
 };
 
 TriangleUtils.getUVCoord = function(U, V, p0, p){
-    var W = new THREE.Vector3();
+    let W = new THREE.Vector3();
     W.crossVectors(U,V);
-    var mat = new THREE.Matrix4();
+    let mat = new THREE.Matrix4();
     mat.set(U.x, V.x, W.x,0,
             U.y, V.y, W.y,0,
             U.z, V.z, W.z,0,
               0,   0,   0,1);
-    var mat1 = new THREE.Matrix4();
+    let mat1 = new THREE.Matrix4();
     mat1.copy(mat).invert();
-    var vec = new THREE.Vector3().subVectors(p, p0);
+    let vec = new THREE.Vector3().subVectors(p, p0);
     vec.applyMatrix4(mat1);
 
     return {u:vec.x,v:vec.y};

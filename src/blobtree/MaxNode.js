@@ -3,7 +3,6 @@
 const THREE = require("three");
 const Types = require("./Types.js");
 const Node = require("./Node.js");
-const Convergence = require("../utils/Convergence.js");
 const Material = require("./Material.js");
 
 /**
