@@ -11,7 +11,6 @@ var require$$0__default = /*#__PURE__*/_interopDefaultLegacy(require$$0);
 var require$$0__default$1 = /*#__PURE__*/_interopDefaultLegacy(require$$0$1);
 
 function checkDependancy(packageName, dependancyName, dependancy) {
-    let duplicationMessage = `${packageName}: ${dependancyName} is duplicated. Your bundle includes ${dependancyName} twice. Please repair your bundle.`;
     try {
         if (THREE[dependancyName] === undefined) {
             THREE[dependancyName] = dependancy;
@@ -19,12 +18,12 @@ function checkDependancy(packageName, dependancyName, dependancy) {
         }
 
         if (THREE[dependancyName] !== dependancy) {
-            throw duplicationMessage;
+            throw new Error(`${packageName}: ${dependancyName} is duplicated. Your bundle includes ${dependancyName} twice. Please repair your bundle.`);
         }
     } catch (error) {
-        if (error !== duplicationMessage) {
+        if (!error.message.match(/is duplicated/)) {
             console.warn(
-                `${packageName}: Duplication check unavailable.` + error
+                `${packageName}: Duplication check unavailable. ${error}`
             );
         } else {
             throw error;
@@ -33,10 +32,18 @@ function checkDependancy(packageName, dependancyName, dependancy) {
 }
 
 function checkThreeRevision(packageName, revision) {
-    if (THREE.REVISION != revision) {
-        console.error(
-            `${packageName} depends on THREE revision ${revision}, but current revision is ${THREE.REVISION}.`
-        );
+    try {
+        if (THREE.REVISION != revision) {
+            throw new Error(`${packageName} depends on THREE revision ${revision}, but current revision is ${THREE.REVISION}.`)
+        }
+    } catch (error) {
+        if (!error.message.match(/depends on THREE revision/)) {
+            console.warn(
+                `${packageName}: Revision check unavailable. ${error}`
+            );
+        } else {
+            throw error;
+        }
     }
 }
 
@@ -77,756 +84,6 @@ Types$l.fromJSON = function(json){
 var Types_1 = Types$l;
 
 const THREE$o = require$$0__default["default"];
-const Types$k = Types_1;
-
-var elementIds = 0;
-
-/**
- *  A superclass for Node and Primitive in the blobtree.
- *  @constructor
- */
-var Element$3 = function () {
-
-    this.id = elementIds++;
-
-    this.aabb = new THREE$o.Box3();
-    this.valid_aabb = false;
-
-    /** @type {Blobtree.Node} */
-    this.parentNode = null;
-};
-
-Element$3.prototype.constructor = Element$3;
-
-Element$3.type = "Element";
-Types$k.register(Element$3.type, Element$3);
-
-/**
- *  @abstract
- *  Return a Javscript Object respecting JSON convention.
- *  All classes must
- */
-Element$3.prototype.toJSON = function(){
-    return {
-        type:this.getType()
-    };
-};
-/**
- *  @abstract
- *  Clone the object.
- */
-Element$3.prototype.clone = function(){
-    return Types$k.fromJSON(this.toJSON());
-};
-
-
-/**
- *  @return {Blobtree.Node} The parent node of this primitive.
- */
-Element$3.prototype.getParentNode = function() {
-    return this.parentNode;
-};
-/**
- *  @return {string} Type of the element
- */
-Element$3.prototype.getType = function() {
-    return Element$3.type;
-};
-
-/**
- *  Perform precomputation that will help to reduce future processing time,
- *  especially on calls to value.
- *  @protected
- *  @abstract
- */
-Element$3.prototype.computeHelpVariables = function() {
-    this.computeAABB();
-};
-
-/**
- *  @abstract
- *  Compute the Axis Aligned Bounding Box (AABB) for the current primitive.
- *  By default, the AABB returned is the unionns of all vertices AABB (This is
- *  good for almost all basic primitives).
- */
-Element$3.prototype.computeAABB = function() {
-    throw "Error : computeAABB is abstract, should have been overwritten";
-};
-
-/**
- *  @return {THREE.Box3} The AABB of this Element (primitive or node). WARNING : call
- *  isValidAABB before to ensure the current AABB does correspond to the primitive
- *  settings.
- */
-Element$3.prototype.getAABB = function() {
-    return this.aabb;
-};
-
-/**
- *  @return {boolean} True if the current aabb is valid, ie it does
- *  correspond to the internal primitive parameters.
- */
-Element$3.prototype.isValidAABB = function() {
-    return this.valid_aabb;
-};
-
-/**
- *  Invalid the bounding boxes recursively up to the root
- */
-Element$3.prototype.invalidAABB = function()
-{
-    this.valid_aabb = false;
-    if(this.parentNode !== null && this.parentNode.isValidAABB()){
-        this.parentNode.invalidAABB();
-    }
-};
-
-/**
- *  Note : This function was made for Node to recursively invalidate
- *  children AABB. Default is to invalidate only this AABB.
- */
-Element$3.prototype.invalidAll = function() {
-    this.invalidAABB();
-};
-
-/**
- *  @abstract
- *  Prepare the element for a call to value.
- *  Important note: For now, a primitive is considered prepared for eval if and only
- *                  if its bounding box is valid (valid_aabb is true).
- *
- */
-Element$3.prototype.prepareForEval = function() {
-    throw "ERROR : prepareForEval is a virtual function, should be re-implemented in all element(error occured in Element.js";
-};
-
-/**
- *  @abstract
- *  Compute the value and/or gradient and/or material
- *  of the element at position p in space. return computations in res (see below)
- *
- *  @param {!THREE.Vector3} p Point where we want to evaluate the primitive field
- *  @param {!Object} res Computed values will be stored here. Each values should exist and
- *                       be allocated already.
- *  @param {number} res.v Value, must be defined
- *  @param {Material} res.m Material, must be allocated and defined if wanted
- *  @param {THREE.Vector3} res.g Gradient, must be allocated and defined if wanted
- */
-Element$3.prototype.value = function(p,res) {
-    throw "ERROR : value is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
-};
-
-Element$3.prototype.numericalGradient = (function(){
-    var tmp = {v:0};
-    var coord = ['x','y','z'];
-    return function(p, res, epsilon) {
-        var eps = epsilon || 0.00001;
-
-        for(var i=0; i<3; ++i){
-            p[coord[i]] = p[coord[i]]+eps;
-            this.value(p,tmp);
-            res[coord[i]] = tmp.v;
-            p[coord[i]] = p[coord[i]]-2*eps;
-            this.value(p,tmp);
-            res[coord[i]] = (res[coord[i]]-tmp.v)/(2*eps);
-            p[coord[i]] = p[coord[i]]+eps; // reset p
-        }
-    }
-})();
-
-/**
- *  @abstract
- *  Get the Area object.
- *  Area objects do provide methods useful when rasterizing, raytracing or polygonizing
- *  the area (intersections with other areas, minimum level of detail needed to
- *  capture the feature nicely, etc etc...).
- *  @return {Array.<Object>} The Areas object corresponding to the node/primitive, in an array
- *
- */
-Element$3.prototype.getAreas = function() {
-    return [];
-};
-
-/**
- *  @abstract
- *  This function is called when a point is outside of the potential influence of a primitive/node.
- *  @return {number} The next step length to do with respect to this primitive/node
- */
-Element$3.prototype.distanceTo = function(p) {
-    throw "ERROR : distanceTo is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
-};
-
-/**
- *  @abstract
- *  This function is called when a point is within the potential influence of a primitive/node.
- *  @return {number} The next step length to do with respect to this primitive/node.
- */
-Element$3.prototype.heuristicStepWithin = function() {
-    throw "ERROR : heuristicStepWithin is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
-};
-
-/**
- *  Trim the tree to keep only nodes influencing a given bounding box.
- *  The tree must be prepared for eval for this process to be working.
- *  Default behaviour is doing nothing, leaves cannot be sub-trimmed, only nodes.
- *  Note : only the root can untrim
- *
- *  @param {THREE.Box3} aabb
- *  @param {Array.<Blobtree.Element>} trimmed Array of trimmed Elements
- *  @param {Array.<Blobtree.Node>} parents Array of fathers from which each trimmed element has been removed.
- */
-Element$3.prototype.trim = function(aabb, trimmed, parents){
-
-};
-
-/**
- *  count the number of elements of class cls in this node and subnodes
- *  @param {Object} cls the class of the elements we want to count
- *  @return {number}
- */
-Element$3.prototype.count = function(cls){
-    return 0;
-};
-
-var Element_1 = Element$3;
-
-const Element$2 = Element_1;
-const Types$j = Types_1;
-
-/**
- *  This class implements an abstract Node class for implicit blobtree.
- *  @constructor
- *  @extends {Element}
- */
-var Node$5 = function ()
-{
-    Element$2.call(this);
-
-    /** @type {Array.<!Element>} */
-    this.children = [];
-};
-
-Node$5.prototype = Object.create(Element$2.prototype);
-Node$5.prototype.constructor = Node$5;
-
-Node$5.type = "Node";
-Types$j.register(Node$5.type, Node$5);
-
-Node$5.prototype.getType = function(){
-    return Node$5.type;
-};
-
-Node$5.prototype.toJSON = function(){
-    var res = Element$2.prototype.toJSON.call(this);
-    res.children = [];
-    for(var i=0; i<this.children.length; ++i){
-        res.children.push(this.children[i].toJSON());
-    }
-    return res;
-};
-
-/**
- *  Clone current node and itss hierarchy
- */
-Node$5.prototype.clone = function(){
-    return Types$j.fromJSON(this.toJSON());
-};
-
-/**
- *  @abstract
- *  Prepare the node and all its children for evaluation.
- *  That means setup all necessary elements for an incoming call to eval.
- *  Important note: For now, a node is considered prepared for eval if and only
- *                  if its bounding box is valid (valid_aabb is true).
- *
- */
-Node$5.prototype.prepareForEval = function()
-{
-    console.error("prepareForEval is a pure virtual function, should be reimplemented in every node class");
-};
-
-/**
- *  Invalid the bounding boxes recursively down for all children
- */
-Node$5.prototype.invalidAll = function() {
-    this.invalidAABB();
-    if( this.children ) {
-        for(var i=0; i<this.children.length; i++) {
-            this.children[i].invalidAll();
-        }
-    }
-};
-
-/**
- *  Destroy the node and its children. The node is removed from the blobtree
- *  (basically clean up the links between blobtree elements).
- */
-Node$5.prototype.destroy = function() {
-    // need to Copy the array since indices will change.
-    var arr_c = this.children.slice(0,this.children.length);
-    for(var i=0; i<arr_c.length; i++) {
-        arr_c[i].destroy();
-    }
-    if(this.children.length !== 0){
-        throw "Error : children length should be 0";
-    }
-    if(this.parentNode !== null){
-        this.parentNode.removeChild(this);
-    }
-    if(this.parentNode !== null){
-        throw "Error : parent node should be null at this point";
-    }
-    this.children.length = 0;
-};
-
-/**
- *  Only works with nary nodes, otherwise a set function would be more appropriate.
- *  -> TODO : check that if we have something else than n-ary nodes one day...
- *  If c already belongs to the tree, it is removed from its current parent
- *  children list before anything (ie it is "moved").
- *
- *  @param {Element} c The child to add.
- */
-Node$5.prototype.addChild = function(c)
-{
-    if(c.parentNode !== null){
-        c.parentNode.removeChild(c);
-    }
-    // TODO should ckeck that the node does not already belong to the children list
-    this.children.push(c);
-    c.parentNode = this;
-
-    this.invalidAABB();
-};
-
-/**
- *  Only works with n-ary nodes, otherwise order matters and we therefore
- *  have to set "null" and node cannot be evaluated.
- *  -> TODO : check that if we have something else than n-ary nodes one day...
- *  WARNING:
- *      Should only be called when a Primitive is deleted.
- *      Otherwise :
- *          To move a node to another parent : use addChild.
- *  @param {Element} c The child to remove.
- */
-Node$5.prototype.removeChild = function(c)
-{
-    var i=0;
-    var cdn = this.children; // minimize the code
-
-    // Note : if this becomes too long, sort this.children using ids
-    while(cdn[i]!==c && i<cdn.length) ++i;
-
-    if(i != cdn.length){
-        cdn[i] = cdn[cdn.length-1];
-        cdn.pop();
-    }else {
-        throw "c does not belong to the children of this node";
-    }
-
-    this.invalidAABB();
-
-    c.parentNode = null;
-};
-
-// Abstract
-Node$5.prototype.computeAABB = function() {
-    this.aabb.makeEmpty();
-    for (var i=0; i<this.children.length; i++) {
-        this.children[i].computeAABB();
-        this.aabb.union(this.children[i].getAABB());
-    }
-};
-
-// Abstract
-Node$5.prototype.getAreas = function() {
-    if(!this.valid_aabb){
-        throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
-    }
-    var res = [];
-    for (var i=0; i<this.children.length; i++) {
-        res.push.apply(res,this.children[i].getAreas());
-    }
-    return res;
-};
-
-// Abstract
-Node$5.prototype.distanceTo = function(p) {
-    var res = 10000000;
-    for (var i=0; i<this.children.length; i++) {
-        res = Math.min(res,this.children[i].distanceTo(p));
-    }
-    return res;
-};
-
-// Abstract
-Node$5.prototype.heuristicStepWithin = function() {
-    var res = 10000000;
-    for (var i=0; i<this.children.length; i++) {
-        res = Math.min(res,this.children[i].heuristicStepWithin());
-    }
-    return res;
-};
-
-// [Abstract]
-Node$5.prototype.trim = function(aabb, trimmed, parents)
-{
-    var idx = trimmed.length;
-    for (var i=0; i<this.children.length; i++) {
-        if(!this.children[i].getAABB().intersectsBox(aabb)){
-            // trim the node
-            trimmed.push(this.children[i]);
-            parents.push(this);
-        }
-    }
-    for(var i=idx; i<trimmed.length; ++i){
-        this.removeChild(trimmed[i]);
-    }
-    // Trim remaining nodes
-    for (var i=0; i<this.children.length; i++) {
-        this.children[i].trim(aabb,trimmed,parents);
-    }
-};
-
-// [Abstract]
-Node$5.prototype.count = function(cls){
-    var count = 0;
-
-    if( this instanceof cls ) {
-        count++;
-    }
-
-    for (var i=0; i<this.children.length; i++) {
-        count += this.children[i].count(cls);
-    }
-
-    return count;
-};
-
-var Node_1 = Node$5;
-
-/**
- * @author Maxime Quiblier
- *
- */
-
-const THREE$n = require$$0__default["default"];
-
-var Convergence$3 = {};
-
-// Limitations: 3D only, but can easily be rewritten for nD
-// The algorithm stops when :
-// - 2 consecutive steps are smaller than epsilon
-// - OR n_max_step is reached
-// Optimization roads :
-//      - 2 small steps may be too much, only 1 could be enough in most cases isn't it?
-// @todo write documentation to talk about failure cases.
-//
-// Variable used in function. This avoid reallocation.
-    Convergence$3.last_mov_pt = new THREE$n.Vector3();
-    Convergence$3.grad = new THREE$n.Vector3();
-    Convergence$3.eval_res_g = new THREE$n.Vector3(0,0,0);
-    Convergence$3.eval_res = {v:0, g:null};
-    Convergence$3.vec = new THREE$n.Vector3();
-
-Convergence$3.safeNewton3D = function(    pot,              // Scalar Field to eval
-                                        starting_point,   // 3D point where we start, must comply to THREE.Vector3 API
-                                        value,            // iso value we are looking for
-                                        epsilon,          // Geometrical limit to stop
-                                        n_max_step,       // limit of number of step
-                                        r_max,            // max distance where we look for the iso
-                                        //bounding_v,       // Bounding volume inside which we look for the iso, getting out will make the process stop.
-                                        res               // the resulting point
-                                        )
-{
-        res.copy(starting_point);
-
-        var i = 1;
-        var consecutive_small_steps = 0;
-        var broken = false;
-        while( consecutive_small_steps != 2 && i<=n_max_step && !broken)
-        {
-            this.last_mov_pt.copy(res);
-
-            this.eval_res.g = this.eval_res_g; // active gradient computation
-            pot.value(res,this.eval_res) ;
-
-            this.grad.copy(this.eval_res.g);
-            if(this.grad.x !== 0.0 || this.grad.y !== 0.0 || this.grad.z !== 0.0 )
-            {
-                var g_l = this.grad.length();
-                var step = (value-this.eval_res.v)/g_l;
-                if(step < epsilon && step > -epsilon)
-                {
-                    if(step>0.0)
-                    {
-                        step = epsilon/g_l;
-                    }
-                    else
-                    {
-                        step = -epsilon/g_l;
-                    }
-                    consecutive_small_steps++;
-                }
-                else
-                {
-                    consecutive_small_steps = 0;
-                }
-                this.grad.normalize().multiplyScalar(step);
-                res.add(this.grad);
-
-                // If the newton step took us out of the bounding volume, we have to stop
-                //if(!bounding_v.containsPoint(res))
-                if( this.vec.subVectors(res,starting_point).lengthSq() > r_max*r_max)
-                {
-                    res.copy(starting_point);
-                    return;
-                }
-
-                /*
-                if( this.vec.subVectors(res,starting_point).lengthSq() > r_max*r_max)
-                {
-                    this.eval_res.g = null; // deactive gradient computation
-                    var current_val = this.eval_res.v;
-                    pot.value(res,this.eval_res);
-                    if( (this.eval_res.v-value)*(current_val-value) < 0.0)   // can only use dichotomy if one point is inside and one outside among (res and last_mov_pt)
-                    {
-                        res.add(this.last_mov_pt);
-                        res.multiplyScalar(0.5);
-                    }
-                    else
-                    {
-                        // In this case we have no clue what to do, so just break...
-                        broken = true;
-                    }
-                }
-                */
-            }
-            else
-            {
-                broken = true;
-            }
-
-            ++i;
-        }
-
-        if(broken){
-            // return strating_point
-            res.copy(starting_point);
-            return;
-        }
-
-        /*
-        if(broken){
-
-            this.eval_res.g = null; // deactive gradient computation
-
-            // Check the point between last_moving_point and starting_point which is closest to the surface and return it.
-            pot.value(this.last_mov_pt,this.eval_res);
-            var ev_last_mov_pt = this.eval_res.v;
-            pot.value(starting_point,this.eval_res);
-            var ev_st_pt = this.eval_res.v;
-            if( Math.abs(ev_last_mov_pt-value) > Math.abs(starting_point-value) )
-            {
-                res.copy(starting_point);
-                return;
-            }
-            else
-            {
-                res.copy(this.last_mov_pt);
-                return;
-            }
-        }
-        */
-};
-
-
-/** \brief This algorithm uses Newton convergence to find a point epsilon close to
-*        a point "p" such that the given potential "pot" evaluated at "p" is "value".
-*        The search is constrained on line defined by (origin, search_dir), and between bounds
-*        defined by min_absc and max_absc which are the abscissae on the line with respect
-*        to origin and search_dir. search_dir should be normalized.
-*        The starting point is given with an abscissa : origin + starting_point_absc*search_dir
-*
-*   \param pot
-*   \param origin Point choosen as origin in the search line frame.
-*   \param search_dir unit vector that, together with origin, defines the searching line
-*   \param min_absc Minimum abscissa on the line : the algorithm will not search for a point below this abscissa.
-*   \param max_absc Maximum abscissa on the line : the algorithm will not search for a point above this abscissa.
-*   \param starting_point_absc Abscissa of the starting point, with respect to the search dir.
-*   \param value The potential value we are looking for on the line with respect to pot.Eval(..)
-*   \param epsilon We want the result to be at least epsilon close to the surface with respect to the
-*                   distance Vector.norm(), we suppose this norm to be the one associated with the dot product Vector.operator |
-*   \param n_max_step Maximum of newton step before giving up.
-*
-*    \return true if a point p such that |pot.Eval(p) - value| < epsilon was found.
-*           false and the current searching point otherwise.
-*
-*
-*   @todo write documentation to talk about failure cases.
-*   @todo Should not normalise search_dir. Change that here and in all part of code where this is used.
-*/
-Convergence$3.safeNewton1D = function(
-                                        pot,
-                                        origin,
-                                        search_dir_unit,
-                                        min_absc_inside,
-                                        max_absc_outside,
-                                        starting_point_absc,
-                                        value,
-                                        epsilon,
-                                        n_max_step,
-                                        res // resulting point res.p and gradient res.g (if res.g defined) resulting absc in res.p_absc
-                                        )
-{
-    this.eval_res.g = this.eval_res_g; // active gradient computation
-
-    if( !(search_dir_unit.x !== 0.0 || search_dir_unit.y !== 0.0 || search_dir_unit.z !== 0.0) ){
-        throw "Error : search direction is null";
-    }
-    if(epsilon<=0){
-        throw "Error: epsilon <= 0, convergence will nuke your face or loop";
-    }
-    if(starting_point_absc<min_absc_inside || starting_point_absc>max_absc_outside){
-        throw "Error : starting absc is not in boundaries";
-    }
-
-    var curr_point_absc = starting_point_absc;
-    var eval_pt = new THREE$n.Vector3();
-
-    // Newton step until we overpass the surface
-    // the minimum step is set to epsilon, that ensure we will cross the surface.
-    var grad = 0;
-    var step = 0;
-    var i = 0;
-    while( max_absc_outside - min_absc_inside > epsilon && i < n_max_step)
-    {
-        // curr_point_absc is guaranteed inside [min_absc_inside,max_absc_outside]
-        pot.value(  eval_pt.copy(search_dir_unit).multiplyScalar(curr_point_absc).add(origin),
-                    this.eval_res) ;
-        // update bounding absc
-        if(this.eval_res.v > value)
-        {
-            min_absc_inside = curr_point_absc;
-        }
-        else
-        {
-            max_absc_outside = curr_point_absc;
-        }
-
-        // Analytical gradient evaluation + dot product should be less than 2 evaluations in cost.
-        grad = this.eval_res.g.dot(search_dir_unit);
-        if(grad !== 0.0)
-        {
-            step = (value-this.eval_res.v)/grad;
-            curr_point_absc += step;
-
-            // Dichotomy step
-            if(curr_point_absc >= max_absc_outside || curr_point_absc <= min_absc_inside)
-            {
-                curr_point_absc = (max_absc_outside+min_absc_inside)*0.5;
-            }
-
-        }
-        else
-        {
-            // Dichotomy step
-            curr_point_absc = (max_absc_outside+min_absc_inside)*0.5;
-        }
-
-        ++i;
-    }
-
-    res.p_absc = (max_absc_outside+min_absc_inside)*0.5; // approximate
-    res.p.copy(search_dir_unit).multiplyScalar(curr_point_absc).add(origin);
-    if(res.g !== undefined){
-        if(i===0){
-            pot.value(  res.p,
-                        this.eval_res) ;
-        }
-        res.g.copy(this.eval_res.g);
-    }
-};
-
-Convergence$3.dichotomy1D = function(
-                                        pot,
-                                        origin,
-                                        search_dir_unit,
-                                        startStepLength,
-                                        value,
-                                        epsilon,
-                                        n_max_step, // TODO : Useless, since dichotomia is absolutely determinist, n step is startStepLength/(2^n) accuracy...
-                                                    //        OR epsilon is the one useless...
-                                        res // resulting point res.p and gradient res.g (if res.g defined) resulting absc in res.p_absc
-                                        )
-{
-
-    this.eval_res.g = null; // deactive gradient computation
-
-    var previousPos = new THREE$n.Vector3().copy(origin);
-    var currentStep = new THREE$n.Vector3();
-    // intersection
-    // dichotomia: first step is going back half of the previous distance
-    startStepLength /= 2;
-    var dist = -startStepLength;
-    var previousDist = dist;
-    origin.sub(
-        currentStep.copy(search_dir_unit)
-            .multiplyScalar(startStepLength));
-    var nstep = 0;
-    while((startStepLength > epsilon) && (nstep < n_max_step))
-    {
-        nstep++;
-        previousPos.copy(origin);
-        previousDist=dist;
-
-        startStepLength/=2;
-        // not asking for the next step, which is always half of previous
-        pot.value(
-            origin,
-            this.eval_res);
-
-        if (this.eval_res.v < value)
-        {
-            // before the surface: go forward
-            origin.add(
-                currentStep.copy(search_dir_unit)
-                    .multiplyScalar(startStepLength));
-            dist+=startStepLength;
-        }
-        else
-        {
-            // after the surface: go backward
-            origin.sub(
-                currentStep.copy(search_dir_unit)
-                    .multiplyScalar(startStepLength));
-            dist-=startStepLength;
-        }
-    }
-    // linear interpolation with previous pos
-    res.p.copy(origin.add(previousPos).divideScalar(2));
-    res.p_absc = (previousDist + dist)/2;
-
-    // linear interpolation with previous pos
-    res.p.copy(origin);
-    res.p_absc = dist;
-
-    // test wether the caller wanted to compute the gradient
-    // (we assume that if res.g is defined, it's a request)
-    if (res.g)
-    {
-        this.eval_res.g = this.eval_res_g; // active gradient computation
-        pot.value(
-            res.p,
-            this.eval_res);
-        res.g.copy(this.eval_res.g);
-    }
-
-};
-
-var Convergence_1 = Convergence$3;
-
-const THREE$m = require$$0__default["default"];
 
 /**
  *  Material object for blobtree. It is an internal material, that should especially
@@ -856,10 +113,10 @@ var Material$b = function (params) {
         throw "Error : Blobtree Material now takes only 1 argument.";
     }
 
-    this.color = new THREE$m.Color(params.color !== undefined ? params.color : 0xaaaaaa);
+    this.color = new THREE$o.Color(params.color !== undefined ? params.color : 0xaaaaaa);
     this.roughness = params.roughness !== undefined ? params.roughness : 0;
     this.metalness = params.metalness !== undefined ? params.metalness : 0;
-    this.emissive = new THREE$m.Color( params.emissive !== undefined ? params.emissive : 0x000000 );
+    this.emissive = new THREE$o.Color( params.emissive !== undefined ? params.emissive : 0x000000 );
 
 };
 
@@ -876,7 +133,7 @@ Material$b.prototype.toJSON = function()
 Material$b.fromJSON = function(json)
 {
     return new Material$b({
-        color: new THREE$m.Color( json.color ),
+        color: new THREE$o.Color( json.color ),
         roughness: json.roughness,
         metalness: json.metalness,
         emissive: json.emissive, // If undefined, will default to pitch black. If not, will load the hex string.
@@ -1094,6 +351,787 @@ Material$b.areEqualsArrays = function(arr1, arr2, arr3, arr4, arr5){
 Material$b.defaultMaterial = new Material$b();
 
 var Material_1 = Material$b;
+
+const THREE$n = require$$0__default["default"];
+const Types$k = Types_1;
+
+let elementIds = 0;
+
+/**
+ *  A superclass for Node and Primitive in the blobtree.
+ *  @class
+ *  @constructor
+ */
+const Element$3 = function () {
+
+    this.id = elementIds++;
+
+    this.aabb = new THREE$n.Box3();
+    this.valid_aabb = false;
+
+    /** @type {Node} */
+    this.parentNode = null;
+};
+
+Element$3.prototype.constructor = Element$3;
+
+Element$3.type = "Element";
+Types$k.register(Element$3.type, Element$3);
+
+/**
+ *  @abstract
+ *  Return a Javscript Object respecting JSON convention.
+ *  All classes must
+ */
+Element$3.prototype.toJSON = function(){
+    return {
+        type:this.getType()
+    };
+};
+/**
+ *  @abstract
+ *  Clone the object.
+ */
+Element$3.prototype.clone = function(){
+    return Types$k.fromJSON(this.toJSON());
+};
+
+
+/**
+ *  @return {Node} The parent node of this primitive.
+ */
+Element$3.prototype.getParentNode = function() {
+    return this.parentNode;
+};
+/**
+ *  @return {string} Type of the element
+ */
+Element$3.prototype.getType = function() {
+    return Element$3.type;
+};
+
+/**
+ *  Perform precomputation that will help to reduce future processing time,
+ *  especially on calls to value.
+ *  @protected
+ *  @abstract
+ */
+Element$3.prototype.computeHelpVariables = function() {
+    this.computeAABB();
+};
+
+/**
+ *  @abstract
+ *  Compute the Axis Aligned Bounding Box (AABB) for the current primitive.
+ *  By default, the AABB returned is the unionns of all vertices AABB (This is
+ *  good for almost all basic primitives).
+ */
+Element$3.prototype.computeAABB = function() {
+    throw "Error : computeAABB is abstract, should have been overwritten";
+};
+
+/**
+ *  @return {THREE.Box3} The AABB of this Element (primitive or node). WARNING : call
+ *  isValidAABB before to ensure the current AABB does correspond to the primitive
+ *  settings.
+ */
+Element$3.prototype.getAABB = function() {
+    return this.aabb;
+};
+
+/**
+ *  @return {boolean} True if the current aabb is valid, ie it does
+ *  correspond to the internal primitive parameters.
+ */
+Element$3.prototype.isValidAABB = function() {
+    return this.valid_aabb;
+};
+
+/**
+ *  Invalid the bounding boxes recursively up to the root
+ */
+Element$3.prototype.invalidAABB = function()
+{
+    this.valid_aabb = false;
+    if(this.parentNode !== null && this.parentNode.isValidAABB()){
+        this.parentNode.invalidAABB();
+    }
+};
+
+/**
+ *  Note : This function was made for Node to recursively invalidate
+ *  children AABB. Default is to invalidate only this AABB.
+ */
+Element$3.prototype.invalidAll = function() {
+    this.invalidAABB();
+};
+
+/**
+ * @typedef prepareForEvalResult
+ * @property {Array<Object>} del_obj
+ * @property {Array<Object>} new_areas
+ */
+
+/**
+ *  @abstract
+ *  Prepare the element for a call to value.
+ *  Important note: For now, a primitive is considered prepared for eval if and only
+ *                  if its bounding box is valid (valid_aabb is true).
+ *  @return {prepareForEvalResult}
+ */
+Element$3.prototype.prepareForEval = function() {
+    // let res = {del_obj:[], new_areas:[]};
+    throw new Error("ERROR : prepareForEval is a virtual function, should be re-implemented in all element(error occured in Element.js");
+};
+
+/**
+ *  @abstract
+ *  Compute the value and/or gradient and/or material
+ *  of the element at position p in space. return computations in res (see below)
+ *
+ *  @param {THREE.Vector3} p Point where we want to evaluate the primitive field
+ *  @param {Object} res Computed values will be stored here. Each values should exist and
+ *                       be allocated already.
+ *  @param {number} res.v Value, must be defined
+ *  @param {Material} res.m Material, must be allocated and defined if wanted
+ *  @param {THREE.Vector3} res.g Gradient, must be allocated and defined if wanted
+ */
+Element$3.prototype.value = function(p,res) {
+    throw new Error("ERROR : value is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");
+};
+
+/**
+ * @param {THREE.Vector3} p The point where we want the numerical gradient
+ * @param {THREE.Vector3} res The resulting gradient
+ * @param {number} epsilon The step value for the numerical evaluation
+ */
+Element$3.prototype.numericalGradient = (function(){
+    let tmp = {v:0};
+    let coord = ['x','y','z'];
+    return function(p, res, epsilon) {
+        let eps = epsilon || 0.00001;
+
+        for(let i=0; i<3; ++i){
+            p[coord[i]] = p[coord[i]]+eps;
+            this.value(p,tmp);
+            res[coord[i]] = tmp.v;
+            p[coord[i]] = p[coord[i]]-2*eps;
+            this.value(p,tmp);
+            res[coord[i]] = (res[coord[i]]-tmp.v)/(2*eps);
+            p[coord[i]] = p[coord[i]]+eps; // reset p
+        }
+    }
+})();
+
+/**
+ *  @abstract
+ *  Get the Area object.
+ *  Area objects do provide methods useful when rasterizing, raytracing or polygonizing
+ *  the area (intersections with other areas, minimum level of detail needed to
+ *  capture the feature nicely, etc etc...).
+ *  @return {Array.<Object>} The Areas object corresponding to the node/primitive, in an array
+ *
+ */
+Element$3.prototype.getAreas = function() {
+    return [];
+};
+
+/**
+ *  @abstract
+ *  This function is called when a point is outside of the potential influence of a primitive/node.
+ *  @return {number} The next step length to do with respect to this primitive/node
+ */
+Element$3.prototype.distanceTo = function(p) {
+    throw new Error("ERROR : distanceTo is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");
+};
+
+/**
+ *  @abstract
+ *  This function is called when a point is within the potential influence of a primitive/node.
+ *  @return {number} The next step length to do with respect to this primitive/node.
+ */
+Element$3.prototype.heuristicStepWithin = function() {
+    throw new Error("ERROR : heuristicStepWithin is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");
+};
+
+/**
+ *  Trim the tree to keep only nodes influencing a given bounding box.
+ *  The tree must be prepared for eval for this process to be working.
+ *  Default behaviour is doing nothing, leaves cannot be sub-trimmed, only nodes.
+ *  Note : only the root can untrim
+ *
+ *  @param {THREE.Box3} _aabb
+ *  @param {Array.<Element>} _trimmed Array of trimmed Elements
+ *  @param {Array.<Node>} _parents Array of fathers from which each trimmed element has been removed.
+ */
+Element$3.prototype.trim = function(_aabb, _trimmed, _parents){
+    // Do nothing by default
+};
+
+/**
+ *  count the number of elements of class cls in this node and subnodes
+ *  @param {Function} _cls the class of the elements we want to count
+ *  @return {number} The number of element of class cls
+ */
+Element$3.prototype.count = function(_cls){
+    return 0;
+};
+
+var Element_1 = Element$3;
+
+const Element$2 = Element_1;
+const Types$j = Types_1;
+
+/**
+ *  This class implements an abstract Node class for implicit blobtree.
+ *  @constructor
+ *  @extends {Element}
+ */
+const Node$5 = function ()
+{
+    Element$2.call(this);
+
+    /** @type {Array.<!Element>} */
+    this.children = [];
+};
+
+Node$5.prototype = Object.create(Element$2.prototype);
+Node$5.prototype.constructor = Node$5;
+
+Node$5.type = "Node";
+Types$j.register(Node$5.type, Node$5);
+
+Node$5.prototype.getType = function(){
+    return Node$5.type;
+};
+
+Node$5.prototype.toJSON = function(){
+    var res = Element$2.prototype.toJSON.call(this);
+    res.children = [];
+    for(var i=0; i<this.children.length; ++i){
+        res.children.push(this.children[i].toJSON());
+    }
+    return res;
+};
+
+/**
+ *  Clone current node and itss hierarchy
+ */
+Node$5.prototype.clone = function(){
+    return Types$j.fromJSON(this.toJSON());
+};
+
+/**
+ *  @abstract
+ *  Prepare the node and all its children for evaluation.
+ *  That means setup all necessary elements for an incoming call to eval.
+ *  Important note: For now, a node is considered prepared for eval if and only
+ *                  if its bounding box is valid (valid_aabb is true).
+ *
+ */
+Node$5.prototype.prepareForEval = function()
+{
+    console.error("prepareForEval is a pure virtual function, should be reimplemented in every node class");
+};
+
+/**
+ *  Invalid the bounding boxes recursively down for all children
+ */
+Node$5.prototype.invalidAll = function() {
+    this.invalidAABB();
+    if( this.children ) {
+        for(var i=0; i<this.children.length; i++) {
+            this.children[i].invalidAll();
+        }
+    }
+};
+
+/**
+ *  Destroy the node and its children. The node is removed from the blobtree
+ *  (basically clean up the links between blobtree elements).
+ */
+Node$5.prototype.destroy = function() {
+    // need to Copy the array since indices will change.
+    var arr_c = this.children.slice(0,this.children.length);
+    for(var i=0; i<arr_c.length; i++) {
+        arr_c[i].destroy();
+    }
+    if(this.children.length !== 0){
+        throw "Error : children length should be 0";
+    }
+    if(this.parentNode !== null){
+        this.parentNode.removeChild(this);
+    }
+    if(this.parentNode !== null){
+        throw "Error : parent node should be null at this point";
+    }
+    this.children.length = 0;
+};
+
+/**
+ *  Only works with nary nodes, otherwise a set function would be more appropriate.
+ *  -> TODO : check that if we have something else than n-ary nodes one day...
+ *  If c already belongs to the tree, it is removed from its current parent
+ *  children list before anything (ie it is "moved").
+ *
+ *  @param {Element} c The child to add.
+ */
+Node$5.prototype.addChild = function(c)
+{
+    if(c.parentNode !== null){
+        c.parentNode.removeChild(c);
+    }
+    // TODO should ckeck that the node does not already belong to the children list
+    this.children.push(c);
+    c.parentNode = this;
+
+    this.invalidAABB();
+};
+
+/**
+ *  Only works with n-ary nodes, otherwise order matters and we therefore
+ *  have to set "null" and node cannot be evaluated.
+ *  -> TODO : check that if we have something else than n-ary nodes one day...
+ *  WARNING:
+ *      Should only be called when a Primitive is deleted.
+ *      Otherwise :
+ *          To move a node to another parent : use addChild.
+ *  @param {Element} c The child to remove.
+ */
+Node$5.prototype.removeChild = function(c)
+{
+    var i=0;
+    var cdn = this.children; // minimize the code
+
+    // Note : if this becomes too long, sort this.children using ids
+    while(cdn[i]!==c && i<cdn.length) ++i;
+
+    if(i != cdn.length){
+        cdn[i] = cdn[cdn.length-1];
+        cdn.pop();
+    }else {
+        throw "c does not belong to the children of this node";
+    }
+
+    this.invalidAABB();
+
+    c.parentNode = null;
+};
+
+// Abstract
+Node$5.prototype.computeAABB = function() {
+    this.aabb.makeEmpty();
+    for (var i=0; i<this.children.length; i++) {
+        this.children[i].computeAABB();
+        this.aabb.union(this.children[i].getAABB());
+    }
+};
+
+// Abstract
+Node$5.prototype.getAreas = function() {
+    if(!this.valid_aabb){
+        throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
+    }
+    var res = [];
+    for (var i=0; i<this.children.length; i++) {
+        res.push.apply(res,this.children[i].getAreas());
+    }
+    return res;
+};
+
+// Abstract
+Node$5.prototype.distanceTo = function(p) {
+    var res = 10000000;
+    for (var i=0; i<this.children.length; i++) {
+        res = Math.min(res,this.children[i].distanceTo(p));
+    }
+    return res;
+};
+
+// Abstract
+Node$5.prototype.heuristicStepWithin = function() {
+    var res = 10000000;
+    for (var i=0; i<this.children.length; i++) {
+        res = Math.min(res,this.children[i].heuristicStepWithin());
+    }
+    return res;
+};
+
+// [Abstract]
+Node$5.prototype.trim = function(aabb, trimmed, parents)
+{
+    var idx = trimmed.length;
+    for (var i=0; i<this.children.length; i++) {
+        if(!this.children[i].getAABB().intersectsBox(aabb)){
+            // trim the node
+            trimmed.push(this.children[i]);
+            parents.push(this);
+        }
+    }
+    for(var i=idx; i<trimmed.length; ++i){
+        this.removeChild(trimmed[i]);
+    }
+    // Trim remaining nodes
+    for (var i=0; i<this.children.length; i++) {
+        this.children[i].trim(aabb,trimmed,parents);
+    }
+};
+
+// [Abstract]
+Node$5.prototype.count = function(cls){
+    var count = 0;
+
+    if( this instanceof cls ) {
+        count++;
+    }
+
+    for (var i=0; i<this.children.length; i++) {
+        count += this.children[i].count(cls);
+    }
+
+    return count;
+};
+
+var Node_1 = Node$5;
+
+/**
+ * @author Maxime Quiblier
+ *
+ */
+
+const THREE$m = require$$0__default["default"];
+
+const Convergence$3 = {};
+
+// Limitations: 3D only, but can easily be rewritten for nD
+// The algorithm stops when :
+// - 2 consecutive steps are smaller than epsilon
+// - OR n_max_step is reached
+// Optimization roads :
+//      - 2 small steps may be too much, only 1 could be enough in most cases isn't it?
+// @todo write documentation to talk about failure cases.
+//
+// Variable used in function. This avoid reallocation.
+    Convergence$3.last_mov_pt = new THREE$m.Vector3();
+    Convergence$3.grad = new THREE$m.Vector3();
+Convergence$3.eval_res_g = new THREE$m.Vector3(0, 0, 0);
+    /** @type {{v:number, m:Material g:THREE.Vector3}} */
+    Convergence$3.eval_res = {v:0, m:null, g:null};
+    Convergence$3.vec = new THREE$m.Vector3();
+
+/**
+ * @param {BlobtreeElement} pot
+ * @param {THREE.Vector3} starting_point
+ * @param {number} value
+ * @param {number} epsilon
+ * @param {number} n_max_step
+ * @param {number} r_max
+ * @param {THREE.Vector3} res
+ * @returns
+ */
+Convergence$3.safeNewton3D = function(    pot,              // Scalar Field to eval
+                                        starting_point,   // 3D point where we start, must comply to THREE.Vector3 API
+                                        value,            // iso value we are looking for
+                                        epsilon,          // Geometrical limit to stop
+                                        n_max_step,       // limit of number of step
+                                        r_max,            // max distance where we look for the iso
+                                        //bounding_v,       // Bounding volume inside which we look for the iso, getting out will make the process stop.
+                                        res               // the resulting point
+                                        )
+{
+        res.copy(starting_point);
+
+        var i = 1;
+        var consecutive_small_steps = 0;
+        var broken = false;
+        while( consecutive_small_steps != 2 && i<=n_max_step && !broken)
+        {
+            this.last_mov_pt.copy(res);
+
+            this.eval_res.g = this.eval_res_g; // active gradient computation
+            pot.value(res,this.eval_res) ;
+
+            this.grad.copy(this.eval_res.g);
+            if(this.grad.x !== 0.0 || this.grad.y !== 0.0 || this.grad.z !== 0.0 )
+            {
+                var g_l = this.grad.length();
+                var step = (value-this.eval_res.v)/g_l;
+                if(step < epsilon && step > -epsilon)
+                {
+                    if(step>0.0)
+                    {
+                        step = epsilon/g_l;
+                    }
+                    else
+                    {
+                        step = -epsilon/g_l;
+                    }
+                    consecutive_small_steps++;
+                }
+                else
+                {
+                    consecutive_small_steps = 0;
+                }
+                this.grad.normalize().multiplyScalar(step);
+                res.add(this.grad);
+
+                // If the newton step took us out of the bounding volume, we have to stop
+                //if(!bounding_v.containsPoint(res))
+                if( this.vec.subVectors(res,starting_point).lengthSq() > r_max*r_max)
+                {
+                    res.copy(starting_point);
+                    return;
+                }
+
+                /*
+                if( this.vec.subVectors(res,starting_point).lengthSq() > r_max*r_max)
+                {
+                    this.eval_res.g = null; // deactive gradient computation
+                    var current_val = this.eval_res.v;
+                    pot.value(res,this.eval_res);
+                    if( (this.eval_res.v-value)*(current_val-value) < 0.0)   // can only use dichotomy if one point is inside and one outside among (res and last_mov_pt)
+                    {
+                        res.add(this.last_mov_pt);
+                        res.multiplyScalar(0.5);
+                    }
+                    else
+                    {
+                        // In this case we have no clue what to do, so just break...
+                        broken = true;
+                    }
+                }
+                */
+            }
+            else
+            {
+                broken = true;
+            }
+
+            ++i;
+        }
+
+        if(broken){
+            // return strating_point
+            res.copy(starting_point);
+            return;
+        }
+
+        /*
+        if(broken){
+
+            this.eval_res.g = null; // deactive gradient computation
+
+            // Check the point between last_moving_point and starting_point which is closest to the surface and return it.
+            pot.value(this.last_mov_pt,this.eval_res);
+            var ev_last_mov_pt = this.eval_res.v;
+            pot.value(starting_point,this.eval_res);
+            var ev_st_pt = this.eval_res.v;
+            if( Math.abs(ev_last_mov_pt-value) > Math.abs(starting_point-value) )
+            {
+                res.copy(starting_point);
+                return;
+            }
+            else
+            {
+                res.copy(this.last_mov_pt);
+                return;
+            }
+        }
+        */
+};
+
+/**
+ *
+ * @typedef {Object} safeNewton1DResult
+ * @property {THREE.Vector3} p
+ * @property {THREE.Vector3} g
+ * @property {number} p_absc
+ *
+ */
+
+/** This algorithm uses Newton convergence to find a point epsilon close to
+*        a point "p" such that the given potential "pot" evaluated at "p" is "value".
+*        The search is constrained on line defined by (origin, search_dir), and between bounds
+*        defined by min_absc and max_absc which are the abscissae on the line with respect
+*        to origin and search_dir. search_dir should be normalized.
+*        The starting point is given with an abscissa : origin + starting_point_absc*search_dir
+*
+*   @param {BlobtreeElement} pot
+*   @param {THREE.Vector3} origin Point choosen as origin in the search line frame.
+*   @param {THREE.Vector3} search_dir_unit unit vector that, together with origin, defines the searching line. Should be normalized
+*   @param {number} min_absc_inside Minimum abscissa on the line : the algorithm will not search for a point below this abscissa.
+*   @param {number} max_absc_outside Maximum abscissa on the line : the algorithm will not search for a point above this abscissa.
+*   @param {number} starting_point_absc Abscissa of the starting point, with respect to the search dir.
+*   @param {number} value The potential value we are looking for on the line with respect to pot.Eval(..)
+*   @param {number} epsilon We want the result to be at least epsilon close to the surface with respect to the
+*                   distance Vector.norm(), we suppose this norm to be the one associated with the dot product Vector.operator |
+*   @param {number} n_max_step Maximum of newton step before giving up.
+*
+*   @param {safeNewton1DResult} res
+*
+*
+*   @todo write documentation to talk about failure cases.
+*   @todo Should not normalise search_dir. Change that here and in all part of code where this is used.
+*/
+Convergence$3.safeNewton1D = function(
+                                        pot,
+                                        origin,
+                                        search_dir_unit,
+                                        min_absc_inside,
+                                        max_absc_outside,
+                                        starting_point_absc,
+                                        value,
+                                        epsilon,
+                                        n_max_step,
+                                        res // resulting point res.p and gradient res.g (if res.g defined) resulting absc in res.p_absc
+                                        )
+{
+    this.eval_res.g = this.eval_res_g; // active gradient computation
+
+    if( !(search_dir_unit.x !== 0.0 || search_dir_unit.y !== 0.0 || search_dir_unit.z !== 0.0) ){
+        throw "Error : search direction is null";
+    }
+    if(epsilon<=0){
+        throw "Error: epsilon <= 0, convergence will nuke your face or loop";
+    }
+    if(starting_point_absc<min_absc_inside || starting_point_absc>max_absc_outside){
+        throw "Error : starting absc is not in boundaries";
+    }
+
+    var curr_point_absc = starting_point_absc;
+    var eval_pt = new THREE$m.Vector3();
+
+    // Newton step until we overpass the surface
+    // the minimum step is set to epsilon, that ensure we will cross the surface.
+    var grad = 0;
+    var step = 0;
+    var i = 0;
+    while( max_absc_outside - min_absc_inside > epsilon && i < n_max_step)
+    {
+        // curr_point_absc is guaranteed inside [min_absc_inside,max_absc_outside]
+        pot.value(  eval_pt.copy(search_dir_unit).multiplyScalar(curr_point_absc).add(origin),
+                    this.eval_res) ;
+        // update bounding absc
+        if(this.eval_res.v > value)
+        {
+            min_absc_inside = curr_point_absc;
+        }
+        else
+        {
+            max_absc_outside = curr_point_absc;
+        }
+
+        // Analytical gradient evaluation + dot product should be less than 2 evaluations in cost.
+        grad = this.eval_res.g.dot(search_dir_unit);
+        if(grad !== 0.0)
+        {
+            step = (value-this.eval_res.v)/grad;
+            curr_point_absc += step;
+
+            // Dichotomy step
+            if(curr_point_absc >= max_absc_outside || curr_point_absc <= min_absc_inside)
+            {
+                curr_point_absc = (max_absc_outside+min_absc_inside)*0.5;
+            }
+
+        }
+        else
+        {
+            // Dichotomy step
+            curr_point_absc = (max_absc_outside+min_absc_inside)*0.5;
+        }
+
+        ++i;
+    }
+
+    res.p_absc = (max_absc_outside+min_absc_inside)*0.5; // approximate
+    res.p.copy(search_dir_unit).multiplyScalar(curr_point_absc).add(origin);
+    if(res.g !== undefined){
+        if(i===0){
+            pot.value(  res.p,
+                        this.eval_res) ;
+        }
+        res.g.copy(this.eval_res.g);
+    }
+};
+
+Convergence$3.dichotomy1D = function(
+                                        pot,
+                                        origin,
+                                        search_dir_unit,
+                                        startStepLength,
+                                        value,
+                                        epsilon,
+                                        n_max_step, // TODO : Useless, since dichotomia is absolutely determinist, n step is startStepLength/(2^n) accuracy...
+                                                    //        OR epsilon is the one useless...
+                                        res // resulting point res.p and gradient res.g (if res.g defined) resulting absc in res.p_absc
+                                        )
+{
+
+    this.eval_res.g = null; // deactive gradient computation
+
+    var previousPos = new THREE$m.Vector3().copy(origin);
+    var currentStep = new THREE$m.Vector3();
+    // intersection
+    // dichotomia: first step is going back half of the previous distance
+    startStepLength /= 2;
+    var dist = -startStepLength;
+    var previousDist = dist;
+    origin.sub(
+        currentStep.copy(search_dir_unit)
+            .multiplyScalar(startStepLength));
+    var nstep = 0;
+    while((startStepLength > epsilon) && (nstep < n_max_step))
+    {
+        nstep++;
+        previousPos.copy(origin);
+        previousDist=dist;
+
+        startStepLength/=2;
+        // not asking for the next step, which is always half of previous
+        pot.value(
+            origin,
+            this.eval_res);
+
+        if (this.eval_res.v < value)
+        {
+            // before the surface: go forward
+            origin.add(
+                currentStep.copy(search_dir_unit)
+                    .multiplyScalar(startStepLength));
+            dist+=startStepLength;
+        }
+        else
+        {
+            // after the surface: go backward
+            origin.sub(
+                currentStep.copy(search_dir_unit)
+                    .multiplyScalar(startStepLength));
+            dist-=startStepLength;
+        }
+    }
+    // linear interpolation with previous pos
+    res.p.copy(origin.add(previousPos).divideScalar(2));
+    res.p_absc = (previousDist + dist)/2;
+
+    // linear interpolation with previous pos
+    res.p.copy(origin);
+    res.p_absc = dist;
+
+    // test wether the caller wanted to compute the gradient
+    // (we assume that if res.g is defined, it's a request)
+    if (res.g)
+    {
+        this.eval_res.g = this.eval_res_g; // active gradient computation
+        pot.value(
+            res.p,
+            this.eval_res);
+        res.g.copy(this.eval_res.g);
+    }
+
+};
+
+var Convergence_1 = Convergence$3;
 
 const THREE$l = require$$0__default["default"];
 const Types$i = Types_1;
@@ -1748,7 +1786,6 @@ DifferenceNode.prototype.prepareForEval = function()
 // [Abstract] see Node for more details.
 DifferenceNode.prototype.value = function(p,res)
 {
-    this.children.length;
     var v_arr = this.tmp_v_arr;
     var m_arr = this.tmp_m_arr;
 
@@ -3855,10 +3892,12 @@ var ScalisSegment_1 = ScalisSegment$1;
 
 const THREE$c = require$$0__default["default"];
 
+const Material$5 = Material_1;
 
-var EPSILON = 0.000001;
 
-var TriangleUtils$2 = {};
+const EPSILON = 0.000001;
+
+const TriangleUtils$2 = {};
 
 /*
   ! Triangle extends Primitive and must have the following properties in constructor: !
@@ -3896,13 +3935,18 @@ var TriangleUtils$2 = {};
 
 */
 
-// intermediary functions used in computeVectorsDirs
-var cleanIndex = function(ind, lengthArray) {
-    var res =ind;
-    if (lengthArray === 0 ){
-        throw "Lenght of the array should not be null";
+/**
+ * intermediary functions used in computeVectorsDirs
+ * @param {number} ind
+ * @param {number} lengthArray
+ * @return {number}
+ */
+let cleanIndex = function(ind, lengthArray) {
+    let res = ind;
+    if (lengthArray === 0) {
+        throw new Error("Lenght of the array should not be 0");
     }
-    if (lengthArray ===1){
+    if (lengthArray === 1) {
         return 0;
     }
     // negative index are looped back at the end of the array
@@ -3915,14 +3959,57 @@ var cleanIndex = function(ind, lengthArray) {
 };
 
 /**
+ * A number, or a string containing a number.
+ * @typedef {Object} VertexLike
+ * @property {() => THREE.Vector3} getPos
+ * @property {() => number} getThickness
+ */
+
+/**
+ * A number, or a string containing a number.
+ * @typedef {Object} TriangleLike
+ * @property {Array<VertexLike>} v
+ * @property {THREE.Vector3} p0p1
+ * @property {THREE.Vector3} p1p2
+ * @property {THREE.Vector3} p2p0
+ * @property {THREE.Vector3} unit_p0p1
+ * @property {THREE.Vector3} unit_p1p2
+ * @property {THREE.Vector3} unit_p2p0
+ * @property {THREE.Vector3} unit_normal
+ * @property {number} length_p0p1
+ * @property {number} length_p1p2
+ * @property {number} length_p2p0
+ * @property {THREE.Vector3} unit_p0p1
+ * @property {number} diffThick_p0p1
+ * @property {number} diffThick_p1p2
+ * @property {number} diffThick_p2p0
+ * @property {THREE.Vector3} ortho_dir
+ * @property {THREE.Vector3} point_min
+ * @property {number} weight_min
+ * @property {THREE.Vector3} main_dir
+ * @property {THREE.Vector3} point_iso_zero
+ * @property {THREE.Vector3} proj_dir
+ * @property {boolean} equal_weights
+ * @property {THREE.Vector3} half_dir_1
+ * @property {THREE.Vector3} point_half
+ * @property {THREE.Vector3} half_dir_2
+ * @property {number} coord_max
+ * @property {number} coord_middle
+ * @property {number} unit_delta_weight
+ * @property {THREE.Vector3} longest_dir_special
+ * @property {number} max_seg_length = tmp.length();
+ * @property {THREE.Vector3} unsigned_ortho_dir = triangle.ortho_dir.clone();
+ */
+
+/**
  *  Compute some internal vars for triangle
- *  @param {!Object} triangle The triangle to compute vars for (blobtree or skel)
+ *  @param {TriangleLike} triangle The triangle to compute vars for (blobtree or skel)
  */
 TriangleUtils$2.computeVectorsDirs = function(triangle){
 
-    var v0_p = triangle.v[0].getPos();
-    var v1_p = triangle.v[1].getPos();
-    var v2_p = triangle.v[2].getPos();
+    let v0_p = triangle.v[0].getPos();
+    let v1_p = triangle.v[1].getPos();
+    let v2_p = triangle.v[2].getPos();
 
     triangle.p0p1.subVectors(v1_p,v0_p);
     triangle.p1p2.subVectors(v2_p,v1_p);
@@ -3940,7 +4027,7 @@ TriangleUtils$2.computeVectorsDirs = function(triangle){
     triangle.length_p1p2 = triangle.p1p2.length();
     triangle.unit_p1p2.copy(triangle.p1p2);
     triangle.unit_p1p2.divideScalar(triangle.length_p1p2);
-    triangle.diffThick_p1p2 = triangle.v[1].getThickness()-triangle.v[2].getThickness();
+    triangle.diffThick_p1p2 = triangle.v[1].getThickness() - triangle.v[2].getThickness();
 
     triangle.length_p2p0 = triangle.p2p0.length();
     triangle.unit_p2p0.copy(triangle.p2p0);
@@ -3950,28 +4037,29 @@ TriangleUtils$2.computeVectorsDirs = function(triangle){
     // Precomputation Used in mech computation
     // So we first find the direction of maximum weight variation.
 
-    var sortingArr = [];
+    /** @type Array<{vert: THREE.Vector3, thick: number, idx: number}> */
+    let sortingArr = [];
     sortingArr.push({ vert: triangle.v[0].getPos(), thick: triangle.v[0].getThickness(), idx:0});
     sortingArr.push({ vert: triangle.v[1].getPos(), thick: triangle.v[1].getThickness(), idx:1});
-    sortingArr.push({ vert: triangle.v[2].getPos(), thick: triangle.v[2].getThickness(), idx:2});
+    sortingArr.push({ vert: triangle.v[2].getPos(), thick: triangle.v[2].getThickness(), idx: 2 });
 
     // sort by the min thickness
     sortingArr.sort(function(a, b) { return a.thick - b.thick;});
     triangle.point_min = sortingArr[0].vert;
     triangle.weight_min = sortingArr[0].thick;
     // Cycle throught the other points
-    var idx = cleanIndex(sortingArr[0].idx+1,3);
-    var point_1 = triangle.v[idx].getPos();
-    var weight_1 = triangle.v[idx].getThickness();
+    let idx = cleanIndex(sortingArr[0].idx+1,3);
+    let point_1 = triangle.v[idx].getPos();
+    let weight_1 = triangle.v[idx].getThickness();
     idx = cleanIndex(sortingArr[0].idx+2,3);
-    var point_2 = triangle.v[idx].getPos();
-    var weight_2 = triangle.v[idx].getThickness();
-    var dir_1 = new THREE$c.Vector3();
+    let point_2 = triangle.v[idx].getPos();
+    let weight_2 = triangle.v[idx].getThickness();
+    let dir_1 = new THREE$c.Vector3();
     dir_1 = dir_1.subVectors(point_1, triangle.point_min);
-    var dir_2 = new THREE$c.Vector3();
+    let dir_2 = new THREE$c.Vector3();
     dir_2 = dir_2.subVectors(point_2, triangle.point_min);
-    var delta_1 = weight_1 - triangle.weight_min;
-    var delta_2 = weight_2 - triangle.weight_min;
+    let delta_1 = weight_1 - triangle.weight_min;
+    let delta_2 = weight_2 - triangle.weight_min;
     if(delta_1 < EPSILON || delta_2 < EPSILON)
     {
         if(delta_1 < delta_2)
@@ -3985,7 +4073,7 @@ TriangleUtils$2.computeVectorsDirs = function(triangle){
             if( (triangle.main_dir.dot(dir_2)) < 0.0) {
                 triangle.main_dir.multiplyScalar( -1.0);
             }
-            var coord_iso_zero_dir = - triangle.weight_min / delta_2;
+            let coord_iso_zero_dir = - triangle.weight_min / delta_2;
             triangle.point_iso_zero = new THREE$c.Vector3( triangle.point_min.x + coord_iso_zero_dir*dir_2.x,
                                                 triangle.point_min.y + coord_iso_zero_dir*dir_2.y,
                                                 triangle.point_min.z + coord_iso_zero_dir*dir_2.z);
@@ -4001,7 +4089,7 @@ TriangleUtils$2.computeVectorsDirs = function(triangle){
             if( (triangle.main_dir.dot(dir_1)) < 0.0) {
                 triangle.main_dir.multiplyScalar( -1.0);
             }
-            var coord_iso_zero_dir = - triangle.weight_min / delta_1;
+            let coord_iso_zero_dir = - triangle.weight_min / delta_1;
             triangle.point_iso_zero = new THREE$c.Vector3(triangle.point_min.x + coord_iso_zero_dir*dir_1.x,
                                                 triangle.point_min.y + coord_iso_zero_dir*dir_1.y,
                                                 triangle.point_min.z + coord_iso_zero_dir*dir_1.z);
@@ -4014,13 +4102,13 @@ TriangleUtils$2.computeVectorsDirs = function(triangle){
     else
     { // WARNING : numerically instable if delta_ close to zero !
         // find the point were weight equal zero along the two edges that leave from point_min
-        var coord_iso_zero_dir1 = - triangle.weight_min / delta_1;
-        var point_iso_zero1 = new THREE$c.Vector3(triangle.point_min.x + coord_iso_zero_dir1*dir_1.x,
+        let coord_iso_zero_dir1 = - triangle.weight_min / delta_1;
+        let point_iso_zero1 = new THREE$c.Vector3(triangle.point_min.x + coord_iso_zero_dir1*dir_1.x,
                                             triangle.point_min.y + coord_iso_zero_dir1*dir_1.y,
                                             triangle.point_min.z + coord_iso_zero_dir1*dir_1.z);
         triangle.point_iso_zero = point_iso_zero1;
-        var coord_iso_zero_dir2 = - triangle.weight_min / delta_2;
-        var point_iso_zero2 = new THREE$c.Vector3(triangle.point_min.x + coord_iso_zero_dir2*dir_2.x,
+        let coord_iso_zero_dir2 = - triangle.weight_min / delta_2;
+        let point_iso_zero2 = new THREE$c.Vector3(triangle.point_min.x + coord_iso_zero_dir2*dir_2.x,
                                             triangle.point_min.y + coord_iso_zero_dir2*dir_2.y,
                                             triangle.point_min.z + coord_iso_zero_dir2*dir_2.z);
 
@@ -4036,14 +4124,14 @@ TriangleUtils$2.computeVectorsDirs = function(triangle){
         }
     }
 
-    var coord_1 = dir_1.dot(triangle.main_dir);    // not normalized !
-    var coord_2 = dir_2.dot(triangle.main_dir);    // not normalized !
+    let coord_1 = dir_1.dot(triangle.main_dir);    // not normalized !
+    let coord_2 = dir_2.dot(triangle.main_dir);    // not normalized !
 
     // due to previous approximation for stability
     coord_1 = (coord_1<0.0) ? 0.0 : coord_1;
     coord_2 = (coord_2<0.0) ? 0.0 : coord_2;
 
-    var longest_dir = null;
+    let longest_dir = null;
     if(coord_1 > coord_2)
     {
         longest_dir = dir_1;
@@ -4074,7 +4162,7 @@ TriangleUtils$2.computeVectorsDirs = function(triangle){
     triangle.longest_dir_special = longest_dir.divideScalar(triangle.coord_max);
 
     // Length of the longest segment during numerical integration
-    var tmp = new THREE$c.Vector3();
+    let tmp = new THREE$c.Vector3();
     tmp.subVectors(triangle.half_dir_1, triangle.longest_dir_special.clone().multiplyScalar(triangle.coord_middle));
     triangle.max_seg_length = tmp.length();
     triangle.unsigned_ortho_dir = triangle.ortho_dir.clone();
@@ -4090,11 +4178,11 @@ TriangleUtils$2.computeVectorsDirs = function(triangle){
  *  @return {{pos:!THREE.Vector3, thick:number}} An object with the computed pos and thickness
  */
 TriangleUtils$2.getParametrisedVertexAttr = function(triangle, u, v){
-    var meanThick = TriangleUtils$2.getMeanThick(triangle, u, v);
+    let meanThick = TriangleUtils$2.getMeanThick(triangle, u, v);
     // create new point
-    var pos = new THREE$c.Vector3();
-    var uAdd = pos.subVectors(triangle.v[1].getPos(), triangle.v[0].getPos()).multiplyScalar(u);
-    var vAdd = pos.clone().subVectors(triangle.v[2].getPos(), triangle.v[0].getPos()).multiplyScalar(v);
+    let pos = new THREE$c.Vector3();
+    let uAdd = pos.subVectors(triangle.v[1].getPos(), triangle.v[0].getPos()).multiplyScalar(u);
+    let vAdd = pos.clone().subVectors(triangle.v[2].getPos(), triangle.v[0].getPos()).multiplyScalar(v);
     pos.addVectors(triangle.v[0].getPos(), uAdd);
     pos.addVectors(pos, vAdd);
 
@@ -4118,8 +4206,8 @@ TriangleUtils$2.getMeanThick = function(triangle, u, v){
  *  @return {!Material} Interpolated material
  */
 TriangleUtils$2.getMeanMat = function(triangle, u, v){
-    var res = new Material();
-    var m_arr = triangle.materials === null?
+    let res = new Material$5();
+    let m_arr = triangle.materials === null?
         [triangle.v[0].getMaterial(),triangle.v[0].getMaterial(),triangle.v[0].getMaterial()] :
         [triangle.materials[0],triangle.materials[1],triangle.materials[2]];
     res.weightedMean(
@@ -4161,32 +4249,32 @@ TriangleUtils$2.getMeanMat = function(triangle, u, v){
  *  @return {{u:number,v:number}} Coordinate of barycenter
  */
 TriangleUtils$2.getTriBaryCoord = function(p0p1, p2p0, p0, p){
-    var U = p0p1;
-    var V = p2p0.clone().multiplyScalar(-1);
-    var W = new THREE$c.Vector3().subVectors(p, p0);
+    let U = p0p1;
+    let V = p2p0.clone().multiplyScalar(-1);
+    let W = new THREE$c.Vector3().subVectors(p, p0);
 
     // b == d
-    var a = U.lengthSq();
-    var b = U.dot(V);
-    var c = W.dot(U);
-    var d = V.lengthSq();
-    var e = W.dot(V);
-    var v = (a*e-b*c)/(a*d-b*b);
-    var u = (c-v*b)/a;
+    let a = U.lengthSq();
+    let b = U.dot(V);
+    let c = W.dot(U);
+    let d = V.lengthSq();
+    let e = W.dot(V);
+    let v = (a*e-b*c)/(a*d-b*b);
+    let u = (c-v*b)/a;
     return {"u":u, "v":v};
 };
 
 TriangleUtils$2.getUVCoord = function(U, V, p0, p){
-    var W = new THREE$c.Vector3();
+    let W = new THREE$c.Vector3();
     W.crossVectors(U,V);
-    var mat = new THREE$c.Matrix4();
+    let mat = new THREE$c.Matrix4();
     mat.set(U.x, V.x, W.x,0,
             U.y, V.y, W.y,0,
             U.z, V.z, W.z,0,
               0,   0,   0,1);
-    var mat1 = new THREE$c.Matrix4();
+    let mat1 = new THREE$c.Matrix4();
     mat1.copy(mat).invert();
-    var vec = new THREE$c.Vector3().subVectors(p, p0);
+    let vec = new THREE$c.Vector3().subVectors(p, p0);
     vec.applyMatrix4(mat1);
 
     return {u:vec.x,v:vec.y};
@@ -4602,7 +4690,7 @@ var AreaScalisTri_1 = AreaScalisTri$1;
 
 const THREE$a = require$$0__default["default"];
 const Types$a = Types_1;
-const Material$5 = Material_1;
+const Material$4 = Material_1;
 const ScalisPrimitive = ScalisPrimitive_1;
 const ScalisVertex$1 = ScalisVertex_1;
 const ScalisMath = ScalisMath_1;
@@ -4634,7 +4722,7 @@ var ScalisTriangle$1 = function(v, volType, density, mats) {
     }
 
     this.volType = volType;
-    this.materials     = mats !== null? mats : [Material$5.defaultMaterial.clone(), Material$5.defaultMaterial.clone(), Material$5.defaultMaterial.clone()];
+    this.materials     = mats !== null? mats : [Material$4.defaultMaterial.clone(), Material$4.defaultMaterial.clone(), Material$4.defaultMaterial.clone()];
 
     this.v = v;
     this.v[0].setPrimitive(this);
@@ -4704,9 +4792,9 @@ ScalisTriangle$1.fromJSON = function(json){
         ScalisVertex$1.fromJSON(json.v[2])
     ];
     var m = [
-        Material$5.fromJSON(json.materials[0]),
-        Material$5.fromJSON(json.materials[1]),
-        Material$5.fromJSON(json.materials[2])
+        Material$4.fromJSON(json.materials[0]),
+        Material$4.fromJSON(json.materials[1]),
+        Material$4.fromJSON(json.materials[2])
     ];
     return new ScalisTriangle$1(v, json.volType, 1.0, m);
 };
@@ -5168,10 +5256,10 @@ ScalisTriangle$1.prototype.GenericSegmentComputation = function(
 ScalisTriangle$1.prototype.evalConvol = (function() {
 
     var g = new THREE$a.Vector3();
-    var m = new Material$5();
+    var m = new Material$4();
     var tmpRes = {v:0,g:null,m:null};
     var g2 = new THREE$a.Vector3();
-    var m2 = new Material$5();
+    var m2 = new Material$4();
     var tmpRes2 = {v:0,g:null,m:null};
 
     return function (p, res) {
@@ -5735,7 +5823,7 @@ var SDFNode_1 = SDFNode$1;
 const THREE$9 = require$$0__default["default"];
 const Types$6 = Types_1;
 const SDFNode = SDFNode_1;
-const Material$4 = Material_1;
+const Material$3 = Material_1;
 
 /**
  *  This class implements a SDF Root Node, which is basically a Signed Distance Field
@@ -5755,7 +5843,7 @@ var SDFRootNode = function (f, material, child) {
 
     this.f = f;
 
-    this.material = material ? material.clone() : new Material$4();
+    this.material = material ? material.clone() : new Material$3();
 
     this.addChild(child);
 
@@ -5829,7 +5917,7 @@ SDFRootNode.prototype.value = function(p,res)
     // Init res
     res.v = 0;
     if(res.m)  {
-        res.m.copy(Material$4.defaultMaterial);
+        res.m.copy(Material$3.defaultMaterial);
     }if(res.g) ;else if (res.step !== undefined) {
         // that, is the max distance
         // we want a value that won't miss any 'min'
@@ -6846,7 +6934,7 @@ var MCTables = Tables$2;
 
 const { Box2 } = require$$0__default["default"];
 const THREE$3 = require$$0__default["default"];
-const Material$3 = Material_1;
+const Material$2 = Material_1;
 const Convergence$1 = Convergence_1;
 
 const Tables$1 = MCTables;
@@ -7042,7 +7130,7 @@ var SlidingMarchingCubes$2 = function(blobtree, params) {
 
     this.vertex = new THREE$3.Vector3(0, 0, 0); // vertex associated to the cell if any
     this.vertex_n = new THREE$3.Vector3(0, 0, 0); // vertex normal
-    this.vertex_m = new Material$3(); // vertex material
+    this.vertex_m = new Material$2(); // vertex material
 
     // Vars and tmp vars for extension checks
     this.extended = false;
@@ -7988,7 +8076,7 @@ SlidingMarchingCubes$2.prototype.computeVertex = (function() {
     var eval_res = {
         v: null,
         g: new THREE$3.Vector3(0, 0, 0),
-        m: new Material$3()
+        m: new Material$2()
     };
     var conv_res = new THREE$3.Vector3();
 
@@ -8090,7 +8178,7 @@ var SlidingMarchingCubes_1 = SlidingMarchingCubes$2;
 const THREE$2 = require$$0__default["default"];
 const Types = Types_1;
 const Node = Node_1;
-const Material$2 = Material_1;
+const Material$1 = Material_1;
 
 /**
  *  This class implement a Min node.
@@ -8115,7 +8203,7 @@ var MaxNode$1 = function (children) {
     // temp vars to speed up evaluation by avoiding allocations
     this.tmp_res = {v:0,g:null,m:null};
     this.tmp_g = new THREE$2.Vector3();
-    this.tmp_m = new Material$2();
+    this.tmp_m = new Material$1();
 
 };
 
@@ -8166,7 +8254,7 @@ MaxNode$1.prototype.value = function(p,res)
     // Init res
     res.v = 0;
     if(res.m)  {
-        res.m.copy(Material$2.defaultMaterial);
+        res.m.copy(Material$1.defaultMaterial);
     }if(res.g) {
         res.g.set(0,0,0);
     }else if (res.step !== undefined) {
@@ -8377,7 +8465,7 @@ var SplitMaxPolygonizer_1 = SplitMaxPolygonizer;
 
 const THREE$1 = require$$0__default["default"];
 
-const Material$1 = Material_1;
+const Material = Material_1;
 const Tables = MCTables;
 const Convergence = Convergence_1;
 
@@ -8414,7 +8502,7 @@ SplitSMC.prototype.constructor = SplitSMC;
  */
 SplitSMC.prototype.computeVertex = (function() {
     // Function static variable
-    var eval_res = {v:null, g:new THREE$1.Vector3(0,0,0), m:new Material$1()};
+    var eval_res = {v:null, g:new THREE$1.Vector3(0,0,0), m:new Material()};
     var conv_res = new THREE$1.Vector3();
 
     return function()

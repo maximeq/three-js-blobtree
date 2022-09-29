@@ -6,7 +6,6 @@ const Types = require("./Types.js");
 // Types
 // eslint-disable-next-line
 const Material = require("../blobtree/Material.js");
-const Node = require("../blobtree/Node.js");
 
 let elementIds = 0;
 
