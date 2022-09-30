@@ -29,7 +29,7 @@ class Node extends Element {
     }
 
     /**
-     * @returns {Json}
+     * @inheritDoc
      */
     toJSON () {
         var res = Element.prototype.toJSON.call(this);
@@ -48,12 +48,8 @@ class Node extends Element {
     }
 
     /**
-     *  @abstract
-     *  Prepare the node and all its children for evaluation.
-     *  That means setup all necessary elements for an incoming call to eval.
-     *  Important note: For now, a node is considered prepared for eval if and only
-     *                  if its bounding box is valid (valid_aabb is true).
-     *
+     *  @override
+     *  @inheritdoc
      */
     prepareForEval () {
         console.error("Blobtree.Node: prepareForEval is a pure abstract function, should be reimplemented in every node class.");
@@ -144,42 +140,42 @@ class Node extends Element {
 
     // Abstract
     computeAABB () {
-            this.aabb.makeEmpty();
-            for (var i = 0; i < this.children.length; i++) {
-                this.children[i].computeAABB();
-                this.aabb.union(this.children[i].getAABB());
-            }
-        };
+        this.aabb.makeEmpty();
+        for (var i = 0; i < this.children.length; i++) {
+            this.children[i].computeAABB();
+            this.aabb.union(this.children[i].getAABB());
+        }
+    };
 
     // Abstract
     getAreas () {
-            if (!this.valid_aabb) {
-                throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
-            }
-            var res = [];
-            for (var i = 0; i < this.children.length; i++) {
-                res.push.apply(res, this.children[i].getAreas());
-            }
-            return res;
-        };
+        if (!this.valid_aabb) {
+            throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
+        }
+        var res = [];
+        for (var i = 0; i < this.children.length; i++) {
+            res.push.apply(res, this.children[i].getAreas());
+        }
+        return res;
+    };
 
     // Abstract
     distanceTo (p) {
-            var res = 10000000;
-            for (var i = 0; i < this.children.length; i++) {
-                res = Math.min(res, this.children[i].distanceTo(p));
-            }
-            return res;
-        };
+        var res = 10000000;
+        for (var i = 0; i < this.children.length; i++) {
+            res = Math.min(res, this.children[i].distanceTo(p));
+        }
+        return res;
+    };
 
     // Abstract
     heuristicStepWithin () {
-            var res = 10000000;
-            for (var i = 0; i < this.children.length; i++) {
-                res = Math.min(res, this.children[i].heuristicStepWithin());
-            }
-            return res;
-        };
+        var res = 10000000;
+        for (var i = 0; i < this.children.length; i++) {
+            res = Math.min(res, this.children[i].heuristicStepWithin());
+        }
+        return res;
+    };
 
     // [Abstract]
     trim (aabb, trimmed, parents) {
@@ -213,7 +209,6 @@ class Node extends Element {
 
         return count;
     };
-
 
 };
 

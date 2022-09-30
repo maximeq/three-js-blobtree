@@ -121,11 +121,13 @@ class Element {
      *  Prepare the element for a call to value.
      *  Important note: For now, a primitive is considered prepared for eval if and only
      *                  if its bounding box is valid (valid_aabb is true).
-     *  @return {{del_obj:Array<Object>, new_areas:Array<Object>}}
      */
     prepareForEval() {
         console.error("Blobtree.Element: prepareForEval is a virtual function, should be re-implemented in all element(error occured in Element.js");
-        return {del_obj:[], new_areas:[]};
+        // Possible improvement: return the list of deleted objects and new ares,
+        // for example to launch a Marching Cube in the changed area only
+        // @return {{del_obj:Array<Object>, new_areas:Array<Object>}}
+        // return {del_obj:[], new_areas:[]};
     }
 
     /**

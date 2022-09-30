@@ -26,8 +26,8 @@ const Convergence = {};
 // Variable used in function. This avoid reallocation.
     Convergence.last_mov_pt = new THREE.Vector3();
     Convergence.grad = new THREE.Vector3();
-Convergence.eval_res_g = new THREE.Vector3(0, 0, 0);
-    /** @type {{v:number, m:Material g:THREE.Vector3}} */
+    Convergence.eval_res_g = new THREE.Vector3(0, 0, 0);
+    /** @type {{v:number, m:Material, g:THREE.Vector3}} */
     Convergence.eval_res = {v:0, m:null, g:null};
     Convergence.vec = new THREE.Vector3();
 
