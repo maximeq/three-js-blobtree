@@ -7,6 +7,18 @@ const Types = require("./Types.js");
 /** @typedef {import('./Material.js')} Material */
 /** @typedef {import('./Node.js')} Node */
 /** @typedef {*} Json */
+/** @typedef {import('./areas/Area')} Area */
+
+/**
+ * My typedef for each object.
+ * @typedef {Object} ValueResultType Computed values will be stored here. Each values should exist and
+ *                    be allocated already.
+ * @property {number} v Value, must be defined
+ * @property {Material=} m Material, must be allocated and defined if wanted
+ * @property {THREE.Vector3=} g Gradient, must be allocated and defined if wanted
+ * @property {number=} step ??? Not sure, probably a "safe" step for raymarching
+ * @property {number=} stepOrtho ??? Same as step but in orthogonal direction ?
+ */
 
 let elementIds = 0;
 
@@ -112,7 +124,7 @@ class Element {
      *  Note : This function was made for Node to recursively invalidate
      *  children AABB. Default is to invalidate only this AABB.
      */
-    invalidAll () {
+    invalidAll() {
         this.invalidAABB();
     }
 
@@ -136,13 +148,9 @@ class Element {
      *  of the element at position p in space. return computations in res (see below)
      *
      *  @param {THREE.Vector3} _p Point where we want to evaluate the primitive field
-     *  @param {Object} _res Computed values will be stored here. Each values should exist and
-     *                       be allocated already.
-     *  @param {number} _res.v Value, must be defined
-     *  @param {Material} _res.m Material, must be allocated and defined if wanted
-     *  @param {THREE.Vector3} _res.g Gradient, must be allocated and defined if wanted
+     *  @param {ValueResultType} _res
      */
-    value (_p, _res) {
+    value(_p, _res) {
         throw new Error("ERROR : value is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");
     };
 
@@ -180,7 +188,7 @@ class Element {
      *  Area objects do provide methods useful when rasterizing, raytracing or polygonizing
      *  the area (intersections with other areas, minimum level of detail needed to
      *  capture the feature nicely, etc etc...).
-     *  @return {Array.<Object>} The Areas object corresponding to the node/primitive, in an array
+     *  @return {Array.<Area>} The Areas object corresponding to the node/primitive, in an array
      *
      */
     getAreas () {

@@ -138,7 +138,9 @@ class Node extends Element {
             c.parentNode = null;
         };
 
-    // Abstract
+    /**
+     * @link Element.computeAABB for a complete description
+     */
     computeAABB () {
         this.aabb.makeEmpty();
         for (var i = 0; i < this.children.length; i++) {
@@ -147,7 +149,10 @@ class Node extends Element {
         }
     };
 
-    // Abstract
+    /**
+     *  @link Element.getAreas for a complete description
+     *  @return {Array<Area>}
+     */
     getAreas () {
         if (!this.valid_aabb) {
             throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
@@ -159,8 +164,12 @@ class Node extends Element {
         return res;
     };
 
-    // Abstract
-    distanceTo (p) {
+    /**
+     * @link Element.distanceTo for a complete description
+     * @param {THREE.Vector3} p
+     * @returns {number}
+     */
+    distanceTo(p) {
         var res = 10000000;
         for (var i = 0; i < this.children.length; i++) {
             res = Math.min(res, this.children[i].distanceTo(p));
@@ -168,8 +177,10 @@ class Node extends Element {
         return res;
     };
 
-    // Abstract
-    heuristicStepWithin () {
+    /**
+     * @returns
+     */
+    heuristicStepWithin() {
         var res = 10000000;
         for (var i = 0; i < this.children.length; i++) {
             res = Math.min(res, this.children[i].heuristicStepWithin());
@@ -177,8 +188,14 @@ class Node extends Element {
         return res;
     };
 
-    // [Abstract]
-    trim (aabb, trimmed, parents) {
+    /**
+     *  @link Element.trim for a complete description.
+     *
+     *  @param {THREE.Box3} aabb
+     *  @param {Array.<Element>} trimmed
+     *  @param {Array.<Node>} parents
+     */
+    trim(aabb, trimmed, parents) {
         let idx = trimmed.length;
         for (let i = 0; i < this.children.length; i++) {
             if (!this.children[i].getAABB().intersectsBox(aabb)) {
@@ -196,7 +213,13 @@ class Node extends Element {
         }
     };
 
-    count (cls) {
+    /**
+     *  @link Element.count for a complete description.
+     *
+     *  @param {Function} cls
+     *  @return {number}
+     */
+    count(cls) {
         var count = 0;
 
         if (this instanceof cls) {

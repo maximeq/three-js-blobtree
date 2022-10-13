@@ -5,9 +5,8 @@ const Types = require("./Types.js");
 const Node = require("./Node.js");
 const Material = require("./Material.js");
 
-/**
- * @typedef {import('./Element.js').Json} Json
- */
+/** @typedef {import('./Element.js').Json} Json */
+/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
 
 /**
  *  This class implement a Max node.
@@ -79,17 +78,10 @@ class MaxNode extends Node {
     }
 
     /**
-     *  Compute the value and/or gradient and/or material
-     *  of the element at position p in space. return computations in res (see below)
+     *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p Point where we want to evaluate the primitive field
-     *  @param {Object} res Computed values will be stored here. Each values should exist and
-     *                       be allocated already.
-     *  @param {number} res.v Value, must be defined
-     *  @param {Material} res.m Material, must be allocated and defined if wanted
-     *  @param {THREE.Vector3} res.g Gradient, must be allocated and defined if wanted
-     *  @param {number=} res.step The next step we can safely walk without missing the iso (0). Mostly used for convergence function or ray marching.
-     *  @param {number=} res.stepOrtho
+     *  @param {THREE.Vector3} p
+     *  @param {ValueResultType} res
      */
     value (p, res) {
         // TODO : check that all bounding box of all children and subchildrens are valid

@@ -3,7 +3,6 @@
 /**
  *  Keep track of all Types added to the Blobtree library.
  *  For now just a list of strings registered by the classes.
- *  @constructor
  */
 var Types = {
     types : {}
@@ -12,7 +11,7 @@ var Types = {
 /**
  *  Register a type in the list.
  *  @param {string} name The name of the type.
- *  @param class The class of the registered type.
+ *  @param {any} cls The class of the registered type.
  */
 Types.register = function(name, cls){
     if(this.types[name]){
@@ -24,7 +23,7 @@ Types.register = function(name, cls){
 /**
  *  Parse a JSON recursively to return a Blobtree or a blobtree element.
  *  @param {Object} json A javascript Object resulting from a JSON interpretation.
- *  @param class The class of the registered type.
+ *  @return {any}
  */
 Types.fromJSON = function(json){
     var cls = this.types[json.type];

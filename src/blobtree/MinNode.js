@@ -5,6 +5,10 @@ const Types = require("./Types.js");
 const Node = require("./Node.js");
 const Material = require("./Material.js");
 
+/** @typedef {import('./Element.js')} Element */
+/** @typedef {import('./Element.js').Json} Json */
+/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
+
 /**
  *  This class implement a Min node.
  *  It will return the minimum value of the field of each primitive.
@@ -52,7 +56,9 @@ class MinNode extends Node {
         return MinNode.type;
     }
 
-    // [Abstract] see Node for a complete description
+    /**
+     *  @link Element.prepareForEval for a complete description
+     */
     prepareForEval () {
         if (!this.valid_aabb) {
             this.aabb = new THREE.Box3();  // Create empty BBox
@@ -66,6 +72,12 @@ class MinNode extends Node {
         }
     };
 
+    /**
+     *  @link Element.value for a complete description
+     *
+     *  @param {THREE.Vector3} p
+     *  @param {ValueResultType} res
+     */
     value (p, res) {
         // TODO : check that all bounding box of all children and subchildrens are valid
         //        This enable not to do it in prim and limit the number of assert call (and string built)
@@ -107,12 +119,19 @@ class MinNode extends Node {
                 res.v = Math.min(res.v, tmp.v);
             }
         }
-        else if (res.steo || res.stepOrtho) {
+        else if (res.step || res.stepOrtho) {
             throw "Not implemented";
         }
     }
 
-    trim (aabb, trimmed, parents) {
+    /**
+     *  @link Element.trim for a complete description.
+     *
+     *  @param {THREE.Box3} aabb
+     *  @param {Array<Element>} trimmed
+     *  @param {Array<Node>} parents
+     */
+    trim(aabb, trimmed, parents) {
         // Trim remaining nodes
         for (var i = 0; i < this.children.length; i++) {
             this.children[i].trim(aabb, trimmed, parents);
