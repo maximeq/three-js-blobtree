@@ -12,32 +12,35 @@ const AreaCapsule = require("../areas/AreaCapsule.js");
  *  @constructor
  *  @extends SDFPrimitive
  *
- *  @param {THREE.Vector3} p1 Position of the first segment extremity
- *  @param {THREE.Vector3} p2 Position of the second segment extremity
- *  @param {number} r1 Radius of the sphere centered in p1
- *  @param {number} r2 Radius of the sphere centered in p2
  */
-var SDFCapsule = function(p1, p2, r1, r2) {
-    SDFPrimitive.call(this);
+class SDFCapsule extends SDFPrimitive {
 
-    this.p1 = p1.clone();
-    this.p2 = p2.clone();
-    this.r1 = r1;
-    this.r2 = r2;
+    static type = "SDFCapsule";
 
-    // Helper for evaluation
-    this.r1 = this.r1;
-    this.rdiff = this.r2 - this.r1;
-    this.unit_dir = new THREE.Vector3().subVectors(this.p2, this.p1);
-    this.lengthSq = this.unit_dir.lengthSq();
-    this.length = this.unit_dir.length();
-    this.unit_dir.normalize();
+    /**
+     *
+     *  @param {THREE.Vector3} p1 Position of the first segment extremity
+     *  @param {THREE.Vector3} p2 Position of the second segment extremity
+     *  @param {number} r1 Radius of the sphere centered in p1
+     *  @param {number} r2 Radius of the sphere centered in p2
+     */
+    constructor(p1, p2, r1, r2) {
+        super();
+
+        this.p1 = p1.clone();
+        this.p2 = p2.clone();
+        this.r1 = r1;
+        this.r2 = r2;
+
+        // Helper for evaluation
+        this.rdiff = this.r2 - this.r1;
+        this.unit_dir = new THREE.Vector3().subVectors(this.p2, this.p1);
+        this.lengthSq = this.unit_dir.lengthSq();
+        this.length = this.unit_dir.length();
+        this.unit_dir.normalize();
+    }
 };
 
-SDFCapsule.prototype = Object.create(SDFPrimitive.prototype);
-SDFCapsule.prototype.constructor = SDFCapsule;
-
-SDFCapsule.type = "SDFCapsule";
 Types.register(SDFCapsule.type, SDFCapsule);
 
 SDFCapsule.prototype.getType = function(){
