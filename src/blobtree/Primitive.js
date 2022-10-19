@@ -7,7 +7,7 @@ const Types = require("./Types.js");
  * @typedef {import('./Material.js')} Material
  * @typedef {import('./Element.js').Json} Json
  *
- * @typedef {import('./Area.js')} Area
+ * @typedef {import('./areas/Area.js')} Area
  */
 
 /**
@@ -80,7 +80,7 @@ class Primitive extends Element {
 
     /**
      * @abstract
-     * @returns {Array.<Areas>}
+     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
      */
     getAreas () {
         console.error("ERROR : getAreas is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");

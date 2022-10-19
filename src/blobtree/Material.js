@@ -66,6 +66,15 @@ class Material {
         return res;
     };
 
+    static fromJSON(json) {
+        return new Material({
+            color: new THREE.Color(json.color),
+            roughness: json.roughness,
+            metalness: json.metalness,
+            emissive: json.emissive, // If undefined, will default to pitch black. If not, will load the hex string.
+        });
+    }
+
     /**
     *  @constructor
     *
@@ -99,15 +108,6 @@ class Material {
             metalness: this.metalness,
             emissive: `#${this.emissive.getHexString()}`
         };
-    }
-
-    fromJSON (json) {
-        return new Material({
-            color: new THREE.Color(json.color),
-            roughness: json.roughness,
-            metalness: json.metalness,
-            emissive: json.emissive, // If undefined, will default to pitch black. If not, will load the hex string.
-        });
     }
 
     /**

@@ -160,27 +160,32 @@ class Element {
      * @param {number} epsilon The step value for the numerical evaluation
      */
     numericalGradient = (function () {
-        let tmp = { v: 0 };
-        let coord = ['x', 'y', 'z'];
-        /**
-         * @param {THREE.Vector3} p
-         * @param {THREE.Vector3} res
-         * @param {number} epsilon
-         */
-        return function (p, res, epsilon) {
-            let eps = epsilon || 0.00001;
+            let tmp = { v: 0 };
+            let coord = ['x', 'y', 'z'];
+            /**
+             * @param {THREE.Vector3} p
+             * @param {THREE.Vector3} res
+             * @param {number} epsilon
+             */
+            return function (p, res, epsilon) {
 
-            for (let i = 0; i < 3; ++i) {
-                p[coord[i]] = p[coord[i]] + eps;
-                this.value(p, tmp);
-                res[coord[i]] = tmp.v;
-                p[coord[i]] = p[coord[i]] - 2 * eps;
-                this.value(p, tmp);
-                res[coord[i]] = (res[coord[i]] - tmp.v) / (2 * eps);
-                p[coord[i]] = p[coord[i]] + eps; // reset p
+                /** @type Element */
+                let self = this;
+
+                let eps = epsilon || 0.00001;
+
+                for (let i = 0; i < 3; ++i) {
+                    p[coord[i]] = p[coord[i]] + eps;
+                    self.value(p, tmp);
+                    res[coord[i]] = tmp.v;
+                    p[coord[i]] = p[coord[i]] - 2 * eps;
+                    self.value(p, tmp);
+                    res[coord[i]] = (res[coord[i]] - tmp.v) / (2 * eps);
+                    p[coord[i]] = p[coord[i]] + eps; // reset p
+                }
             }
         }
-    })()
+    )()
 
     /**
      *  @abstract
@@ -188,8 +193,7 @@ class Element {
      *  Area objects do provide methods useful when rasterizing, raytracing or polygonizing
      *  the area (intersections with other areas, minimum level of detail needed to
      *  capture the feature nicely, etc etc...).
-     *  @return {Array.<Area>} The Areas object corresponding to the node/primitive, in an array
-     *
+     *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>} The Areas object corresponding to the node/primitive, in an array
      */
     getAreas () {
         return [];
