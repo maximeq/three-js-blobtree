@@ -89,14 +89,14 @@ class RootNode extends RicciNode {
      *  @return {number} The neutral value of this tree, ie the value of the field in empty region of space.
      *                   This is an API for external use and future development. For now it is hard set to 0.
      */
-    getNeutralValue = function () {
+    getNeutralValue() {
         return 0;
     };
 
     /**
      * @link Node.invalidAABB for a complete description
      */
-    invalidAABB = function () {
+    invalidAABB() {
         this.valid_aabb = false;
     };
 

@@ -3,6 +3,14 @@
 const THREE = require("three");
 
 /**
+ * @typedef {Object} MaterialJSON
+ * @property {string} color
+ * @property {number} roughness
+ * @property {number} metalness
+ * @property {string} emissive
+ */
+
+/**
  *  Material object for blobtree. It is an internal material, that should especially
  *  be used in implicit elements. It is the internal representation of the material,
  *  not the openGL material that will be used for display.

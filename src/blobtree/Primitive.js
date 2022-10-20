@@ -5,9 +5,15 @@ const Types = require("./Types.js");
 
 /**
  * @typedef {import('./Material.js')} Material
+ * @typedef {import('./Material.js').MaterialJSON} MaterialJSON
+ * @typedef {import('./Element.js').ElementJSON} ElementJSON
  * @typedef {import('./Element.js').Json} Json
  *
  * @typedef {import('./areas/Area.js')} Area
+ */
+
+/**
+ * @typedef {{materials:Array<MaterialJSON>} & ElementJSON} PrimitiveJSON
  */
 
 /**
@@ -27,10 +33,10 @@ class Primitive extends Element {
     }
 
     /**
-     * @returns {Json}
+     * @returns {PrimitiveJSON}
      */
     toJSON() {
-        var res = Element.prototype.toJSON.call(this);
+        var res = { ...super.toJSON(), materials: [] };
         res.materials = [];
         for (var i = 0; i < this.materials.length; ++i) {
             res.materials.push(this.materials[i].toJSON());

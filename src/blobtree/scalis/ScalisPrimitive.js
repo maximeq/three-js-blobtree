@@ -5,8 +5,14 @@ const Primitive = require("../Primitive.js");
 
 /** @typedef {import('../Element.js')} Element */
 /** @typedef {import('../Element.js').Json} Json */
+/** @typedef {import('../Element.js').ElementJSON} ElementJSON */
+/** @typedef {import('../Primitive.js').PrimitiveJSON} PrimitiveJSON */
 /** @typedef {import('./ScalisVertex')} ScalisVertex */
 /** @typedef {import('./ScalisVertex').ScalisVertexJSON} ScalisVertexJSON */
+
+/**
+ * @typedef {{v:Array<ScalisVertexJSON>, volType:string} & PrimitiveJSON} ScalisPrimitiveJSON
+ */
 
 /**
  *  Represent an implicit primitive respecting the SCALIS model developped by Cedrric Zanni
@@ -29,7 +35,6 @@ class ScalisPrimitive extends Primitive {
 
         /**
          * @type {!Array.<!ScalisVertex>}
-         * @protected
          */
         this.v = []; // vertex array
     }
@@ -42,10 +47,14 @@ class ScalisPrimitive extends Primitive {
     }
 
     /**
-     *  @return {{v:Array<ScalisVertexJSON>, volType: string} & Json}
+     *  @return {ScalisPrimitiveJSON}
      */
     toJSON() {
-        var res = Primitive.prototype.toJSON.call(this);
+        var res = {
+            ...super.toJSON(),
+            v: [],
+            volType: this.volType
+        };
         res.v = [];
         res.volType = this.volType;
         for (var i = 0; i < this.v.length; ++i) {

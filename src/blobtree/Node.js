@@ -6,6 +6,8 @@ const Types = require("./Types.js");
 // Types
 /**
  * @typedef {import('./Element.js').Json} Json
+ * @typedef {import('./Primitive.js')} Primitive
+ * @typedef {import('./areas/Area')} Area
  */
 
 /**
@@ -120,23 +122,23 @@ class Node extends Element {
      *  @param {Element} c The child to remove.
      */
     removeChild (c) {
-            var i = 0;
-            var cdn = this.children; // minimize the code
+        var i = 0;
+        var cdn = this.children; // minimize the code
 
-            // Note : if this becomes too long, sort this.children using ids
-            while (cdn[i] !== c && i < cdn.length) ++i;
+        // Note : if this becomes too long, sort this.children using ids
+        while (cdn[i] !== c && i < cdn.length) ++i;
 
-            if (i != cdn.length) {
-                cdn[i] = cdn[cdn.length - 1];
-                cdn.pop();
-            } else {
-                throw "c does not belong to the children of this node";
-            }
+        if (i != cdn.length) {
+            cdn[i] = cdn[cdn.length - 1];
+            cdn.pop();
+        } else {
+            throw "c does not belong to the children of this node";
+        }
 
-            this.invalidAABB();
+        this.invalidAABB();
 
-            c.parentNode = null;
-        };
+        c.parentNode = null;
+    }
 
     /**
      * @link Element.computeAABB for a complete description
@@ -147,11 +149,11 @@ class Node extends Element {
             this.children[i].computeAABB();
             this.aabb.union(this.children[i].getAABB());
         }
-    };
+    }
 
     /**
      *  @link Element.getAreas for a complete description
-     *  @return {Array<Area>}
+     *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
      */
     getAreas () {
         if (!this.valid_aabb) {

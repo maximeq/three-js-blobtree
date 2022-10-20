@@ -6,11 +6,15 @@ const Types = require("./Types.js");
 // Types
 /** @typedef {import('./Material.js')} Material */
 /** @typedef {import('./Node.js')} Node */
+/** @typedef {import('./Primitive')} Primitive */
 /** @typedef {*} Json */
 /** @typedef {import('./areas/Area')} Area */
 
 /**
- * My typedef for each object.
+ * @typedef {{type:string}} ElementJSON
+ */
+
+/**
  * @typedef {Object} ValueResultType Computed values will be stored here. Each values should exist and
  *                    be allocated already.
  * @property {number} v Value, must be defined
@@ -44,7 +48,7 @@ class Element {
     /**
      *  Return a Javscript Object respecting JSON convention.
      *  All classes must defined it.
-     *  @return {{type:string} & Json}
+     *  @return {ElementJSON}
      */
     toJSON () {
         return {
@@ -56,7 +60,7 @@ class Element {
      *  Clone the object.
      * @return {Element}
      */
-    clone () {
+    clone() {
         return Types.fromJSON(this.toJSON());
     }
 
