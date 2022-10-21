@@ -5,6 +5,14 @@ const Types = require("../Types.js");
 const SDFPrimitive = require("./SDFPrimitive.js");
 const AreaCapsule = require("../areas/AreaCapsule.js");
 
+/** @typedef {import('../Element.js').Json} Json */
+/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
+/** @typedef {import('./SDFPrimitive').SDFPrimitiveJSON} SDFPrimitiveJSON */
+
+/**
+ * @typedef {{p1:{x:number,y:number,z:number},r1:number,p2:{x:number,y:number,z:number},r2:number} & SDFPrimitiveJSON} SDFCapsuleJSON
+ */
+
 /**
  *  This primitive implements a distance field to an extanded "capsule geometry", which is actually a weighted segment.
  *  You can find more on Capsule geometry here https://github.com/maximeq/three-js-capsule-geometry
@@ -47,23 +55,31 @@ class SDFCapsule extends SDFPrimitive {
         return SDFCapsule.type;
     };
 
+    /**
+     * @returns {SDFCapsuleJSON}
+     */
     toJSON() {
-        var res = SDFPrimitive.prototype.toJSON.call(this);
-        res.p1 = {
-            x: this.p1.x,
-            y: this.p1.y,
-            z: this.p1.z
+        return {
+            ...super.toJSON(),
+            p1: {
+                x: this.p1.x,
+                y: this.p1.y,
+                z: this.p1.z
+            },
+            r1: this.r1,
+            p2: {
+                x: this.p2.x,
+                y: this.p2.y,
+                z: this.p2.z
+            },
+            r2: this.r2
         };
-        res.r1 = this.r1;
-        res.p2 = {
-            x: this.p2.x,
-            y: this.p2.y,
-            z: this.p2.z
-        };
-        res.r2 = this.r2;
-        return res;
-    };
+    }
 
+    /**
+     * @param {SDFCapsuleJSON} json
+     * @returns {SDFCapsule}
+     */
     fromJSON(json) {
         //var v = ScalisVertex.fromJSON(json.v[0]);
         return new SDFCapsule(
@@ -145,19 +161,21 @@ class SDFCapsule extends SDFPrimitive {
         );
         return b1.union(b2);
     };
-// [Abstract]
 
     /**
-     * @type {() => void} 
-    */
-    prepareForEval = function () {
+     * @link Element.prepareForEval for a complete description
+     */
+    prepareForEval() {
         if (!this.valid_aabb) {
             this.valid_aabb = true;
         }
     };
 
-// [Abstract] see ScalisPrimitive.getArea
-    getAreas = function (d) {
+    /**
+     * @param {number} d
+     * @return {Object} The Areas object corresponding to the node/primitive, in an array
+     */
+    getDistanceAreas(d) {
         if (!this.valid_aabb) {
             throw "ERROR : Cannot get area of invalid primitive";
         } else {
@@ -176,35 +194,45 @@ class SDFCapsule extends SDFPrimitive {
         }
     };
 
-// [Abstract] see SDFPrimitive.value
+    /**
+     *  @link Element.value for a complete description
+     *
+     *  @param {THREE.Vector3} p
+     *  @param {ValueResultType} res
+     */
     value = (function () {
         var v = new THREE.Vector3();
         var proj = new THREE.Vector3();
-
+        /**
+         *  @param {THREE.Vector3} p
+         *  @param {ValueResultType} res
+         */
         return function (p, res) {
-            v.subVectors(p, this.p1);
+            /** @type {SDFCapsule} */
+            let self = this;
+            v.subVectors(p, self.p1);
             var p1p_sqrl = v.lengthSq();
 
             // In unit_dir basis, vector (this.r1-this.r2, this.length) is normal to the "weight line"
             // We need a projection in this direction up to the segment line to know in which case we fall.
 
-            var x_p_2D = v.dot(this.unit_dir);
+            var x_p_2D = v.dot(self.unit_dir);
             // pythagore inc.
             var y_p_2D = Math.sqrt(
                 Math.max( // Necessary because of rounded errors, pyth result can be <0 and this causes sqrt to return NaN...
                     0.0, p1p_sqrl - x_p_2D * x_p_2D // =  y_p_2D² by pythagore
                 )
             );
-            var t = -y_p_2D / this.length;
+            var t = -y_p_2D / self.length;
 
-            var proj_x = x_p_2D + t * (this.r1 - this.r2);
+            var proj_x = x_p_2D + t * (self.r1 - self.r2);
             // var proj_y = 0.0; // by construction
 
             // Easy way to compute the distance now that we ave the projection on the segment
-            var a = THREE.MathUtils.clamp(proj_x / this.length, 0, 1.0);
-            proj.copy(this.p1).lerp(this.p2, a); // compute the actual 3D projection
+            var a = THREE.MathUtils.clamp(proj_x / self.length, 0, 1.0);
+            proj.copy(self.p1).lerp(self.p2, a); // compute the actual 3D projection
             var l = v.subVectors(p, proj).length();
-            res.v = l - (a * this.r2 + (1.0 - a) * this.r1);
+            res.v = l - (a * self.r2 + (1.0 - a) * self.r1);
             if (res.g) {
                 res.g.copy(v).divideScalar(l);
             }

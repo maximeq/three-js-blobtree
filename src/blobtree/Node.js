@@ -6,9 +6,12 @@ const Types = require("./Types.js");
 // Types
 /**
  * @typedef {import('./Element.js').Json} Json
+ * @typedef {import('./Element.js').ElementJSON} ElementJSON
  * @typedef {import('./Primitive.js')} Primitive
  * @typedef {import('./areas/Area')} Area
  */
+
+/** @typedef {{children:Array<{ElementJSON}>} & ElementJSON} NodeJSON*/
 
 /**
  *  This class implements an abstract Node class for implicit blobtree.
@@ -31,11 +34,13 @@ class Node extends Element {
     }
 
     /**
-     * @inheritDoc
+     * @return {NodeJSON}
      */
     toJSON () {
-        var res = Element.prototype.toJSON.call(this);
-        res.children = [];
+        var res = {
+            ...super.toJSON(),
+            children: []
+        };
         for (var i = 0; i < this.children.length; ++i) {
             res.children.push(this.children[i].toJSON());
         }
@@ -50,8 +55,7 @@ class Node extends Element {
     }
 
     /**
-     *  @override
-     *  @inheritdoc
+     *  @link Element.prepareForEval
      */
     prepareForEval () {
         console.error("Blobtree.Node: prepareForEval is a pure abstract function, should be reimplemented in every node class.");
@@ -109,6 +113,8 @@ class Node extends Element {
         c.parentNode = this;
 
         this.invalidAABB();
+
+        return this;
     };
 
     /**

@@ -5,6 +5,15 @@ const Types = require("../Types.js");
 const SDFPrimitive = require("./SDFPrimitive.js");
 const AreaSphere = require("../areas/AreaSphere.js");
 
+/** @typedef {import('../areas/Area')} Area */
+/** @typedef {import('../Element.js').Json} Json */
+/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
+/** @typedef {import('./SDFPrimitive').SDFPrimitiveJSON} SDFPrimitiveJSON */
+
+/**
+ * @typedef {{p:{x:number,y:number,z:number},acc:number} & SDFPrimitiveJSON} SDFPointJSON
+ */
+
 /**
  *  @constructor
  *  @extends SDFPrimitive
@@ -15,7 +24,7 @@ class SDFPoint extends SDFPrimitive {
     static type = "SDFPoint";
 
     /**
-     * 
+     *
      *  @param {THREE.Vector3} p Position (ie center) of the point
      *  @param {number} acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
      */
@@ -27,22 +36,30 @@ class SDFPoint extends SDFPrimitive {
         this.acc = acc || 1.0;
     }
 
-        
+
     getType(){
         return SDFPoint.type;
     };
 
+    /**
+     * @returns {SDFPointJSON}
+     */
     toJSON() {
-        var res = SDFPrimitive.prototype.toJSON.call(this);
-        res.p = {
-            x:this.p.x,
-            y:this.p.y,
-            z:this.p.z
+        return {
+            ...super.toJSON(),
+            p: {
+                x: this.p.x,
+                y: this.p.y,
+                z: this.p.z
+            },
+            acc: this.acc
         };
-        res.acc = this.acc;
-        return res;
     };
 
+    /**
+     * @param {SDFPointJSON} json
+     * @returns {SDFPoint}
+     */
     fromJSON(json){
         return new SDFPoint(new THREE.Vector3(json.p.x,json.p.y, json.p.z), json.acc);
     };
@@ -92,10 +109,14 @@ class SDFPoint extends SDFPrimitive {
         }
     };
 
-    // [Abstract] see ScalisPrimitive.getArea
-    getAreas(d) {
+    /**
+     * @link SDFPrimitive.getDistanceAreas
+     * @param {number} d Distance to consider for the area computation.
+     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:SDFPrimitive}>}
+     */
+    getDistanceAreas(d) {
         if(!this.valid_aabb) {
-            throw "ERROR : Cannot get area of invalid primitive";     
+            throw "ERROR : Cannot get area of invalid primitive";
         }else{
             return [{
                 aabb:this.computeDistanceAABB(d),
@@ -109,7 +130,12 @@ class SDFPoint extends SDFPrimitive {
         }
     };
 
-    // [Abstract] see SDFPrimitive.value
+    /**
+     *  @link Element.value for a complete description
+     *
+     *  @param {THREE.Vector3} p
+     *  @param {ValueResultType} res
+     */
     value = (function(){
         var v = new THREE.Vector3();
 

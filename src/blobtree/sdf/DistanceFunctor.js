@@ -5,6 +5,10 @@ const Types = require("../Types.js");
 /** @typedef {*} Json */
 
 /**
+ * @typedef {{type:string}} DistanceFunctorJSON
+ */
+
+/**
  *  A superclass for Node and Primitive in the blobtree.
  *  @constructor
  */

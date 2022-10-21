@@ -6,6 +6,12 @@ const Element = require('../Element.js');
 const Types = require("../Types.js");
 
 /** @typedef {import('../areas/Area')} Area */
+/** @typedef {import('../Element').ElementJSON} ElementJSON */
+/** @typedef {import('../Primitive')} Primitive */
+
+/**
+ * @typedef {ElementJSON} SDFPrimitiveJSON
+ */
 
 /**
  *  This class implements an abstract primitve class for signed distance field.
@@ -38,25 +44,35 @@ class SDFPrimitive extends Element {
      */
     computeAABB() {
         // Nothing to do, SDF have infinite bounding box
-    };
+    }
 
     /**
      * Return the bounding box of the node for a given maximum distance.
      * Ie, the distance field is greater than d everywhere outside the returned box.
      * @param {number} _d Distance
      * @abstract
+     * @return {THREE.Box3}
      */
     computeDistanceAABB(_d) {
-        throw "computeDistanceAABB is an abstract function of SDFPrimitive. Please reimplement it in children classes.";
-    };
+        console.error("computeDistanceAABB is an abstract function of SDFPrimitive. Please reimplement it in children classes.");
+        return (new THREE.Box3()).makeEmpty()
+    }
 
     /**
-     * SDF Field are infinite, so Areas do not make sens.
-     * @return {Object} The Areas object corresponding to the node/primitive, in an array
+     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
      */
     getAreas() {
         throw "No Areas for SDFPrimitive.";
-    };
+    }
+
+    /**
+     * @param {number} _d Distance to consider for the area computation.
+     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:SDFPrimitive}>}
+     */
+    getDistanceAreas(_d) {
+        console.error("getDistanceAreas is an abstract function of SDFPrimitive. Please reimplement in children classes");
+        return [];
+    }
 
     /**
      * Since SDF Nodes are distance function, this function will return
