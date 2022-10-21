@@ -65,7 +65,7 @@ class SDFCapsule extends SDFPrimitive {
     };
 
     fromJSON(json) {
-        var v = ScalisVertex.fromJSON(json.v[0]);
+        //var v = ScalisVertex.fromJSON(json.v[0]);
         return new SDFCapsule(
             new THREE.Vector3(json.p1.x, json.p1.y, json.p1.z),
             new THREE.Vector3(json.p2.x, json.p2.y, json.p2.z),
@@ -146,17 +146,20 @@ class SDFCapsule extends SDFPrimitive {
         return b1.union(b2);
     };
 // [Abstract]
-SDFCapsule.prototype.prepareForEval = function () {
+
+    /**
+     * @type {() => void} 
+    */
+    prepareForEval = function () {
         if (!this.valid_aabb) {
             this.valid_aabb = true;
         }
     };
 
 // [Abstract] see ScalisPrimitive.getArea
-SDFCapsule.prototype.getAreas = function (d) {
+    getAreas = function (d) {
         if (!this.valid_aabb) {
             throw "ERROR : Cannot get area of invalid primitive";
-            return [];
         } else {
             return [{
                 aabb: this.computeDistanceAABB(d),
@@ -174,14 +177,13 @@ SDFCapsule.prototype.getAreas = function (d) {
     };
 
 // [Abstract] see SDFPrimitive.value
-SDFCapsule.prototype.value = (function () {
+    value = (function () {
         var v = new THREE.Vector3();
         var proj = new THREE.Vector3();
 
         return function (p, res) {
             v.subVectors(p, this.p1);
             var p1p_sqrl = v.lengthSq();
-            var p1p_l = Math.sqrt(p1p_sqrl);
 
             // In unit_dir basis, vector (this.r1-this.r2, this.length) is normal to the "weight line"
             // We need a projection in this direction up to the segment line to know in which case we fall.
@@ -199,7 +201,7 @@ SDFCapsule.prototype.value = (function () {
             // var proj_y = 0.0; // by construction
 
             // Easy way to compute the distance now that we ave the projection on the segment
-            var a = THREE.Math.clamp(proj_x / this.length, 0, 1.0);
+            var a = THREE.MathUtils.clamp(proj_x / this.length, 0, 1.0);
             proj.copy(this.p1).lerp(this.p2, a); // compute the actual 3D projection
             var l = v.subVectors(p, proj).length();
             res.v = l - (a * this.r2 + (1.0 - a) * this.r1);

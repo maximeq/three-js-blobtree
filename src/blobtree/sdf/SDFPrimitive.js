@@ -5,6 +5,8 @@ const THREE = require("three");
 const Element = require('../Element.js');
 const Types = require("../Types.js");
 
+/** @typedef {import('../areas/Area')} Area */
+
 /**
  *  This class implements an abstract primitve class for signed distance field.
  *  SDFPrimitive subclasses must define a scalar field being the distance to a geometry.
@@ -43,14 +45,14 @@ class SDFPrimitive extends Element {
      * Ie, the distance field is greater than d everywhere outside the returned box.
      * @param {number} _d Distance
      * @abstract
-     */s
+     */
     computeDistanceAABB(_d) {
         throw "computeDistanceAABB is an abstract function of SDFPrimitive. Please reimplement it in children classes.";
     };
 
     /**
      * SDF Field are infinite, so Areas do not make sens.
-     * @return {Array.<Area>} The Areas object corresponding to the node/primitive, in an array
+     * @return {Object} The Areas object corresponding to the node/primitive, in an array
      */
     getAreas() {
         throw "No Areas for SDFPrimitive.";
