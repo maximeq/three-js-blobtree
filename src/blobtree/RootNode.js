@@ -11,6 +11,12 @@ const Convergence = require("../utils/Convergence");
 /** @typedef {import('./Material')} Material */
 /** @typedef {import('./Element.js').Json} Json */
 /** @typedef {import('./Element.js').ValueResultType} ValueResultType */
+/** @typedef {import('./RicciNode').RicciNodeJSON} RicciNodeJSON */
+
+/**
+ * @typedef {{iso:number} & RicciNodeJSON} RootNodeJSON
+ */
+
 
 /**
  * @typedef {Object} IntersectionResult The result of the intersection
@@ -28,6 +34,18 @@ const Convergence = require("../utils/Convergence");
 class RootNode extends RicciNode {
 
     static type = "RootNode";
+
+    /**
+     * @param {RootNodeJSON} json
+     * @returns {RootNode}
+     */
+    static fromJSON(json) {
+        var res = new RootNode();
+        for (var i = 0; i < json.children.length; ++i) {
+            res.addChild(Types.fromJSON(json.children[i]));
+        }
+        return res;
+    };
 
     constructor() {
         // Default RootNode is a riccinode with ricci_n = 64 (almost a max)
@@ -54,21 +72,15 @@ class RootNode extends RicciNode {
         return RootNode.type;
     };
 
-    toJSON() {
-        var res = RicciNode.prototype.toJSON.call(this);
-        res.iso = this.iso_value;
-        return res;
-    };
-
     /**
-     * @param {Json} json
-     * @returns {RootNode}
+     * @link RicciNode.toJSON
+     * @returns {RootNodeJSON}
      */
-    fromJSON(json) {
-        var res = new RootNode();
-        for (var i = 0; i < json.children.length; ++i) {
-            res.addChild(Types.fromJSON(json.children[i]));
-        }
+    toJSON() {
+        var res = {
+            ...super.toJSON(),
+            iso: this.iso_value
+        };
         return res;
     };
 

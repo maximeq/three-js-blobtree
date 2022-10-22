@@ -70,7 +70,7 @@ class Primitive extends Element {
      * @link Element.computeAABB for a complete description
      */
     computeAABB() {
-        throw "Primitive.prototype.computeAABB  Must be reimplemented in all inherited class.";
+        throw "Primitive.computeAABB  Must be reimplemented in all inherited class.";
     };
 
     /**

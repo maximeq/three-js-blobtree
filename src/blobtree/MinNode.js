@@ -8,6 +8,11 @@ const Material = require("./Material.js");
 /** @typedef {import('./Element.js')} Element */
 /** @typedef {import('./Element.js').Json} Json */
 /** @typedef {import('./Element.js').ValueResultType} ValueResultType */
+/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
+
+/**
+ * @typedef {NodeJSON} MinNodeJSON
+ */
 
 /**
  *  This class implement a Min node.
@@ -20,6 +25,11 @@ class MinNode extends Node {
 
     static type = "MinNode";
 
+    /**
+     *
+     * @param {MinNodeJSON} json
+     * @returns {MinNode}
+     */
     static fromJSON(json) {
         var res = new MinNode();
         for (var i = 0; i < json.children.length; ++i) {

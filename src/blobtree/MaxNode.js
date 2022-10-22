@@ -7,6 +7,11 @@ const Material = require("./Material.js");
 
 /** @typedef {import('./Element.js').Json} Json */
 /** @typedef {import('./Element.js').ValueResultType} ValueResultType */
+/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
+
+/**
+ * @typedef {NodeJSON} MaxNodeJSON
+ */
 
 /**
  *  This class implement a Max node.

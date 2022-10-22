@@ -7,6 +7,11 @@ const Material = require("./Material.js");
 
 /** @typedef {import('./Element.js').Json} Json */
 /** @typedef {import('./Element.js').ValueResultType} ValueResultType */
+/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
+
+/**
+ * @typedef {{ricci_n:number} & NodeJSON} RicciNodeJSON
+ */
 
 /**
  *  This class implement a n-ary blend node which use a Ricci Blend.
@@ -61,11 +66,13 @@ class RicciNode extends Node {
 
     /**
      * @link Node.toJSON
-     * @returns {Json}
+     * @returns {RicciNodeJSON}
      */
     toJSON() {
-        let res = super.toJSON.call(this);
-        res.ricci = this.ricci_n;
+        let res = {
+            ...super.toJSON(),
+            ricci_n: this.ricci_n
+        };
 
         return res;
     };
@@ -75,7 +82,7 @@ class RicciNode extends Node {
      * @param {Json} json
      * @returns
      */
-    fromJSON(json) {
+    static fromJSON(json) {
         let res = new RicciNode(json.ricci);
         for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
