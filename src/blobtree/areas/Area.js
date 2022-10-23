@@ -105,6 +105,20 @@ class Area {
      */
     getMinRawAcc() {
         throw "Error : getRawAcc is abstract, should have been overwritten";
+    },
+
+    /**
+     *  @abstract
+     *  Return the minimum accuracy required at some point on the given axis, according to Accuracies.curr
+     *  The returned accuracy is the one you would need when stepping in the axis
+     *  direction when you are on the axis at coordinate t.
+     *  @param {string} axis x, y or z
+     *  @param {number} t Coordinate on the axis
+     *  @return {number} The step you can safely do in axis direction
+     */
+    getAxisProjectionMinStep(axis, t) {
+        console.error("Area.getAxisProjectionMinStep is a pure virtual function, please reimplement");
+        return 1;
     }
 };
 

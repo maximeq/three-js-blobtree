@@ -199,14 +199,14 @@ class SlidingMarchingCubes {
         /** @type {(percent:number) => void} */
         this.progress = smcParams.progress
             ? smcParams.progress
-            : function (percent) {
+            : function (_percent) {
                 //console.log(percent);
             };
 
         /** @type {Int32Array} */
         this.reso = new Int32Array(3);
         /**
-         * @type {{x:number, y:number, z:number}}
+         * @type {{x:Float32Array, y:Float32Array, z:Float32Array}}
          */
         this.steps = {
             x: null,
@@ -409,10 +409,10 @@ class SlidingMarchingCubes {
         y0,
         y1
     ) {
-        var varr = this.values_xy[1];
+        let varr = this.values_xy[1];
 
-        var nx = x1 - x0;
-        var ny = y1 - y0;
+        let nx = x1 - x0;
+        let ny = y1 - y0;
 
         /*
         this.computeFrontValAtBoxCorners(cx,cy,cz, new THREE.Vector2(x0,y0), new THREE.Vector2(x1,y1));
@@ -424,9 +424,9 @@ class SlidingMarchingCubes {
 
         if (nx > 1) {
             // must interpolate
-            var line = y0 * this.reso[0];
-            var val0 = varr[line + x0];
-            var v_step = (varr[line + x1] - val0) / nx;
+            let line = y0 * this.reso[0];
+            let val0 = varr[line + x0];
+            let v_step = (varr[line + x1] - val0) / nx;
             for (var i = 1; i < nx; ++i) {
                 if (varr[line + x0 + i] === -1) {
                     varr[line + x0 + i] = val0 + i * v_step;
@@ -437,17 +437,17 @@ class SlidingMarchingCubes {
 
         if (ny > 1) {
             // compute upper line
-            var line = y1 * this.reso[0];
-            var val0 = varr[line + x0];
-            var v_step = (varr[line + x1] - val0) / nx;
-            for (var i = 1; i < nx; ++i) {
+            let line = y1 * this.reso[0];
+            let val0 = varr[line + x0];
+            let v_step = (varr[line + x1] - val0) / nx;
+            for (let i = 1; i < nx; ++i) {
                 if (varr[line + x0 + i] === -1) {
                     varr[line + x0 + i] = val0 + i * v_step;
                     //this.computeFrontValAt(cx,cy,cz,x0+i,y1);
                 }
             }
 
-            for (var i = 0; i <= nx; ++i) {
+            for (let i = 0; i <= nx; ++i) {
                 val0 = varr[y0 * this.reso[0] + x0 + i];
                 v_step = (varr[y1 * this.reso[0] + x0 + i] - val0) / ny;
                 for (var k = 1; k < ny; ++k) {
@@ -498,14 +498,14 @@ class SlidingMarchingCubes {
         };
     })();
 
-/**
- *  Compute corner values in the front buffer in 2D box defined by min,max
- *  @param {number} cx X coordinate of the front buffer corner
- *  @param {number} cy Y coordinate of the front buffer corner
- *  @param {number} cz Z coordinate of the front buffer corner
- *  @param {!THREE.Vector2} min 2D box min
- *  @param {!THREE.Vector2} max 2D box max
- */
+    /**
+     *  Compute corner values in the front buffer in 2D box defined by min,max
+     *  @param {number} cx X coordinate of the front buffer corner
+     *  @param {number} cy Y coordinate of the front buffer corner
+     *  @param {number} cz Z coordinate of the front buffer corner
+     *  @param {!THREE.Vector2} min 2D box min
+     *  @param {!THREE.Vector2} max 2D box max
+     */
     computeFrontValAtBoxCorners (
         cx,
         cy,
@@ -698,17 +698,17 @@ class SlidingMarchingCubes {
             }
         }
 
-        for (var k = 0; k < new_boxes.length; ++k) {
-            var b = new_boxes[k];
+        for (let k = 0; k < new_boxes.length; ++k) {
+            let b = new_boxes[k];
 
-            var bsize = b.getSize(new THREE.Vector2());
+            let bsize = b.getSize(new THREE.Vector2());
 
             if (boxes2D_rec[k].length === 0) {
                 this.setFrontValZeroInBox(b.min, b.max);
             } else {
                 if (bsize.x <= b.getRawAcc() && bsize.y <= b.getRawAcc()) {
                     // We reach the raw level
-                    var mask = this.computeBoxMask(b.min, b.max);
+                    let mask = this.computeBoxMask(b.min, b.max);
                     if (mask === 0xf || mask === 0x0) {
                         // all points are inside, since we reached raw, we can interpolate
                         // Note when all values are very close to 0, it's useless to interpolate, setting 0 can do.
@@ -883,7 +883,7 @@ class SlidingMarchingCubes {
     compute(o_aabb, extended) {
         this.initGeometry();
 
-        var timer_begin = new Date();
+        var timer_begin = new Date().getTime();
 
         this.blobtree.prepareForEval();
         var aabb = null;
@@ -896,17 +896,17 @@ class SlidingMarchingCubes {
         this.extended = extended !== undefined ? extended : false;
 
         if (this.extended) {
-            var adims = aabb.getSize(new THREE.Vector3());
-            var minAcc = Math.min(
+            let adims = aabb.getSize(new THREE.Vector3());
+            let minAcc = Math.min(
                 Math.min(this.getMinAcc(aabb), adims[0]),
                 Math.min(adims[1], adims[2])
             );
-            var acc_box = aabb.clone();
-            var final_bbox = aabb.clone();
-            var axis = ["x", "y", "z"];
-            for (var k = 0; k < axis.length; ++k) {
+            let acc_box = aabb.clone();
+            let final_bbox = aabb.clone();
+            let axis = ["x", "y", "z"];
+            for (let k = 0; k < axis.length; ++k) {
                 acc_box.max[axis[k]] = aabb.min[axis[k]] + minAcc;
-                var slice_max = this.getMaxAcc(acc_box);
+                let slice_max = this.getMaxAcc(acc_box);
                 if (slice_max !== 0) {
                     final_bbox.min[axis[k]] = final_bbox.min[axis[k]] - slice_max;
                 }
@@ -935,7 +935,7 @@ class SlidingMarchingCubes {
         }
 
         this.min_acc = this.areas.length !== 0 ? this.areas[0].bv.getMinAcc() : 1;
-        for (var i = 0; i < this.areas.length; ++i) {
+        for (let i = 0; i < this.areas.length; ++i) {
             if (this.areas[i].bv.getMinAcc() < this.min_acc) {
                 this.min_acc = this.areas[i].bv.getMinAcc();
             }
@@ -946,7 +946,6 @@ class SlidingMarchingCubes {
         var dims = aabb.getSize(new THREE.Vector3());
 
         this.steps.z = new Float32Array(Math.ceil(dims.z / this.min_acc) + 2);
-        var z = corner.z;
         this.steps.z[0] = corner.z;
         var index = 1;
         var areas = this.blobtree.getAreas();
@@ -957,7 +956,7 @@ class SlidingMarchingCubes {
                 min_step = this.min_acc;
             } else {
                 // find minimum accuracy needed in this slice.
-                for (var i = 0; i < areas.length; ++i) {
+                for (let i = 0; i < areas.length; ++i) {
                     min_step = Math.min(
                         min_step,
                         areas[i].bv.getAxisProjectionMinStep(
@@ -1035,12 +1034,12 @@ class SlidingMarchingCubes {
 
         for (var iz = 0; iz < this.reso[2] - 1; ++iz) {
             // Switch the 2 arrays, and fill the one in front
-            var switcher = this.values_xy[0];
+            let valuesSwitcher = this.values_xy[0];
             this.values_xy[0] = this.values_xy[1];
-            this.values_xy[1] = switcher;
-            switcher = this.vertices_xy[0];
+            this.values_xy[1] = valuesSwitcher;
+            let verticesSwitcher = this.vertices_xy[0];
             this.vertices_xy[0] = this.vertices_xy[1];
-            this.vertices_xy[1] = switcher;
+            this.vertices_xy[1] = verticesSwitcher;
 
             var z1 = this.steps.z[iz + 1];
             trim_aabb.set(
@@ -1054,7 +1053,7 @@ class SlidingMarchingCubes {
             this.blobtree.internalTrim(trim_aabb);
             this.blobtree.prepareForEval();
             this.computeFrontValues(corner.x, corner.y, z1);
-            this.blobtree.internalUntrim(trim_aabb);
+            this.blobtree.internalUntrim();
             this.blobtree.prepareForEval();
 
             this.z = this.steps.z[iz];
@@ -1083,7 +1082,7 @@ class SlidingMarchingCubes {
             this.blobtree.prepareForEval();
         }
 
-        var timer_end = new Date();
+        var timer_end = new Date().getTime();
         console.log(
             "Sliding Marching Cubes computed in " + (timer_end - timer_begin) + "ms"
         );
@@ -1166,14 +1165,14 @@ class SlidingMarchingCubes {
      *  @param {number} z Current cell z coordinate in the grid (integer)
      */
     triangulate(x, y, z) {
-        var idx_y_0 = y * this.reso[0] + x;
+        let idx_y_0 = y * this.reso[0] + x;
         if (this.edge_cross[0] && y !== 0 && z !== 0) {
             // x edge is crossed
             // Check orientation
-            var v1 = this.vertices_xy[1][idx_y_0];
-            var v2 = this.vertices_xy[1][(y - 1) * this.reso[0] + x];
-            var v3 = this.vertices_xy[0][(y - 1) * this.reso[0] + x];
-            var v4 = this.vertices_xy[0][idx_y_0];
+            let v1 = this.vertices_xy[1][idx_y_0];
+            let v2 = this.vertices_xy[1][(y - 1) * this.reso[0] + x];
+            let v3 = this.vertices_xy[0][(y - 1) * this.reso[0] + x];
+            let v4 = this.vertices_xy[0][idx_y_0];
             if (this.mask & 0x1) {
                 this.pushDirectFaces(v1, v2, v3, v4);
             } else {
@@ -1183,10 +1182,10 @@ class SlidingMarchingCubes {
         if (this.edge_cross[4] && x !== 0 && z !== 0) {
             // y edge is crossed
             // Check orientation
-            var v1 = this.vertices_xy[1][idx_y_0];
-            var v2 = this.vertices_xy[0][idx_y_0];
-            var v3 = this.vertices_xy[0][idx_y_0 - 1];
-            var v4 = this.vertices_xy[1][idx_y_0 - 1];
+            let v1 = this.vertices_xy[1][idx_y_0];
+            let v2 = this.vertices_xy[0][idx_y_0];
+            let v3 = this.vertices_xy[0][idx_y_0 - 1];
+            let v4 = this.vertices_xy[1][idx_y_0 - 1];
             if (this.mask & 0x1) {
                 this.pushDirectFaces(v1, v2, v3, v4);
             } else {
@@ -1196,10 +1195,10 @@ class SlidingMarchingCubes {
         if (this.edge_cross[8] && x !== 0 && y !== 0) {
             // z edge is crossed
             // Check orientation
-            var v1 = this.vertices_xy[1][idx_y_0];
-            var v2 = this.vertices_xy[1][idx_y_0 - 1];
-            var v3 = this.vertices_xy[1][(y - 1) * this.reso[0] + x - 1];
-            var v4 = this.vertices_xy[1][(y - 1) * this.reso[0] + x];
+            let v1 = this.vertices_xy[1][idx_y_0];
+            let v2 = this.vertices_xy[1][idx_y_0 - 1];
+            let v3 = this.vertices_xy[1][(y - 1) * this.reso[0] + x - 1];
+            let v4 = this.vertices_xy[1][(y - 1) * this.reso[0] + x];
             if (this.mask & 0x1) {
                 this.pushDirectFaces(v1, v2, v3, v4);
             } else {
