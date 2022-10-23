@@ -37,7 +37,7 @@ class SDFCapsule extends SDFPrimitive {
             json.r1,
             json.r2
         );
-    };
+    }
 
     /**
      *
@@ -67,7 +67,7 @@ class SDFCapsule extends SDFPrimitive {
      */
     getType() {
         return SDFCapsule.type;
-    };
+    }
 
     /**
      * @returns {SDFCapsuleJSON}
@@ -96,7 +96,7 @@ class SDFCapsule extends SDFPrimitive {
     setRadius1(r1) {
         this.r1 = r1;
         this.invalidAABB();
-    };
+    }
 
     /**
      *  @param {number} r2 The new radius at p2

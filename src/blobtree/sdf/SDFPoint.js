@@ -24,6 +24,14 @@ class SDFPoint extends SDFPrimitive {
     static type = "SDFPoint";
 
     /**
+     * @param {SDFPointJSON} json
+     * @returns {SDFPoint}
+     */
+    static fromJSON(json) {
+        return new SDFPoint(new THREE.Vector3(json.p.x, json.p.y, json.p.z), json.acc);
+    };
+
+    /**
      *
      *  @param {THREE.Vector3} p Position (ie center) of the point
      *  @param {number} acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
@@ -54,14 +62,6 @@ class SDFPoint extends SDFPrimitive {
             },
             acc: this.acc
         };
-    };
-
-    /**
-     * @param {SDFPointJSON} json
-     * @returns {SDFPoint}
-     */
-    fromJSON(json){
-        return new SDFPoint(new THREE.Vector3(json.p.x,json.p.y, json.p.z), json.acc);
     };
 
     /**

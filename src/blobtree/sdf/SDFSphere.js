@@ -143,14 +143,17 @@ class SDFSphere extends SDFPrimitive {
          *  @param {THREE.Vector3} p
          *  @param {ValueResultType} res
          */
-        return function(p,res) {
-            if(!this.valid_aabb){
+        return function (p, res) {
+            /** @type {SDFSphere} */
+            let self = this;
+
+            if (!self.valid_aabb){
                 throw "Error : PrepareForEval should have been called";
             }
 
-            v.subVectors(p,this.p);
+            v.subVectors(p, self.p);
             var l = v.length();
-            res.v = l - this.r;
+            res.v = l - self.r;
             if(res.g)
             {
                 res.g.copy(v).multiplyScalar(1/l);

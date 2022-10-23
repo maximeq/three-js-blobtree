@@ -13,23 +13,43 @@ const TriangleUtils = require("../../utils/TriangleUtils.js");
 // Number of sample in the Simpsons integration.
 var sampleNumber = 10;
 
+/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
 /** @typedef {import('./ScalisPrimitive').ScalisPrimitiveJSON} ScalisPrimitiveJSON */
 
 /**
- * @typedef {{density:number} & ScalisPrimitiveJSON} ScalisTriangleJSON
+ * @typedef {ScalisPrimitiveJSON} ScalisTriangleJSON
  */
 
 
 /**
  * This class implements a ScalisTriangle primitive.
  *  CONVOL Evaluation is not exact so we use simpsons numerical integration.
- * 
+ *
  *  @constructor
  *  @extends ScalisPrimitive
  */
 class ScalisTriangle extends ScalisPrimitive {
 
+    /** @type {"ScalisTriangle"} */
     static type = "ScalisTriangle";
+
+    /**
+     * @param {ScalisTriangleJSON} json
+     * @returns
+     */
+    static fromJSON(json) {
+        var v = [
+            ScalisVertex.fromJSON(json.v[0]),
+            ScalisVertex.fromJSON(json.v[1]),
+            ScalisVertex.fromJSON(json.v[2])
+        ];
+        var m = [
+            Material.fromJSON(json.materials[0]),
+            Material.fromJSON(json.materials[1]),
+            Material.fromJSON(json.materials[2])
+        ];
+        return new ScalisTriangle(v, json.volType, 1.0, m);
+    };
 
     /**
      *  @param {!Array.<ScalisVertex>} v the 3 vertices for the triangle
@@ -103,27 +123,18 @@ class ScalisTriangle extends ScalisPrimitive {
 
     getType(){
         return ScalisTriangle.type;
-    };
-    
-    toJSON() {
-        var res = super.toJSON();
-        return res;
-    };
+    }
 
-    fromJSON(json){
-        var v = [
-            ScalisVertex.fromJSON(json.v[0]),
-            ScalisVertex.fromJSON(json.v[1]),
-            ScalisVertex.fromJSON(json.v[2])
-        ];
-        var m = [
-            Material.fromJSON(json.materials[0]),
-            Material.fromJSON(json.materials[1]),
-            Material.fromJSON(json.materials[2])
-        ];
-        return new ScalisTriangle(v, json.volType, 1.0, m);
-    };
-    
+    /**
+     *
+     * @returns {ScalisTriangleJSON}
+     */
+    toJSON() {
+        return {
+            ...super.toJSON()
+        };
+    }
+
     // [Abstract] See Primitive.prepareForEval for more details
     prepareForEval() {
         if(!this.valid_aabb)
@@ -131,9 +142,9 @@ class ScalisTriangle extends ScalisPrimitive {
             this.computeHelpVariables();
             this.valid_aabb = true;
         }
-    };
-    
-    
+    }
+
+
     // [Abstract] See Primtive.getArea for more details
     getAreas() {
         if(!this.valid_aabb){
@@ -170,39 +181,39 @@ class ScalisTriangle extends ScalisPrimitive {
                 obj: this
             }];
         }
-    };
-    
+    }
+
     // [Abstract] See Primitive.computeHelpVariables for more details
     computeHelpVariables() {
         TriangleUtils.computeVectorsDirs(this);
         // Compute the AABB from the union of the BBox of the vertices
         this.computeAABB();
-    };
-    
+    }
+
     // [Abstract] See ScalisPrimitive.mutableVolType for more details
     mutableVolType() {
         return true;
-    };
-    
+    }
+
     // [Abstract] See Primitive.setVolType for more details
     setVolType(vt)
     {
         if( !(vt == ScalisPrimitive.CONVOL || vt == ScalisPrimitive.DIST) ){
             throw "ERROR : volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST";
         }
-    
+
         if(this.volType != vt){
             this.volType = vt;
             this.invalidAABB();
         }
-    };
-    
+    }
+
     // [Abstract] See Primitive.getVolType for more details
     getVolType()
     {
         return this.volType;
-    };
-    
+    }
+
     /**
      *  Clamps a number. Based on Zevan's idea: http://actionsnippet.com/?p=475
      *  @param {number} a
@@ -215,61 +226,68 @@ class ScalisTriangle extends ScalisPrimitive {
      */
     clamp(a,b,c){
         return Math.max(b,Math.min(c,a));
-    };
-    
+    }
+
     // [Abstract] See Primitive.distanceTo for more details
     distanceTo = (function() {
         var p0p = new THREE.Vector3();
         var p1p = new THREE.Vector3();
         var p2p = new THREE.Vector3();
         var tmp = new THREE.Vector3();
-        return function(p) {
-    
-            p0p.subVectors(p,this.v[0].getPos());
-            p1p.subVectors(p,this.v[1].getPos());
-            p2p.subVectors(p,this.v[2].getPos());
-            if( tmp.crossVectors(this.p0p1,p0p).dot(this.unit_normal)>0 &&
-                tmp.crossVectors(this.p1p2,p1p).dot(this.unit_normal)>0 &&
-                tmp.crossVectors(this.p2p0,p2p).dot(this.unit_normal)>0)
+        return function (p) {
+
+            /** @type {ScalisTriangle} */
+            let self = this;
+
+            p0p.subVectors(p, self.v[0].getPos());
+            p1p.subVectors(p, self.v[1].getPos());
+            p2p.subVectors(p, self.v[2].getPos());
+            if (tmp.crossVectors(self.p0p1, p0p).dot(self.unit_normal)>0 &&
+                tmp.crossVectors(self.p1p2, p1p).dot(self.unit_normal)>0 &&
+                tmp.crossVectors(self.p2p0, p2p).dot(self.unit_normal)>0)
             {
                 // p is in the triangle
-                return Math.abs(p0p.dot(this.unit_normal));
+                return Math.abs(p0p.dot(self.unit_normal));
             }else{
-                var t0 = p0p.dot(this.p0p1) / this.length_p0p1;
+                var t0 = p0p.dot(self.p0p1) / self.length_p0p1;
                 // clamp is our own function declared there
-                t0=this.clamp(t0,0,1);
-                tmp.copy(this.p0p1)
+                t0 = self.clamp(t0,0,1);
+                tmp.copy(self.p0p1)
                     .multiplyScalar(t0)
-                    .add(this.v[0].getPos());
+                    .add(self.v[0].getPos());
                 t0 = p.distanceToSquared(tmp);
-    
-                var t1 = p1p.dot(this.p1p2) / this.length_p1p2;
+
+                var t1 = p1p.dot(self.p1p2) / self.length_p1p2;
                 // clamp is our own function declared there
-                t1=this.clamp(t1,0,1);
-                tmp.copy(this.p1p2)
+                t1 = self.clamp(t1,0,1);
+                tmp.copy(self.p1p2)
                     .multiplyScalar(t1)
-                    .add(this.v[1].getPos());
+                    .add(self.v[1].getPos());
                 t1 = p.distanceToSquared(tmp);
-    
-                var t2 = p2p.dot(this.p2p0) / this.length_p2p0;
+
+                var t2 = p2p.dot(self.p2p0) / self.length_p2p0;
                 // clamp is our own function declared there
-                t2=this.clamp(t2,0,1);
-                tmp.copy(this.p2p0)
+                t2 = self.clamp(t2,0,1);
+                tmp.copy(self.p2p0)
                     .multiplyScalar(t2)
-                    .add(this.v[2].getPos());
+                    .add(self.v[2].getPos());
                 t2 = p.distanceToSquared(tmp);
-    
+
                 return Math.sqrt(Math.min(Math.min(t0,t1),t2));
             }
         };
     })();
-    
+
     // [Abstract] See Primitive.heuristicStepWithin for more details
     heuristicStepWithin() {
         return this.weight_min/3;
     };
-    
-    // [Abstract] See Primitive.value for more details
+    /**
+     *  @link Element.value for a complete description
+     *
+     *  @param {THREE.Vector3} p
+     *  @param {ValueResultType} res
+     */
     value(p,res) {
         switch(this.volType){
             case ScalisPrimitive.DIST:
@@ -280,31 +298,35 @@ class ScalisTriangle extends ScalisPrimitive {
             default:
                 throw "Unknown volType, use Orga";
         }
-    };
-    
-    /*
-     *  value function for Distance volume type (distance field).
-     * @params
-     */
+    }
+
     /**
      *  value function for Distance volume type (distance field).
-     * @type {(p: any, res: any) => void} 
+     *
+     *  @param {THREE.Vector3} p
+     *  @param {ValueResultType} res
      */
-    evalDist = (function(){
+    evalDist = (function() {
 
         var ev_eps = {v:0};
         var p_eps = new THREE.Vector3();
-        var self = this;
-        
-        return function(p,res) {
-        /*
-            // bounding box check (could/should be done in the node ?)
-            if( p.x > this.aabb.min_x && p.x < this.aabb.max_x &&
-                p.y > this.aabb.min_y && p.y < this.aabb.max_y &&
-                p.z > this.aabb.min_z && p.z < this.aabb.max_z
-                )
-            {
-        */
+        /**
+         *  value function for Distance volume type (distance field).
+         *
+         *  @param {THREE.Vector3} p
+         *  @param {ValueResultType} res
+         */
+        return function (p, res) {
+            /** @type {ScalisTriangle} */
+            let self = this;
+            /*
+                // bounding box check (could/should be done in the node ?)
+                if( p.x > this.aabb.min_x && p.x < this.aabb.max_x &&
+                    p.y > this.aabb.min_y && p.y < this.aabb.max_y &&
+                    p.z > this.aabb.min_z && p.z < this.aabb.max_z
+                    )
+                {
+            */
             // First compute the distance to the triangle and find the nearest point
             // Code taken from EuclideanDistance functor, can be optimized.
             var p0_to_p = new THREE.Vector3();
@@ -352,15 +374,15 @@ class ScalisTriangle extends ScalisPrimitive {
                 var pz = new THREE.Vector3(Z.x-p.x,Z.y-p.y,Z.z-p.z);
 
                 // set proj_dir
-                this.proj_dir = new THREE.Vector3();
-                this.proj_dir.crossVectors(pz,self.unsigned_ortho_dir);
-                this.proj_dir.normalize(); // should be useless
+                self.proj_dir = new THREE.Vector3();
+                self.proj_dir.crossVectors(pz,self.unsigned_ortho_dir);
+                self.proj_dir.normalize(); // should be useless
             }
 
             // Project along the given direction
             var non_ortho_proj = new THREE.Vector3();
-            non_ortho_proj.copy(this.proj_dir);
-            non_ortho_proj.multiplyScalar( -p0_to_p.dot(normal_inv)/this.proj_dir.dot(normal_inv));
+            non_ortho_proj.copy(self.proj_dir);
+            non_ortho_proj.multiplyScalar( -p0_to_p.dot(normal_inv)/self.proj_dir.dot(normal_inv));
             non_ortho_proj.add(p);
 
             var tmp_vec = new THREE.Vector3();
@@ -524,8 +546,8 @@ class ScalisTriangle extends ScalisPrimitive {
     */
         };
     })();
-    
-    
+
+
     /**
      *
      *  Segment computations used in Distance triangle evaluation.
@@ -551,10 +573,10 @@ class ScalisTriangle extends ScalisPrimitive {
     {
         var origin_to_p = new THREE.Vector3();
         origin_to_p.subVectors(point,p1);
-    
+
         var orig_p_scal_dir = origin_to_p.dot(p1p2);
         var orig_p_sqr = origin_to_p.lengthSq();
-    
+
         var denum = sqr_length * weight_1 + orig_p_scal_dir * delta_weight;
         var t = (delta_weight<0.0) ? 0.0 : 1.0;
         if(denum > 0.0)
@@ -562,83 +584,92 @@ class ScalisTriangle extends ScalisPrimitive {
             t = (orig_p_scal_dir * weight_1 + orig_p_sqr * delta_weight) /denum;
             t = (t<0.0) ? 0.0 : ((t>1.0) ? 1.0 : t) ; // clipping (nearest point on segment not line)
         }
-    
+
         res.proj_to_p = new THREE.Vector3(  t*p1p2.x - origin_to_p.x,
                                             t*p1p2.y - origin_to_p.y,
                                             t*p1p2.z - origin_to_p.z);
         res.weight_proj = weight_1 + t*delta_weight;
-    
+
         res.t = t;
-    
+
         return res;
-    };
-    
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     // Convolution Evaluation functions and auxiliaary functions
-    
+
     /**
      *  value function for Distance volume type (distance field).
+     *
+     *  @param {THREE.Vector3} p
+     *  @param {ValueResultType} res
      */
     evalConvol = (function() {
-    
+
         var g = new THREE.Vector3();
         var m = new Material();
         var tmpRes = {v:0,g:null,m:null};
         var g2 = new THREE.Vector3();
         var m2 = new Material();
         var tmpRes2 = {v:0,g:null,m:null};
-    
+        /**
+         *  @param {THREE.Vector3} p
+         *  @param {ValueResultType} res
+         */
         return function (p, res) {
-    
+
+            /** @type {ScalisTriangle} */
+            let self = this;
+
             tmpRes.g = res.g ? g : null;
             tmpRes.m = res.m ? m : null;
-    
+
             // Compute closest point (t parameter) on the triangle in "warped space" as well as clipping
             var clipped = {l1: 0, l2: 0};
-            if (this.ComputeTParam(p, clipped)) {
+            if (self.ComputeTParam(p, clipped)) {
                 var t_low = clipped.l1;
                 var t_high = clipped.l2;
                 // Compute local warp coordinates
-                var w_local = this.weight_min + t_low * this.unit_delta_weight;
-                var local_t_max = this.warpAbscissa((t_high - t_low) / w_local);
-    
+                var w_local = self.weight_min + t_low * self.unit_delta_weight;
+                var local_t_max = self.warpAbscissa((t_high - t_low) / w_local);
+
                 // Compute the required number of sample
                 var nb_samples = 2 * (0.5 * sampleNumber * local_t_max + 1.0);
                 var d_step_size = local_t_max / nb_samples;
-    
+
                 // Perform Simpson scheme
                 var t = d_step_size;
                 d_step_size *= 2.0;
                 var res_odd = 0.0;
                 var grad_odd = new THREE.Vector3();
-    
+
                 for (var i = 1; i < nb_samples; i += 2) {
-                    this.computeLineIntegral(this.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
+                    self.computeLineIntegral(self.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
                     res_odd += tmpRes.v;
                     if (res.g) {
                         grad_odd.addVectors(grad_odd, tmpRes.g);
                     }
                     t += d_step_size;
                 }
-    
+
                 var res_even = 0.0;
                 var grad_even = new THREE.Vector3();
                 t = 0.0;
                 for (var j = 2; j < nb_samples; j += 2) {
                     t += d_step_size;
-                    this.computeLineIntegral(this.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
+                    self.computeLineIntegral(self.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
                     if (res.g) {
                         grad_even.addVectors(grad_even, tmpRes.g);
                     }
                     res_even += tmpRes.v;
                 }
-    
+
                 tmpRes2.g = res.g ? g2 : null;
                 tmpRes2.m = res.m ? m2 : null;
-    
-                var res_low = this.computeLineIntegral(t_low, p, tmpRes);
-                var res_high = this.computeLineIntegral(t_high, p, tmpRes2);
-    
+
+                var res_low = self.computeLineIntegral(t_low, p, tmpRes);
+                var res_high = self.computeLineIntegral(t_high, p, tmpRes2);
+
                 res.v = res_low.v + 4.0 * res_odd + 2.0 * res_even + res_low.v;
                 var factor = ( local_t_max / (3.0 * (nb_samples)) ) * ScalisMath.Poly6NF2D;
                 res.v *= factor;
@@ -656,7 +687,7 @@ class ScalisTriangle extends ScalisPrimitive {
             }
             if (res.m) {
                 tmpRes.g = null;
-                this.evalDist(p, tmpRes);
+                self.evalDist(p, tmpRes);
                 res.m.copy(tmpRes.m);
             }
         };
@@ -678,8 +709,8 @@ class ScalisTriangle extends ScalisPrimitive {
                                                     (1.0/9.0) + sqr_dt_divdlp2*(
                                                         (1.0/11.0) + sqr_dt_divdlp2*(1.0/13.0) )))));
         return 2.0 * t * inv_dtp2 * serie_approx;
-    };
-    
+    }
+
     /**
      *  @param {number} t
      *  @return {number} Unwarped value
@@ -688,8 +719,8 @@ class ScalisTriangle extends ScalisPrimitive {
         // Compute approx of (exp(d*l)-1)/d
         var dt = t * this.unit_delta_weight;
         return t * ( 1.0 + dt *( 1.0/2.0 + dt * ( 1.0/6.0 + dt * ( 1.0/24.0 + dt * ( 1.0/120.0 + dt * 1.0/720.0 ))))) ;
-    };
-    
+    }
+
     /**
      *  @param {number} t
      *  @param {!THREE.Vector3} p point, as a THREE.Vector3
@@ -697,11 +728,11 @@ class ScalisTriangle extends ScalisPrimitive {
      *  @return the res parameter, filled with proper values
      */
     computeLineIntegral(t, p, res) {
-    
+
         var weight = this.weight_min + t * this.unit_delta_weight;
         var p_1 = new THREE.Vector3();
         p_1.addVectors(this.point_min, this.longest_dir_special.clone().multiplyScalar(t));
-    
+
         var length = (t<this.coord_middle) ? (t/this.coord_middle) * this.max_seg_length
                                                : ((this.coord_max-t)/(this.coord_max - this.coord_middle)) * this.max_seg_length;
         if (res.g) {
@@ -709,11 +740,11 @@ class ScalisTriangle extends ScalisPrimitive {
         } else {
             this.consWeightEvalForSeg( p_1, weight, this.ortho_dir, length, p, res);
         }
-    
+
         return res;
-    };
-    
-    
+    }
+
+
     /**
      * "Select" the part of a segment that is inside (in the homothetic space) of a clipping "sphere".
      *          This function use precomputed values given as parameter (prevent redundant computation during convolution
@@ -736,7 +767,7 @@ class ScalisTriangle extends ScalisPrimitive {
         var a = -w.z;
         var b = -w.y;
         var c = -w.x;
-    
+
         var delta = b*b - a*c;
         if(delta>=0.0)
         {
@@ -755,8 +786,8 @@ class ScalisTriangle extends ScalisPrimitive {
             }
         }
         return false;
-    };
-    
+    }
+
     /**
      *  @param {!THREE.Vector3} p_1
      *  @param {number} w_1
@@ -772,7 +803,7 @@ class ScalisTriangle extends ScalisPrimitive {
         p_min_to_point.subVectors( point, p_1 );
         var uv = unit_dir.dot(p_min_to_point);
         var d2 = p_min_to_point.lengthSq();
-    
+
         var special_coeff = new THREE.Vector3();
         special_coeff.set( w_1*w_1  - ScalisMath.KIS2 * d2,
                            - ScalisMath.KIS2 * uv,
@@ -783,16 +814,16 @@ class ScalisTriangle extends ScalisPrimitive {
             var inv_local_min_weight = 1.0 / w_1;
             special_coeff.x = 1.0 - ScalisMath.KIS2 * ( clipped.l1*(clipped.l1-2.0*uv) + d2 ) * inv_local_min_weight*inv_local_min_weight;
             special_coeff.y = - ScalisMath.KIS2*(uv-clipped.l1) * inv_local_min_weight;
-    
+
             res.v = this.homotheticCompactPolynomial_segment_F_i6_cste( (clipped.l2-clipped.l1) * inv_local_min_weight,
                                                                                                       special_coeff );
         }else{
             res = 0;
         }
-    
+
         return res;
-    };
-    
+    }
+
     /**
      *  @param {!THREE.Vector3} p_1
      *  @param {number} w_1
@@ -804,12 +835,12 @@ class ScalisTriangle extends ScalisPrimitive {
      *  @protected
      */
     consWeightEvalGradForSeg( p_1, w_1, unit_dir, length, point, res) {
-    
+
         var p_min_to_point = new THREE.Vector3();
         p_min_to_point.subVectors( point, p_1 );
         var uv = unit_dir.dot(p_min_to_point);
         var d2 = p_min_to_point.lengthSq();
-    
+
         var special_coeff = new THREE.Vector3();
         special_coeff.set( w_1*w_1  - ScalisMath.KIS2 * d2 ,
                            - ScalisMath.KIS2 * uv ,
@@ -820,7 +851,7 @@ class ScalisTriangle extends ScalisPrimitive {
             var inv_local_min_weight = 1.0 / w_1;
             special_coeff.x = 1.0 - ScalisMath.KIS2 * ( clipped.l1*(clipped.l1-2.0*uv) + d2 ) * inv_local_min_weight*inv_local_min_weight;
             special_coeff.y = - ScalisMath.KIS2*(uv-clipped.l1) * inv_local_min_weight;
-    
+
             var F0F1F2 = new THREE.Vector3();
             this.homotheticCompactPolynomial_segment_FGradF_i6_cste( (clipped.l2-clipped.l1) * inv_local_min_weight,
                                                                                                     special_coeff, F0F1F2);
@@ -835,10 +866,10 @@ class ScalisTriangle extends ScalisPrimitive {
             res.v = 0;
             res.g.set(0,0,0);
         }
-    
+
         return res;
-    };
-    
+    }
+
     /**
      *  @param {!THREE.Vector3} point the point of evaluation, as a THREE.Vector3
      *  @param {!Object} clipped Result if clipping occured, in l1 and l2, returned
@@ -848,21 +879,21 @@ class ScalisTriangle extends ScalisPrimitive {
     ComputeTParam(point, clipped) {
         var p_min_to_point = new THREE.Vector3();
         p_min_to_point.subVectors( point, this.point_min );
-    
+
         var coord_main_dir = p_min_to_point.dot(this.main_dir);
         var coord_normal   = p_min_to_point.dot(this.unit_normal);
-    
+
         //WARNING : Assume that the compact support is defined in the same way as HomotheticCompactPolynomial kernels
         var dist_sqr = coord_main_dir*coord_main_dir + coord_normal*coord_normal;
-    
+
         var special_coeff = new THREE.Vector3();
         special_coeff.set( this.weight_min*this.weight_min - ScalisMath.KIS2 * dist_sqr,
                           -this.unit_delta_weight*this.weight_min - ScalisMath.KIS2 * coord_main_dir,
                            this.unit_delta_weight*this.unit_delta_weight - ScalisMath.KIS2);
-    
+
         return this.homotheticClippingSpecial(special_coeff, this.coord_max, clipped);
-    };
-    
+    }
+
     /**
      *  Sub-function for optimized convolution value computation (Homothetic Compact Polynomial).*
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
@@ -886,8 +917,8 @@ class ScalisTriangle extends ScalisPrimitive {
         var t7 = t7070 * t7070;
         var t7075 = t7069 * t7;
         return  (0.6e1 / 0.5e1 * (0.4e1 / 0.3e1 * (0.2e1 * t7065 * l + t7066 * t7064 + t7069 * t7070) * t7077 + t7076 + t7075) * t7077 + t7064 * t7076 + t7070 * t7075) * t7067 / 0.7e1;
-    };
-    
+    }
+
     // optimized function for segment of constant weight
     // computes value and grad
     /**
@@ -919,11 +950,9 @@ class ScalisTriangle extends ScalisPrimitive {
         res.x = (0.6e1 / 0.5e1 * t7079 * t7094 + t7083 * t7080 + t7087 * t7085) * t7084 / 0.7e1;
         res.y = t7093;
         res.z = (t7087 * t7093 + t7080 / 0.6e1 - t7085 / 0.6e1) * t7084;
-    };
+    }
 };
 
 Types.register(ScalisTriangle.type, ScalisTriangle);
-
-
 
 module.exports = ScalisTriangle;

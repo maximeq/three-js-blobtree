@@ -182,7 +182,7 @@ class ScalisSegment extends ScalisPrimitive {
         }
     };
 
-// [Abstract] See Primitive.computeHelpVariables for more details
+    // [Abstract] See Primitive.computeHelpVariables for more details
     computeHelpVariables() {
         this.v0_p = this.v[0].getPos();
         this.v1_p = this.v[1].getPos(); // this one is probably useless to be kept for eval since not used....
@@ -243,14 +243,14 @@ class ScalisSegment extends ScalisPrimitive {
         }
     };
 
-///////////////////////////////////////////////////////////////////////////
-// Distance Evaluation functions and auxiliaary functions
-// Note : for the mech primitive we use a CompactPolynomial6 kernel.
-//        TODO : the orga should use the same for better smoothness
+    ///////////////////////////////////////////////////////////////////////////
+    // Distance Evaluation functions and auxiliaary functions
+    // Note : for the mech primitive we use a CompactPolynomial6 kernel.
+    //        TODO : the orga should use the same for better smoothness
 
-/**
- *  value function for Distance volume type (distance field).
- */
+    /**
+     *  value function for Distance volume type (distance field).
+     */
     evalDist = (function () {
         var ev_eps = { v: 0 };
         var p_eps = new THREE.Vector3();
