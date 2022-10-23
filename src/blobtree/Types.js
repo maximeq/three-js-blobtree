@@ -5,11 +5,14 @@
  *  For now just a list of strings registered by the classes.
  */
 var Types = {
+    /**
+     * @type {Object<string,{fromJSON:Function}>}
+     */
     types: {},
     /**
      *  Register a type in the list.
      *  @param {string} name The name of the type.
-     *  @param {any} cls The class of the registered type.
+     *  @param {{fromJSON:Function}} cls The class of the registered type.
      */
     register(name, cls) {
         if (this.types[name]) {

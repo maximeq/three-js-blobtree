@@ -26,6 +26,20 @@ class SDFCapsule extends SDFPrimitive {
     static type = "SDFCapsule";
 
     /**
+     * @param {SDFCapsuleJSON} json
+     * @returns {SDFCapsule}
+     */
+    static fromJSON(json) {
+        //var v = ScalisVertex.fromJSON(json.v[0]);
+        return new SDFCapsule(
+            new THREE.Vector3(json.p1.x, json.p1.y, json.p1.z),
+            new THREE.Vector3(json.p2.x, json.p2.y, json.p2.z),
+            json.r1,
+            json.r2
+        );
+    };
+
+    /**
      *
      *  @param {THREE.Vector3} p1 Position of the first segment extremity
      *  @param {THREE.Vector3} p2 Position of the second segment extremity
@@ -75,20 +89,6 @@ class SDFCapsule extends SDFPrimitive {
             r2: this.r2
         };
     }
-
-    /**
-     * @param {SDFCapsuleJSON} json
-     * @returns {SDFCapsule}
-     */
-    fromJSON(json) {
-        //var v = ScalisVertex.fromJSON(json.v[0]);
-        return new SDFCapsule(
-            new THREE.Vector3(json.p1.x, json.p1.y, json.p1.z),
-            new THREE.Vector3(json.p2.x, json.p2.y, json.p2.z),
-            json.r1,
-            json.r2
-        );
-    };
 
     /**
      *  @param {number} r1 The new radius at p1

@@ -35,6 +35,13 @@ class Element {
 
     static type = "Element";
 
+    /**
+     * @param {ElementJSON} _json
+     */
+    static fromJSON(_json) {
+        throw new Error("Element.fromJSON should never be called as Element is abstract.");
+    }
+
     constructor() {
         this.id = elementIds++;
 

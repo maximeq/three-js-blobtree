@@ -16,13 +16,10 @@ const AreaSphere = require("../areas/AreaSphere.js");
 /** @typedef {import('../Element.js').Json} Json */
 /** @typedef {import('../Element.js').ValueResultType} ValueResultType */
 /** @typedef {import('./ScalisVertex').ScalisVertexJSON} ScalisVertexJSON */
+/** @typedef {import('./ScalisPrimitive').ScalisPrimitiveJSON} ScalisPrimitiveJSON */
 
 /**
- * @typedef {Object} ScalisPointJSON
- * @property {Array<ScalisVertexJSON>} v
- * @property {Array<Material>} materials
- * @property {string} volType
- * @property {number} density
+ * @typedef {{density:number} & ScalisPrimitiveJSON} ScalisPointJSON
  */
 
 class ScalisPoint extends ScalisPrimitive  {
@@ -70,9 +67,10 @@ class ScalisPoint extends ScalisPrimitive  {
     };
 
     toJSON() {
-        var res = ScalisPrimitive.prototype.toJSON.call(this);
-        res.density = this.density;
-        return res;
+        return {
+            ...super.toJSON(),
+            density: this.density
+        }
     };
 
     /**

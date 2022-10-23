@@ -8,7 +8,13 @@ const Material = require("./Material.js");
 /**
  * @typedef {import('./Element.js')} Element
  * @typedef {import('./Element.js').Json} Json
+ * @typedef {import('./Node.js').NodeJSON} NodeJSON
  */
+
+/**
+ * @typedef {{alpha:number} & NodeJSON} DifferenceNodeJSON
+ */
+
 
 /**
  *  This class implement a difference blending node.
@@ -20,6 +26,14 @@ const Material = require("./Material.js");
 class DifferenceNode extends Node {
 
     static type = "DifferenceNode";
+
+    /**
+     * @param {DifferenceNodeJSON} json
+     * @returns {DifferenceNode}
+     */
+    static fromJSON(json) {
+        return new DifferenceNode(Types.fromJSON(json.children[0]), Types.fromJSON(json.children[1]), json.alpha);
+    };
 
     /**
      *
@@ -84,16 +98,13 @@ class DifferenceNode extends Node {
     };
 
     /**
-     * @returns {Json}
+     * @returns {DifferenceNodeJSON}
      */
     toJSON() {
-        var res = super.toJSON.call(this);
-        res.alpha = this.alpha;
-        return res;
-    };
-
-    fromJSON (json) {
-        return new DifferenceNode(Types.fromJSON(json.children[0]), Types.fromJSON(json.children[1]), json.alpha);
+        return {
+            ...super.toJSON(),
+            alpha: this.alpha
+        };
     };
 
     /**

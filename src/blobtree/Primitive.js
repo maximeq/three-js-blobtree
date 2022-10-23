@@ -26,6 +26,13 @@ class Primitive extends Element {
 
     static type = "Primitive";
 
+    /**
+     * @param {PrimitiveJSON} _json
+     */
+    static fromJSON(_json) {
+        throw new Error("Primitibe.fromJSON should never be called as Primitibe is abstract.");
+    }
+
     constructor() {
         super();
         /** @type {!Array.<!Material>} */

@@ -22,6 +22,13 @@ class Node extends Element {
 
     static type = "Node";
 
+    /**
+     * @param {NodeJSON} _json
+     */
+    static fromJSON(_json) {
+        throw new Error("Node.fromJSON should never be called as Node is abstract.");
+    }
+
     constructor() {
         super();
 

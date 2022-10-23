@@ -17,6 +17,14 @@ class DistanceFunctor {
     static type = "DistanceFunctor";
 
     /**
+     *  @abstract
+     *  @param {DistanceFunctorJSON} json Json description of the object
+     */
+    static fromJSON(json) {
+        return Types.fromJSON(json);
+    };
+
+    /**
      *  @return {string} Type of the element
      */
     getType() {
@@ -26,19 +34,12 @@ class DistanceFunctor {
     /**
      *  @abstract
      *  Return a Javscript Object respecting JSON convention and can be used to serialize the functor.
-     *  @returns {Json}
+     *  @returns {DistanceFunctorJSON}
      */
     toJSON() {
         return {
             type: this.getType()
         };
-    };
-    /**
-     *  @abstract
-     *  @param {Json} json Json description of the object
-     */
-    fromJSON(json) {
-        return Types.fromJSON(json);
     };
 
     /**

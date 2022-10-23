@@ -3,6 +3,10 @@
 const Types = require("../Types.js");
 const DistanceFunctor = require("./DistanceFunctor.js");
 
+/** @typedef {import('./DistanceFunctor').DistanceFunctorJSON} DistanceFunctorJSON */
+
+/** @typedef {{scale:number} & DistanceFunctorJSON} Poly6DistanceFunctorJSON */
+
 /**
  *  Specialised Distance Functor using a 6 degree polynomial function.
  *  This is the function similar to the one used in SCALIS primitives.
@@ -11,6 +15,13 @@ const DistanceFunctor = require("./DistanceFunctor.js");
 class Poly6DistanceFunctor extends DistanceFunctor {
 
     static type = "Poly6DistanceFunctor";
+
+    /**
+     * @param {Poly6DistanceFunctorJSON} json
+     */
+    static fromJSON(json) {
+        return new Poly6DistanceFunctor(json.scale);
+    }
 
     /**
      * This is the standard 6 degree polynomial function used for implicit modeling.
@@ -29,7 +40,7 @@ class Poly6DistanceFunctor extends DistanceFunctor {
         } else {
             return 0.0;
         }
-    };
+    }
 
     /**
      * @param {number} scale
@@ -44,16 +55,17 @@ class Poly6DistanceFunctor extends DistanceFunctor {
      */
     getType() {
         return Poly6DistanceFunctor.type;
-    };
+    }
 
     /**
      *  @return {Object} Json description of this functor.
      */
     toJSON() {
-        var json = super.toJSON();
-        json.scale = this.scale;
-        return json;
-    };
+        return {
+            ...super.toJSON(),
+            scale: this.scale
+        };
+    }
 
     /**
      * @link DistanceFunctor.value for a complete description.
@@ -64,7 +76,7 @@ class Poly6DistanceFunctor extends DistanceFunctor {
         var dp = d / (2 * this.scale); // ensure the support fits the scale.
         dp = dp + 0.5;
         return Poly6DistanceFunctor.evalStandard(dp) / Poly6DistanceFunctor.evalStandard(0.5);
-    };
+    }
 
     /**
      * @param {number} d
@@ -75,7 +87,7 @@ class Poly6DistanceFunctor extends DistanceFunctor {
         var res = (1 - ds * ds);
         res = -(6 / (2 * this.scale)) * ds * res * res / Poly6DistanceFunctor.evalStandard(0.5);
         return res;
-    };
+    }
 
     /**
      * @link DistanceFunctor.getSupport for a complete description.
@@ -83,7 +95,7 @@ class Poly6DistanceFunctor extends DistanceFunctor {
      */
     getSupport() {
         return this.scale;
-    };
+    }
 };
 
 Types.register(Poly6DistanceFunctor.type, Poly6DistanceFunctor);
