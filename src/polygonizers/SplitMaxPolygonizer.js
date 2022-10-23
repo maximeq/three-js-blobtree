@@ -1,4 +1,4 @@
-const mergeBufferGeometries = require("three/examples/jsm/utils/BufferGeometryUtils").mergeBufferGeometries
+const BufferGeometryUtils = require("three/examples/jsm/utils/BufferGeometryUtils");
 
 // Does not work yet, so just suppose that Blobtree is defined externally
 // const Blobtree = require('three-js-blobtree");
@@ -13,49 +13,65 @@ const ScalisTriangle = require("../blobtree/scalis/ScalisTriangle");
 const SlidingMarchingCubes = require("./SlidingMarchingCubes");
 
 /**
+ * @typedef {import('./SlidingMarchingCubes').SMCParams} SMCParams
+ */
+
+/**
+ * @typedef {SMCParams & {class: any}} SubPolygonizerParams
+ */
+
+/**
+ * @typedef {Object} SplitMaxPolygonizerParams
+ * @property {SubPolygonizerParams=} subPolygonizer Parameters for the subpolygonizer to use.
+ *                                           Must contain all parameters for the given subPolygonizer (like detailRatio, etc...)
+ *                                           The class of the subpolygonizer (default to SlidingMarchingCubes) is in additional parameter class
+ * @property {Boolean=} smpParams.uniformRes If true, uniform resolution will be used on all primitives, according to the minimum accuracy in the blobtree.
+ * @property {Function=} smpParams.progress Progress callback, taking a percentage as parameter.
+ * @property {Number=} smpParams.ricciThreshold The RicciNode coefficient above which it will be considered like a MaxNode.
+ */
+
+/**
  *  This class will polygonize nodes independantly when they blend with a MaxNode or a RicciNode
  *  (for RicciNode, only if the coefficient of at least "ricciThreshold", threshold being a parameter).
  *  It will create a mesh made of several shells but intersections will be better looking than with some
  *  global polygonizers like MarchingCubes.
- *
- *  @param {Object} params Parameters and option for this polygonizer.
- *      @param {Object} params.subPolygonizer Parameters for the subpolygonizer to use.
- *                                            Must contain all parameters for the given subPolygonizer (like detailRatio, etc...)
- *      @param {Boolean} params.uniformRes If true, uniform resolution will be used on all primitives, according to the minimum accuracy in the blobtree.
- *          @param {Function} params.subPolygonizer.class The class of the subpolygonizer (default to SlidingMarchingCubes)
- *  @param {Function} params.progress Progress callback, taking a percentage as parameter.
- *  @param {Number} params.ricciThreshold The RicciNode coefficient above which it will be considered like a MaxNode.
  */
-var SplitMaxPolygonizer = function(blobtree, params) {
+class SplitMaxPolygonizer {
+    /**
+     *  @param {SplitMaxPolygonizerParams=} smpParams Parameters and option for this polygonizer.
+     */
+    constructor(blobtree, smpParams) {
+        var params = smpParams || {};
 
-    var params = params || {};
+        this.blobtree = blobtree;
 
-    this.blobtree = blobtree;
+        this.uniformRes = params.uniformRes || false;
+        this.min_acc = null;
+        this.minAccs = [];
 
-    this.uniformRes = params.uniformRes || false;
-    this.min_acc = null;
-    this.minAccs = [];
+        /** @type {SubPolygonizerParams} */
+        this.subPolygonizer = params.subPolygonizer ? params.subPolygonizer : {
+            class: SlidingMarchingCubes,
+            detailRatio: 1.0
+        };
 
-    this.subPolygonizer = params.subPolygonizer  ? params.subPolygonizer : {
-        class:SlidingMarchingCubes,
-        detailRatio:1.0
-    };
+        this.ricciThreshold = params.ricciThreshold || 64;
 
-    this.ricciThreshold = params.ricciThreshold || 64;
+        this.progress = params.progress ? params.progress : function (_percent) {
+            //console.log(percent);
+        };
 
-    this.progress = params.progress ? params.progress : function(percent){
-        //console.log(percent);
-    };
-
-    // Now we need to parse the blobtree and split it according to the different ways of
-    // generating each groups.
-    // Since we do not wantto alterate the original blobtree, for now we will use cloning.
-    // (to be changed if it is too slow)
-    this.subtrees = []; // Blobtrees created for primitives which must be generated with SMC
+        // Now we need to parse the blobtree and split it according to the different ways of
+        // generating each groups.
+        // Since we do not wantto alterate the original blobtree, for now we will use cloning.
+        // (to be changed if it is too slow)
+        this.subtrees = []; // Blobtrees created for primitives which must be generated with SMC
         this.progCoeff = []; // progress coefficient, mainly depends on the total number of primitives in the node.
         this.totalCoeff = 0;
 
-    this.setBlobtree(blobtree);
+        this.setBlobtree(blobtree);
+    }
+
 };
 
 SplitMaxPolygonizer.prototype.constructor = SplitMaxPolygonizer;
@@ -112,7 +128,7 @@ SplitMaxPolygonizer.prototype.setBlobtree = function(blobtree){
                 }
             }
         }else if(n instanceof MaxNode){
-            for(var i=0; i<n.children.length; ++i){
+            for (let i = 0; i < n.children.length; ++i) {
                 recurse(n.children[i]);
             }
         }else if(n instanceof ScalisPoint){
@@ -160,7 +176,7 @@ SplitMaxPolygonizer.prototype.compute = function() {
         prog += this.progCoeff[i];
     }
 
-    var res = mergeBufferGeometries(geometries);
+    var res = BufferGeometryUtils.mergeBufferGeometries(geometries);
 
     this.progress(100);
 
