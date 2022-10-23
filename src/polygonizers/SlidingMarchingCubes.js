@@ -151,6 +151,20 @@ class Box2Acc extends Box2 {
 }
 
 /**
+*  @typedef {Object} SMCParams Parameters and option for this polygonizer.
+*  @property {string=} zResolution Defines how the stepping in z occurs. Options are :
+*                                  "adaptive" (default) steps are computed according to local minimum accuracy.
+*                                  "uniform" steps are uniform along z, according to the global minimum accuracy.
+*  @property {number=} detailRatio The blobtree defines some needed accuracies for polygonizing.
+*                                  However, if you want more details, you can set this to less than 1.
+*                                  Note that this is limited to 0.01, which will already increase your model complexity by a 10 000 factor.
+*  @property {(percent:number) => void=} progress Progress callback, taling a percentage as parameter.
+*  @property {ConvergenceParams=} convergence Add newton convergence steps to position each vertex.
+*  @property {number=} dichotomy NOT YET IMPLEMENTED Add dichotomy steps to position each vertex. Usually using convergence is better, except if the implicit
+*                                field is such that congerging is not possible (for example, null gradients on large areas)
+*/
+
+/**
  *  Class for a dual marching cube using 2 sliding arrays.
 
  *  @constructor
@@ -159,17 +173,7 @@ class Box2Acc extends Box2 {
 class SlidingMarchingCubes {
     /**
      *  @param {RootNode} blobtree A blobtree to polygonize.
-     *  @param {Object} smcParams Parameters and option for this polygonizer.
-     *  @param {string=} smcParams.zResolution Defines how the stepping in z occurs. Options are :
-     *                                     "adaptive" (default) steps are computed according to local minimum accuracy.
-     *                                     "uniform" steps are uniform along z, according to the global minimum accuracy.
-     *  @param {number=} smcParams.detailRatio The blobtree defines some needed accuracies for polygonizing.
-     *                                     However, if you want more details, you can set this to less than 1.
-     *                                     Note that this is limited to 0.01, which will already increase your model complexity by a 10 000 factor.
-     *  @param {(percent:number) => void=} smcParams.progress Progress callback, taling a percentage as parameter.
-     *  @param {ConvergenceParams=} smcParams.convergence Add newton convergence steps to position each vertex.
-     *  @param {number=} smcParams.dichotomy NOT YET IMPLEMENTED Add dichotomy steps to position each vertex. Usually using convergence is better, except if the implicit
-     *                                   field is such that congerging is not possible (for example, null gradients on large areas)
+     *  @param {SMCParams} smcParams Parameters and option for this polygonizer
      */
     constructor(blobtree, smcParams) {
         if (!smcParams) {
