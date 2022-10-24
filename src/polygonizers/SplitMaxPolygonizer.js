@@ -1,4 +1,4 @@
-const BufferGeometryUtils = require("three/examples/jsm/utils/BufferGeometryUtils");
+const { BufferGeometryUtils } = require("three/examples/jsm/utils/BufferGeometryUtils");
 
 // Does not work yet, so just suppose that Blobtree is defined externally
 // const Blobtree = require('three-js-blobtree");
