@@ -16,6 +16,7 @@
     },
     "dependencies": {
         "@types/three": "^0.130.2",
+        "rollup": "^2.79.1",
         "three": "0.130.x",
         "three-js-checker": "1.0.x"
     },
