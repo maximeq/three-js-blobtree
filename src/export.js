@@ -6,6 +6,7 @@ import RicciNode from "./blobtree/RicciNode.js";
 import DifferenceNode from "./blobtree/DifferenceNode.js";
 import MinNode from "./blobtree/MinNode.js";
 import TwistNode from "./blobtree/TwistNode";
+import ScaleNode from "./blobtree/ScaleNode";
 import MaxNode from "./blobtree/MinNode.js";
 import Primitive from "./blobtree/Primitive.js";
 import ScalisMath from "./blobtree/scalis/ScalisMath.js";
@@ -46,6 +47,7 @@ export {
     MinNode,
     MaxNode,
     TwistNode,
+    ScaleNode,
     Primitive,
     ScalisMath,
     ScalisPrimitive,
