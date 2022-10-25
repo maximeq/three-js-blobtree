@@ -44,9 +44,7 @@
         <script>
 
             var root = new Blobtree.RootNode();
-            var twist_node = new Blobtree.TwistNode(
-                [
-                        new Blobtree.MinNode(
+            var sdf_root = new Blobtree.MinNode(
                         [
                             new Blobtree.SDFRootNode(
                                 new Blobtree.Poly6DistanceFunctor(6.0),
@@ -65,8 +63,31 @@
                                 )
                             )
                         ]
-                        )
+                        );
+            var ricci_root = new Blobtree.RicciNode(1,
+                [
+                    new Blobtree.ScalisPoint(
+                        new Blobtree.ScalisVertex(
+                            new THREE.Vector3(-8,0,0),
+                            12
+                        ),
+                        Blobtree.ScalisPrimitive.DIST,
+                        1.0,
+                        new Blobtree.Material({color:'#dd4f43'})
+                    ),
+                    new Blobtree.ScalisPoint(
+                        new Blobtree.ScalisVertex(
+                            new THREE.Vector3(8,0,0),
+                            12
+                        ),
+                        Blobtree.ScalisPrimitive.DIST,
+                        1.0,
+                        new Blobtree.Material({color:'#ffcd41'})
+                    )
                 ]
+            );
+            var twist_node = new Blobtree.TwistNode(
+                [sdf_root]
             );
 
             root.addChild(twist_node);
@@ -94,13 +115,28 @@
             },100);
 
 
-            let guiProp = {twist_axis_x : 0.0, twist_axis_y : 1.0, twist_axis_z : 0.0 };
+            let guiProp = {twist_axis_x : 0.0, twist_axis_y : 1.0, twist_axis_z : 0.0, volType : "SDF" };
             let gui = new dat.GUI({name : 'Twist Node', width: 350});
             let twistParams = gui.addFolder("Twist Parameters");
 
             twistParams.add(guiProp, "twist_axis_x", -1.0, 1.0, 0.1).name("Twist Axis X").onChange(function() {twist_node.twist_axis.x = guiProp.twist_axis_x ;twist_node.twist_axis.normalize();}).updateDisplay();
             twistParams.add(guiProp, "twist_axis_y", -1.0, 1.0, 0.1).name("Twist Axis Y").onChange(function() {twist_node.twist_axis.y =  guiProp.twist_axis_y ;twist_node.twist_axis.normalize();}).updateDisplay();
             twistParams.add(guiProp, "twist_axis_z", -1.0, 1.0, 0.1).name("Twist Axis Z").onChange(function() { twist_node.twist_axis.z =  guiProp.twist_axis_z;twist_node.twist_axis.normalize();}).updateDisplay();
+            twistParams.add(guiProp, 'volType', ["Ricci", "SDF"]).onChange(function() {
+                if(guiProp.volType === 'Ricci')
+                {
+                    twist_node.removeChild(sdf_root);
+                    twist_node.addChild(ricci_root);
+                }
+                else if (guiProp.volType === 'SDF')
+                {
+                    twist_node.removeChild(ricci_root);
+                    twist_node.addChild(sdf_root);
+                }
+           
+                mesh.geometry = smc.compute();
+                updateShadow();
+            })
         </script>
         <!-- Main script containing THREE.js setup for the page -->
         <script src="./js/smc-main-script.js"></script>
