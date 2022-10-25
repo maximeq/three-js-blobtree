@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Blobtree - Basic</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
+            body {
+                color: #000;
+                font-family:Monospace;
+                font-size:13px;
+                text-align:center;
+                font-weight: bold;
+
+                background-color: #fff;
+                margin: 0px;
+                overflow: hidden;
+            }
+
+            #info {
+                color:#000;
+                position: absolute;
+                top: 0px; width: 100%;
+                padding: 5px;
+
+            }
+
+            a {
+                color: red;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="info">
+            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Twist Node example
+        </div>
+
+        <script src="../../node_modules/three/build/three.js"></script>
+        <script src="../../node_modules/three/examples/js/controls/OrbitControls.js"></script>
+        <script src="./lib/dat.gui.min.js"></script>
+        <script src="../../dist/three-js-blobtree.js"></script>
+        <script src="./js/SimpleFunctor.js"></script>
+        <script>
+
+            var root = new Blobtree.RootNode();
+            var twist_node = new Blobtree.TwistNode(
+                [
+                        new Blobtree.MinNode(
+                        [
+                            new Blobtree.SDFRootNode(
+                                new Blobtree.Poly6DistanceFunctor(6.0),
+                                new Blobtree.Material({color:'#ffcd41'}),
+                                new Blobtree.SDFSphere(
+                                    new THREE.Vector3(8,0,0),
+                                    12
+                                )
+                            ),
+                            new Blobtree.SDFRootNode(
+                                new Blobtree.Poly6DistanceFunctor(6.0),
+                                new Blobtree.Material({color:'#dd4f43'}),
+                                new Blobtree.SDFSphere(
+                                    new THREE.Vector3(-8,0,0),
+                                    12
+                                )
+                            )
+                        ]
+                        )
+                ]
+            );
+
+            root.addChild(twist_node);
+
+            var smc = new Blobtree.SlidingMarchingCubes(
+                root,
+                {
+                    convergence:{},
+                    detailRatio: 0.25    // Double resolution with respect to the primitives setup.
+                }
+            );
+
+            // Compute the geometry using the SlidingMarchingCubes
+            // geometry is kept as a global variable to be used in the following script.
+            var geometry = smc.compute();
+            geometry.computeBoundingBox();
+            var material = new THREE.MeshPhongMaterial( {vertexColors:true} );
+
+            var mesh = new THREE.Mesh( geometry, material );
+
+            window.setInterval(function (a,b) {
+            twist_node.twist_ampl = 0.6*Math.cos(new Date().getTime()/1500.0);
+            mesh.geometry = smc.compute();
+            updateShadow();
+            },100);
+
+
+            let guiProp = {twist_axis_x : 0.0, twist_axis_y : 1.0, twist_axis_z : 0.0 };
+            let gui = new dat.GUI({name : 'Twist Node', width: 350});
+            let twistParams = gui.addFolder("Twist Parameters");
+
+            twistParams.add(guiProp, "twist_axis_x", -1.0, 1.0, 0.1).name("Twist Axis X").onChange(function() {twist_node.twist_axis.x = guiProp.twist_axis_x ;twist_node.twist_axis.normalize();}).updateDisplay();
+            twistParams.add(guiProp, "twist_axis_y", -1.0, 1.0, 0.1).name("Twist Axis Y").onChange(function() {twist_node.twist_axis.y =  guiProp.twist_axis_y ;twist_node.twist_axis.normalize();}).updateDisplay();
+            twistParams.add(guiProp, "twist_axis_z", -1.0, 1.0, 0.1).name("Twist Axis Z").onChange(function() { twist_node.twist_axis.z =  guiProp.twist_axis_z;twist_node.twist_axis.normalize();}).updateDisplay();
+        </script>
+        <!-- Main script containing THREE.js setup for the page -->
+        <script src="./js/smc-main-script.js"></script>
+
+    </body>
+</html>
