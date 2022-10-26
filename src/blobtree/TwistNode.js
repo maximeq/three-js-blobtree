@@ -60,9 +60,40 @@ class TwistNode extends Node {
         /** @type {Material} */
         this.tmp_m = new Material();
 
-        this.twist_ampl = 1.0;
-        this.twist_axis = new THREE.Vector3(0.0,1.0,0.0); 
+        this._twist_amout = 1.0;
+        this._twist_axis = new THREE.Vector3(0.0,1.0,0.0);
+        this._twist_axis_mat = new THREE.Matrix4();
+        this._twist_axis_mat_inv = new THREE.Matrix4();
 
+    }
+
+    setTwistAmount(amount)
+    {
+        this._twist_amout = amount;
+    }
+
+    setTwistAxis(axis)
+    {
+        this._twist_axis = axis;
+        this._computeTransforms();
+    }
+
+    _computeTransforms()
+    {
+        let r_angle = Math.acos(this._twist_axis.dot(new THREE.Vector3(0,1,0)));
+        if(Math.abs(r_angle) > 0.0001)
+        {   
+            let t_axis = this._twist_axis.clone();
+            let rot_axis = t_axis.cross(new THREE.Vector3(0,1,0));
+            rot_axis.normalize();            
+            this._twist_axis_mat.makeRotationAxis(rot_axis,r_angle);
+        }
+        else
+        {
+            this._twist_axis_mat.identity();
+        }
+        this._twist_axis_mat_inv = this._twist_axis_mat.clone();
+        this._twist_axis_mat_inv.invert();      
     }
 
     getType () {
@@ -118,34 +149,26 @@ class TwistNode extends Node {
          
 
             let center = new THREE.Vector3();
-            this.aabb.getCenter(center);
-            let tr_mat = new THREE.Matrix4();
-            let r_angle = Math.acos(this.twist_axis.dot(new THREE.Vector3(0,1,0)));
-            if(Math.abs(r_angle) > 0.0001)
-            {   
-                let t_axis = this.twist_axis.clone();
-                let rot_axis = t_axis.cross(new THREE.Vector3(0,1,0));
-                rot_axis.normalize();            
-                tr_mat.makeRotationAxis(rot_axis,r_angle);
-            }
+            this.aabb.getCenter(center);            
           
+            //Center the input point
             let t_p =  new THREE.Vector3(p.x - center.x
                                         ,p.y - center.y
                                         ,p.z - center.z);
 
-            t_p.applyMatrix4(tr_mat);
+            //Rotate towards twist axis space
+            t_p.applyMatrix4(this._twist_axis_mat);
 
-                      
-            let c_twist = Math.cos(this.twist_ampl*t_p.y);
-            let s_twist = Math.sin(this.twist_ampl*t_p.y);
+            //Twist          
+            let c_twist = Math.cos(this._twist_amout*t_p.y);
+            let s_twist = Math.sin(this._twist_amout*t_p.y);
         
+            //Revert to world space
             let q = new THREE.Vector3(c_twist*t_p.x - s_twist*t_p.z,
                                      t_p.y,
-                                     s_twist*t_p.x + c_twist*t_p.z) ;
-
-  
+                                     s_twist*t_p.x + c_twist*t_p.z);
             
-            q.applyMatrix4(tr_mat.invert());
+            q.applyMatrix4(this._twist_axis_mat_inv);
 
             let t_q = new THREE.Vector3(q.x + center.x
                 ,q.y + center.y
@@ -155,8 +178,7 @@ class TwistNode extends Node {
             for (var i = 0; i < l; ++i) {
                 this.children[i].value(t_q, tmp);
                 res.v = tmp.v;
-              /*  this.children[i].value(p, tmp);
-                res.v += tmp.v;*/
+
                 if (res.g) {
                     res.g.copy(tmp.g);
                 }

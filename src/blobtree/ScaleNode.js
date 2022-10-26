@@ -60,8 +60,14 @@ class ScaleNode extends Node {
         /** @type {Material} */
         this.tmp_m = new Material();
 
-        this.scale = new THREE.Vector3(1,1,1);
+        this._scale = new THREE.Vector3(1,1,1);
 
+    }
+
+    setScale(scale)
+    {
+        this._scale = scale;
+        this.invalidAABB();
     }
 
     getType () {
@@ -77,12 +83,25 @@ class ScaleNode extends Node {
             for (var i = 0; i < this.children.length; ++i) {
                 var c = this.children[i];
                 c.prepareForEval();
-                this.aabb.union(c.getAABB());     // new aabb is computed according to remaining children aabb
+                let bb = c.getAABB().clone();
+                this.aabb.union(bb.expandByVector(this._scale));     // new aabb is computed according to remaining children aabb
             }
 
             this.valid_aabb = true;
         }
     };
+
+     /**
+     * @link Element.computeAABB for a complete description
+     */
+      computeAABB () {
+        this.aabb.makeEmpty();
+        for (var i = 0; i < this.children.length; i++) {
+            this.children[i].computeAABB();
+            let bb = this.children[i].getAABB().clone();
+            this.aabb.union(bb.expandByVector(this._scale));
+        }
+    }
 
     /**
      *  @link Element.value for a complete description
@@ -118,14 +137,14 @@ class ScaleNode extends Node {
             let center = new THREE.Vector3();
             this.aabb.getCenter(center);
           
-            let st_p =  new THREE.Vector3((p.x - center.x)/this.scale.x + center.x
-                                        ,(p.y - center.y)/ this.scale.y + center.y
-                                        ,(p.z - center.z)/ this.scale.z + center.z);
+            let st_p =  new THREE.Vector3((p.x - center.x)/this._scale.x + center.x
+                                        ,(p.y - center.y)/ this._scale.y + center.y
+                                        ,(p.z - center.z)/ this._scale.z + center.z);
                                 
             res.v = Number.MAX_VALUE;
             for (var i = 0; i < l; ++i) {
                 this.children[i].value(st_p, tmp);
-                res.v = tmp.v*this.scale.length();
+                res.v = tmp.v*(Math.min(this._scale.x,Math.min(this._scale.y,this._scale.z)));
               /*  this.children[i].value(p, tmp);
                 res.v += tmp.v;*/
                 if (res.g) {

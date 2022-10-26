@@ -109,7 +109,7 @@
             var mesh = new THREE.Mesh( geometry, material );
 
             window.setInterval(function (a,b) {
-            twist_node.twist_ampl = 0.6*Math.cos(new Date().getTime()/1500.0);
+            twist_node.setTwistAmount(0.6*Math.cos(new Date().getTime()/1500.0));
             mesh.geometry = smc.compute();
             updateShadow();
             },100);
@@ -119,10 +119,11 @@
             let gui = new dat.GUI({name : 'Twist Node', width: 350});
             let twistParams = gui.addFolder("Twist Parameters");
 
-            twistParams.add(guiProp, "twist_axis_x", -1.0, 1.0, 0.1).name("Twist Axis X").onChange(function() {twist_node.twist_axis.x = guiProp.twist_axis_x ;twist_node.twist_axis.normalize();}).updateDisplay();
-            twistParams.add(guiProp, "twist_axis_y", -1.0, 1.0, 0.1).name("Twist Axis Y").onChange(function() {twist_node.twist_axis.y =  guiProp.twist_axis_y ;twist_node.twist_axis.normalize();}).updateDisplay();
-            twistParams.add(guiProp, "twist_axis_z", -1.0, 1.0, 0.1).name("Twist Axis Z").onChange(function() { twist_node.twist_axis.z =  guiProp.twist_axis_z;twist_node.twist_axis.normalize();}).updateDisplay();
-            twistParams.add(guiProp, 'volType', ["Ricci", "SDF"]).onChange(function() {
+            twistParams.add(guiProp, "twist_axis_x", -1.0, 1.0, 0.1).name("Twist Axis X").onChange(function() {twist_node.setTwistAxis(new THREE.Vector3(guiProp.twist_axis_x, guiProp.twist_axis_y, guiProp.twist_axis_z).normalize());}).updateDisplay();
+            twistParams.add(guiProp, "twist_axis_y", -1.0, 1.0, 0.1).name("Twist Axis Y").onChange(function() {twist_node.setTwistAxis(new THREE.Vector3(guiProp.twist_axis_x, guiProp.twist_axis_y, guiProp.twist_axis_z).normalize());}).updateDisplay();
+            twistParams.add(guiProp, "twist_axis_z", -1.0, 1.0, 0.1).name("Twist Axis Z").onChange(function() {twist_node.setTwistAxis(new THREE.Vector3(guiProp.twist_axis_x, guiProp.twist_axis_y, guiProp.twist_axis_z).normalize());}).updateDisplay();
+            twistParams.add(guiProp, 'volType', ["Ricci", "SDF"]).onChange(function() 
+            {
                 if(guiProp.volType === 'Ricci')
                 {
                     twist_node.removeChild(sdf_root);

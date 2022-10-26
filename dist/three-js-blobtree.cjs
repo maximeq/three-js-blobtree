@@ -2298,9 +2298,40 @@ class TwistNode extends Node$3 {
         /** @type {Material} */
         this.tmp_m = new Material$9();
 
-        this.twist_ampl = 1.0;
-        this.twist_axis = new THREE$l.Vector3(0.0,1.0,0.0); 
+        this._twist_amout = 1.0;
+        this._twist_axis = new THREE$l.Vector3(0.0,1.0,0.0);
+        this._twist_axis_mat = new THREE$l.Matrix4();
+        this._twist_axis_mat_inv = new THREE$l.Matrix4();
 
+    }
+
+    setTwistAmount(amount)
+    {
+        this._twist_amout = amount;
+    }
+
+    setTwistAxis(axis)
+    {
+        this._twist_axis = axis;
+        this._computeTransforms();
+    }
+
+    _computeTransforms()
+    {
+        let r_angle = Math.acos(this._twist_axis.dot(new THREE$l.Vector3(0,1,0)));
+        if(Math.abs(r_angle) > 0.0001)
+        {   
+            let t_axis = this._twist_axis.clone();
+            let rot_axis = t_axis.cross(new THREE$l.Vector3(0,1,0));
+            rot_axis.normalize();            
+            this._twist_axis_mat.makeRotationAxis(rot_axis,r_angle);
+        }
+        else
+        {
+            this._twist_axis_mat.identity();
+        }
+        this._twist_axis_mat_inv = this._twist_axis_mat.clone();
+        this._twist_axis_mat_inv.invert();      
     }
 
     getType () {
@@ -2356,34 +2387,26 @@ class TwistNode extends Node$3 {
          
 
             let center = new THREE$l.Vector3();
-            this.aabb.getCenter(center);
-            let tr_mat = new THREE$l.Matrix4();
-            let r_angle = Math.acos(this.twist_axis.dot(new THREE$l.Vector3(0,1,0)));
-            if(Math.abs(r_angle) > 0.0001)
-            {   
-                let t_axis = this.twist_axis.clone();
-                let rot_axis = t_axis.cross(new THREE$l.Vector3(0,1,0));
-                rot_axis.normalize();            
-                tr_mat.makeRotationAxis(rot_axis,r_angle);
-            }
+            this.aabb.getCenter(center);            
           
+            //Center the input point
             let t_p =  new THREE$l.Vector3(p.x - center.x
                                         ,p.y - center.y
                                         ,p.z - center.z);
 
-            t_p.applyMatrix4(tr_mat);
+            //Rotate towards twist axis space
+            t_p.applyMatrix4(this._twist_axis_mat);
 
-                      
-            let c_twist = Math.cos(this.twist_ampl*t_p.y);
-            let s_twist = Math.sin(this.twist_ampl*t_p.y);
+            //Twist          
+            let c_twist = Math.cos(this._twist_amout*t_p.y);
+            let s_twist = Math.sin(this._twist_amout*t_p.y);
         
+            //Revert to world space
             let q = new THREE$l.Vector3(c_twist*t_p.x - s_twist*t_p.z,
                                      t_p.y,
-                                     s_twist*t_p.x + c_twist*t_p.z) ;
-
-  
+                                     s_twist*t_p.x + c_twist*t_p.z);
             
-            q.applyMatrix4(tr_mat.invert());
+            q.applyMatrix4(this._twist_axis_mat_inv);
 
             let t_q = new THREE$l.Vector3(q.x + center.x
                 ,q.y + center.y
@@ -2393,8 +2416,7 @@ class TwistNode extends Node$3 {
             for (var i = 0; i < l; ++i) {
                 this.children[i].value(t_q, tmp);
                 res.v = tmp.v;
-              /*  this.children[i].value(p, tmp);
-                res.v += tmp.v;*/
+
                 if (res.g) {
                     res.g.copy(tmp.g);
                 }
@@ -2491,8 +2513,14 @@ class ScaleNode extends Node$2 {
         /** @type {Material} */
         this.tmp_m = new Material$8();
 
-        this.scale = new THREE$k.Vector3(1,1,1);
+        this._scale = new THREE$k.Vector3(1,1,1);
 
+    }
+
+    setScale(scale)
+    {
+        this._scale = scale;
+        this.invalidAABB();
     }
 
     getType () {
@@ -2508,12 +2536,25 @@ class ScaleNode extends Node$2 {
             for (var i = 0; i < this.children.length; ++i) {
                 var c = this.children[i];
                 c.prepareForEval();
-                this.aabb.union(c.getAABB());     // new aabb is computed according to remaining children aabb
+                let bb = c.getAABB().clone();
+                this.aabb.union(bb.expandByVector(this._scale));     // new aabb is computed according to remaining children aabb
             }
 
             this.valid_aabb = true;
         }
     };
+
+     /**
+     * @link Element.computeAABB for a complete description
+     */
+      computeAABB () {
+        this.aabb.makeEmpty();
+        for (var i = 0; i < this.children.length; i++) {
+            this.children[i].computeAABB();
+            let bb = this.children[i].getAABB().clone();
+            this.aabb.union(bb.expandByVector(this._scale));
+        }
+    }
 
     /**
      *  @link Element.value for a complete description
@@ -2549,14 +2590,14 @@ class ScaleNode extends Node$2 {
             let center = new THREE$k.Vector3();
             this.aabb.getCenter(center);
           
-            let st_p =  new THREE$k.Vector3((p.x - center.x)/this.scale.x + center.x
-                                        ,(p.y - center.y)/ this.scale.y + center.y
-                                        ,(p.z - center.z)/ this.scale.z + center.z);
+            let st_p =  new THREE$k.Vector3((p.x - center.x)/this._scale.x + center.x
+                                        ,(p.y - center.y)/ this._scale.y + center.y
+                                        ,(p.z - center.z)/ this._scale.z + center.z);
                                 
             res.v = Number.MAX_VALUE;
             for (var i = 0; i < l; ++i) {
                 this.children[i].value(st_p, tmp);
-                res.v = tmp.v*this.scale.length();
+                res.v = tmp.v*(Math.min(this._scale.x,Math.min(this._scale.y,this._scale.z)));
               /*  this.children[i].value(p, tmp);
                 res.v += tmp.v;*/
                 if (res.g) {
