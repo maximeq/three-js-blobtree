@@ -108,14 +108,11 @@
 
             var mesh = new THREE.Mesh( geometry, material );
 
-         
-
-
             let guiProp = {scale_x : 1.0, scale_y : 1.0, scale_z : 1.0, volType : "SDF" };
             let gui = new dat.GUI({name : 'Scale Node', width: 350});
             let scaleParams = gui.addFolder("Scale Parameters");
 
-            scaleParams.add(guiProp, "scale_x", 0.001, 10.0, 0.001).name("Scale X").onChange(function() {scale_node.setScale(new THREE.Vector3(guiProp.scale_x,guiProp.scale_y,guiProp.scale_z)); mesh.geometry = smc.compute(); updateShadow();  geometry.computeBoundingBox();}).updateDisplay();
+            scaleParams.add(guiProp, "scale_x", 0.001, 10.0, 0.001).name("Scale X").onChange(function() {  scale_node.setScale(new THREE.Vector3(guiProp.scale_x,guiProp.scale_y,guiProp.scale_z)); mesh.geometry = smc.compute(); updateShadow();  geometry.computeBoundingBox();}).updateDisplay();
             scaleParams.add(guiProp, "scale_y", 0.001, 10.0, 0.001).name("Scale Y").onChange(function() {scale_node.setScale(new THREE.Vector3(guiProp.scale_x,guiProp.scale_y,guiProp.scale_z)); mesh.geometry = smc.compute(); updateShadow();  geometry.computeBoundingBox();}).updateDisplay();
             scaleParams.add(guiProp, "scale_z", 0.001, 10.0, 0.001).name("Scale Z").onChange(function() {scale_node.setScale(new THREE.Vector3(guiProp.scale_x,guiProp.scale_y,guiProp.scale_z)); mesh.geometry = smc.compute(); updateShadow();  geometry.computeBoundingBox();}).updateDisplay();
             scaleParams.add(guiProp, 'volType', ["Ricci", "SDF"]).onChange(function() {

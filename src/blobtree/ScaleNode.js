@@ -83,10 +83,16 @@ class ScaleNode extends Node {
             for (var i = 0; i < this.children.length; ++i) {
                 var c = this.children[i];
                 c.prepareForEval();
-                let bb = c.getAABB().clone();
-                this.aabb.union(bb.expandByVector(this._scale));     // new aabb is computed according to remaining children aabb
+                this.aabb.union(c.getAABB());    // new aabb is computed according to remaining children aabb
             }
 
+            let bb_size = new THREE.Vector3();
+            this.aabb.clone().getSize(bb_size);
+            let x_scale = bb_size.x*(this._scale.x - 1.0);
+            let y_scale = bb_size.y*(this._scale.y - 1.0);
+            let z_scale = bb_size.z*(this._scale.z - 1.0);
+    
+            this.aabb.expandByVector(new THREE.Vector3(x_scale,y_scale,z_scale));
             this.valid_aabb = true;
         }
     };
@@ -98,9 +104,16 @@ class ScaleNode extends Node {
         this.aabb.makeEmpty();
         for (var i = 0; i < this.children.length; i++) {
             this.children[i].computeAABB();
-            let bb = this.children[i].getAABB().clone();
-            this.aabb.union(bb.expandByVector(this._scale));
+            this.aabb.union( this.children[i].getAABB());
         }
+
+        let bb_size = new THREE.Vector3();
+        this.aabb.clone().getSize(bb_size);
+        let x_scale = bb_size.x*(this._scale.x - 1.0);
+        let y_scale = bb_size.y*(this._scale.y - 1.0);
+        let z_scale = bb_size.z*(this._scale.z - 1.0);
+
+        this.aabb.expandByVector(new THREE.Vector3(x_scale,y_scale,z_scale));
     }
 
     /**
@@ -144,9 +157,7 @@ class ScaleNode extends Node {
             res.v = Number.MAX_VALUE;
             for (var i = 0; i < l; ++i) {
                 this.children[i].value(st_p, tmp);
-                res.v = tmp.v*(Math.min(this._scale.x,Math.min(this._scale.y,this._scale.z)));
-              /*  this.children[i].value(p, tmp);
-                res.v += tmp.v;*/
+                res.v = tmp.v;
                 if (res.g) {
                     res.g.copy(tmp.g);
                 }
