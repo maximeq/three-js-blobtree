@@ -39,6 +39,7 @@
         <script src="../../node_modules/three/build/three.js"></script>
         <script src="../../node_modules/three/examples/js/controls/OrbitControls.js"></script>
         <script src="../../dist/three-js-blobtree.js"></script>
+        <script src="./lib/dat.gui.min.js"></script>
         <script>
 
             var root = new Blobtree.RootNode();
@@ -66,9 +67,21 @@
             // geometry is kept as a global variable to be used in the following script.
             var geometry = smc.compute();
             geometry.computeBoundingBox();
-            var material = new THREE.MeshPhongMaterial( {vertexColors:true} );
+            var material = new THREE.MeshPhongMaterial( {vertexColors:true,flatShading : true} );
 
             var mesh = new THREE.Mesh( geometry, material );
+            var guiProp;
+
+            var gui = new dat.GUI({name : 'Curvature', width: 350});
+            let curvatureParams = gui.addFolder('Curvature');
+            guiProp = {minCurvOrient : smc.minCurvOrient};
+    
+            curvatureParams.add(guiProp, 'minCurvOrient').listen().onChange( function()
+            {
+                smc.minCurvOrient = guiProp.minCurvOrient;
+                mesh.geometry =  smc.compute();
+
+            });
         </script>
         <!-- Main script containing THREE.js setup for the page -->
         <script src="./js/smc-main-script.js"></script>
