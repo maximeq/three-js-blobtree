@@ -7791,6 +7791,7 @@ class Box2Acc extends Box2 {
             this.nice_acc = nice_acc;
         }
         this.raw_acc = this.raw_acc ? this.nice_acc : raw_acc;
+         
     }
     /**
      *
@@ -7994,6 +7995,11 @@ class SlidingMarchingCubes$2 {
          * @type {ResultingGeometry}
          */
         this.geometry = null;
+
+
+        // Ensure triangulation along min curvature edge 
+        /** @type {boolean} */
+        this.minCurvOrient = true;
     }
 
     /**
@@ -8873,6 +8879,62 @@ class SlidingMarchingCubes$2 {
         this.geometry.addFace(v1, v4, v3);
     };
 
+
+    _isMinCurvatureTriangulation(v1, v2, v3, v4)
+    {
+        //Quad opposes v1 and v3 and v2 and v4
+        //check min curvature
+        let p1 = new THREE$3.Vector3(this.geometry.position[v1*3]
+            ,this.geometry.position[v1*3+ 1] 
+            ,this.geometry.position[v1*3 + 2]);
+        let p2 = new THREE$3.Vector3(this.geometry.position[v2*3]
+            ,this.geometry.position[v2*3+ 1] 
+            ,this.geometry.position[v2*3+ 2]);
+        let p3 = new THREE$3.Vector3(this.geometry.position[v3*3]
+            ,this.geometry.position[v3*3+ 1] 
+            ,this.geometry.position[v3*3+ 2]);
+        let p4 = new THREE$3.Vector3(this.geometry.position[v4*3]
+            ,this.geometry.position[v4*3+ 1] 
+            ,this.geometry.position[v4*3+ 2]);
+
+        //Edges from v2
+        let pp_2_1 = new THREE$3.Vector3();
+        pp_2_1.subVectors(p1,p2);
+
+        let pp_2_3 = new THREE$3.Vector3();
+        pp_2_3.subVectors(p3,p2);
+
+        let pp_2_4 = new THREE$3.Vector3();
+        pp_2_4.subVectors(p4,p2);
+
+        //Edges from v4
+        let pp_4_1 = new THREE$3.Vector3();
+        pp_4_1.subVectors(p1,p4);
+
+        let pp_4_3 = new THREE$3.Vector3();
+        pp_4_3.subVectors(p3,p4);
+
+        //normal of 123 triangle
+        let n_2 = pp_2_3.clone();
+        n_2.cross(pp_2_1).normalize();
+
+        //normal of 143 triangle
+        let n_4 = pp_4_1.clone();
+        n_4.cross(pp_4_3).normalize();
+
+        //normal of 234 triangle 
+        let n_23 = pp_2_3.clone();
+        n_23.cross(pp_2_4).normalize();
+
+        //normal of 214 triangle
+        let n_42 = pp_4_1.clone();
+        n_42.cross(pp_2_4.multiplyScalar(-1.0)).normalize();
+
+        let dot_24 = n_2.dot(n_4);
+        let dot_31 = n_23.dot(n_42);
+
+        return dot_31  < dot_24;
+    }
     /**
      *  Compute and add faces depending on current cell crossing mask
      *  @param {number} x Current cell x coordinate in the grid (integer)
@@ -8888,6 +8950,21 @@ class SlidingMarchingCubes$2 {
             let v2 = this.vertices_xy[1][(y - 1) * this.reso[0] + x];
             let v3 = this.vertices_xy[0][(y - 1) * this.reso[0] + x];
             let v4 = this.vertices_xy[0][idx_y_0];
+
+            
+            if(this.minCurvOrient)
+            {
+                let switch_edge = !this._isMinCurvatureTriangulation(v1, v2, v3, v4);
+                if(switch_edge)
+                {
+                    let tmp = v1;
+                    v1 = v2;
+                    v2 = v3;
+                    v3 = v4;
+                    v4 = tmp;
+                }
+            }
+
             if (this.mask & 0x1) {
                 this.pushDirectFaces(v1, v2, v3, v4);
             } else {
@@ -8901,6 +8978,19 @@ class SlidingMarchingCubes$2 {
             let v2 = this.vertices_xy[0][idx_y_0];
             let v3 = this.vertices_xy[0][idx_y_0 - 1];
             let v4 = this.vertices_xy[1][idx_y_0 - 1];
+
+            if(this.minCurvOrient)
+            {
+                let switch_edge = !this._isMinCurvatureTriangulation(v1, v2, v3, v4);
+                if(switch_edge)
+                {
+                    let tmp = v1;
+                    v1 = v2;
+                    v2 = v3;
+                    v3 = v4;
+                    v4 = tmp;
+                }
+            }
             if (this.mask & 0x1) {
                 this.pushDirectFaces(v1, v2, v3, v4);
             } else {
@@ -8914,6 +9004,19 @@ class SlidingMarchingCubes$2 {
             let v2 = this.vertices_xy[1][idx_y_0 - 1];
             let v3 = this.vertices_xy[1][(y - 1) * this.reso[0] + x - 1];
             let v4 = this.vertices_xy[1][(y - 1) * this.reso[0] + x];
+
+            if(this.minCurvOrient)
+            {
+                let switch_edge = !this._isMinCurvatureTriangulation(v1, v2, v3, v4);
+                if(switch_edge)
+                {
+                    let tmp = v1;
+                    v1 = v2;
+                    v2 = v3;
+                    v3 = v4;
+                    v4 = tmp;
+                }
+            }
             if (this.mask & 0x1) {
                 this.pushDirectFaces(v1, v2, v3, v4);
             } else {
