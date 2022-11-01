@@ -8000,6 +8000,78 @@ class SlidingMarchingCubes$2 {
         // Ensure triangulation along min curvature edge 
         /** @type {boolean} */
         this.minCurvOrient = true;
+
+
+
+        //Local Variable per allocated and Scoped for optimization
+        var p1 = new THREE$3.Vector3();
+        var p2 = new THREE$3.Vector3();
+        var p3 = new THREE$3.Vector3();
+        var p4 = new THREE$3.Vector3();
+        //Edges from v2
+        var pp_2_1 = new THREE$3.Vector3();                
+        var pp_2_3 = new THREE$3.Vector3();                        
+        var pp_2_4 = new THREE$3.Vector3();
+        //Edges from v4
+        var pp_4_1 = new THREE$3.Vector3();
+        var pp_4_3 = new THREE$3.Vector3();
+        var n_2 = new THREE$3.Vector3();
+        var n_4 = new THREE$3.Vector3();
+        var n_23 = new THREE$3.Vector3();
+        var n_42 = new THREE$3.Vector3();
+
+        // Returns true if 123/143 split is along min curvature 
+        /** @type {(v1:number,v2:number,v3:number,v4:number) => boolean} */
+        this._isMinCurvatureTriangulation = function(v1,v2,v3,v4)
+        {
+            //Quad opposes v1 and v3 and v2 and v4
+            //check min curvature
+            p1.x = this.geometry.position[v1*3];
+            p1.y = this.geometry.position[v1*3+ 1];             
+            p1.z = this.geometry.position[v1*3 + 2];
+
+            p2.x = this.geometry.position[v2*3];
+            p2.y = this.geometry.position[v2*3+ 1]; 
+            p2.z = this.geometry.position[v2*3+ 2];
+        
+            p3.x = this.geometry.position[v3*3];
+            p3.y =this.geometry.position[v3*3+ 1]; 
+            p3.z = this.geometry.position[v3*3+ 2];
+            
+            p4.x = this.geometry.position[v4*3];
+            p4.y = this.geometry.position[v4*3+ 1]; 
+            p4.z = this.geometry.position[v4*3+ 2];
+
+            //Edges from v2        
+            pp_2_1.subVectors(p1,p2);        
+            pp_2_3.subVectors(p3,p2);
+            pp_2_4.subVectors(p4,p2);
+
+            //Edges from v4
+            pp_4_1.subVectors(p1,p4);        
+            pp_4_3.subVectors(p3,p4);
+
+            //normal of 123 triangle
+            n_2.copy(pp_2_3);
+            n_2.cross(pp_2_1).normalize();
+
+            //normal of 143 triangle
+            n_4.copy(pp_4_1);
+            n_4.cross(pp_4_3).normalize();
+
+            //normal of 234 triangle 
+            n_23.copy(pp_2_3);
+            n_23.cross(pp_2_4).normalize();
+
+            //normal of 214 triangle
+            n_42.copy(pp_4_1);
+            n_42.cross(pp_2_4.multiplyScalar(-1.0)).normalize();
+
+            let dot_24 = n_2.dot(n_4);
+            let dot_31 = n_23.dot(n_42);
+
+            return dot_31  < dot_24;
+        };
     }
 
     /**
@@ -8783,8 +8855,8 @@ class SlidingMarchingCubes$2 {
             this.curr_steps.x = this.min_acc;
             this.curr_steps.y = this.min_acc;
             this.curr_step_vol =
-                this.curr_steps.x * this.curr_steps.y * this.curr_steps.z;
-
+            this.curr_steps.x * this.curr_steps.y * this.curr_steps.z;
+                        
             for (var iy = 0; iy < this.reso[1] - 1; ++iy) {
                 for (var ix = 0; ix < this.reso[0] - 1; ++ix) {
                     this.y = corner.y + iy * this.min_acc;
@@ -8880,61 +8952,6 @@ class SlidingMarchingCubes$2 {
     };
 
 
-    _isMinCurvatureTriangulation(v1, v2, v3, v4)
-    {
-        //Quad opposes v1 and v3 and v2 and v4
-        //check min curvature
-        let p1 = new THREE$3.Vector3(this.geometry.position[v1*3]
-            ,this.geometry.position[v1*3+ 1] 
-            ,this.geometry.position[v1*3 + 2]);
-        let p2 = new THREE$3.Vector3(this.geometry.position[v2*3]
-            ,this.geometry.position[v2*3+ 1] 
-            ,this.geometry.position[v2*3+ 2]);
-        let p3 = new THREE$3.Vector3(this.geometry.position[v3*3]
-            ,this.geometry.position[v3*3+ 1] 
-            ,this.geometry.position[v3*3+ 2]);
-        let p4 = new THREE$3.Vector3(this.geometry.position[v4*3]
-            ,this.geometry.position[v4*3+ 1] 
-            ,this.geometry.position[v4*3+ 2]);
-
-        //Edges from v2
-        let pp_2_1 = new THREE$3.Vector3();
-        pp_2_1.subVectors(p1,p2);
-
-        let pp_2_3 = new THREE$3.Vector3();
-        pp_2_3.subVectors(p3,p2);
-
-        let pp_2_4 = new THREE$3.Vector3();
-        pp_2_4.subVectors(p4,p2);
-
-        //Edges from v4
-        let pp_4_1 = new THREE$3.Vector3();
-        pp_4_1.subVectors(p1,p4);
-
-        let pp_4_3 = new THREE$3.Vector3();
-        pp_4_3.subVectors(p3,p4);
-
-        //normal of 123 triangle
-        let n_2 = pp_2_3.clone();
-        n_2.cross(pp_2_1).normalize();
-
-        //normal of 143 triangle
-        let n_4 = pp_4_1.clone();
-        n_4.cross(pp_4_3).normalize();
-
-        //normal of 234 triangle 
-        let n_23 = pp_2_3.clone();
-        n_23.cross(pp_2_4).normalize();
-
-        //normal of 214 triangle
-        let n_42 = pp_4_1.clone();
-        n_42.cross(pp_2_4.multiplyScalar(-1.0)).normalize();
-
-        let dot_24 = n_2.dot(n_4);
-        let dot_31 = n_23.dot(n_42);
-
-        return dot_31  < dot_24;
-    }
     /**
      *  Compute and add faces depending on current cell crossing mask
      *  @param {number} x Current cell x coordinate in the grid (integer)
