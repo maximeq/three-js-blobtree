@@ -7999,6 +7999,39 @@ class SlidingMarchingCubes$2 {
         /** @type {THREE.Vector3} */
         this.ext_p = new THREE$3.Vector3();
 
+
+        //Var and tmp var pre allocated and Scoped 
+        //for optimization of triangulation criteria
+        //assuming a v1v2v3v4 quad
+        /** @type {THREE.Vector3} */
+        var p1 = new THREE$3.Vector3(); //v1 position
+        /** @type {THREE.Vector3} */
+        var p2 = new THREE$3.Vector3(); //v2 position
+        /** @type {THREE.Vector3} */
+        var p3 = new THREE$3.Vector3(); //v3 position
+        /** @type {THREE.Vector3} */
+        var p4 = new THREE$3.Vector3(); //v4 position
+        //Edges from v2
+        /** @type {THREE.Vector3} */
+        var pp_2_1 = new THREE$3.Vector3(); //v2v1 edge
+        /** @type {THREE.Vector3} */                
+        var pp_2_3 = new THREE$3.Vector3(); //v2v3 edge
+        /** @type {THREE.Vector3} */                        
+        var pp_2_4 = new THREE$3.Vector3(); //v2v4 edge
+        //Edges from v4
+        /** @type {THREE.Vector3} */
+        var pp_4_1 = new THREE$3.Vector3(); //v4v1 edge
+        /** @type {THREE.Vector3} */
+        var pp_4_3 = new THREE$3.Vector3(); //v3v1 edge
+        /** @type {THREE.Vector3} */
+        var n_2 = new THREE$3.Vector3(); //123 normal
+        /** @type {THREE.Vector3} */
+        var n_4 = new THREE$3.Vector3(); //341 normal
+        /** @type {THREE.Vector3} */
+        var n_23 = new THREE$3.Vector3(); //234 normal
+        /** @type {THREE.Vector3} */
+        var n_42 = new THREE$3.Vector3(); //412 normal
+
         /**
          * Resulting mesh data
          * @type {ResultingGeometry}
@@ -8010,24 +8043,6 @@ class SlidingMarchingCubes$2 {
         /** @type {boolean} */
         this.minCurvOrient = true;
 
-
-
-        //Local Variable per allocated and Scoped for optimization
-        var p1 = new THREE$3.Vector3();
-        var p2 = new THREE$3.Vector3();
-        var p3 = new THREE$3.Vector3();
-        var p4 = new THREE$3.Vector3();
-        //Edges from v2
-        var pp_2_1 = new THREE$3.Vector3();                
-        var pp_2_3 = new THREE$3.Vector3();                        
-        var pp_2_4 = new THREE$3.Vector3();
-        //Edges from v4
-        var pp_4_1 = new THREE$3.Vector3();
-        var pp_4_3 = new THREE$3.Vector3();
-        var n_2 = new THREE$3.Vector3();
-        var n_4 = new THREE$3.Vector3();
-        var n_23 = new THREE$3.Vector3();
-        var n_42 = new THREE$3.Vector3();
 
         // Returns true if 123/143 split is along min curvature 
         /** @type {(v1:number,v2:number,v3:number,v4:number) => boolean} */
