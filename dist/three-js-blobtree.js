@@ -7996,37 +7996,7 @@ var Blobtree = (function (exports, require$$0, require$$0$1) {
             this.ext_p = new THREE$3.Vector3();
 
 
-            //Var and tmp var pre allocated and Scoped 
-            //for optimization of triangulation criteria
-            //assuming a v1v2v3v4 quad
-            /** @type {THREE.Vector3} */
-            var p1 = new THREE$3.Vector3(); //v1 position
-            /** @type {THREE.Vector3} */
-            var p2 = new THREE$3.Vector3(); //v2 position
-            /** @type {THREE.Vector3} */
-            var p3 = new THREE$3.Vector3(); //v3 position
-            /** @type {THREE.Vector3} */
-            var p4 = new THREE$3.Vector3(); //v4 position
-            //Edges from v2
-            /** @type {THREE.Vector3} */
-            var pp_2_1 = new THREE$3.Vector3(); //v2v1 edge
-            /** @type {THREE.Vector3} */                
-            var pp_2_3 = new THREE$3.Vector3(); //v2v3 edge
-            /** @type {THREE.Vector3} */                        
-            var pp_2_4 = new THREE$3.Vector3(); //v2v4 edge
-            //Edges from v4
-            /** @type {THREE.Vector3} */
-            var pp_4_1 = new THREE$3.Vector3(); //v4v1 edge
-            /** @type {THREE.Vector3} */
-            var pp_4_3 = new THREE$3.Vector3(); //v3v1 edge
-            /** @type {THREE.Vector3} */
-            var n_2 = new THREE$3.Vector3(); //123 normal
-            /** @type {THREE.Vector3} */
-            var n_4 = new THREE$3.Vector3(); //341 normal
-            /** @type {THREE.Vector3} */
-            var n_23 = new THREE$3.Vector3(); //234 normal
-            /** @type {THREE.Vector3} */
-            var n_42 = new THREE$3.Vector3(); //412 normal
+       
 
             /**
              * Resulting mesh data
@@ -8042,56 +8012,92 @@ var Blobtree = (function (exports, require$$0, require$$0$1) {
 
             // Returns true if 123/143 split is along min curvature 
             /** @type {(v1:number,v2:number,v3:number,v4:number) => boolean} */
-            this._isMinCurvatureTriangulation = function(v1,v2,v3,v4)
-            {
-                //Quad opposes v1 and v3 and v2 and v4
-                //check min curvature
-                p1.x = this.geometry.position[v1*3];
-                p1.y = this.geometry.position[v1*3+ 1];             
-                p1.z = this.geometry.position[v1*3 + 2];
-
-                p2.x = this.geometry.position[v2*3];
-                p2.y = this.geometry.position[v2*3+ 1]; 
-                p2.z = this.geometry.position[v2*3+ 2];
-            
-                p3.x = this.geometry.position[v3*3];
-                p3.y =this.geometry.position[v3*3+ 1]; 
-                p3.z = this.geometry.position[v3*3+ 2];
-                
-                p4.x = this.geometry.position[v4*3];
-                p4.y = this.geometry.position[v4*3+ 1]; 
-                p4.z = this.geometry.position[v4*3+ 2];
-
-                //Edges from v2        
-                pp_2_1.subVectors(p1,p2);        
-                pp_2_3.subVectors(p3,p2);
-                pp_2_4.subVectors(p4,p2);
-
+            this._isMinCurvatureTriangulation =  
+            (function () 
+            {     
+                //Var and tmp var pre allocated and Scoped 
+                //for optimization of triangulation criteria
+                //assuming a v1v2v3v4 quad
+                /** @type {THREE.Vector3} */
+                let p1 = new THREE$3.Vector3(); //v1 position
+                /** @type {THREE.Vector3} */
+                let p2 = new THREE$3.Vector3(); //v2 position
+                /** @type {THREE.Vector3} */
+                let p3 = new THREE$3.Vector3(); //v3 position
+                /** @type {THREE.Vector3} */
+                let p4 = new THREE$3.Vector3(); //v4 position
+                //Edges from v2
+                /** @type {THREE.Vector3} */
+                let pp_2_1 = new THREE$3.Vector3(); //v2v1 edge
+                /** @type {THREE.Vector3} */                
+                let pp_2_3 = new THREE$3.Vector3(); //v2v3 edge
+                /** @type {THREE.Vector3} */                        
+                let pp_2_4 = new THREE$3.Vector3(); //v2v4 edge
                 //Edges from v4
-                pp_4_1.subVectors(p1,p4);        
-                pp_4_3.subVectors(p3,p4);
+                /** @type {THREE.Vector3} */
+                let pp_4_1 = new THREE$3.Vector3(); //v4v1 edge
+                /** @type {THREE.Vector3} */
+                let pp_4_3 = new THREE$3.Vector3(); //v3v1 edge
+                /** @type {THREE.Vector3} */
+                let n_2 = new THREE$3.Vector3(); //123 normal
+                /** @type {THREE.Vector3} */
+                let n_4 = new THREE$3.Vector3(); //341 normal
+                /** @type {THREE.Vector3} */
+                let n_23 = new THREE$3.Vector3(); //234 normal
+                /** @type {THREE.Vector3} */
+                let n_42 = new THREE$3.Vector3(); //412 normal
 
-                //normal of 123 triangle
-                n_2.copy(pp_2_3);
-                n_2.cross(pp_2_1).normalize();
+                return function(v1,v2,v3,v4)
+                {
+                    //Quad opposes v1 and v3 and v2 and v4
+                    //check min curvature
+                    p1.x = this.geometry.position[v1*3];
+                    p1.y = this.geometry.position[v1*3+ 1];             
+                    p1.z = this.geometry.position[v1*3 + 2];
 
-                //normal of 143 triangle
-                n_4.copy(pp_4_1);
-                n_4.cross(pp_4_3).normalize();
+                    p2.x = this.geometry.position[v2*3];
+                    p2.y = this.geometry.position[v2*3+ 1]; 
+                    p2.z = this.geometry.position[v2*3+ 2];
+                
+                    p3.x = this.geometry.position[v3*3];
+                    p3.y =this.geometry.position[v3*3+ 1]; 
+                    p3.z = this.geometry.position[v3*3+ 2];
+                    
+                    p4.x = this.geometry.position[v4*3];
+                    p4.y = this.geometry.position[v4*3+ 1]; 
+                    p4.z = this.geometry.position[v4*3+ 2];
 
-                //normal of 234 triangle 
-                n_23.copy(pp_2_3);
-                n_23.cross(pp_2_4).normalize();
+                    //Edges from v2        
+                    pp_2_1.subVectors(p1,p2);        
+                    pp_2_3.subVectors(p3,p2);
+                    pp_2_4.subVectors(p4,p2);
 
-                //normal of 214 triangle
-                n_42.copy(pp_4_1);
-                n_42.cross(pp_2_4.multiplyScalar(-1.0)).normalize();
+                    //Edges from v4
+                    pp_4_1.subVectors(p1,p4);        
+                    pp_4_3.subVectors(p3,p4);
 
-                let dot_24 = n_2.dot(n_4);
-                let dot_31 = n_23.dot(n_42);
+                    //normal of 123 triangle
+                    n_2.copy(pp_2_3);
+                    n_2.cross(pp_2_1).normalize();
 
-                return dot_31  < dot_24;
-            };
+                    //normal of 143 triangle
+                    n_4.copy(pp_4_1);
+                    n_4.cross(pp_4_3).normalize();
+
+                    //normal of 234 triangle 
+                    n_23.copy(pp_2_3);
+                    n_23.cross(pp_2_4).normalize();
+
+                    //normal of 214 triangle
+                    n_42.copy(pp_4_1);
+                    n_42.cross(pp_2_4.multiplyScalar(-1.0)).normalize();
+
+                    let dot_24 = n_2.dot(n_4);
+                    let dot_31 = n_23.dot(n_42);
+
+                    return dot_31  < dot_24;
+                }
+            })();
         }
 
         /**
