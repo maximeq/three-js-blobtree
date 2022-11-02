@@ -83,7 +83,7 @@ class RicciNode extends Node {
      * @returns
      */
     static fromJSON(json) {
-        let res = new RicciNode(json.ricci);
+        let res = new RicciNode(json.ricci_n);
         for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
         }

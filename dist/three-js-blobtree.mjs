@@ -953,7 +953,7 @@ class RicciNode$2 extends Node$4 {
      * @returns
      */
     static fromJSON(json) {
-        let res = new RicciNode$2(json.ricci);
+        let res = new RicciNode$2(json.ricci_n);
         for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types$i.fromJSON(json.children[i]));
         }
