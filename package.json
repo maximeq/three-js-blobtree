@@ -3,6 +3,7 @@
     "version": "2.130.0",
     "description": "Library to handle implicit surfaces in THREE.JS using a blobtree.",
     "main": "dist/three-js-blobtree.cjs",
+    "types": "./dist/export.d.ts",
     "module": "src/check-wrapper.js",
     "browser": "dist/three-js-blobtree.min.js",
     "scripts": {
