@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Blobtree - Basic</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
+            body {
+                color: #000;
+                font-family:Monospace;
+                font-size:13px;
+                text-align:center;
+                font-weight: bold;
+
+                background-color: #fff;
+                margin: 0px;
+                overflow: hidden;
+            }
+
+            #info {
+                color:#000;
+                position: absolute;
+                top: 0px; width: 100%;
+                padding: 5px;
+
+            }
+
+            a {
+                color: red;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="info">
+            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Basic example
+        </div>
+
+        <script src="../../node_modules/three/build/three.js"></script>
+        <script src="../../node_modules/three/examples/js/controls/OrbitControls.js"></script>
+        <script src="../../dist/three-js-blobtree.js"></script>
+        <script src="./lib/dat.gui.min.js"></script>
+        <script>
+
+            var root = new Blobtree.RootNode();
+
+            root.addChild(
+                new Blobtree.ScalisPoint(
+                    new Blobtree.ScalisVertex(
+                        new THREE.Vector3(0,0,0),
+                        5
+                    ),
+                    Blobtree.ScalisPrimitive.DIST,
+                    1.0,
+                    new Blobtree.Material({color:'#dd4f43'})
+                )
+            );
+
+            var smc = new Blobtree.SlidingMarchingCubes(
+                root,
+                {
+                    detailRatio: 0.25    // Double resolution with respect to the primitives setup.
+                }
+            );
+
+            // Compute the geometry using the SlidingMarchingCubes
+            // geometry is kept as a global variable to be used in the following script.
+            var geometry = smc.compute();
+            geometry.computeBoundingBox();
+            var material = new THREE.MeshPhongMaterial( {vertexColors:true,flatShading : true} );
+
+            var mesh = new THREE.Mesh( geometry, material );
+            var guiProp;
+
+            var gui = new dat.GUI({name : 'Curvature', width: 350});
+            let curvatureParams = gui.addFolder('Curvature');
+            guiProp = {minCurvOrient : smc.minCurvOrient};
+    
+            curvatureParams.add(guiProp, 'minCurvOrient').listen().onChange( function()
+            {
+                smc.minCurvOrient = guiProp.minCurvOrient;
+                mesh.geometry =  smc.compute();
+
+            });
+        </script>
+        <!-- Main script containing THREE.js setup for the page -->
+        <script src="./js/smc-main-script.js"></script>
+
+    </body>
+</html>

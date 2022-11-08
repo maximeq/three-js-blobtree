@@ -11,7 +11,7 @@ const Material = require("./Material.js");
 /** @typedef {import('./Node.js').NodeJSON} NodeJSON */
 
 /**
- * @typedef {NodeJSON} ScaleNodeJSON
+ * @typedef { {scale_x:number} & {scale_y:number} & {scale_z:number} & NodeJSON} ScaleNodeJSON
  */
 
 /**
@@ -24,20 +24,7 @@ const Material = require("./Material.js");
 class ScaleNode extends Node {
 
     static type = "ScaleNode";
-
-    /**
-     *
-     * @param {ScaleNodeJSON} json
-     * @returns {ScaleNode}
-     */
-    static fromJSON(json) {
-        var res = new ScaleNode();
-        for (var i = 0; i < json.children.length; ++i) {
-            res.addChild(Types.fromJSON(json.children[i]));
-        }
-        return res;
-    }
-
+ 
     /**
     *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
@@ -64,12 +51,52 @@ class ScaleNode extends Node {
 
     }
 
+
+
+     /**
+     * @link Node.toJSON
+     * @returns {ScaleNodeJSON}
+     */
+      toJSON() {
+        let res = {
+            ...super.toJSON(),
+            scale_x: this._scale.x,
+            scale_y: this._scale.y,
+            scale_z: this._scale.z,
+        };
+
+        return res;
+    };
+
+    /**
+     * @link Node.fromJSON
+     * 
+     * @param {ScaleNodeJSON} json
+     * @returns {ScaleNode}
+     */
+    static fromJSON(json) {
+    var res = new ScaleNode();
+    res.setScale(new THREE.Vector3(json.scale_x
+                                    ,json.scale_y
+                                    ,json.scale_z));
+    for (var i = 0; i < json.children.length; ++i) {
+        res.addChild(Types.fromJSON(json.children[i]));
+    }
+    return res;
+    }
+
+    /**
+     * @link ScaleNode.setScale
+     */
     setScale(scale)
     {
         this._scale = scale;
         this.invalidAABB();
     }
 
+    /**
+     * @link Node.getType
+     */
     getType () {
         return ScaleNode.type;
     }

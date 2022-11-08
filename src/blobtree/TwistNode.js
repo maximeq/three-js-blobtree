@@ -11,7 +11,7 @@ const Material = require("./Material.js");
 /** @typedef {import('./Node.js').NodeJSON} NodeJSON */
 
 /**
- * @typedef {NodeJSON} TwistNodeJSON
+ * @typedef { {twist_amout:number} & {axis_x:number} & {axis_y:number} & {axis_z:number} & NodeJSON} TwistNodeJSON
  */
 
 /**
@@ -24,19 +24,6 @@ const Material = require("./Material.js");
 class TwistNode extends Node {
 
     static type = "TwistNode";
-
-    /**
-     *
-     * @param {TwistNodeJSON} json
-     * @returns {TwistNode}
-     */
-    static fromJSON(json) {
-        var res = new TwistNode();
-        for (var i = 0; i < json.children.length; ++i) {
-            res.addChild(Types.fromJSON(json.children[i]));
-        }
-        return res;
-    }
 
     /**
     *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
@@ -65,6 +52,41 @@ class TwistNode extends Node {
         this._twist_axis_mat = new THREE.Matrix4();
         this._twist_axis_mat_inv = new THREE.Matrix4();
 
+    }
+
+    
+     /**
+     * @link Node.toJSON
+     * @returns {TwistNodeJSON}
+     */
+      toJSON() {
+        let res = {
+            ...super.toJSON(),
+            twist_amout: this._twist_amout,
+            axis_x: this._twist_axis.x,
+            axis_y: this._twist_axis.y,
+            axis_z: this._twist_axis.z,
+        };
+
+        return res;
+    };
+
+    /**
+     *@link Node.fromJSON
+     * 
+     * @param {TwistNodeJSON} json
+     * @returns {TwistNode}
+     */
+     static fromJSON(json) {
+        var res = new TwistNode();
+        res.setTwistAmount(json.twist_amout);
+        res.setTwistAxis(new THREE.Vector3(json.axis_x
+                                            ,json.axis_y
+                                            ,json.axis_z));
+        for (var i = 0; i < json.children.length; ++i) {
+            res.addChild(Types.fromJSON(json.children[i]));
+        }
+        return res;
     }
 
     setTwistAmount(amount)

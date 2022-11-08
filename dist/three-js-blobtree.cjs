@@ -962,7 +962,7 @@ class RicciNode$2 extends Node$6 {
      * @returns
      */
     static fromJSON(json) {
-        let res = new RicciNode$2(json.ricci);
+        let res = new RicciNode$2(json.ricci_n);
         for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types$k.fromJSON(json.children[i]));
         }
@@ -2249,7 +2249,7 @@ const Material$9 = Material_1;
 /** @typedef {import('./Node.js').NodeJSON} NodeJSON */
 
 /**
- * @typedef {NodeJSON} TwistNodeJSON
+ * @typedef { {twist_amout:number} & {axis_x:number} & {axis_y:number} & {axis_z:number} & NodeJSON} TwistNodeJSON
  */
 
 /**
@@ -2262,19 +2262,6 @@ const Material$9 = Material_1;
 class TwistNode extends Node$3 {
 
     static type = "TwistNode";
-
-    /**
-     *
-     * @param {TwistNodeJSON} json
-     * @returns {TwistNode}
-     */
-    static fromJSON(json) {
-        var res = new TwistNode();
-        for (var i = 0; i < json.children.length; ++i) {
-            res.addChild(Types$g.fromJSON(json.children[i]));
-        }
-        return res;
-    }
 
     /**
     *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
@@ -2303,6 +2290,41 @@ class TwistNode extends Node$3 {
         this._twist_axis_mat = new THREE$l.Matrix4();
         this._twist_axis_mat_inv = new THREE$l.Matrix4();
 
+    }
+
+    
+     /**
+     * @link Node.toJSON
+     * @returns {TwistNodeJSON}
+     */
+      toJSON() {
+        let res = {
+            ...super.toJSON(),
+            twist_amout: this._twist_amout,
+            axis_x: this._twist_axis.x,
+            axis_y: this._twist_axis.y,
+            axis_z: this._twist_axis.z,
+        };
+
+        return res;
+    };
+
+    /**
+     *@link Node.fromJSON
+     * 
+     * @param {TwistNodeJSON} json
+     * @returns {TwistNode}
+     */
+     static fromJSON(json) {
+        var res = new TwistNode();
+        res.setTwistAmount(json.twist_amout);
+        res.setTwistAxis(new THREE$l.Vector3(json.axis_x
+                                            ,json.axis_y
+                                            ,json.axis_z));
+        for (var i = 0; i < json.children.length; ++i) {
+            res.addChild(Types$g.fromJSON(json.children[i]));
+        }
+        return res;
     }
 
     setTwistAmount(amount)
@@ -2464,7 +2486,7 @@ const Material$8 = Material_1;
 /** @typedef {import('./Node.js').NodeJSON} NodeJSON */
 
 /**
- * @typedef {NodeJSON} ScaleNodeJSON
+ * @typedef { {scale_x:number} & {scale_y:number} & {scale_z:number} & NodeJSON} ScaleNodeJSON
  */
 
 /**
@@ -2477,20 +2499,7 @@ const Material$8 = Material_1;
 class ScaleNode extends Node$2 {
 
     static type = "ScaleNode";
-
-    /**
-     *
-     * @param {ScaleNodeJSON} json
-     * @returns {ScaleNode}
-     */
-    static fromJSON(json) {
-        var res = new ScaleNode();
-        for (var i = 0; i < json.children.length; ++i) {
-            res.addChild(Types$f.fromJSON(json.children[i]));
-        }
-        return res;
-    }
-
+ 
     /**
     *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
@@ -2517,12 +2526,52 @@ class ScaleNode extends Node$2 {
 
     }
 
+
+
+     /**
+     * @link Node.toJSON
+     * @returns {ScaleNodeJSON}
+     */
+      toJSON() {
+        let res = {
+            ...super.toJSON(),
+            scale_x: this._scale.x,
+            scale_y: this._scale.y,
+            scale_z: this._scale.z,
+        };
+
+        return res;
+    };
+
+    /**
+     * @link Node.fromJSON
+     * 
+     * @param {ScaleNodeJSON} json
+     * @returns {ScaleNode}
+     */
+    static fromJSON(json) {
+    var res = new ScaleNode();
+    res.setScale(new THREE$k.Vector3(json.scale_x
+                                    ,json.scale_y
+                                    ,json.scale_z));
+    for (var i = 0; i < json.children.length; ++i) {
+        res.addChild(Types$f.fromJSON(json.children[i]));
+    }
+    return res;
+    }
+
+    /**
+     * @link ScaleNode.setScale
+     */
     setScale(scale)
     {
         this._scale = scale;
         this.invalidAABB();
     }
 
+    /**
+     * @link Node.getType
+     */
     getType () {
         return ScaleNode.type;
     }
@@ -8209,6 +8258,7 @@ class Box2Acc extends Box2 {
             this.nice_acc = nice_acc;
         }
         this.raw_acc = this.raw_acc ? this.nice_acc : raw_acc;
+         
     }
     /**
      *
@@ -8407,11 +8457,109 @@ class SlidingMarchingCubes$2 {
         /** @type {THREE.Vector3} */
         this.ext_p = new THREE$3.Vector3();
 
+
+   
+
         /**
          * Resulting mesh data
          * @type {ResultingGeometry}
          */
         this.geometry = null;
+
+
+        // Ensure triangulation along min curvature edge 
+        /** @type {boolean} */
+        this.minCurvOrient = true;
+
+
+        // Returns true if 123/143 split is along min curvature 
+        /** @type {(v1:number,v2:number,v3:number,v4:number) => boolean} */
+        this._isMinCurvatureTriangulation =  
+        (function () 
+        {     
+            //Var and tmp var pre allocated and Scoped 
+            //for optimization of triangulation criteria
+            //assuming a v1v2v3v4 quad
+            /** @type {THREE.Vector3} */
+            let p1 = new THREE$3.Vector3(); //v1 position
+            /** @type {THREE.Vector3} */
+            let p2 = new THREE$3.Vector3(); //v2 position
+            /** @type {THREE.Vector3} */
+            let p3 = new THREE$3.Vector3(); //v3 position
+            /** @type {THREE.Vector3} */
+            let p4 = new THREE$3.Vector3(); //v4 position
+            //Edges from v2
+            /** @type {THREE.Vector3} */
+            let pp_2_1 = new THREE$3.Vector3(); //v2v1 edge
+            /** @type {THREE.Vector3} */                
+            let pp_2_3 = new THREE$3.Vector3(); //v2v3 edge
+            /** @type {THREE.Vector3} */                        
+            let pp_2_4 = new THREE$3.Vector3(); //v2v4 edge
+            //Edges from v4
+            /** @type {THREE.Vector3} */
+            let pp_4_1 = new THREE$3.Vector3(); //v4v1 edge
+            /** @type {THREE.Vector3} */
+            let pp_4_3 = new THREE$3.Vector3(); //v3v1 edge
+            /** @type {THREE.Vector3} */
+            let n_2 = new THREE$3.Vector3(); //123 normal
+            /** @type {THREE.Vector3} */
+            let n_4 = new THREE$3.Vector3(); //341 normal
+            /** @type {THREE.Vector3} */
+            let n_23 = new THREE$3.Vector3(); //234 normal
+            /** @type {THREE.Vector3} */
+            let n_42 = new THREE$3.Vector3(); //412 normal
+
+            return function(v1,v2,v3,v4)
+            {
+                //Quad opposes v1 and v3 and v2 and v4
+                //check min curvature
+                p1.x = this.geometry.position[v1*3];
+                p1.y = this.geometry.position[v1*3+ 1];             
+                p1.z = this.geometry.position[v1*3 + 2];
+
+                p2.x = this.geometry.position[v2*3];
+                p2.y = this.geometry.position[v2*3+ 1]; 
+                p2.z = this.geometry.position[v2*3+ 2];
+            
+                p3.x = this.geometry.position[v3*3];
+                p3.y =this.geometry.position[v3*3+ 1]; 
+                p3.z = this.geometry.position[v3*3+ 2];
+                
+                p4.x = this.geometry.position[v4*3];
+                p4.y = this.geometry.position[v4*3+ 1]; 
+                p4.z = this.geometry.position[v4*3+ 2];
+
+                //Edges from v2        
+                pp_2_1.subVectors(p1,p2);        
+                pp_2_3.subVectors(p3,p2);
+                pp_2_4.subVectors(p4,p2);
+
+                //Edges from v4
+                pp_4_1.subVectors(p1,p4);        
+                pp_4_3.subVectors(p3,p4);
+
+                //normal of 123 triangle
+                n_2.copy(pp_2_3);
+                n_2.cross(pp_2_1).normalize();
+
+                //normal of 143 triangle
+                n_4.copy(pp_4_1);
+                n_4.cross(pp_4_3).normalize();
+
+                //normal of 234 triangle 
+                n_23.copy(pp_2_3);
+                n_23.cross(pp_2_4).normalize();
+
+                //normal of 214 triangle
+                n_42.copy(pp_4_1);
+                n_42.cross(pp_2_4.multiplyScalar(-1.0)).normalize();
+
+                let dot_24 = n_2.dot(n_4);
+                let dot_31 = n_23.dot(n_42);
+
+                return dot_31  < dot_24;
+            }
+        })();
     }
 
     /**
@@ -9195,8 +9343,8 @@ class SlidingMarchingCubes$2 {
             this.curr_steps.x = this.min_acc;
             this.curr_steps.y = this.min_acc;
             this.curr_step_vol =
-                this.curr_steps.x * this.curr_steps.y * this.curr_steps.z;
-
+            this.curr_steps.x * this.curr_steps.y * this.curr_steps.z;
+                        
             for (var iy = 0; iy < this.reso[1] - 1; ++iy) {
                 for (var ix = 0; ix < this.reso[0] - 1; ++ix) {
                     this.y = corner.y + iy * this.min_acc;
@@ -9291,6 +9439,7 @@ class SlidingMarchingCubes$2 {
         this.geometry.addFace(v1, v4, v3);
     };
 
+
     /**
      *  Compute and add faces depending on current cell crossing mask
      *  @param {number} x Current cell x coordinate in the grid (integer)
@@ -9306,6 +9455,21 @@ class SlidingMarchingCubes$2 {
             let v2 = this.vertices_xy[1][(y - 1) * this.reso[0] + x];
             let v3 = this.vertices_xy[0][(y - 1) * this.reso[0] + x];
             let v4 = this.vertices_xy[0][idx_y_0];
+
+            
+            if(this.minCurvOrient)
+            {
+                let switch_edge = !this._isMinCurvatureTriangulation(v1, v2, v3, v4);
+                if(switch_edge)
+                {
+                    let tmp = v1;
+                    v1 = v2;
+                    v2 = v3;
+                    v3 = v4;
+                    v4 = tmp;
+                }
+            }
+
             if (this.mask & 0x1) {
                 this.pushDirectFaces(v1, v2, v3, v4);
             } else {
@@ -9319,6 +9483,19 @@ class SlidingMarchingCubes$2 {
             let v2 = this.vertices_xy[0][idx_y_0];
             let v3 = this.vertices_xy[0][idx_y_0 - 1];
             let v4 = this.vertices_xy[1][idx_y_0 - 1];
+
+            if(this.minCurvOrient)
+            {
+                let switch_edge = !this._isMinCurvatureTriangulation(v1, v2, v3, v4);
+                if(switch_edge)
+                {
+                    let tmp = v1;
+                    v1 = v2;
+                    v2 = v3;
+                    v3 = v4;
+                    v4 = tmp;
+                }
+            }
             if (this.mask & 0x1) {
                 this.pushDirectFaces(v1, v2, v3, v4);
             } else {
@@ -9332,6 +9509,19 @@ class SlidingMarchingCubes$2 {
             let v2 = this.vertices_xy[1][idx_y_0 - 1];
             let v3 = this.vertices_xy[1][(y - 1) * this.reso[0] + x - 1];
             let v4 = this.vertices_xy[1][(y - 1) * this.reso[0] + x];
+
+            if(this.minCurvOrient)
+            {
+                let switch_edge = !this._isMinCurvatureTriangulation(v1, v2, v3, v4);
+                if(switch_edge)
+                {
+                    let tmp = v1;
+                    v1 = v2;
+                    v2 = v3;
+                    v3 = v4;
+                    v4 = tmp;
+                }
+            }
             if (this.mask & 0x1) {
                 this.pushDirectFaces(v1, v2, v3, v4);
             } else {
