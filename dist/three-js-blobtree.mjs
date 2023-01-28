@@ -2,6 +2,7 @@ import require$$0 from 'three';
 import require$$0$1, { BufferGeometryUtils as BufferGeometryUtils$1 } from 'three/examples/jsm/utils/BufferGeometryUtils';
 
 function checkDependancy(packageName, dependancyName, dependancy) {
+    let duplicationMessage = `${packageName}: ${dependancyName} is duplicated. Your bundle includes ${dependancyName} twice. Please repair your bundle.`;
     try {
         if (THREE[dependancyName] === undefined) {
             THREE[dependancyName] = dependancy;
@@ -9,12 +10,12 @@ function checkDependancy(packageName, dependancyName, dependancy) {
         }
 
         if (THREE[dependancyName] !== dependancy) {
-            throw new Error(`${packageName}: ${dependancyName} is duplicated. Your bundle includes ${dependancyName} twice. Please repair your bundle.`);
+            throw duplicationMessage;
         }
     } catch (error) {
-        if (!error.message.match(/is duplicated/)) {
+        if (error !== duplicationMessage) {
             console.warn(
-                `${packageName}: Duplication check unavailable. ${error}`
+                `${packageName}: Duplication check unavailable.` + error
             );
         } else {
             throw error;
@@ -23,18 +24,10 @@ function checkDependancy(packageName, dependancyName, dependancy) {
 }
 
 function checkThreeRevision(packageName, revision) {
-    try {
-        if (THREE.REVISION != revision) {
-            throw new Error(`${packageName} depends on THREE revision ${revision}, but current revision is ${THREE.REVISION}.`)
-        }
-    } catch (error) {
-        if (!error.message.match(/depends on THREE revision/)) {
-            console.warn(
-                `${packageName}: Revision check unavailable. ${error}`
-            );
-        } else {
-            throw error;
-        }
+    if (THREE.REVISION != revision) {
+        console.error(
+            `${packageName} depends on THREE revision ${revision}, but current revision is ${THREE.REVISION}.`
+        );
     }
 }
 
@@ -2490,7 +2483,7 @@ const Material$8 = Material_1;
 class ScaleNode extends Node$2 {
 
     static type = "ScaleNode";
- 
+
     /**
     *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
@@ -2536,27 +2529,32 @@ class ScaleNode extends Node$2 {
 
     /**
      * @link Node.fromJSON
-     * 
+     *
      * @param {ScaleNodeJSON} json
      * @returns {ScaleNode}
      */
     static fromJSON(json) {
-    var res = new ScaleNode();
-    res.setScale(new THREE$k.Vector3(json.scale_x
-                                    ,json.scale_y
-                                    ,json.scale_z));
-    for (var i = 0; i < json.children.length; ++i) {
-        res.addChild(Types$f.fromJSON(json.children[i]));
-    }
-    return res;
+        var res = new ScaleNode();
+        res.setScale(
+            new THREE$k.Vector3(
+                json.scale_x,
+                json.scale_y,
+                json.scale_z
+            )
+        );
+        for (var i = 0; i < json.children.length; ++i) {
+            res.addChild(Types$f.fromJSON(json.children[i]));
+        }
+        return res;
     }
 
     /**
      * @link ScaleNode.setScale
+     * @param {THREE.Vector3} scale
      */
     setScale(scale)
     {
-        this._scale = scale;
+        this._scale.copy(scale);
         this.invalidAABB();
     }
 
@@ -2584,7 +2582,7 @@ class ScaleNode extends Node$2 {
             let x_scale = bb_size.x*(this._scale.x - 1.0);
             let y_scale = bb_size.y*(this._scale.y - 1.0);
             let z_scale = bb_size.z*(this._scale.z - 1.0);
-    
+
             this.aabb.expandByVector(new THREE$k.Vector3(x_scale,y_scale,z_scale));
             this.valid_aabb = true;
         }
@@ -2638,15 +2636,15 @@ class ScaleNode extends Node$2 {
 
 
         if (this.aabb.containsPoint(p) && l !== 0) {
-         
+
 
             let center = new THREE$k.Vector3();
             this.aabb.getCenter(center);
-          
+
             let st_p =  new THREE$k.Vector3((p.x - center.x)/this._scale.x + center.x
                                         ,(p.y - center.y)/ this._scale.y + center.y
                                         ,(p.z - center.z)/ this._scale.z + center.z);
-                                
+
             res.v = Number.MAX_VALUE;
             for (var i = 0; i < l; ++i) {
                 this.children[i].value(st_p, tmp);
