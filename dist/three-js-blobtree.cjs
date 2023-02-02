@@ -8256,7 +8256,7 @@ class Box2Acc extends Box2 {
             this.nice_acc = nice_acc;
         }
         this.raw_acc = this.raw_acc ? this.nice_acc : raw_acc;
-         
+
     }
     /**
      *
@@ -8456,7 +8456,7 @@ class SlidingMarchingCubes$2 {
         this.ext_p = new THREE$3.Vector3();
 
 
-   
+
 
         /**
          * Resulting mesh data
@@ -8465,17 +8465,17 @@ class SlidingMarchingCubes$2 {
         this.geometry = null;
 
 
-        // Ensure triangulation along min curvature edge 
+        // Ensure triangulation along min curvature edge
         /** @type {boolean} */
         this.minCurvOrient = true;
 
 
-        // Returns true if 123/143 split is along min curvature 
+        // Returns true if 123/143 split is along min curvature
         /** @type {(v1:number,v2:number,v3:number,v4:number) => boolean} */
-        this._isMinCurvatureTriangulation =  
-        (function () 
-        {     
-            //Var and tmp var pre allocated and Scoped 
+        this._isMinCurvatureTriangulation =
+        (function ()
+        {
+            //Var and tmp var pre allocated and Scoped
             //for optimization of triangulation criteria
             //assuming a v1v2v3v4 quad
             /** @type {THREE.Vector3} */
@@ -8489,9 +8489,9 @@ class SlidingMarchingCubes$2 {
             //Edges from v2
             /** @type {THREE.Vector3} */
             let pp_2_1 = new THREE$3.Vector3(); //v2v1 edge
-            /** @type {THREE.Vector3} */                
+            /** @type {THREE.Vector3} */
             let pp_2_3 = new THREE$3.Vector3(); //v2v3 edge
-            /** @type {THREE.Vector3} */                        
+            /** @type {THREE.Vector3} */
             let pp_2_4 = new THREE$3.Vector3(); //v2v4 edge
             //Edges from v4
             /** @type {THREE.Vector3} */
@@ -8512,28 +8512,28 @@ class SlidingMarchingCubes$2 {
                 //Quad opposes v1 and v3 and v2 and v4
                 //check min curvature
                 p1.x = this.geometry.position[v1*3];
-                p1.y = this.geometry.position[v1*3+ 1];             
+                p1.y = this.geometry.position[v1*3+ 1];
                 p1.z = this.geometry.position[v1*3 + 2];
 
                 p2.x = this.geometry.position[v2*3];
-                p2.y = this.geometry.position[v2*3+ 1]; 
+                p2.y = this.geometry.position[v2*3+ 1];
                 p2.z = this.geometry.position[v2*3+ 2];
-            
+
                 p3.x = this.geometry.position[v3*3];
-                p3.y =this.geometry.position[v3*3+ 1]; 
+                p3.y =this.geometry.position[v3*3+ 1];
                 p3.z = this.geometry.position[v3*3+ 2];
-                
+
                 p4.x = this.geometry.position[v4*3];
-                p4.y = this.geometry.position[v4*3+ 1]; 
+                p4.y = this.geometry.position[v4*3+ 1];
                 p4.z = this.geometry.position[v4*3+ 2];
 
-                //Edges from v2        
-                pp_2_1.subVectors(p1,p2);        
+                //Edges from v2
+                pp_2_1.subVectors(p1,p2);
                 pp_2_3.subVectors(p3,p2);
                 pp_2_4.subVectors(p4,p2);
 
                 //Edges from v4
-                pp_4_1.subVectors(p1,p4);        
+                pp_4_1.subVectors(p1,p4);
                 pp_4_3.subVectors(p3,p4);
 
                 //normal of 123 triangle
@@ -8544,7 +8544,7 @@ class SlidingMarchingCubes$2 {
                 n_4.copy(pp_4_1);
                 n_4.cross(pp_4_3).normalize();
 
-                //normal of 234 triangle 
+                //normal of 234 triangle
                 n_23.copy(pp_2_3);
                 n_23.cross(pp_2_4).normalize();
 
@@ -9210,7 +9210,7 @@ class SlidingMarchingCubes$2 {
         // if no areas, blobtree is empty so stop and send an empty mesh.
         if (this.areas.length === 0) {
             this.progress(100);
-            return new THREE$3.BufferGeometry();
+            return this.buildResultingBufferGeometry();
         }
 
         this.min_acc = this.areas.length !== 0 ? this.areas[0].bv.getMinAcc() : 1;
@@ -9342,7 +9342,7 @@ class SlidingMarchingCubes$2 {
             this.curr_steps.y = this.min_acc;
             this.curr_step_vol =
             this.curr_steps.x * this.curr_steps.y * this.curr_steps.z;
-                        
+
             for (var iy = 0; iy < this.reso[1] - 1; ++iy) {
                 for (var ix = 0; ix < this.reso[0] - 1; ++ix) {
                     this.y = corner.y + iy * this.min_acc;
@@ -9454,7 +9454,7 @@ class SlidingMarchingCubes$2 {
             let v3 = this.vertices_xy[0][(y - 1) * this.reso[0] + x];
             let v4 = this.vertices_xy[0][idx_y_0];
 
-            
+
             if(this.minCurvOrient)
             {
                 let switch_edge = !this._isMinCurvatureTriangulation(v1, v2, v3, v4);
