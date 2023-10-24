@@ -1,4 +1,3 @@
-export const version: "1.0.0";
 import Types from "./blobtree/Types.js";
 import Element from "./blobtree/Element.js";
 import Node from "./blobtree/Node.js";
@@ -6,9 +5,9 @@ import RootNode from "./blobtree/RootNode.js";
 import RicciNode from "./blobtree/RicciNode.js";
 import DifferenceNode from "./blobtree/DifferenceNode.js";
 import MinNode from "./blobtree/MinNode.js";
-import MaxNode from "./blobtree/MinNode.js";
 import TwistNode from "./blobtree/TwistNode";
 import ScaleNode from "./blobtree/ScaleNode";
+import MaxNode from "./blobtree/MinNode.js";
 import Primitive from "./blobtree/Primitive.js";
 import ScalisMath from "./blobtree/scalis/ScalisMath.js";
 import ScalisPrimitive from "./blobtree/scalis/ScalisPrimitive.js";
@@ -32,7 +31,8 @@ import AreaScalisTri from "./blobtree/areas/AreaScalisTri.js";
 import AreaSphere from "./blobtree/areas/AreaSphere.js";
 import AreaCapsule from "./blobtree/areas/AreaCapsule.js";
 import SlidingMarchingCubes from "./polygonizers/SlidingMarchingCubes.js";
-import SplitMaxPolygonizer from "./polygonizers/SplitMaxPolygonizer.js";
+import { SplitMaxPolygonizer } from "./polygonizers/SplitMaxPolygonizer";
 import SplitSMC from "./polygonizers/SplitSMC.js";
-export { Types, Element, Node, RootNode, RicciNode, DifferenceNode, MinNode, MaxNode, TwistNode, ScaleNode, Primitive, ScalisMath, ScalisPrimitive, ScalisPoint, ScalisSegment, ScalisTriangle, ScalisVertex, DistanceFunctor, Poly6DistanceFunctor, SDFRootNode, SDFPrimitive, SDFPoint, SDFSegment, SDFSphere, SDFCapsule, Material, Accuracies, Area, AreaScalisSeg, AreaScalisTri, AreaSphere, AreaCapsule, SlidingMarchingCubes, SplitMaxPolygonizer, SplitSMC };
+declare const version = "1.0.0";
+export { version, Types, Element, Node, RootNode, RicciNode, DifferenceNode, MinNode, MaxNode, TwistNode, ScaleNode, Primitive, ScalisMath, ScalisPrimitive, ScalisPoint, ScalisSegment, ScalisTriangle, ScalisVertex, DistanceFunctor, Poly6DistanceFunctor, SDFRootNode, SDFPrimitive, SDFPoint, SDFSegment, SDFSphere, SDFCapsule, Material, Accuracies, Area, AreaScalisSeg, AreaScalisTri, AreaSphere, AreaCapsule, SlidingMarchingCubes, SplitMaxPolygonizer, SplitSMC, };
 //# sourceMappingURL=export.d.ts.map

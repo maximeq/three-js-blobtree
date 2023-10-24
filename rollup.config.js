@@ -1,6 +1,7 @@
 import commonjs from '@rollup/plugin-commonjs';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import { terser } from "rollup-plugin-terser";
+import typescript from "@rollup/plugin-typescript";
 
 const MODULE_NAME = 'Blobtree';
 const MODULE_FILENAME = 'three-js-blobtree';
@@ -27,6 +28,7 @@ export default {
 
     // common options
     plugins: [
+        typescript(),
         commonjs(), // handles requires in CJS dependancies
         nodeResolve(), // resolves node_module dependancies
     ],

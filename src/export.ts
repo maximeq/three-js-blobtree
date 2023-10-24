@@ -31,7 +31,7 @@ import AreaScalisTri from "./blobtree/areas/AreaScalisTri.js";
 import AreaSphere from "./blobtree/areas/AreaSphere.js";
 import AreaCapsule from "./blobtree/areas/AreaCapsule.js";
 import SlidingMarchingCubes from "./polygonizers/SlidingMarchingCubes.js";
-import SplitMaxPolygonizer from "./polygonizers/SplitMaxPolygonizer.js";
+import { SplitMaxPolygonizer } from "./polygonizers/SplitMaxPolygonizer";
 import SplitSMC from "./polygonizers/SplitSMC.js";
 
 const version = "1.0.0";

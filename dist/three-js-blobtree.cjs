@@ -3,12 +3,11 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 var require$$0 = require('three');
-var require$$0$1 = require('three/examples/jsm/utils/BufferGeometryUtils');
+var BufferGeometryUtils = require('three/examples/jsm/utils/BufferGeometryUtils');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
 var require$$0__default = /*#__PURE__*/_interopDefaultLegacy(require$$0);
-var require$$0__default$1 = /*#__PURE__*/_interopDefaultLegacy(require$$0$1);
 
 function checkDependancy(packageName, dependancyName, dependancy) {
     let duplicationMessage = `${packageName}: ${dependancyName} is duplicated. Your bundle includes ${dependancyName} twice. Please repair your bundle.`;
@@ -892,7 +891,7 @@ const Material$c = Material_1;
  *  @constructor
  *  @extends Node
  */
-class RicciNode$2 extends Node$6 {
+class RicciNode$1 extends Node$6 {
 
     static type = "RicciNode";
 
@@ -933,7 +932,7 @@ class RicciNode$2 extends Node$6 {
      * @returns {string}
      */
     getType() {
-        return RicciNode$2.type;
+        return RicciNode$1.type;
     };
 
     /**
@@ -955,7 +954,7 @@ class RicciNode$2 extends Node$6 {
      * @returns
      */
     static fromJSON(json) {
-        let res = new RicciNode$2(json.ricci_n);
+        let res = new RicciNode$1(json.ricci_n);
         for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types$k.fromJSON(json.children[i]));
         }
@@ -1110,9 +1109,9 @@ class RicciNode$2 extends Node$6 {
     };
 
 }
-Types$k.register(RicciNode$2.type, RicciNode$2);
+Types$k.register(RicciNode$1.type, RicciNode$1);
 
-var RicciNode_1 = RicciNode$2;
+var RicciNode_1 = RicciNode$1;
 
 /**
  * @author Maxime Quiblier
@@ -1455,7 +1454,7 @@ var Convergence_1 = Convergence$3;
 
 const THREE$o = require$$0__default["default"];
 const Types$j = Types_1;
-const RicciNode$1 = RicciNode_1;
+const RicciNode = RicciNode_1;
 
 const Convergence$2 = Convergence_1;
 
@@ -1484,7 +1483,7 @@ const Convergence$2 = Convergence_1;
  *  @constructor
  *  @extends RicciNode
  */
-class RootNode$1 extends RicciNode$1 {
+class RootNode extends RicciNode {
 
     static type = "RootNode";
 
@@ -1493,7 +1492,7 @@ class RootNode$1 extends RicciNode$1 {
      * @returns {RootNode}
      */
     static fromJSON(json) {
-        var res = new RootNode$1();
+        var res = new RootNode();
         for (var i = 0; i < json.children.length; ++i) {
             res.addChild(Types$j.fromJSON(json.children[i]));
         }
@@ -1522,7 +1521,7 @@ class RootNode$1 extends RicciNode$1 {
      * @returns {string}
      */
     getType() {
-        return RootNode$1.type;
+        return RootNode.type;
     };
 
     /**
@@ -1848,9 +1847,9 @@ class RootNode$1 extends RicciNode$1 {
     }();
 
 }
-Types$j.register(RootNode$1.type, RootNode$1);
+Types$j.register(RootNode.type, RootNode);
 
-var RootNode_1 = RootNode$1;
+var RootNode_1 = RootNode;
 
 const THREE$n = require$$0__default["default"];
 const Types$i = Types_1;
@@ -3579,7 +3578,7 @@ const AreaSphere$2 = AreaSphere_1;
  * @typedef {{density:number} & ScalisPrimitiveJSON} ScalisPointJSON
  */
 
-class ScalisPoint$1 extends ScalisPrimitive$2  {
+class ScalisPoint extends ScalisPrimitive$2  {
 
     static type = "ScalisPoint";
 
@@ -3590,7 +3589,7 @@ class ScalisPoint$1 extends ScalisPrimitive$2  {
     static fromJSON(json) {
         var v = ScalisVertex$2.fromJSON(json.v[0]);
         var m = Material$7.fromJSON(json.materials[0]);
-        return new ScalisPoint$1(v, json.volType, json.density, m);
+        return new ScalisPoint(v, json.volType, json.density, m);
     };
 
     /**
@@ -3620,7 +3619,7 @@ class ScalisPoint$1 extends ScalisPrimitive$2  {
     }
 
     getType() {
-        return ScalisPoint$1.type;
+        return ScalisPoint.type;
     };
 
     toJSON() {
@@ -3743,10 +3742,10 @@ class ScalisPoint$1 extends ScalisPrimitive$2  {
     }
 }
 
-Types$c.register(ScalisPoint$1.type, ScalisPoint$1);
+Types$c.register(ScalisPoint.type, ScalisPoint);
 
 
-var ScalisPoint_1 = ScalisPoint$1;
+var ScalisPoint_1 = ScalisPoint;
 
 const THREE$g = require$$0__default["default"];
 const ScalisMath$3 = ScalisMath_1;
@@ -4063,7 +4062,7 @@ const AreaScalisSeg$1 = AreaScalisSeg_1;
  *  @constructor
  *  @extends ScalisPrimitive
  */
-class ScalisSegment$1 extends ScalisPrimitive$1 {
+class ScalisSegment extends ScalisPrimitive$1 {
 
     static type = "ScalisSegment";
 
@@ -4078,7 +4077,7 @@ class ScalisSegment$1 extends ScalisPrimitive$1 {
             Material$6.fromJSON(json.materials[0]),
             Material$6.fromJSON(json.materials[1])
         ];
-        return new ScalisSegment$1(v0, v1, json.volType, json.density, m);
+        return new ScalisSegment(v0, v1, json.volType, json.density, m);
     };
 
     /**
@@ -4146,7 +4145,7 @@ class ScalisSegment$1 extends ScalisPrimitive$1 {
     }
 
     getType() {
-        return ScalisSegment$1.type;
+        return ScalisSegment.type;
     };
 
     /**
@@ -4724,9 +4723,9 @@ class ScalisSegment$1 extends ScalisPrimitive$1 {
     ////////////////////////////////////////////////////////////////////////////
 }
 
-Types$b.register(ScalisSegment$1.type, ScalisSegment$1);
+Types$b.register(ScalisSegment.type, ScalisSegment);
 
-var ScalisSegment_1 = ScalisSegment$1;
+var ScalisSegment_1 = ScalisSegment;
 
 const THREE$e = require$$0__default["default"];
 
@@ -5549,7 +5548,7 @@ var sampleNumber = 10;
  *  @constructor
  *  @extends ScalisPrimitive
  */
-class ScalisTriangle$1 extends ScalisPrimitive {
+class ScalisTriangle extends ScalisPrimitive {
 
     /** @type {"ScalisTriangle"} */
     static type = "ScalisTriangle";
@@ -5569,7 +5568,7 @@ class ScalisTriangle$1 extends ScalisPrimitive {
             Material$4.fromJSON(json.materials[1]),
             Material$4.fromJSON(json.materials[2])
         ];
-        return new ScalisTriangle$1(v, json.volType, 1.0, m);
+        return new ScalisTriangle(v, json.volType, 1.0, m);
     };
 
     /**
@@ -5643,7 +5642,7 @@ class ScalisTriangle$1 extends ScalisPrimitive {
     }
 
     getType(){
-        return ScalisTriangle$1.type;
+        return ScalisTriangle.type;
     }
 
     /**
@@ -6473,9 +6472,9 @@ class ScalisTriangle$1 extends ScalisPrimitive {
         res.z = (t7087 * t7093 + t7080 / 0.6e1 - t7085 / 0.6e1) * t7084;
     }
 }
-Types$a.register(ScalisTriangle$1.type, ScalisTriangle$1);
+Types$a.register(ScalisTriangle.type, ScalisTriangle);
 
-var ScalisTriangle_1 = ScalisTriangle$1;
+var ScalisTriangle_1 = ScalisTriangle;
 
 const Types$9 = Types_1;
 
@@ -8347,7 +8346,7 @@ class Box2Acc extends Box2 {
  *  @constructor
  */
 
-class SlidingMarchingCubes$2 {
+class SlidingMarchingCubes$1 {
     /**
      *  @param {RootNode} blobtree A blobtree to polygonize.
      *  @param {SMCParams} smcParams Parameters and option for this polygonizer
@@ -9634,7 +9633,7 @@ class SlidingMarchingCubes$2 {
         }
     }
 }
-var SlidingMarchingCubes_1 = SlidingMarchingCubes$2;
+var SlidingMarchingCubes_1 = SlidingMarchingCubes$1;
 
 const THREE$2 = require$$0__default["default"];
 const Types = Types_1;
@@ -9656,7 +9655,7 @@ const Material$1 = Material_1;
  *  @class MaxNode
  *  @extends Node
  */
-class MaxNode$1 extends Node {
+class MaxNode extends Node {
 
     static type = "MaxNode";
 
@@ -9666,7 +9665,7 @@ class MaxNode$1 extends Node {
      * @returns
      */
     static fromJSON(json) {
-        var res = new MaxNode$1();
+        var res = new MaxNode();
         for (var i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
         }
@@ -9699,7 +9698,7 @@ class MaxNode$1 extends Node {
      * @returns {string}
      */
     getType = function () {
-        return MaxNode$1.type;
+        return MaxNode.type;
     }
 
     /**
@@ -9771,41 +9770,9 @@ class MaxNode$1 extends Node {
     }
 
 }
-Types.register(MaxNode$1.type, MaxNode$1);
+Types.register(MaxNode.type, MaxNode);
 
-var MaxNode_1 = MaxNode$1;
-
-const { BufferGeometryUtils } = require$$0__default$1["default"];
-
-// Does not work yet, so just suppose that Blobtree is defined externally
-// const Blobtree = require('three-js-blobtree");
-
-const RootNode = RootNode_1;
-const RicciNode = RicciNode_1;
-const MaxNode = MaxNode_1;
-const ScalisPoint = ScalisPoint_1;
-const ScalisSegment = ScalisSegment_1;
-const ScalisTriangle = ScalisTriangle_1;
-
-const SlidingMarchingCubes$1 = SlidingMarchingCubes_1;
-
-/**
- * @typedef {import('./SlidingMarchingCubes').SMCParams} SMCParams
- */
-
-/**
- * @typedef {SMCParams & {class: any}} SubPolygonizerParams
- */
-
-/**
- * @typedef {Object} SplitMaxPolygonizerParams
- * @property {SubPolygonizerParams=} subPolygonizer Parameters for the subpolygonizer to use.
- *                                           Must contain all parameters for the given subPolygonizer (like detailRatio, etc...)
- *                                           The class of the subpolygonizer (default to SlidingMarchingCubes) is in additional parameter class
- * @property {Boolean=} smpParams.uniformRes If true, uniform resolution will be used on all primitives, according to the minimum accuracy in the blobtree.
- * @property {Function=} smpParams.progress Progress callback, taking a percentage as parameter.
- * @property {Number=} smpParams.ricciThreshold The RicciNode coefficient above which it will be considered like a MaxNode.
- */
+var MaxNode_1 = MaxNode;
 
 /**
  *  This class will polygonize nodes independantly when they blend with a MaxNode or a RicciNode
@@ -9814,152 +9781,152 @@ const SlidingMarchingCubes$1 = SlidingMarchingCubes_1;
  *  global polygonizers like MarchingCubes.
  */
 class SplitMaxPolygonizer {
-    /**
-     *  @param {SplitMaxPolygonizerParams=} smpParams Parameters and option for this polygonizer.
-     */
-    constructor(blobtree, smpParams) {
-        var params = smpParams || {};
-
-        this.blobtree = blobtree;
-
-        this.uniformRes = params.uniformRes || false;
-        this.min_acc = null;
-        this.minAccs = [];
-
-        /** @type {SubPolygonizerParams} */
-        this.subPolygonizer = params.subPolygonizer ? params.subPolygonizer : {
-            class: SlidingMarchingCubes$1,
+    blobtree;
+    uniformRes = false;
+    min_acc = null;
+    minAccs = [];
+    subPolygonizer = {
+        className: "SlidingMarchingCubes",
+        smcParams: {
             detailRatio: 1.0
-        };
-
-        this.ricciThreshold = params.ricciThreshold || 64;
-
-        this.progress = params.progress ? params.progress : function (_percent) {
-            //console.log(percent);
-        };
-
-        // Now we need to parse the blobtree and split it according to the different ways of
-        // generating each groups.
-        // Since we do not wantto alterate the original blobtree, for now we will use cloning.
-        // (to be changed if it is too slow)
-        this.subtrees = []; // Blobtrees created for primitives which must be generated with SMC
-        this.progCoeff = []; // progress coefficient, mainly depends on the total number of primitives in the node.
-        this.totalCoeff = 0;
-
-        this.setBlobtree(blobtree);
-    }
-
-}
-SplitMaxPolygonizer.prototype.constructor = SplitMaxPolygonizer;
-
-SplitMaxPolygonizer.prototype.setBlobtree = function(blobtree){
-
-    this.blobtree = blobtree;
-    this.blobtree.prepareForEval();
-
-    var getBlobtreeMinAcc = function(btree){
-        var areas = btree.getAreas();
-        var min_acc = areas.length !== 0 ? areas[0].bv.getMinAcc() : null;
-        for(var i=0; i<areas.length; ++i){
-            if(areas[i].bv.getMinAcc()<min_acc){
-                min_acc = areas[i].bv.getMinAcc();
+        }
+    };
+    ricciThreshold = 64;
+    progress = (_percent) => {
+        //console.log(percent);
+    };
+    // Now we need to parse the blobtree and split it according to the different ways of
+    // generating each groups.
+    // Since we do not wantto alterate the original blobtree, for now we will use cloning.
+    // (to be changed if it is too slow)
+    subtrees = []; // Blobtrees created for primitives which must be generated with SMC
+    progCoeff = []; // progress coefficient, mainly depends on the total number of primitives in the node.
+    totalCoeff = 0;
+    constructor(blobtree, smpParams) {
+        const params = smpParams || {};
+        this.blobtree = blobtree;
+        if (params.uniformRes) {
+            this.uniformRes = params.uniformRes;
+        }
+        if (params.subPolygonizer) {
+            switch (params.subPolygonizer.className) {
+                case "SlidingMarchingCubes":
+                    this.subPolygonizer.className = "SlidingMarchingCubes";
+                    this.subPolygonizer.smcParams = params.subPolygonizer.smcParams || {
+                        detailRatio: 1.0
+                    };
+                    break;
+                default:
+                    console.error("Unknown polygonier class" + params.subPolygonizer.className);
+                    break;
             }
         }
-        return min_acc;
-    };
-    this.min_acc = getBlobtreeMinAcc(this.blobtree);
-
-    this.subtrees = [];
+        if (params.ricciThreshold !== undefined) {
+            this.ricciThreshold = params.ricciThreshold;
+        }
+        if (params.progress !== undefined) {
+            this.progress = params.progress;
+        }
+        this.setBlobtree(blobtree);
+    }
+    setBlobtree(blobtree) {
+        this.blobtree = blobtree;
+        this.blobtree.prepareForEval();
+        const getBlobtreeMinAcc = function (btree) {
+            var areas = btree.getAreas();
+            var min_acc = areas.length !== 0 ? areas[0].bv.getMinAcc() : null;
+            for (var i = 0; i < areas.length; ++i) {
+                if (areas[i].bv.getMinAcc() < min_acc) {
+                    min_acc = areas[i].bv.getMinAcc();
+                }
+            }
+            return min_acc;
+        };
+        this.min_acc = getBlobtreeMinAcc(this.blobtree);
+        this.subtrees = [];
         this.progCoeff = [];
         this.totalCoeff = 0;
-
-    var self = this;
-    var addToSubtrees = function(n){
-        var subtree = null;
-        if(n instanceof RootNode){
-            subtree = n.clone();
-        }else {
-            subtree = new RootNode();
-            subtree.addChild(n.clone());
-        }
-        self.subtrees.push(subtree);
-        subtree.prepareForEval();
-        self.minAccs.push(getBlobtreeMinAcc(subtree));
-        self.progCoeff.push(
-            subtree.count(ScalisPoint) + subtree.count(ScalisSegment) + subtree.count(ScalisTriangle)
-        );
-        self.totalCoeff += self.progCoeff[self.progCoeff.length-1];
-    };
-
-    var recurse = function(n){
-        if(n instanceof RicciNode){
-            if(n.getRicciN() < self.ricciThreshold){
-                // This node must be copied and generated using SMC
-                if(n.children.length !== 0){
-                    addToSubtrees(n);
+        var self = this;
+        var addToSubtrees = function (n) {
+            var subtree = null;
+            if (n instanceof RootNode_1) {
+                subtree = n.clone();
+            }
+            else {
+                subtree = new RootNode_1();
+                subtree.addChild(n.clone());
+            }
+            self.subtrees.push(subtree);
+            subtree.prepareForEval();
+            self.minAccs.push(getBlobtreeMinAcc(subtree));
+            self.progCoeff.push(subtree.count(ScalisPoint_1) + subtree.count(ScalisSegment_1) + subtree.count(ScalisTriangle_1));
+            self.totalCoeff += self.progCoeff[self.progCoeff.length - 1];
+        };
+        var recurse = function (n) {
+            if (n instanceof RicciNode_1) {
+                if (n.getRicciN() < self.ricciThreshold) {
+                    // This node must be copied and generated using SMC
+                    if (n.children.length !== 0) {
+                        addToSubtrees(n);
+                    }
                 }
-            }else {
-                for(var i=0; i<n.children.length; ++i){
+                else {
+                    for (var i = 0; i < n.children.length; ++i) {
+                        recurse(n.children[i]);
+                    }
+                }
+            }
+            else if (n instanceof MaxNode_1) {
+                for (let i = 0; i < n.children.length; ++i) {
                     recurse(n.children[i]);
                 }
             }
-        }else if(n instanceof MaxNode){
-            for (let i = 0; i < n.children.length; ++i) {
-                recurse(n.children[i]);
+            else if (n instanceof ScalisPoint_1) {
+                addToSubtrees(n);
             }
-        }else if(n instanceof ScalisPoint){
-            addToSubtrees(n);
-        }else if(n instanceof ScalisSegment){
-            addToSubtrees(n);
-        }else if(n instanceof ScalisTriangle){
-            addToSubtrees(n);
-        }else {
-            addToSubtrees(n);
-        }
-    };
-
-    recurse(this.blobtree);
-};
-
-SplitMaxPolygonizer.prototype.compute = function() {
-
-    if(!this.blobtree.isValidAABB()){
-        this.setBlobtree(this.blobtree);
-    }
-
-    var self = this;
-    this.progress(0);
-    var prog = 0;
-    var geometries = [];
-    for(var i=0; i<this.subtrees.length; ++i){
-
-        var prev_detailRatio = this.subPolygonizer.detailRatio || 1.0;
-        if(this.uniformRes && this.min_acc){
-            this.subPolygonizer.detailRatio = prev_detailRatio*this.min_acc/this.minAccs[i];
-        }
-
-        this.subPolygonizer.progress = function(percent){
-            self.progress(100*(prog + (percent/100)*self.progCoeff[i])/self.totalCoeff);
+            else if (n instanceof ScalisSegment_1) {
+                addToSubtrees(n);
+            }
+            else if (n instanceof ScalisTriangle_1) {
+                addToSubtrees(n);
+            }
+            else {
+                addToSubtrees(n);
+            }
         };
-        var polygonizer = new this.subPolygonizer.class(
-            this.subtrees[i],
-            this.subPolygonizer
-        );
-        geometries.push(polygonizer.compute());
-
-        this.subPolygonizer.detailRatio = prev_detailRatio;
-
-        prog += this.progCoeff[i];
+        recurse(this.blobtree);
     }
-
-    var res = BufferGeometryUtils.mergeBufferGeometries(geometries);
-
-    this.progress(100);
-
-    return res;
-};
-
-var SplitMaxPolygonizer_1 = SplitMaxPolygonizer;
+    compute() {
+        if (!this.blobtree.isValidAABB()) {
+            this.setBlobtree(this.blobtree);
+        }
+        var self = this;
+        this.progress(0);
+        var prog = 0;
+        var geometries = [];
+        for (var i = 0; i < this.subtrees.length; ++i) {
+            var prev_detailRatio = this.subPolygonizer.smcParams.detailRatio || 1.0;
+            if (this.uniformRes && this.min_acc) {
+                this.subPolygonizer.smcParams.detailRatio = prev_detailRatio * this.min_acc / this.minAccs[i];
+            }
+            this.subPolygonizer.smcParams.progress = function (percent) {
+                self.progress(100 * (prog + (percent / 100) * self.progCoeff[i]) / self.totalCoeff);
+            };
+            let polygonizer = null;
+            switch (this.subPolygonizer.className) {
+                case "SlidingMarchingCubes":
+                    polygonizer = new SlidingMarchingCubes_1(this.subtrees[i], this.subPolygonizer.smcParams);
+            }
+            geometries.push(polygonizer.compute());
+            this.subPolygonizer.smcParams.detailRatio = prev_detailRatio;
+            prog += this.progCoeff[i];
+        }
+        var res = BufferGeometryUtils.BufferGeometryUtils.mergeBufferGeometries(geometries);
+        this.progress(100);
+        return res;
+    }
+    ;
+}
 
 const THREE$1 = require$$0__default["default"];
 
@@ -10138,14 +10105,14 @@ var Blobtree = /*#__PURE__*/Object.freeze({
     AreaSphere: AreaSphere_1,
     AreaCapsule: AreaCapsule_1,
     SlidingMarchingCubes: SlidingMarchingCubes_1,
-    SplitMaxPolygonizer: SplitMaxPolygonizer_1,
+    SplitMaxPolygonizer: SplitMaxPolygonizer,
     SplitSMC: SplitSMC_1
 });
 
 const PACKAGE_NAME = "three-js-blobtree";
 
 checkThreeRevision(PACKAGE_NAME, 130);
-checkDependancy(PACKAGE_NAME, "BufferGeometryUtils", require$$0$1.BufferGeometryUtils);
+checkDependancy(PACKAGE_NAME, "BufferGeometryUtils", BufferGeometryUtils.BufferGeometryUtils);
 checkDependancy(PACKAGE_NAME, "Blobtree", Blobtree);
 
 exports.Accuracies = Accuracies_1;
@@ -10179,7 +10146,7 @@ exports.ScalisSegment = ScalisSegment_1;
 exports.ScalisTriangle = ScalisTriangle_1;
 exports.ScalisVertex = ScalisVertex_1;
 exports.SlidingMarchingCubes = SlidingMarchingCubes_1;
-exports.SplitMaxPolygonizer = SplitMaxPolygonizer_1;
+exports.SplitMaxPolygonizer = SplitMaxPolygonizer;
 exports.SplitSMC = SplitSMC_1;
 exports.TwistNode = TwistNode_1;
 exports.Types = Types_1;

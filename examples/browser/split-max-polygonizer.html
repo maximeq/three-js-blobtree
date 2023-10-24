@@ -156,9 +156,11 @@
                 root,
                 {
                     subPolygonizer:{
-                        class:Blobtree.SlidingMarchingCubes,
-                        convergence:{step:4},
-                        detailRatio: 1.0
+                        className:"SlidingMarchingCubes",
+                        smcParams:{
+                            convergence: { step: 4 },
+                            detailRatio: 1.0
+                        }
                     }
                 }
             );
