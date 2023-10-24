@@ -43,8 +43,9 @@ declare class ScaleNode extends Node {
     toJSON(): ScaleNodeJSON;
     /**
      * @link ScaleNode.setScale
+     * @param {THREE.Vector3} scale
      */
-    setScale(scale: any): void;
+    setScale(scale: THREE.Vector3): void;
 }
 declare namespace ScaleNode {
     export { Element, Json, ValueResultType, NodeJSON, ScaleNodeJSON };
