@@ -15,8 +15,8 @@ import { Area } from "./Area.js";
 export declare class AreaScalisTri extends Area {
     /**
      *  @param { Array.< !ScalisVertex >} v Array or vertices
-     *  @param {!THREE.Vector3} unit_normal Normal to the plane made by the 3 vertices, as a THREE.Vector3
-     *  @param {!THREE.Vector3} main_dir Main direction dependeing on thicknesses
+     *  @param {!Vector3} unit_normal Normal to the plane made by the 3 vertices, as a Vector3
+     *  @param {!Vector3} main_dir Main direction dependeing on thicknesses
      * @param {!Object}  segParams
      *  @param {number}  min_thick Minimum thickness in the Triangle
      *  @param {number} max_thick Maximum thickness in the triangle
@@ -24,7 +24,7 @@ export declare class AreaScalisTri extends Area {
     constructor(v: any, unit_normal: any, main_dir: any, segParams: any, min_thick: any, max_thick: any);
     /**
      *  Compute projection (used in other functions)
-     *  @param {!THREE.Vector3} p Point to proj
+     *  @param {!Vector3} p Point to proj
      *  @param {!Object} segParams A seg param object @todo clarify this parameter
      *
      *  @protected
@@ -41,7 +41,7 @@ export declare class AreaScalisTri extends Area {
      *  Adapted from the segment sphere intersection. Could be factorised!
      *  @return {boolean} true if the sphere and the area intersect
      *
-     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @param {!Object} segParams A segParams object containing data for a segment
      *  @param {number} KS Kernel Scale, ie ScalisMath.KS (Why is it a parameter, its global!?)
      *
@@ -49,13 +49,13 @@ export declare class AreaScalisTri extends Area {
     sphereIntersectSegment(sphere: any, segParams: any, KS: any): boolean;
     /**
      * @link Area.contains for a complete description
-     * @param {THREE.Vector3} p
+     * @param {Vector3} p
      */
     contains: (p: any) => any;
     /**
      *  Copied from AreaSeg.getAcc
      *
-     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @param {!Object} segParams A segParams object containing data for a segment area
      *
      *  @return {!Object} Object containing intersect (boolean) and currAcc (number) attributes
@@ -66,7 +66,7 @@ export declare class AreaScalisTri extends Area {
     };
     /**
      *  Get accuracy for the inner triangle (do not consider segment edges)
-     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      */
     getAccTri(sphere: any): any;
     /**
@@ -74,7 +74,7 @@ export declare class AreaScalisTri extends Area {
      *
      *  @return {number} the accuracy needed in the intersection zone
      *
-     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @param {number}  factor  the ratio to determine the wanted accuracy.
      *
      *  @todo Check the Maths
@@ -82,19 +82,19 @@ export declare class AreaScalisTri extends Area {
     getAcc(sphere: any, factor: any): number;
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
     getNiceAcc(sphere: any): number;
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Curr accuracy needed in the intersection zone
      */
     getCurrAcc(sphere: any): number;
     /**
      *  @link Area.getRawAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
     getRawAcc(sphere: any): number;

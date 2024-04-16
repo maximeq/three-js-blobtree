@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { Vector3, Box3 } from "three"
 import { Types } from "./Types";
 import { Node } from "./Node";
 import { Material } from "./Material";
@@ -38,14 +38,14 @@ export class ScaleNode extends Node {
         }
 
         // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:THREE.Vector3, m:Material}} */
+        /** @type {{v:number, g:Vector3, m:Material}} */
         this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {THREE.Vector3} */
-        this.tmp_g = new THREE.Vector3();
+        /** @type {Vector3} */
+        this.tmp_g = new Vector3();
         /** @type {Material} */
         this.tmp_m = new Material();
 
-        this._scale = new THREE.Vector3(1, 1, 1);
+        this._scale = new Vector3(1, 1, 1);
 
     }
 
@@ -75,7 +75,7 @@ export class ScaleNode extends Node {
     static fromJSON(json) {
         var res = new ScaleNode();
         res.setScale(
-            new THREE.Vector3(
+            new Vector3(
                 json.scale_x,
                 json.scale_y,
                 json.scale_z
@@ -89,7 +89,7 @@ export class ScaleNode extends Node {
 
     /**
      * @link ScaleNode.setScale
-     * @param {THREE.Vector3} scale
+     * @param {Vector3} scale
      */
     setScale(scale) {
         this._scale.copy(scale);
@@ -108,20 +108,20 @@ export class ScaleNode extends Node {
      */
     prepareForEval() {
         if (!this.valid_aabb) {
-            this.aabb = new THREE.Box3();  // Create empty BBox
+            this.aabb = new Box3();  // Create empty BBox
             for (var i = 0; i < this.children.length; ++i) {
                 var c = this.children[i];
                 c.prepareForEval();
                 this.aabb.union(c.getAABB());    // new aabb is computed according to remaining children aabb
             }
 
-            let bb_size = new THREE.Vector3();
+            let bb_size = new Vector3();
             this.aabb.clone().getSize(bb_size);
             let x_scale = bb_size.x * (this._scale.x - 1.0);
             let y_scale = bb_size.y * (this._scale.y - 1.0);
             let z_scale = bb_size.z * (this._scale.z - 1.0);
 
-            this.aabb.expandByVector(new THREE.Vector3(x_scale, y_scale, z_scale));
+            this.aabb.expandByVector(new Vector3(x_scale, y_scale, z_scale));
             this.valid_aabb = true;
         }
     };
@@ -136,19 +136,19 @@ export class ScaleNode extends Node {
             this.aabb.union(this.children[i].getAABB());
         }
 
-        let bb_size = new THREE.Vector3();
+        let bb_size = new Vector3();
         this.aabb.clone().getSize(bb_size);
         let x_scale = bb_size.x * (this._scale.x - 1.0);
         let y_scale = bb_size.y * (this._scale.y - 1.0);
         let z_scale = bb_size.z * (this._scale.z - 1.0);
 
-        this.aabb.expandByVector(new THREE.Vector3(x_scale, y_scale, z_scale));
+        this.aabb.expandByVector(new Vector3(x_scale, y_scale, z_scale));
     }
 
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p, res) {
@@ -176,10 +176,10 @@ export class ScaleNode extends Node {
         if (this.aabb.containsPoint(p) && l !== 0) {
 
 
-            let center = new THREE.Vector3();
+            let center = new Vector3();
             this.aabb.getCenter(center);
 
-            let st_p = new THREE.Vector3((p.x - center.x) / this._scale.x + center.x
+            let st_p = new Vector3((p.x - center.x) / this._scale.x + center.x
                 , (p.y - center.y) / this._scale.y + center.y
                 , (p.z - center.z) / this._scale.z + center.z);
 
@@ -207,7 +207,7 @@ export class ScaleNode extends Node {
     /**
      *  @link Element.trim for a complete description.
      *
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      *  @param {Array<Element>} trimmed
      *  @param {Array<Node>} parents
      */

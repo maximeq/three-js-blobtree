@@ -33,7 +33,10 @@ export declare class ScalisPrimitive extends Primitive {
          * @type {!Array.<!ScalisVertex>}
          */
         materials: never[];
-        type: string;
+        type: string; /**
+         *  @abstract Specify if the voltype can be changed
+         *  @return {boolean} True if and only if the VolType can be changed.
+         */
     };
     /**
      *  @abstract Specify if the voltype can be changed

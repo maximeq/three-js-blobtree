@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { Vector3, Box3 } from "three";
 import { Types } from "./Types";
 import { Node } from "./Node";
 import { Material } from "./Material";
@@ -46,10 +46,10 @@ export class RicciNode extends Node {
         this.tmp_m_arr = [];
 
         // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g: THREE.Vector3, m:Material}} */
+        /** @type {{v:number, g: Vector3, m:Material}} */
         this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {THREE.Vector3} */
-        this.tmp_g = new THREE.Vector3();
+        /** @type {Vector3} */
+        this.tmp_g = new Vector3();
         /** @type {Material} */
         this.tmp_m = new Material();
     }
@@ -93,7 +93,7 @@ export class RicciNode extends Node {
      */
     prepareForEval() {
         if (!this.valid_aabb) {
-            this.aabb = new THREE.Box3();  // Create empty BBox
+            this.aabb = new Box3();  // Create empty BBox
             for (let i = 0; i < this.children.length; ++i) {
                 let c = this.children[i];
                 c.prepareForEval();
@@ -116,7 +116,7 @@ export class RicciNode extends Node {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p, res) {

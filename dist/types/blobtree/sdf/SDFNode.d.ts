@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { Box3 } from "three";
 import { Node } from '../Node';
 /** @typedef {import('../areas/Area')} Area */
 /** @typedef {import('./SDFPrimitive')} SDFPrimitive */
@@ -21,10 +21,10 @@ export declare class SDFNode extends Node {
      *  Ie, the distance field is greater than d everywhere outside the returned box.
      *  @abstract
      *  @param {number} d Distance
-     *  @return {THREE.Box3}
+     *  @return {Box3}
      *
      */
-    computeDistanceAABB(d: any): THREE.Box3;
+    computeDistanceAABB(d: any): Box3;
     /**
      *
      * @param {SDFNode | SDFPrimitive} c
@@ -39,14 +39,14 @@ export declare class SDFNode extends Node {
     getAreas(): void;
     /**
      * @param {number} d Distance to consider for the area computation.
-     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:SDFPrimitive}>}
+     * @returns {Array.<{aabb: Box3, bv:Area, obj:SDFPrimitive}>}
      */
     getDistanceAreas(d: any): any[];
     /**
      * Since SDF Nodes are distance function, this function will return
      * an accurate distance to the surface.
      * @abstract
-     * @param {THREE.Vector3} _p Point
+     * @param {Vector3} _p Point
      * @return {number}
      */
     distanceTo(_p: any): void;

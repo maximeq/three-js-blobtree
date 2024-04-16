@@ -1,4 +1,4 @@
-import THREE from "three";
+import { Vector3 } from "three"
 import { ScalisMath } from "../scalis/ScalisMath.js";
 import { Area } from "./Area.js";
 import { Accuracies } from "../accuracies/Accuracies.js";
@@ -23,25 +23,25 @@ import { Accuracies } from "../accuracies/Accuracies.js";
 export class AreaScalisSeg extends Area {
 
     /**
-     * @param {!THREE.Vector3} p0 first point of the shape
-     * @param {!THREE.Vector3} p1 second point of the shape
+     * @param {!Vector3} p0 first point of the shape
+     * @param {!Vector3} p1 second point of the shape
      * @param {number} thick0 radius at p0
      * @param {number} thick1 radius at p1
      */
     constructor(p0, p1, thick0, thick1) {
         super();
 
-        this.p0 = new THREE.Vector3(p0.x, p0.y, p0.z);
-        this.p1 = new THREE.Vector3(p1.x, p1.y, p1.z);
+        this.p0 = new Vector3(p0.x, p0.y, p0.z);
+        this.p1 = new Vector3(p1.x, p1.y, p1.z);
         this.thick0 = thick0;
         this.thick1 = thick1;
 
-        this.unit_dir = new THREE.Vector3().subVectors(p1, p0);
+        this.unit_dir = new Vector3().subVectors(p1, p0);
         this.length = this.unit_dir.length();
         this.unit_dir.normalize();
 
         // tmp var for functions below
-        this.vector = new THREE.Vector3();
+        this.vector = new Vector3();
         this.p0_to_p = this.vector; // basically the same as above + smart name
         this.p0_to_p_sqrnorm = 0;
         this.x_p_2D = 0;
@@ -57,7 +57,7 @@ export class AreaScalisSeg extends Area {
 
     /**
     * Compute some of the tmp variables.Used to factorized other functions code.
-    * @param { !THREE.Vector3 } p A point as a THREE.Vector3
+    * @param { !Vector3 } p A point as a Vector3
     *
     * @protected
     */
@@ -110,7 +110,7 @@ export class AreaScalisSeg extends Area {
 
     /**
      * @link Area.contains for a complete description
-     * @param {THREE.Vector3} p
+     * @param {Vector3} p
      */
     contains(p) {
         this.proj_computation(p);
@@ -143,7 +143,7 @@ export class AreaScalisSeg extends Area {
      *
      *  @return {number} the accuracy needed in the intersection zone
      *
-     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @param {number}  factor  the ratio to determine the wanted accuracy.
      *
      *  @todo Check the Maths
@@ -202,7 +202,7 @@ export class AreaScalisSeg extends Area {
 
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
     getNiceAcc(sphere) {
@@ -211,7 +211,7 @@ export class AreaScalisSeg extends Area {
 
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Curr accuracy needed in the intersection zone
      */
     getCurrAcc = function (sphere) {
@@ -220,7 +220,7 @@ export class AreaScalisSeg extends Area {
 
     /**
      *  @link Area.getRawAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
     getRawAcc(sphere) {

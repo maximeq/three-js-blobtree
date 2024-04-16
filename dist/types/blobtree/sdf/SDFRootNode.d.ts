@@ -51,13 +51,13 @@ export declare class SDFRootNode extends Primitive {
      *
      *  This function is an attempt to have SDFRootNode behave like a Primitive in the normal Blobtree.
      *
-     *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
+     *  @returns {Array.<{aabb: Box3, bv:Area, obj:Primitive}>}
      */
     getAreas(): any[];
     /**
      *  @link Node.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p: any, res: any): void;

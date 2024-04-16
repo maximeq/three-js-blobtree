@@ -4,7 +4,7 @@
 export declare class ScalisVertex {
     static fromJSON(json: any): ScalisVertex;
     /**
-     *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
+     *  @param {!Vector3} pos A position in space, as a Vector3
      *  @param {number} thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
      */
     constructor(pos: any, thickness: any);
@@ -27,7 +27,7 @@ export declare class ScalisVertex {
     };
     /**
      *  Set a new position.
-     *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
+     *  @param {!Vector3} pos A position in space, as a Vector3
      */
     setPos(pos: any): void;
     /**
@@ -38,12 +38,12 @@ export declare class ScalisVertex {
     /**
      *  Set a both position and thickness
      *  @param {number} thickness The new thickness
-     *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
+     *  @param {!Vector3} pos A position in space, as a Vector3
      */
     setAll(pos: any, thickness: any): void;
     /**
      *  Get the current position
-     *  @return {!THREE.Vector3} Current position, as a THREE.Vector3
+     *  @return {!Vector3} Current position, as a Vector3
      */
     getPos(): any;
     /**
@@ -53,7 +53,7 @@ export declare class ScalisVertex {
     getThickness(): any;
     /**
      *  Get the current AxisAlignedBoundingBox
-     *  @return {THREE.Box3} The AABB of this vertex.
+     *  @return {Box3} The AABB of this vertex.
      */
     getAABB(): any;
     /**

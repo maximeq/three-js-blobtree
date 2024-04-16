@@ -1,4 +1,4 @@
-import * as THREE from "three"
+import { Vector3, Box3 } from "three"
 import { ScalisMath } from "./ScalisMath.js"
 
 /** @typedef {import('./ScalisPrimitive')} ScalisPrimitive */
@@ -21,11 +21,11 @@ var verticesIds = 0;
 export class ScalisVertex {
 
     static fromJSON(json) {
-        return new ScalisVertex(new THREE.Vector3(json.position.x, json.position.y, json.position.z), json.thickness);
+        return new ScalisVertex(new Vector3(json.position.x, json.position.y, json.position.z), json.thickness);
     }
 
     /**
-     *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
+     *  @param {!Vector3} pos A position in space, as a Vector3
      *  @param {number} thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
      */
     constructor(pos, thickness) {
@@ -38,7 +38,7 @@ export class ScalisVertex {
         // The primitive using this vertex
         this.prim = null;
 
-        this.aabb = new THREE.Box3();
+        this.aabb = new Box3();
         this.valid_aabb = false;
     };
 
@@ -69,7 +69,7 @@ export class ScalisVertex {
 
     /**
      *  Set a new position.
-     *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
+     *  @param {!Vector3} pos A position in space, as a Vector3
      */
     setPos(pos) {
         this.valid_aabb = false;
@@ -90,7 +90,7 @@ export class ScalisVertex {
     /**
      *  Set a both position and thickness
      *  @param {number} thickness The new thickness
-     *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
+     *  @param {!Vector3} pos A position in space, as a Vector3
      */
     setAll(pos, thickness) {
         this.valid_aabb = false;
@@ -101,7 +101,7 @@ export class ScalisVertex {
 
     /**
      *  Get the current position
-     *  @return {!THREE.Vector3} Current position, as a THREE.Vector3
+     *  @return {!Vector3} Current position, as a Vector3
      */
     getPos() {
         return this.pos;
@@ -117,7 +117,7 @@ export class ScalisVertex {
 
     /**
      *  Get the current AxisAlignedBoundingBox
-     *  @return {THREE.Box3} The AABB of this vertex.
+     *  @return {Box3} The AABB of this vertex.
      */
     getAABB() {
         if (!this.valid_aabb) {
@@ -134,12 +134,12 @@ export class ScalisVertex {
     computeAABB() {
         var pos = this.getPos();
         var boundSupport = this.getThickness() * ScalisMath.KS;
-        this.aabb.set(new THREE.Vector3(
+        this.aabb.set(new Vector3(
             pos.x - boundSupport,
             pos.y - boundSupport,
             pos.z - boundSupport
         ),
-            new THREE.Vector3(
+            new Vector3(
                 pos.x + boundSupport,
                 pos.y + boundSupport,
                 pos.z + boundSupport

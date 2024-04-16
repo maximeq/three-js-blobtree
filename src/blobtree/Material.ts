@@ -1,5 +1,4 @@
-import * as THREE from "three";
-
+import { Color } from "three";
 /**
  * @typedef {Object} MaterialJSON
  * @property {string} color
@@ -16,7 +15,7 @@ import * as THREE from "three";
  *
  *  @param {!Object} params Parameters for the material. As a dictionary to be easily extended later.
  *
- *  @param {THREE.Color?}   params.color        Base diffuse color for the material.
+ *  @param {Color?}   params.color        Base diffuse color for the material.
  *                                              Defaults to #aaaaaa
  *
  *  @param {number?}        params.roughness    Roughness for the material.
@@ -25,7 +24,7 @@ import * as THREE from "three";
  *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
  *                                              Defaults to 0.
  *
- *  @param {THREE.Color?} params.emissive       Emissive color for the material.
+ *  @param {Color?} params.emissive       Emissive color for the material.
  *                                              Defaults to pitch black. (no light emission)
  */
 export class Material {
@@ -74,7 +73,7 @@ export class Material {
 
     static fromJSON(json) {
         return new Material({
-            color: new THREE.Color(json.color),
+            color: new Color(json.color),
             roughness: json.roughness,
             metalness: json.metalness,
             emissive: json.emissive, // If undefined, will default to pitch black. If not, will load the hex string.
@@ -86,13 +85,13 @@ export class Material {
     *
     *  @param { !Object } params Parameters for the material.As a dictionary to be easily extended later.
     *
-    *  @param { THREE.Color ?} params.color Base diffuse color for the material. Defaults to #aaaaaa
+    *  @param { Color ?} params.color Base diffuse color for the material. Defaults to #aaaaaa
     *
     *  @param { number ?} params.roughness Roughness for the material. Defaults to 0.
     *
     *  @param { number ?} params.metalness Metalness aspect of the material, 1 for metalness, 0 for dielectric. Defaults to 0.
     *
-    *  @param { THREE.Color ?} params.emissive Emissive color for the material. Defaults to pitch black. (no light emission)
+    *  @param { Color ?} params.emissive Emissive color for the material. Defaults to pitch black. (no light emission)
     */
     constructor(params) {
         params = params || {};
@@ -101,10 +100,10 @@ export class Material {
             throw "Error : Blobtree Material now takes only 1 argument.";
         }
 
-        this.color = new THREE.Color(params.color !== undefined ? params.color : 0xaaaaaa);
+        this.color = new Color(params.color !== undefined ? params.color : 0xaaaaaa);
         this.roughness = params.roughness !== undefined ? params.roughness : 0;
         this.metalness = params.metalness !== undefined ? params.metalness : 0;
-        this.emissive = new THREE.Color(params.emissive !== undefined ? params.emissive : 0x000000);
+        this.emissive = new Color(params.emissive !== undefined ? params.emissive : 0x000000);
     }
 
     toJSON() {
@@ -143,7 +142,7 @@ export class Material {
     /**
      *  @deprecated Use setParams instead
      *  Set Material parameters at once. DEPRECATED. Use setParams
-     *  @param {THREE.Color!} c Color
+     *  @param {Color!} c Color
      *  @param {number!} r roughness
      *  @param {number!} m Metalness
      */
@@ -157,10 +156,10 @@ export class Material {
      *  Set Material parameters (all or just some)
      *
      *  @param {Object} params Parameters for the material. As a dictionary to be easily extended later.
-     *  @param {THREE.Color?}   params.color        Base diffuse color for the material.
+     *  @param {Color?}   params.color        Base diffuse color for the material.
      *  @param {number?}        params.roughness    Roughness for the material.
      *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
-     *  @param {THREE.Color?} params.emissive       Emissive color for the material.
+     *  @param {Color?} params.emissive       Emissive color for the material.
      */
     setParams(params) {
         this.color.copy(params.color ? params.color : this.color);
@@ -169,7 +168,7 @@ export class Material {
         this.emissive.copy(params.emissive !== undefined ? params.emissive : this.emissive);
     }
 
-    /** @return {THREE.Color} */
+    /** @return {Color} */
     getColor() { return this.color; };
 
     /** @return {number} */
@@ -178,7 +177,7 @@ export class Material {
     /** @return {number} */
     getMetalness = function () { return this.metalness; };
 
-    /** @return {THREE.Color} */
+    /** @return {Color} */
     getEmissive() { return this.emissive; }
 
 

@@ -36,7 +36,7 @@ export declare class MaxNode extends Node {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p: any, res: any): void;

@@ -13,7 +13,7 @@
  *
  *  @param {!Object} params Parameters for the material. As a dictionary to be easily extended later.
  *
- *  @param {THREE.Color?}   params.color        Base diffuse color for the material.
+ *  @param {Color?}   params.color        Base diffuse color for the material.
  *                                              Defaults to #aaaaaa
  *
  *  @param {number?}        params.roughness    Roughness for the material.
@@ -22,7 +22,7 @@
  *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
  *                                              Defaults to 0.
  *
- *  @param {THREE.Color?} params.emissive       Emissive color for the material.
+ *  @param {Color?} params.emissive       Emissive color for the material.
  *                                              Defaults to pitch black. (no light emission)
  */
 export declare class Material {
@@ -47,13 +47,13 @@ export declare class Material {
     *
     *  @param { !Object } params Parameters for the material.As a dictionary to be easily extended later.
     *
-    *  @param { THREE.Color ?} params.color Base diffuse color for the material. Defaults to #aaaaaa
+    *  @param { Color ?} params.color Base diffuse color for the material. Defaults to #aaaaaa
     *
     *  @param { number ?} params.roughness Roughness for the material. Defaults to 0.
     *
     *  @param { number ?} params.metalness Metalness aspect of the material, 1 for metalness, 0 for dielectric. Defaults to 0.
     *
-    *  @param { THREE.Color ?} params.emissive Emissive color for the material. Defaults to pitch black. (no light emission)
+    *  @param { Color ?} params.emissive Emissive color for the material. Defaults to pitch black. (no light emission)
     */
     constructor(params: any);
     toJSON(): {
@@ -75,7 +75,7 @@ export declare class Material {
     /**
      *  @deprecated Use setParams instead
      *  Set Material parameters at once. DEPRECATED. Use setParams
-     *  @param {THREE.Color!} c Color
+     *  @param {Color!} c Color
      *  @param {number!} r roughness
      *  @param {number!} m Metalness
      */
@@ -84,19 +84,19 @@ export declare class Material {
      *  Set Material parameters (all or just some)
      *
      *  @param {Object} params Parameters for the material. As a dictionary to be easily extended later.
-     *  @param {THREE.Color?}   params.color        Base diffuse color for the material.
+     *  @param {Color?}   params.color        Base diffuse color for the material.
      *  @param {number?}        params.roughness    Roughness for the material.
      *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
-     *  @param {THREE.Color?} params.emissive       Emissive color for the material.
+     *  @param {Color?} params.emissive       Emissive color for the material.
      */
     setParams(params: any): void;
-    /** @return {THREE.Color} */
+    /** @return {Color} */
     getColor(): any;
     /** @return {number} */
     getRoughness(): any;
     /** @return {number} */
     getMetalness: () => any;
-    /** @return {THREE.Color} */
+    /** @return {Color} */
     getEmissive(): any;
     equals(m: any): any;
     /**

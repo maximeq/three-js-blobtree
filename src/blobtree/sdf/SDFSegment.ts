@@ -1,6 +1,4 @@
-"use strict";
-
-import THREE from "three";
+import { Vector3, Line3,Box3 } from "three"
 import { Types } from "../Types.js";
 import { SDFPrimitive } from "./SDFPrimitive.js";
 import { AreaCapsule } from "../areas/AreaCapsule.js";
@@ -18,8 +16,8 @@ import { AreaCapsule } from "../areas/AreaCapsule.js";
  *  @constructor
  *  @extends SDFPrimitive
  *
- *  @param {THREE.Vector3} p1 Position of the first segment extremity
- *  @param {THREE.Vector3} p2 Position of the second segment extremity
+ *  @param {Vector3} p1 Position of the first segment extremity
+ *  @param {Vector3} p2 Position of the second segment extremity
  *  @param {number} acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
  */
 export class SDFSegment extends SDFPrimitive {
@@ -32,16 +30,16 @@ export class SDFSegment extends SDFPrimitive {
      */
     static fromJSON(json) {
         return new SDFSegment(
-            new THREE.Vector3(json.p1.x, json.p1.y, json.p1.z),
-            new THREE.Vector3(json.p2.x, json.p2.y, json.p2.z),
+            new Vector3(json.p1.x, json.p1.y, json.p1.z),
+            new Vector3(json.p2.x, json.p2.y, json.p2.z),
             json.acc
         );
     };
 
     /**
      *
-     * @param {THREE.Vector3} p1
-     * @param {THREE.Vector3} p2
+     * @param {Vector3} p1
+     * @param {Vector3} p2
      * @param {number} acc
      */
     constructor(p1, p2, acc) {
@@ -52,8 +50,8 @@ export class SDFSegment extends SDFPrimitive {
         this.acc = acc || 1.0;
 
         // Helper for evaluation
-        /** @type {THREE.Line3} */
-        this.l = new THREE.Line3(this.p1, this.p2);
+        /** @type {Line3} */
+        this.l = new Line3(this.p1, this.p2);
     }
 
     getType() {
@@ -97,14 +95,14 @@ export class SDFSegment extends SDFPrimitive {
     };
 
     /**
-     *  @param {THREE.Vector3} p1 The new position of the first segment point.
+     *  @param {Vector3} p1 The new position of the first segment point.
      */
     setPosition1(p1) {
         this.p1.copy(p1);
         this.invalidAABB();
     };
     /**
-     *  @param {THREE.Vector3} p2 The new position of the second segment point
+     *  @param {Vector3} p2 The new position of the second segment point
      */
     setPosition2(p2) {
         this.p2.copy(p2);
@@ -112,13 +110,13 @@ export class SDFSegment extends SDFPrimitive {
     };
 
     /**
-     *  @return {THREE.Vector3} Current position of the first segment point
+     *  @return {Vector3} Current position of the first segment point
      */
     getPosition1() {
         return this.p1;
     };
     /**
-     *  @return {THREE.Vector3} Current position of the second segment point
+     *  @return {Vector3} Current position of the second segment point
      */
     getPosition2() {
         return this.p2;
@@ -126,13 +124,13 @@ export class SDFSegment extends SDFPrimitive {
 
     // [Abstract]
     computeDistanceAABB(d) {
-        var b1 = new THREE.Box3(
-            this.p1.clone().add(new THREE.Vector3(-d, -d, -d)),
-            this.p1.clone().add(new THREE.Vector3(d, d, d))
+        var b1 = new Box3(
+            this.p1.clone().add(new Vector3(-d, -d, -d)),
+            this.p1.clone().add(new Vector3(d, d, d))
         );
-        var b2 = new THREE.Box3(
-            this.p2.clone().add(new THREE.Vector3(-d, -d, -d)),
-            this.p2.clone().add(new THREE.Vector3(d, d, d))
+        var b2 = new Box3(
+            this.p2.clone().add(new Vector3(-d, -d, -d)),
+            this.p2.clone().add(new Vector3(d, d, d))
         );
         return b1.union(b2);
     };
@@ -170,14 +168,14 @@ export class SDFSegment extends SDFPrimitive {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value = (function () {
-        var v = new THREE.Vector3();
-        var lc = new THREE.Vector3();
+        var v = new Vector3();
+        var lc = new Vector3();
         /**
-         *  @param {THREE.Vector3} p
+         *  @param {Vector3} p
          *  @param {ValueResultType} res
          */
         return function (p, res) {

@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { Box3 } from "three";
 import { Types } from "./Types";
 
 // Types
@@ -17,7 +17,7 @@ import { Types } from "./Types";
  *                    be allocated already.
  * @property {number} v Value, must be defined
  * @property {Material=} m Material, must be allocated and defined if wanted
- * @property {THREE.Vector3=} g Gradient, must be allocated and defined if wanted
+ * @property {Vector3=} g Gradient, must be allocated and defined if wanted
  * @property {number=} step ??? Not sure, probably a "safe" step for raymarching
  * @property {number=} stepOrtho ??? Same as step but in orthogonal direction ?
  */
@@ -43,7 +43,7 @@ export class Element {
     constructor() {
         this.id = elementIds++;
 
-        this.aabb = new THREE.Box3();
+        this.aabb = new Box3();
         this.valid_aabb = false;
 
         /** @type {Node} */
@@ -103,7 +103,7 @@ export class Element {
     }
 
     /**
-     *  @return {THREE.Box3} The AABB of this Element (primitive or node). WARNING : call
+     *  @return {Box3} The AABB of this Element (primitive or node). WARNING : call
      *  isValidAABB before to ensure the current AABB does correspond to the primitive
      *  settings.
      */
@@ -156,7 +156,7 @@ export class Element {
      *  Compute the value and/or gradient and/or material
      *  of the element at position p in space. return computations in res (see below)
      *
-     *  @param {THREE.Vector3} _p Point where we want to evaluate the primitive field
+     *  @param {Vector3} _p Point where we want to evaluate the primitive field
      *  @param {ValueResultType} _res
      */
     value(_p, _res) {
@@ -164,16 +164,16 @@ export class Element {
     };
 
     /**
-     * @param {THREE.Vector3} p The point where we want the numerical gradient
-     * @param {THREE.Vector3} res The resulting gradient
+     * @param {Vector3} p The point where we want the numerical gradient
+     * @param {Vector3} res The resulting gradient
      * @param {number} epsilon The step value for the numerical evaluation
      */
     numericalGradient = (function () {
         let tmp = { v: 0 };
         let coord = ['x', 'y', 'z'];
         /**
-         * @param {THREE.Vector3} p
-         * @param {THREE.Vector3} res
+         * @param {Vector3} p
+         * @param {Vector3} res
          * @param {number} epsilon
          */
         return function (p, res, epsilon) {
@@ -202,7 +202,7 @@ export class Element {
      *  Area objects do provide methods useful when rasterizing, raytracing or polygonizing
      *  the area (intersections with other areas, minimum level of detail needed to
      *  capture the feature nicely, etc etc...).
-     *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>} The Areas object corresponding to the node/primitive, in an array
+     *  @returns {Array.<{aabb: Box3, bv:Area, obj:Primitive}>} The Areas object corresponding to the node/primitive, in an array
      */
     getAreas() {
         return [];
@@ -211,7 +211,7 @@ export class Element {
     /**
      *  @abstract
      *  This function is called when a point is outside of the potential influence of a primitive/node.
-     *  @param {THREE.Vector3} _p
+     *  @param {Vector3} _p
      *  @return {number} The next step length to do with respect to this primitive/node
      */
     distanceTo(_p) {
@@ -233,7 +233,7 @@ export class Element {
      *  Default behaviour is doing nothing, leaves cannot be sub-trimmed, only nodes.
      *  Note : only the root can untrim
      *
-     *  @param {THREE.Box3} _aabb
+     *  @param {Box3} _aabb
      *  @param {Array.<Element>} _trimmed Array of trimmed Elements
      *  @param {Array.<Node>} _parents Array of fathers from which each trimmed element has been removed.
      */

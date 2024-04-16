@@ -1,5 +1,4 @@
-import * as THREE from "three";
-import { Box2 } from "three";
+import { Box2, Vector2, Vector3, Box3, BufferGeometry, BufferAttribute } from "three";
 import { Material } from "../blobtree/Material.js"
 import { Convergence } from "../utils/Convergence.js"
 import { Tables } from "./MCTables.js"
@@ -50,15 +49,15 @@ import { Tables } from "./MCTables.js"
 /**
  *  Axis Aligned Bounding Box in 2D carrying accuracy data
  *  @constructor
- *  @extends THREE.Box2
+ *  @extends Box2
  */
 
 
 class Box2Acc extends Box2 {
 
     /**
-     *  @param {THREE.Vector2=} min Minimum x,y coordinate of the box
-     *  @param {THREE.Vector2=} max Maximum x,y coordinate of the box
+     *  @param {Vector2=} min Minimum x,y coordinate of the box
+     *  @param {Vector2=} max Maximum x,y coordinate of the box
      *  @param {number=} nice_acc Nice accuracy in this box
      *  @param {number=} raw_acc Raw accuracy in this box
      */
@@ -141,7 +140,7 @@ class Box2Acc extends Box2 {
 
     /**
      *  Get corner with the minimum coordinates
-     *  @return {THREE.Vector2}
+     *  @return {Vector2}
      */
     getMinCorner() {
         return this.min;
@@ -261,20 +260,20 @@ export class SlidingMarchingCubes {
             false
         ];
 
-        /** @type {THREE.Vector3} */
-        this.vertex = new THREE.Vector3(0, 0, 0); // vertex associated to the cell if any
-        /** @type {THREE.Vector3} */
-        this.vertex_n = new THREE.Vector3(0, 0, 0); // vertex normal
+        /** @type {Vector3} */
+        this.vertex = new Vector3(0, 0, 0); // vertex associated to the cell if any
+        /** @type {Vector3} */
+        this.vertex_n = new Vector3(0, 0, 0); // vertex normal
         /** @type {Material} */
         this.vertex_m = new Material(); // vertex material
 
         // Vars and tmp vars for extension checks
         /** @type {boolean} */
         this.extended = false;
-        /** @type {THREE.Box3} */
-        this.dis_o_aabb = new THREE.Box3();
-        /** @type {THREE.Vector3} */
-        this.ext_p = new THREE.Vector3();
+        /** @type {Box3} */
+        this.dis_o_aabb = new Box3();
+        /** @type {Vector3} */
+        this.ext_p = new Vector3();
 
 
 
@@ -298,34 +297,34 @@ export class SlidingMarchingCubes {
                 //Var and tmp var pre allocated and Scoped
                 //for optimization of triangulation criteria
                 //assuming a v1v2v3v4 quad
-                /** @type {THREE.Vector3} */
-                let p1 = new THREE.Vector3(); //v1 position
-                /** @type {THREE.Vector3} */
-                let p2 = new THREE.Vector3(); //v2 position
-                /** @type {THREE.Vector3} */
-                let p3 = new THREE.Vector3(); //v3 position
-                /** @type {THREE.Vector3} */
-                let p4 = new THREE.Vector3(); //v4 position
+                /** @type {Vector3} */
+                let p1 = new Vector3(); //v1 position
+                /** @type {Vector3} */
+                let p2 = new Vector3(); //v2 position
+                /** @type {Vector3} */
+                let p3 = new Vector3(); //v3 position
+                /** @type {Vector3} */
+                let p4 = new Vector3(); //v4 position
                 //Edges from v2
-                /** @type {THREE.Vector3} */
-                let pp_2_1 = new THREE.Vector3(); //v2v1 edge
-                /** @type {THREE.Vector3} */
-                let pp_2_3 = new THREE.Vector3(); //v2v3 edge
-                /** @type {THREE.Vector3} */
-                let pp_2_4 = new THREE.Vector3(); //v2v4 edge
+                /** @type {Vector3} */
+                let pp_2_1 = new Vector3(); //v2v1 edge
+                /** @type {Vector3} */
+                let pp_2_3 = new Vector3(); //v2v3 edge
+                /** @type {Vector3} */
+                let pp_2_4 = new Vector3(); //v2v4 edge
                 //Edges from v4
-                /** @type {THREE.Vector3} */
-                let pp_4_1 = new THREE.Vector3(); //v4v1 edge
-                /** @type {THREE.Vector3} */
-                let pp_4_3 = new THREE.Vector3(); //v3v1 edge
-                /** @type {THREE.Vector3} */
-                let n_2 = new THREE.Vector3(); //123 normal
-                /** @type {THREE.Vector3} */
-                let n_4 = new THREE.Vector3(); //341 normal
-                /** @type {THREE.Vector3} */
-                let n_23 = new THREE.Vector3(); //234 normal
-                /** @type {THREE.Vector3} */
-                let n_42 = new THREE.Vector3(); //412 normal
+                /** @type {Vector3} */
+                let pp_4_1 = new Vector3(); //v4v1 edge
+                /** @type {Vector3} */
+                let pp_4_3 = new Vector3(); //v3v1 edge
+                /** @type {Vector3} */
+                let n_2 = new Vector3(); //123 normal
+                /** @type {Vector3} */
+                let n_4 = new Vector3(); //341 normal
+                /** @type {Vector3} */
+                let n_23 = new Vector3(); //234 normal
+                /** @type {Vector3} */
+                let n_42 = new Vector3(); //412 normal
 
                 return function (v1, v2, v3, v4) {
                     //Quad opposes v1 and v3 and v2 and v4
@@ -414,30 +413,30 @@ export class SlidingMarchingCubes {
      *  @private
      */
     buildResultingBufferGeometry() {
-        var res = new THREE.BufferGeometry();
+        var res = new BufferGeometry();
         res.setAttribute(
             "position",
-            new THREE.BufferAttribute(new Float32Array(this.geometry.position), 3)
+            new BufferAttribute(new Float32Array(this.geometry.position), 3)
         );
         res.setAttribute(
             "normal",
-            new THREE.BufferAttribute(new Float32Array(this.geometry.normal), 3)
+            new BufferAttribute(new Float32Array(this.geometry.normal), 3)
         );
         res.setAttribute(
             "color",
-            new THREE.BufferAttribute(new Float32Array(this.geometry.color), 3)
+            new BufferAttribute(new Float32Array(this.geometry.color), 3)
         );
         res.setAttribute(
             "roughness",
-            new THREE.BufferAttribute(new Float32Array(this.geometry.roughness), 1)
+            new BufferAttribute(new Float32Array(this.geometry.roughness), 1)
         );
         res.setAttribute(
             "metalness",
-            new THREE.BufferAttribute(new Float32Array(this.geometry.metalness), 1)
+            new BufferAttribute(new Float32Array(this.geometry.metalness), 1)
         );
 
         res.setIndex(
-            new THREE.BufferAttribute(
+            new BufferAttribute(
                 this.geometry.nVertices > 65535
                     ? new Uint32Array(this.geometry.faces)
                     : new Uint16Array(this.geometry.faces),
@@ -513,8 +512,8 @@ export class SlidingMarchingCubes {
         let ny = y1 - y0;
 
         /*
-        this.computeFrontValAtBoxCorners(cx,cy,cz, new THREE.Vector2(x0,y0), new THREE.Vector2(x1,y1));
-        var mask = this.computeBoxMask(new THREE.Vector2(x0,y0), new THREE.Vector2(x1,y1));
+        this.computeFrontValAtBoxCorners(cx,cy,cz, new Vector2(x0,y0), new Vector2(x1,y1));
+        var mask = this.computeBoxMask(new Vector2(x0,y0), new Vector2(x1,y1));
         if(!(mask === 0xf || mask === 0x0)){
             throw "Error bad mask when interpolating";
         }
@@ -582,7 +581,7 @@ export class SlidingMarchingCubes {
      */
     computeFrontValAtClosure = (function () {
         var eval_res = { v: 0 };
-        var p = new THREE.Vector3();
+        var p = new Vector3();
         return function (cx, cy, cz, x, y) {
             /** @type {SlidingMarchingCubes} */
             let self = this;
@@ -601,8 +600,8 @@ export class SlidingMarchingCubes {
      *  @param {number} cx X coordinate of the front buffer corner
      *  @param {number} cy Y coordinate of the front buffer corner
      *  @param {number} cz Z coordinate of the front buffer corner
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      */
     computeFrontValAtBoxCorners(
         cx,
@@ -622,8 +621,8 @@ export class SlidingMarchingCubes {
      *  @param {number} cx X coordinate of the front buffer corner
      *  @param {number} cy Y coordinate of the front buffer corner
      *  @param {number} cz Z coordinate of the front buffer corner
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      */
     computeFrontValInBox(
         cx,
@@ -641,8 +640,8 @@ export class SlidingMarchingCubes {
 
     /**
      *  Set all values in 2D box min,max at 0.
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      */
     setFrontValZeroInBox(min, max) {
         for (var ix = min.x; ix <= max.x; ++ix) {
@@ -655,8 +654,8 @@ export class SlidingMarchingCubes {
     /**
      *  Compute 2D mask of a given 2D box. Mask is an hex integer unique for each
      *  combination of iso value crossing (like in 3D marching cubes, but in 2D).
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      *  @return {number} The mask
      */
     computeBoxMask(min, max) {
@@ -686,8 +685,8 @@ export class SlidingMarchingCubes {
 
     /**
      *  Return 0 if and only if all coners value of 2D box min,max are 0
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      *  @return {number}
      */
     checkZeroBox(min, max) {
@@ -721,7 +720,7 @@ export class SlidingMarchingCubes {
         // split the current box in 2 boxes in the largest dimension
 
         var new_boxes = null;
-        var diff = new THREE.Vector2(
+        var diff = new Vector2(
             Math.round(box.max.x - box.min.x),
             Math.round(box.max.y - box.min.y)
         );
@@ -732,12 +731,12 @@ export class SlidingMarchingCubes {
             new_boxes = [
                 new Box2Acc(
                     box.min,
-                    new THREE.Vector2(x_cut, box.max.y),
+                    new Vector2(x_cut, box.max.y),
                     10000,
                     10000
                 ),
                 new Box2Acc(
-                    new THREE.Vector2(x_cut, box.min.y),
+                    new Vector2(x_cut, box.min.y),
                     box.max,
                     10000,
                     10000
@@ -754,12 +753,12 @@ export class SlidingMarchingCubes {
                 new_boxes = [
                     new Box2Acc(
                         box.min,
-                        new THREE.Vector2(box.max.x, y_cut),
+                        new Vector2(box.max.x, y_cut),
                         10000,
                         10000
                     ),
                     new Box2Acc(
-                        new THREE.Vector2(box.min.x, y_cut),
+                        new Vector2(box.min.x, y_cut),
                         box.max,
                         10000,
                         10000
@@ -799,7 +798,7 @@ export class SlidingMarchingCubes {
         for (let k = 0; k < new_boxes.length; ++k) {
             let b = new_boxes[k];
 
-            let bsize = b.getSize(new THREE.Vector2());
+            let bsize = b.getSize(new Vector2());
 
             if (boxes2D_rec[k].length === 0) {
                 this.setFrontValZeroInBox(b.min, b.max);
@@ -898,8 +897,8 @@ export class SlidingMarchingCubes {
             );
             boxes2D.push(
                 new Box2Acc(
-                    new THREE.Vector2(x_min, y_min),
-                    new THREE.Vector2(x_max, y_max),
+                    new Vector2(x_min, y_min),
+                    new Vector2(x_max, y_max),
                     nice_acc,
                     raw_acc
                 )
@@ -909,8 +908,8 @@ export class SlidingMarchingCubes {
 
         bigbox.intersect(
             new Box2Acc(
-                new THREE.Vector2(0, 0),
-                new THREE.Vector2(this.reso[0], this.reso[1]),
+                new Vector2(0, 0),
+                new Vector2(this.reso[0], this.reso[1]),
                 bigbox.getNiceAcc(),
                 bigbox.getRawAcc()
             )
@@ -924,7 +923,7 @@ export class SlidingMarchingCubes {
 
     /**
      *   get the min accuracy needed for this zone
-     *   @param {THREE.Box3} bbox the zone for which we want the minAcc
+     *   @param {Box3} bbox the zone for which we want the minAcc
      *   @return {number} the min acc for this zone
      */
     getMinAcc(bbox) {
@@ -948,7 +947,7 @@ export class SlidingMarchingCubes {
 
     /**
      *   get the max accuracy needed for this zone
-     *   @param {THREE.Box3} bbox the zone for which we want the minAcc
+     *   @param {Box3} bbox the zone for which we want the minAcc
      *   @return {number} the max acc for this zone
      */
     getMaxAcc(bbox) {
@@ -973,7 +972,7 @@ export class SlidingMarchingCubes {
     /**
      *  Note : returned mesh data will be accurate only if extened AABB difference
      *  with o_aabb is small. compared to o_aabb size.
-     *  @param {THREE.Box3} o_aabb The aabb where to compute the surface, if null, the blobtree AABB will be used
+     *  @param {Box3} o_aabb The aabb where to compute the surface, if null, the blobtree AABB will be used
      *  @param {boolean=} extended True if we want the agorithm to extend the computation zone
      *                            to ensure overlap with a mesh resulting from a computation
      *                            in a neighbouring aabb (Especially usefull for parallelism).
@@ -994,7 +993,7 @@ export class SlidingMarchingCubes {
         this.extended = extended !== undefined ? extended : false;
 
         if (this.extended) {
-            let adims = aabb.getSize(new THREE.Vector3());
+            let adims = aabb.getSize(new Vector3());
             let minAcc = Math.min(
                 Math.min(this.getMinAcc(aabb), adims[0]),
                 Math.min(adims[1], adims[2])
@@ -1041,7 +1040,7 @@ export class SlidingMarchingCubes {
         this.min_acc = this.min_acc * this.detail_ratio;
 
         var corner = aabb.min;
-        var dims = aabb.getSize(new THREE.Vector3());
+        var dims = aabb.getSize(new Vector3());
 
         this.steps.z = new Float32Array(Math.ceil(dims.z / this.min_acc) + 2);
         this.steps.z[0] = corner.z;
@@ -1077,8 +1076,8 @@ export class SlidingMarchingCubes {
         if (this.extended) {
             var i = 0;
             this.dis_o_aabb.set(
-                new THREE.Vector3(-1, -1, -1),
-                new THREE.Vector3(-1, -1, -1)
+                new Vector3(-1, -1, -1),
+                new Vector3(-1, -1, -1)
             );
             while (i < this.reso[2] && this.dis_o_aabb.min.z === -1) {
                 if (this.steps.z[i] >= o_aabb.min.z) {
@@ -1125,7 +1124,7 @@ export class SlidingMarchingCubes {
         this.vertices_xy[1] = new Int32Array(this.reso[0] * this.reso[1]);
 
         // Aabb for trimming the blobtree
-        var trim_aabb = new THREE.Box3();
+        var trim_aabb = new Box3();
         this.computeFrontValues(corner.x, corner.y, corner.z);
 
         var percent = 0;
@@ -1141,8 +1140,8 @@ export class SlidingMarchingCubes {
 
             var z1 = this.steps.z[iz + 1];
             trim_aabb.set(
-                new THREE.Vector3(corner.x, corner.y, z1 - this.min_acc / 64),
-                new THREE.Vector3(
+                new Vector3(corner.x, corner.y, z1 - this.min_acc / 64),
+                new Vector3(
                     corner.x + this.reso[0] * this.min_acc,
                     corner.y + this.reso[1] * this.min_acc,
                     z1 + this.min_acc / 64
@@ -1201,7 +1200,7 @@ export class SlidingMarchingCubes {
      *  compute marching cube mask, build the resulting vertex and faces if necessary.
      *  @param {number} x
      *  @param {number} y
-     *  @param {THREE.Vector3} corner Bottom left corner of front array.
+     *  @param {Vector3} corner Bottom left corner of front array.
      */
     fetchAndTriangulate(x, y, z, corner) {
         var idx_y_0 = y * this.reso[0] + x;
@@ -1349,10 +1348,10 @@ export class SlidingMarchingCubes {
         // Function static variable
         var eval_res = {
             v: null,
-            g: new THREE.Vector3(0, 0, 0),
+            g: new Vector3(0, 0, 0),
             m: new Material()
         };
-        var conv_res = new THREE.Vector3();
+        var conv_res = new Vector3();
 
         return function () {
             eval_res.v = this.blobtree.getNeutralValue();
@@ -1415,7 +1414,7 @@ export class SlidingMarchingCubes {
             if (this.convergence) {
                 Convergence.safeNewton3D(
                     this.blobtree, // Scalar Field to eval
-                    this.vertex, // 3D point where we start, must comply to THREE.Vector3 API
+                    this.vertex, // 3D point where we start, must comply to Vector3 API
                     this.blobtree.getIsoValue(), // iso value we are looking for
                     this.min_acc * this.convergence.ratio, // Geometrical limit to stop
                     this.convergence.step, // limit of number of step

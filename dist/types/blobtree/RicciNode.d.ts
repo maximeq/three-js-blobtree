@@ -31,7 +31,6 @@ export declare class RicciNode extends Node {
     toJSON(): {
         ricci_n: any;
         children: never[];
-        /** @type {THREE.Vector3} */
         type: string;
     };
     /**
@@ -47,7 +46,7 @@ export declare class RicciNode extends Node {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p: any, res: any): void;

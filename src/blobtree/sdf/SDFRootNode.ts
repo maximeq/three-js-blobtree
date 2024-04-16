@@ -1,4 +1,4 @@
-import THREE from "three";
+import { Vector3, Box3 } from "three"
 import { Types } from "../Types.js";
 import { SDFNode } from "./SDFNode.js";
 import { Primitive } from "../Primitive.js";
@@ -70,7 +70,7 @@ export class SDFRootNode extends Primitive {
         // Tmp vars to speed up computation (no reallocations)
         // TODO : should be pushed in the function static variables since there can be no SDFRoot below the SDFRoot.
         this.tmp_res = { v: 0, g: null };
-        this.tmp_g = new THREE.Vector3(0, 0, 0);
+        this.tmp_g = new Vector3(0, 0, 0);
     }
 
     getType() {
@@ -109,7 +109,7 @@ export class SDFRootNode extends Primitive {
 
     prepareForEval() {
         if (!this.valid_aabb) {
-            this.aabb = new THREE.Box3();  // Create empty BBox
+            this.aabb = new Box3();  // Create empty BBox
             for (let i = 0; i < this.sdfRoot.children.length; ++i) {
                 let c = this.sdfRoot.children[i];
                 c.prepareForEval();
@@ -127,7 +127,7 @@ export class SDFRootNode extends Primitive {
      *
      *  This function is an attempt to have SDFRootNode behave like a Primitive in the normal Blobtree.
      *
-     *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
+     *  @returns {Array.<{aabb: Box3, bv:Area, obj:Primitive}>}
      */
     getAreas() {
         if (!this.valid_aabb) {
@@ -149,7 +149,7 @@ export class SDFRootNode extends Primitive {
     /**
      *  @link Node.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p, res) {

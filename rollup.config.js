@@ -28,10 +28,11 @@ export default [
         ],
     },
 
+    // TODO: uncommented this when package is fully ported to TS
     // bundle types
-    {
-        input: "./dist/types/exports.d.ts",
-        output: [{ file: `dist/${PACKAGE_NAME}.module.d.ts`, format: "es" }],
-        plugins: [dts()],
-    }
+    // {
+    //     input: "./dist/types/exports.d.ts",
+    //     output: [{ file: `dist/${PACKAGE_NAME}.module.d.ts`, format: "es" }],
+    //     plugins: [dts()],
+    // }
 ]

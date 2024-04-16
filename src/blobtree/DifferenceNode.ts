@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { Vector3 } from "three";
 import { Types } from "./Types";
 import { Node } from "./Node";
 import { Material } from "./Material";
@@ -54,18 +54,18 @@ export class DifferenceNode extends Node {
         this.clamped = 0.0;
 
         // Tmp vars to speed up computation (no reallocations)
-        /** @type {{v:number, g:THREE.Vector3, m:Material}} */
-        this.tmp_res0 = { v: 0, g: new THREE.Vector3(0, 0, 0), m: new Material() };
+        /** @type {{v:number, g:Vector3, m:Material}} */
+        this.tmp_res0 = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
 
-        /** @type {{v:number, g:THREE.Vector3, m:Material}} */
-        this.tmp_res1 = { v: 0, g: new THREE.Vector3(0, 0, 0), m: new Material() };
+        /** @type {{v:number, g:Vector3, m:Material}} */
+        this.tmp_res1 = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
 
-        /** @type {THREE.Vector3} */
-        this.g0 = new THREE.Vector3();
+        /** @type {Vector3} */
+        this.g0 = new Vector3();
         /** @type {Material} */
         this.m0 = new Material();
-        /** @type {THREE.Vector3} */
-        this.g1 = new THREE.Vector3();
+        /** @type {Vector3} */
+        this.g1 = new Vector3();
         /** @type {Material} */
         this.m1 = new Material();
 
@@ -124,12 +124,12 @@ export class DifferenceNode extends Node {
      *  Compute the value and/or gradient and/or material
      *  of the element at position p in space. return computations in res (see below)
      *
-     *  @param {THREE.Vector3} p Point where we want to evaluate the primitive field
+     *  @param {Vector3} p Point where we want to evaluate the primitive field
      *  @param {Object} res Computed values will be stored here. Each values should exist and
      *                       be allocated already.
      *  @param {number} res.v Value, must be defined
      *  @param {Material} res.m Material, must be allocated and defined if wanted
-     *  @param {THREE.Vector3} res.g Gradient, must be allocated and defined if wanted
+     *  @param {Vector3} res.g Gradient, must be allocated and defined if wanted
      *  @param {number=} res.step The next step we can safely walk without missing the iso (0). Mostly used for convergence function or ray marching.
      *  @param {number=} res.stepOrtho
      */
@@ -209,7 +209,7 @@ export class DifferenceNode extends Node {
      *
      *  Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
      *
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      *  @param {Array.<Element>} trimmed
      *  @param {Array.<Node>} parents
      */

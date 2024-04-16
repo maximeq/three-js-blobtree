@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { Vector3, Matrix4, Box3 } from "three"
 import { Types } from "./Types";
 import { Node } from "./Node";
 import { Material } from "./Material";
@@ -38,17 +38,17 @@ export class TwistNode extends Node {
         }
 
         // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:THREE.Vector3, m:Material}} */
+        /** @type {{v:number, g:Vector3, m:Material}} */
         this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {THREE.Vector3} */
-        this.tmp_g = new THREE.Vector3();
+        /** @type {Vector3} */
+        this.tmp_g = new Vector3();
         /** @type {Material} */
         this.tmp_m = new Material();
 
         this._twist_amout = 1.0;
-        this._twist_axis = new THREE.Vector3(0.0, 1.0, 0.0);
-        this._twist_axis_mat = new THREE.Matrix4();
-        this._twist_axis_mat_inv = new THREE.Matrix4();
+        this._twist_axis = new Vector3(0.0, 1.0, 0.0);
+        this._twist_axis_mat = new Matrix4();
+        this._twist_axis_mat_inv = new Matrix4();
 
     }
 
@@ -78,7 +78,7 @@ export class TwistNode extends Node {
     static fromJSON(json) {
         var res = new TwistNode();
         res.setTwistAmount(json.twist_amout);
-        res.setTwistAxis(new THREE.Vector3(json.axis_x
+        res.setTwistAxis(new Vector3(json.axis_x
             , json.axis_y
             , json.axis_z));
         for (var i = 0; i < json.children.length; ++i) {
@@ -97,10 +97,10 @@ export class TwistNode extends Node {
     }
 
     _computeTransforms() {
-        let r_angle = Math.acos(this._twist_axis.dot(new THREE.Vector3(0, 1, 0)));
+        let r_angle = Math.acos(this._twist_axis.dot(new Vector3(0, 1, 0)));
         if (Math.abs(r_angle) > 0.0001) {
             let t_axis = this._twist_axis.clone();
-            let rot_axis = t_axis.cross(new THREE.Vector3(0, 1, 0));
+            let rot_axis = t_axis.cross(new Vector3(0, 1, 0));
             rot_axis.normalize();
             this._twist_axis_mat.makeRotationAxis(rot_axis, r_angle);
         }
@@ -120,7 +120,7 @@ export class TwistNode extends Node {
      */
     prepareForEval() {
         if (!this.valid_aabb) {
-            this.aabb = new THREE.Box3();  // Create empty BBox
+            this.aabb = new Box3();  // Create empty BBox
             for (var i = 0; i < this.children.length; ++i) {
                 var c = this.children[i];
                 c.prepareForEval();
@@ -134,7 +134,7 @@ export class TwistNode extends Node {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p, res) {
@@ -163,11 +163,11 @@ export class TwistNode extends Node {
         if (this.aabb.containsPoint(p) && l !== 0) {
 
 
-            let center = new THREE.Vector3();
+            let center = new Vector3();
             this.aabb.getCenter(center);
 
             //Center the input point
-            let t_p = new THREE.Vector3(p.x - center.x
+            let t_p = new Vector3(p.x - center.x
                 , p.y - center.y
                 , p.z - center.z);
 
@@ -179,13 +179,13 @@ export class TwistNode extends Node {
             let s_twist = Math.sin(this._twist_amout * t_p.y);
 
             //Revert to world space
-            let q = new THREE.Vector3(c_twist * t_p.x - s_twist * t_p.z,
+            let q = new Vector3(c_twist * t_p.x - s_twist * t_p.z,
                 t_p.y,
                 s_twist * t_p.x + c_twist * t_p.z);
 
             q.applyMatrix4(this._twist_axis_mat_inv);
 
-            let t_q = new THREE.Vector3(q.x + center.x
+            let t_q = new Vector3(q.x + center.x
                 , q.y + center.y
                 , q.z + center.z);
 
@@ -214,7 +214,7 @@ export class TwistNode extends Node {
     /**
      *  @link Element.trim for a complete description.
      *
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      *  @param {Array<Element>} trimmed
      *  @param {Array<Node>} parents
      */

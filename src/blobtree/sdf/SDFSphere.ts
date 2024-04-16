@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { Vector3, Box3 } from "three"
 import { Types } from "../Types.js";
 import { SDFPrimitive } from "./SDFPrimitive.js";
 import { AreaSphere } from "../areas/AreaSphere.js";
@@ -15,7 +15,7 @@ import { AreaSphere } from "../areas/AreaSphere.js";
  *  @constructor
  *  @extends SDFPrimitive
  *
- *  @param {THREE.Vector3} p Position (ie center) of the sphere
+ *  @param {Vector3} p Position (ie center) of the sphere
  *  @param {number} r Radius of the sphere
  */
 export class SDFSphere extends SDFPrimitive {
@@ -27,12 +27,12 @@ export class SDFSphere extends SDFPrimitive {
      * @returns
      */
     static fromJSON(json) {
-        return new SDFSphere(new THREE.Vector3(json.p.x, json.p.y, json.p.z), json.r);
+        return new SDFSphere(new Vector3(json.p.x, json.p.y, json.p.z), json.r);
     };
 
     /**
      *
-     * @param {THREE.Vector3} p
+     * @param {Vector3} p
      * @param {number} r The radius of the sphere
      */
     constructor(p, r) {
@@ -78,7 +78,7 @@ export class SDFSphere extends SDFPrimitive {
     };
 
     /**
-     *  @param {THREE.Vector3} p The new position (ie center)
+     *  @param {Vector3} p The new position (ie center)
      */
     setPosition(p) {
         this.p.copy(p);
@@ -86,7 +86,7 @@ export class SDFSphere extends SDFPrimitive {
     };
 
     /**
-     *  @return {THREE.Vector3} Current position (ie center)
+     *  @return {Vector3} Current position (ie center)
      */
     getPosition() {
         return this.p;
@@ -94,9 +94,9 @@ export class SDFSphere extends SDFPrimitive {
 
     // [Abstract]
     computeDistanceAABB(d) {
-        return new THREE.Box3(
-            this.p.clone().add(new THREE.Vector3(-this.r - d, -this.r - d, -this.r - d)),
-            this.p.clone().add(new THREE.Vector3(this.r + d, this.r + d, this.r + d))
+        return new Box3(
+            this.p.clone().add(new Vector3(-this.r - d, -this.r - d, -this.r - d)),
+            this.p.clone().add(new Vector3(this.r + d, this.r + d, this.r + d))
         );
     };
 
@@ -130,13 +130,13 @@ export class SDFSphere extends SDFPrimitive {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value = (function () {
-        var v = new THREE.Vector3();
+        var v = new Vector3();
         /**
-         *  @param {THREE.Vector3} p
+         *  @param {Vector3} p
          *  @param {ValueResultType} res
          */
         return function (p, res) {

@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { Vector3 } from "three"
 import { Types } from "../Types.js";
 import { Material } from "../Material.js";
 import { ScalisPrimitive } from "./ScalisPrimitive.js";
@@ -57,7 +57,7 @@ export class ScalisPoint extends ScalisPrimitive {
 
         // Temporary for eval
         // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
-        this.v_to_p = new THREE.Vector3();
+        this.v_to_p = new Vector3();
     }
 
     getType() {
@@ -138,7 +138,7 @@ export class ScalisPoint extends ScalisPrimitive {
     /**
      *  @link Element.value
      *
-     *  @param {THREE.Vector3} p Point where we want to evaluate the primitive field
+     *  @param {Vector3} p Point where we want to evaluate the primitive field
      *  @param {ValueResultType} res
      */
     value(p, res) {
@@ -173,7 +173,7 @@ export class ScalisPoint extends ScalisPrimitive {
     }
 
     /**
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @return {number}
      */
     distanceTo(p) {

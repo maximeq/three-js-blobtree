@@ -33,14 +33,14 @@ export declare class MinNode extends Node {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p: any, res: any): void;
     /**
      *  @link Element.trim for a complete description.
      *
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      *  @param {Array<Element>} trimmed
      *  @param {Array<Node>} parents
      */

@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { BufferGeometry } from "three";
 /**
 *  @typedef {Object} SMCParams Parameters and option for this polygonizer.
 *  @property {string=} zResolution Defines how the stepping in z occurs. Options are :
@@ -33,7 +33,7 @@ export declare class SlidingMarchingCubes {
      *  used in compute function.
      *  @private
      */
-    buildResultingBufferGeometry(): THREE.BufferGeometry;
+    buildResultingBufferGeometry(): BufferGeometry;
     /**
      *  Set values in this.values_xy[1] to 0
      *  @private
@@ -88,8 +88,8 @@ export declare class SlidingMarchingCubes {
      *  @param {number} cx X coordinate of the front buffer corner
      *  @param {number} cy Y coordinate of the front buffer corner
      *  @param {number} cz Z coordinate of the front buffer corner
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      */
     computeFrontValAtBoxCorners(cx: any, cy: any, cz: any, min: any, max: any): void;
     /**
@@ -97,28 +97,28 @@ export declare class SlidingMarchingCubes {
      *  @param {number} cx X coordinate of the front buffer corner
      *  @param {number} cy Y coordinate of the front buffer corner
      *  @param {number} cz Z coordinate of the front buffer corner
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      */
     computeFrontValInBox(cx: any, cy: any, cz: any, min: any, max: any): void;
     /**
      *  Set all values in 2D box min,max at 0.
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      */
     setFrontValZeroInBox(min: any, max: any): void;
     /**
      *  Compute 2D mask of a given 2D box. Mask is an hex integer unique for each
      *  combination of iso value crossing (like in 3D marching cubes, but in 2D).
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      *  @return {number} The mask
      */
     computeBoxMask(min: any, max: any): number;
     /**
      *  Return 0 if and only if all coners value of 2D box min,max are 0
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      *  @return {number}
      */
     checkZeroBox(min: any, max: any): any;
@@ -144,31 +144,31 @@ export declare class SlidingMarchingCubes {
     computeFrontValues(cx: any, cy: any, cz: any): void;
     /**
      *   get the min accuracy needed for this zone
-     *   @param {THREE.Box3} bbox the zone for which we want the minAcc
+     *   @param {Box3} bbox the zone for which we want the minAcc
      *   @return {number} the min acc for this zone
      */
     getMinAcc(bbox: any): number;
     /**
      *   get the max accuracy needed for this zone
-     *   @param {THREE.Box3} bbox the zone for which we want the minAcc
+     *   @param {Box3} bbox the zone for which we want the minAcc
      *   @return {number} the max acc for this zone
      */
     getMaxAcc(bbox: any): number;
     /**
      *  Note : returned mesh data will be accurate only if extened AABB difference
      *  with o_aabb is small. compared to o_aabb size.
-     *  @param {THREE.Box3} o_aabb The aabb where to compute the surface, if null, the blobtree AABB will be used
+     *  @param {Box3} o_aabb The aabb where to compute the surface, if null, the blobtree AABB will be used
      *  @param {boolean=} extended True if we want the agorithm to extend the computation zone
      *                            to ensure overlap with a mesh resulting from a computation
      *                            in a neighbouring aabb (Especially usefull for parallelism).
      */
-    compute(o_aabb: any, extended: any): THREE.BufferGeometry;
+    compute(o_aabb: any, extended: any): BufferGeometry;
     /**
      *  Check values for cube at x, y. Ie get values front front and back arrays,
      *  compute marching cube mask, build the resulting vertex and faces if necessary.
      *  @param {number} x
      *  @param {number} y
-     *  @param {THREE.Vector3} corner Bottom left corner of front array.
+     *  @param {Vector3} corner Bottom left corner of front array.
      */
     fetchAndTriangulate(x: any, y: any, z: any, corner: any): void;
     /**

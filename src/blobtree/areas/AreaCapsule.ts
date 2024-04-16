@@ -1,4 +1,4 @@
-import THREE from "three";
+import { Vector3 } from "three"
 import { Area } from "./Area.js";
 import { Accuracies } from "../accuracies/Accuracies.js";
 
@@ -16,8 +16,8 @@ export class AreaCapsule extends Area {
 
     /**
      *
-     *  @param {!THREE.Vector3} p1     First point of the shape
-     *  @param {!THREE.Vector3} p2     Second point of the shape
+     *  @param {!Vector3} p1     First point of the shape
+     *  @param {!Vector3} p2     Second point of the shape
      *  @param {number}  r1 radius at p1
      *  @param {number}  r2 radius at p2
      *  @param {number}  accFactor1 Apply an accuracy factor to the standard one, around p1. Default to 1.
@@ -34,12 +34,12 @@ export class AreaCapsule extends Area {
         this.accFactor1 = accFactor1 || 1.0;
         this.accFactor2 = accFactor2 || 1.0;
 
-        this.unit_dir = new THREE.Vector3().subVectors(p2, p1);
+        this.unit_dir = new Vector3().subVectors(p2, p1);
         this.length = this.unit_dir.length();
         this.unit_dir.normalize();
 
         // tmp var for functions below
-        this.vector = new THREE.Vector3();
+        this.vector = new Vector3();
         this.p1_to_p = this.vector; // basically the same as above + smart name
         this.p1_to_p_sqrnorm = 0;
         this.x_p_2D = 0;
@@ -55,7 +55,7 @@ export class AreaCapsule extends Area {
 
     /**
      * Compute some of the tmp variables.Used to factorized other functions code.
-     * @param { !THREE.Vector3 } p A point as a THREE.Vector3
+     * @param { !Vector3 } p A point as a Vector3
      *
      * @protected
      */
@@ -108,7 +108,7 @@ export class AreaCapsule extends Area {
 
     /**
      * @link Area.contains for a complete description
-     * @param {THREE.Vector3} p
+     * @param {Vector3} p
      */
     contains(p) {
         this.proj_computation(p);
@@ -141,7 +141,7 @@ export class AreaCapsule extends Area {
      *
      *  @return {number} the accuracy needed in the intersection zone
      *
-     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @param {number}  factor  the ratio to determine the wanted accuracy.
      *
      *  @todo Check the Maths
@@ -177,7 +177,7 @@ export class AreaCapsule extends Area {
 
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
     getNiceAcc(sphere) {
@@ -186,7 +186,7 @@ export class AreaCapsule extends Area {
 
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Curr accuracy needed in the intersection zone
      */
     getCurrAcc(sphere) {
@@ -195,7 +195,7 @@ export class AreaCapsule extends Area {
 
     /**
      *  @link Area.getRawAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
     getRawAcc(sphere) {

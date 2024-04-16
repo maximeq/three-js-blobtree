@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { Vector3, Box3 } from "three"
 import { Types } from "../Types";
 import { Element } from "../Element";
 
@@ -24,8 +24,8 @@ export class SDFPrimitive extends Element {
         super();
         // Default bounding box for a SDF is infinite.
         this.aabb.set(
-            new THREE.Vector3(- Infinity, - Infinity, - Infinity),
-            new THREE.Vector3(+ Infinity, + Infinity, + Infinity)
+            new Vector3(- Infinity, - Infinity, - Infinity),
+            new Vector3(+ Infinity, + Infinity, + Infinity)
         );
     }
 
@@ -48,15 +48,15 @@ export class SDFPrimitive extends Element {
      * Ie, the distance field is greater than d everywhere outside the returned box.
      * @param {number} _d Distance
      * @abstract
-     * @return {THREE.Box3}
+     * @return {Box3}
      */
     computeDistanceAABB(_d) {
         console.error("computeDistanceAABB is an abstract function of SDFPrimitive. Please reimplement it in children classes.");
-        return (new THREE.Box3()).makeEmpty()
+        return (new Box3()).makeEmpty()
     }
 
     /**
-     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
+     * @returns {Array.<{aabb: Box3, bv:Area, obj:Primitive}>}
      */
     getAreas() {
         throw "No Areas for SDFPrimitive.";
@@ -64,7 +64,7 @@ export class SDFPrimitive extends Element {
 
     /**
      * @param {number} _d Distance to consider for the area computation.
-     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:SDFPrimitive}>}
+     * @returns {Array.<{aabb: Box3, bv:Area, obj:SDFPrimitive}>}
      */
     getDistanceAreas(_d) {
         console.error("getDistanceAreas is an abstract function of SDFPrimitive. Please reimplement in children classes");
@@ -76,12 +76,12 @@ export class SDFPrimitive extends Element {
      * an accurate distance to the surface.
      * @abstract
      *
-     * @param {THREE.Vector3} p
+     * @param {Vector3} p
      */
     distanceTo = (function () {
         var res = { v: 0 };
         /**
-         * @param {THREE.Vector3} p
+         * @param {Vector3} p
          */
         return (p) => {
             /** @type {SDFPrimitive} */

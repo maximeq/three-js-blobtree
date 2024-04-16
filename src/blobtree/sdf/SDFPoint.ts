@@ -1,4 +1,4 @@
-import THREE from "three";
+import { Vector3, Box3 } from "three"
 import { Types } from "../Types.js";
 import { SDFPrimitive } from "./SDFPrimitive.js";
 import { AreaSphere } from "../areas/AreaSphere.js";
@@ -26,12 +26,12 @@ export class SDFPoint extends SDFPrimitive {
      * @returns {SDFPoint}
      */
     static fromJSON(json) {
-        return new SDFPoint(new THREE.Vector3(json.p.x, json.p.y, json.p.z), json.acc);
+        return new SDFPoint(new Vector3(json.p.x, json.p.y, json.p.z), json.acc);
     };
 
     /**
      *
-     *  @param {THREE.Vector3} p Position (ie center) of the point
+     *  @param {Vector3} p Position (ie center) of the point
      *  @param {number} acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
      */
     constructor(p, acc) {
@@ -77,7 +77,7 @@ export class SDFPoint extends SDFPrimitive {
     };
 
     /**
-     *  @param {THREE.Vector3} p The new position (ie center)
+     *  @param {Vector3} p The new position (ie center)
      */
     setPosition(p) {
         this.p.copy(p);
@@ -85,7 +85,7 @@ export class SDFPoint extends SDFPrimitive {
     };
 
     /**
-     *  @return {THREE.Vector3} Current position (ie center)
+     *  @return {Vector3} Current position (ie center)
      */
     getPosition() {
         return this.p;
@@ -93,9 +93,9 @@ export class SDFPoint extends SDFPrimitive {
 
     // [Abstract]
     computeDistanceAABB(d) {
-        return new THREE.Box3(
-            this.p.clone().add(new THREE.Vector3(-d, -d, -d)),
-            this.p.clone().add(new THREE.Vector3(d, d, d))
+        return new Box3(
+            this.p.clone().add(new Vector3(-d, -d, -d)),
+            this.p.clone().add(new Vector3(d, d, d))
         );
     };
     // [Abstract]
@@ -108,7 +108,7 @@ export class SDFPoint extends SDFPrimitive {
     /**
      * @link SDFPrimitive.getDistanceAreas
      * @param {number} d Distance to consider for the area computation.
-     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:SDFPrimitive}>}
+     * @returns {Array.<{aabb: Box3, bv:Area, obj:SDFPrimitive}>}
      */
     getDistanceAreas(d) {
         if (!this.valid_aabb) {
@@ -129,11 +129,11 @@ export class SDFPoint extends SDFPrimitive {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value = (function () {
-        var v = new THREE.Vector3();
+        var v = new Vector3();
 
         return function (p, res) {
             if (!this.valid_aabb) {

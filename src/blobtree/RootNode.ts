@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { Vector3 } from "three";
 import { Types } from "./Types"
 import { RicciNode } from "./RicciNode.js";
 import { Convergence } from "../utils/Convergence"
@@ -18,8 +18,8 @@ import { Convergence } from "../utils/Convergence"
 /**
  * @typedef {Object} IntersectionResult The result of the intersection
  * @property {number=} distance distance from ray.origin to intersection point,
- * @property {THREE.Vector3} point: intersection point,
- * @property {THREE.Vector3} g: gradient at intersection, if required.
+ * @property {Vector3} point: intersection point,
+ * @property {Vector3} g: gradient at intersection, if required.
  */
 
 /**
@@ -113,7 +113,7 @@ export class RootNode extends RicciNode {
      *  Basically perform a trim but keep track of trimmed elements.
      *  This is usefull if you want to trim, then untrim, then trim, etc...
      *  For example, this is very useful for evaluation optim
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      */
     internalTrim(aabb) {
         if (!(this.trimmed.length === 0 && this.trim_parents.length === 0)) {
@@ -125,7 +125,7 @@ export class RootNode extends RicciNode {
     /**
      *  Wrapper for trim, will help programmers to make the difference between
      *  internal and external trim.
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      *  @param {Array.<Element>} trimmed Array of trimmed Elements
      *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
      */
@@ -167,19 +167,19 @@ export class RootNode extends RicciNode {
 
 
     intersectRayBlob = function () {
-        var curPos = new THREE.Vector3();
-        var marchingVector = new THREE.Vector3();
-        var currentStep = new THREE.Vector3();
+        var curPos = new Vector3();
+        var marchingVector = new Vector3();
+        var currentStep = new Vector3();
 
         /** @type {ValueResultType} */
         var tmp_res = {
             v: 0,
-            g: new THREE.Vector3(),
+            g: new Vector3(),
             step: 0
         };
         var conv_res = {
-            p: new THREE.Vector3(),
-            g: new THREE.Vector3(),
+            p: new Vector3(),
+            g: new Vector3(),
             p_absc: 0.0
         };
         var previousStepLength = 0;
@@ -187,7 +187,7 @@ export class RootNode extends RicciNode {
         var dist = 0;
         /**
          * @this RootNode
-         *  @param {!THREE.Ray} ray Ray to cast for which intersection is seeked.
+         *  @param {!Ray} ray Ray to cast for which intersection is seeked.
          *
          *  @param {IntersectionResult} res
          *  @param {number} maxDistance If the intersection is not located at a distance
@@ -276,14 +276,14 @@ export class RootNode extends RicciNode {
     intersectOrthoRayBlob = function () {
         // curpos and marching vector are only instanciated once,
         // we are using closure method
-        var curPos = new THREE.Vector3();
-        var resumePos = new THREE.Vector3();
+        var curPos = new Vector3();
+        var resumePos = new Vector3();
         /** @type {ValueResultType} */
         var tmp_res = {
             v: 0,
             step: 0
         };
-        var g = new THREE.Vector3();
+        var g = new Vector3();
         /** @type {ValueResultType} */
         var dicho_res = {
             v: 0

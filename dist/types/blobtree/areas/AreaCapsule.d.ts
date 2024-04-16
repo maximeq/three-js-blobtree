@@ -11,8 +11,8 @@ import { Area } from "./Area.js";
 export declare class AreaCapsule extends Area {
     /**
      *
-     *  @param {!THREE.Vector3} p1     First point of the shape
-     *  @param {!THREE.Vector3} p2     Second point of the shape
+     *  @param {!Vector3} p1     First point of the shape
+     *  @param {!Vector3} p2     Second point of the shape
      *  @param {number}  r1 radius at p1
      *  @param {number}  r2 radius at p2
      *  @param {number}  accFactor1 Apply an accuracy factor to the standard one, around p1. Default to 1.
@@ -22,7 +22,7 @@ export declare class AreaCapsule extends Area {
     constructor(p1: any, p2: any, r1: any, r2: any, accFactor1: any, accFactor2: any);
     /**
      * Compute some of the tmp variables.Used to factorized other functions code.
-     * @param { !THREE.Vector3 } p A point as a THREE.Vector3
+     * @param { !Vector3 } p A point as a Vector3
      *
      * @protected
      */
@@ -36,7 +36,7 @@ export declare class AreaCapsule extends Area {
     sphereIntersect(sphere: any): boolean;
     /**
      * @link Area.contains for a complete description
-     * @param {THREE.Vector3} p
+     * @param {Vector3} p
      */
     contains(p: any): boolean;
     /**
@@ -44,7 +44,7 @@ export declare class AreaCapsule extends Area {
      *
      *  @return {number} the accuracy needed in the intersection zone
      *
-     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @param {number}  factor  the ratio to determine the wanted accuracy.
      *
      *  @todo Check the Maths
@@ -52,19 +52,19 @@ export declare class AreaCapsule extends Area {
     getAcc(sphere: any, factor: any): number;
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
     getNiceAcc(sphere: any): number;
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Curr accuracy needed in the intersection zone
      */
     getCurrAcc(sphere: any): number;
     /**
      *  @link Area.getRawAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
     getRawAcc(sphere: any): number;

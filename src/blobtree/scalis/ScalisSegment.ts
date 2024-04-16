@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { Vector3 } from "three"
 import { Types } from "../Types.js";
 import { Material } from "../Material.js";
 import { ScalisPrimitive } from "./ScalisPrimitive.js";
@@ -66,24 +66,24 @@ export class ScalisSegment extends ScalisPrimitive {
         // CONVOL
         this.clipped_l1 = 1.0;
         this.clipped_l2 = 0.0;
-        this.vector = new THREE.Vector3();
-        this.cycle = new THREE.Vector3();
-        this.proj = new THREE.Vector3();
+        this.vector = new Vector3();
+        this.cycle = new Vector3();
+        this.proj = new Vector3();
         // helper attributes
         this.v0_p = this.v[0].getPos();
         this.v1_p = this.v[1].getPos(); // this one is probably useless to be kept for eval since not used....
-        this.dir = new THREE.Vector3();
+        this.dir = new Vector3();
         this.lengthSq = 0;
         this.length = 0;
-        this.unit_dir = new THREE.Vector3();
+        this.unit_dir = new Vector3();
         // weight_p1 is convol's weight_p2 ( >_< )
         this.weight_p1 = 0;
         // c0 and c1 are convol's weight_coeff
         this.c0 = 0;
         this.c1 = 0;
 
-        this.increase_unit_dir = new THREE.Vector3();
-        this.p_min = new THREE.Vector3();
+        this.increase_unit_dir = new Vector3();
+        this.p_min = new Vector3();
         this.weight_min = 0;
         this.inv_weight_min = 0;
         this.unit_delta_weight = 0;
@@ -92,10 +92,10 @@ export class ScalisSegment extends ScalisPrimitive {
         this.maxboundSq = 0;
         this.cyl_bd0 = 0;
         this.cyl_bd1 = 0;
-        this.f0f1f2 = new THREE.Vector3();
+        this.f0f1f2 = new Vector3();
 
-        this.tmpVec1 = new THREE.Vector3();
-        this.tmpVec2 = new THREE.Vector3();
+        this.tmpVec1 = new Vector3();
+        this.tmpVec2 = new Vector3();
 
         this.computeHelpVariables();
     }
@@ -166,8 +166,8 @@ export class ScalisSegment extends ScalisPrimitive {
         } else {
             return [{
                 aabb: this.aabb,
-                //new THREE.Box3(-256, -256, -256, 256,256,256),
-                //new THREE.Box3(this.aabb.min_x-min_thick,this.aabb.min_y-min_thick,this.aabb.min_z-min_thick,
+                //new Box3(-256, -256, -256, 256,256,256),
+                //new Box3(this.aabb.min_x-min_thick,this.aabb.min_y-min_thick,this.aabb.min_z-min_thick,
                 //this.aabb.max_x+min_thick,this.aabb.max_y+min_thick,this.aabb.max_z+min_thick),
                 bv: new AreaScalisSeg(
                     this.v[0].getPos(),
@@ -251,7 +251,7 @@ export class ScalisSegment extends ScalisPrimitive {
      */
     evalDist = (function () {
         var ev_eps = { v: 0 };
-        var p_eps = new THREE.Vector3();
+        var p_eps = new Vector3();
         return function (p, res) {
 
             var p0_to_p = this.vector;
@@ -313,7 +313,7 @@ export class ScalisSegment extends ScalisPrimitive {
 
     /**
      *
-     * @param {THREE.Vector3} p Evaluation point
+     * @param {Vector3} p Evaluation point
      * @param {Object} res Resulting material will be in res.m
      */
     evalMat(p, res) {
@@ -339,7 +339,7 @@ export class ScalisSegment extends ScalisPrimitive {
     };
 
     /**
-     *  @param {!THREE.Vector3} w special_coeff
+     *  @param {!Vector3} w special_coeff
      *  @return {boolean}
      */
     HomotheticClippingSpecial(w) {
@@ -464,8 +464,8 @@ export class ScalisSegment extends ScalisPrimitive {
 
     // [Abstract] see ScalisPrimitive.distanceTo
     distanceTo = (function () {
-        var tmpVector = new THREE.Vector3();
-        var tmpVectorProj = new THREE.Vector3();
+        var tmpVector = new Vector3();
+        var tmpVectorProj = new Vector3();
         return function (p) {
             /** @type {ScalisSegment} */
             let self = this;

@@ -1,5 +1,4 @@
-import * as THREE from 'three';
-import THREE__default, { Vector3, Matrix4, Box2 } from 'three';
+import { Box3, Color, Vector3, Matrix4, MathUtils, Line3, BufferGeometry, BufferAttribute, Vector2, Box2 } from 'three';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 /**
@@ -50,7 +49,7 @@ const Types = {
  *                    be allocated already.
  * @property {number} v Value, must be defined
  * @property {Material=} m Material, must be allocated and defined if wanted
- * @property {THREE.Vector3=} g Gradient, must be allocated and defined if wanted
+ * @property {Vector3=} g Gradient, must be allocated and defined if wanted
  * @property {number=} step ??? Not sure, probably a "safe" step for raymarching
  * @property {number=} stepOrtho ??? Same as step but in orthogonal direction ?
  */
@@ -70,7 +69,7 @@ class Element {
     }
     constructor() {
         this.id = elementIds++;
-        this.aabb = new THREE.Box3();
+        this.aabb = new Box3();
         this.valid_aabb = false;
         /** @type {Node} */
         this.parentNode = null;
@@ -122,7 +121,7 @@ class Element {
         throw "Error : computeAABB is abstract, should have been overwritten";
     }
     /**
-     *  @return {THREE.Box3} The AABB of this Element (primitive or node). WARNING : call
+     *  @return {Box3} The AABB of this Element (primitive or node). WARNING : call
      *  isValidAABB before to ensure the current AABB does correspond to the primitive
      *  settings.
      */
@@ -170,7 +169,7 @@ class Element {
      *  Compute the value and/or gradient and/or material
      *  of the element at position p in space. return computations in res (see below)
      *
-     *  @param {THREE.Vector3} _p Point where we want to evaluate the primitive field
+     *  @param {Vector3} _p Point where we want to evaluate the primitive field
      *  @param {ValueResultType} _res
      */
     value(_p, _res) {
@@ -178,16 +177,16 @@ class Element {
     }
     ;
     /**
-     * @param {THREE.Vector3} p The point where we want the numerical gradient
-     * @param {THREE.Vector3} res The resulting gradient
+     * @param {Vector3} p The point where we want the numerical gradient
+     * @param {Vector3} res The resulting gradient
      * @param {number} epsilon The step value for the numerical evaluation
      */
     numericalGradient = (function () {
         let tmp = { v: 0 };
         let coord = ['x', 'y', 'z'];
         /**
-         * @param {THREE.Vector3} p
-         * @param {THREE.Vector3} res
+         * @param {Vector3} p
+         * @param {Vector3} res
          * @param {number} epsilon
          */
         return function (p, res, epsilon) {
@@ -211,7 +210,7 @@ class Element {
      *  Area objects do provide methods useful when rasterizing, raytracing or polygonizing
      *  the area (intersections with other areas, minimum level of detail needed to
      *  capture the feature nicely, etc etc...).
-     *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>} The Areas object corresponding to the node/primitive, in an array
+     *  @returns {Array.<{aabb: Box3, bv:Area, obj:Primitive}>} The Areas object corresponding to the node/primitive, in an array
      */
     getAreas() {
         return [];
@@ -219,7 +218,7 @@ class Element {
     /**
      *  @abstract
      *  This function is called when a point is outside of the potential influence of a primitive/node.
-     *  @param {THREE.Vector3} _p
+     *  @param {Vector3} _p
      *  @return {number} The next step length to do with respect to this primitive/node
      */
     distanceTo(_p) {
@@ -240,7 +239,7 @@ class Element {
      *  Default behaviour is doing nothing, leaves cannot be sub-trimmed, only nodes.
      *  Note : only the root can untrim
      *
-     *  @param {THREE.Box3} _aabb
+     *  @param {Box3} _aabb
      *  @param {Array.<Element>} _trimmed Array of trimmed Elements
      *  @param {Array.<Node>} _parents Array of fathers from which each trimmed element has been removed.
      */
@@ -505,7 +504,7 @@ Types.register(Node.type, Node);
  *
  *  @param {!Object} params Parameters for the material. As a dictionary to be easily extended later.
  *
- *  @param {THREE.Color?}   params.color        Base diffuse color for the material.
+ *  @param {Color?}   params.color        Base diffuse color for the material.
  *                                              Defaults to #aaaaaa
  *
  *  @param {number?}        params.roughness    Roughness for the material.
@@ -514,7 +513,7 @@ Types.register(Node.type, Node);
  *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
  *                                              Defaults to 0.
  *
- *  @param {THREE.Color?} params.emissive       Emissive color for the material.
+ *  @param {Color?} params.emissive       Emissive color for the material.
  *                                              Defaults to pitch black. (no light emission)
  */
 class Material {
@@ -561,7 +560,7 @@ class Material {
     ;
     static fromJSON(json) {
         return new Material({
-            color: new THREE.Color(json.color),
+            color: new Color(json.color),
             roughness: json.roughness,
             metalness: json.metalness,
             emissive: json.emissive, // If undefined, will default to pitch black. If not, will load the hex string.
@@ -572,23 +571,23 @@ class Material {
     *
     *  @param { !Object } params Parameters for the material.As a dictionary to be easily extended later.
     *
-    *  @param { THREE.Color ?} params.color Base diffuse color for the material. Defaults to #aaaaaa
+    *  @param { Color ?} params.color Base diffuse color for the material. Defaults to #aaaaaa
     *
     *  @param { number ?} params.roughness Roughness for the material. Defaults to 0.
     *
     *  @param { number ?} params.metalness Metalness aspect of the material, 1 for metalness, 0 for dielectric. Defaults to 0.
     *
-    *  @param { THREE.Color ?} params.emissive Emissive color for the material. Defaults to pitch black. (no light emission)
+    *  @param { Color ?} params.emissive Emissive color for the material. Defaults to pitch black. (no light emission)
     */
     constructor(params) {
         params = params || {};
         if (arguments[1] !== undefined) {
             throw "Error : Blobtree Material now takes only 1 argument.";
         }
-        this.color = new THREE.Color(params.color !== undefined ? params.color : 0xaaaaaa);
+        this.color = new Color(params.color !== undefined ? params.color : 0xaaaaaa);
         this.roughness = params.roughness !== undefined ? params.roughness : 0;
         this.metalness = params.metalness !== undefined ? params.metalness : 0;
-        this.emissive = new THREE.Color(params.emissive !== undefined ? params.emissive : 0x000000);
+        this.emissive = new Color(params.emissive !== undefined ? params.emissive : 0x000000);
     }
     toJSON() {
         return {
@@ -623,7 +622,7 @@ class Material {
     /**
      *  @deprecated Use setParams instead
      *  Set Material parameters at once. DEPRECATED. Use setParams
-     *  @param {THREE.Color!} c Color
+     *  @param {Color!} c Color
      *  @param {number!} r roughness
      *  @param {number!} m Metalness
      */
@@ -636,10 +635,10 @@ class Material {
      *  Set Material parameters (all or just some)
      *
      *  @param {Object} params Parameters for the material. As a dictionary to be easily extended later.
-     *  @param {THREE.Color?}   params.color        Base diffuse color for the material.
+     *  @param {Color?}   params.color        Base diffuse color for the material.
      *  @param {number?}        params.roughness    Roughness for the material.
      *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
-     *  @param {THREE.Color?} params.emissive       Emissive color for the material.
+     *  @param {Color?} params.emissive       Emissive color for the material.
      */
     setParams(params) {
         this.color.copy(params.color ? params.color : this.color);
@@ -647,7 +646,7 @@ class Material {
         this.metalness = params.metalness !== undefined ? params.metalness : this.metalness;
         this.emissive.copy(params.emissive !== undefined ? params.emissive : this.emissive);
     }
-    /** @return {THREE.Color} */
+    /** @return {Color} */
     getColor() { return this.color; }
     ;
     /** @return {number} */
@@ -655,7 +654,7 @@ class Material {
     ;
     /** @return {number} */
     getMetalness = function () { return this.metalness; };
-    /** @return {THREE.Color} */
+    /** @return {Color} */
     getEmissive() { return this.emissive; }
     equals(m) {
         return this.color.equals(m.color) &&
@@ -787,16 +786,16 @@ class DifferenceNode extends Node {
          */
         this.clamped = 0.0;
         // Tmp vars to speed up computation (no reallocations)
-        /** @type {{v:number, g:THREE.Vector3, m:Material}} */
-        this.tmp_res0 = { v: 0, g: new THREE.Vector3(0, 0, 0), m: new Material() };
-        /** @type {{v:number, g:THREE.Vector3, m:Material}} */
-        this.tmp_res1 = { v: 0, g: new THREE.Vector3(0, 0, 0), m: new Material() };
-        /** @type {THREE.Vector3} */
-        this.g0 = new THREE.Vector3();
+        /** @type {{v:number, g:Vector3, m:Material}} */
+        this.tmp_res0 = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
+        /** @type {{v:number, g:Vector3, m:Material}} */
+        this.tmp_res1 = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
+        /** @type {Vector3} */
+        this.g0 = new Vector3();
         /** @type {Material} */
         this.m0 = new Material();
-        /** @type {THREE.Vector3} */
-        this.g1 = new THREE.Vector3();
+        /** @type {Vector3} */
+        this.g1 = new Vector3();
         /** @type {Material} */
         this.m1 = new Material();
         /** @type {Float32Array} */
@@ -852,12 +851,12 @@ class DifferenceNode extends Node {
      *  Compute the value and/or gradient and/or material
      *  of the element at position p in space. return computations in res (see below)
      *
-     *  @param {THREE.Vector3} p Point where we want to evaluate the primitive field
+     *  @param {Vector3} p Point where we want to evaluate the primitive field
      *  @param {Object} res Computed values will be stored here. Each values should exist and
      *                       be allocated already.
      *  @param {number} res.v Value, must be defined
      *  @param {Material} res.m Material, must be allocated and defined if wanted
-     *  @param {THREE.Vector3} res.g Gradient, must be allocated and defined if wanted
+     *  @param {Vector3} res.g Gradient, must be allocated and defined if wanted
      *  @param {number=} res.step The next step we can safely walk without missing the iso (0). Mostly used for convergence function or ray marching.
      *  @param {number=} res.stepOrtho
      */
@@ -937,7 +936,7 @@ class DifferenceNode extends Node {
      *
      *  Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
      *
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      *  @param {Array.<Element>} trimmed
      *  @param {Array.<Node>} parents
      */
@@ -991,10 +990,10 @@ class MaxNode extends Node {
             });
         }
         // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:THREE.Vector3, m:Material}} */
+        /** @type {{v:number, g:Vector3, m:Material}} */
         this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {THREE.Vector3} */
-        this.tmp_g = new THREE.Vector3();
+        /** @type {Vector3} */
+        this.tmp_g = new Vector3();
         /** @type {Material} */
         this.tmp_m = new Material();
     }
@@ -1009,7 +1008,7 @@ class MaxNode extends Node {
      **/
     prepareForEval() {
         if (!this.valid_aabb) {
-            this.aabb = new THREE.Box3(); // Create empty BBox
+            this.aabb = new Box3(); // Create empty BBox
             for (var i = 0; i < this.children.length; ++i) {
                 var c = this.children[i];
                 c.prepareForEval();
@@ -1021,7 +1020,7 @@ class MaxNode extends Node {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p, res) {
@@ -1111,10 +1110,10 @@ class MinNode extends Node {
             });
         }
         // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:THREE.Vector3, m:Material}} */
+        /** @type {{v:number, g:Vector3, m:Material}} */
         this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {THREE.Vector3} */
-        this.tmp_g = new THREE.Vector3();
+        /** @type {Vector3} */
+        this.tmp_g = new Vector3();
         /** @type {Material} */
         this.tmp_m = new Material();
     }
@@ -1126,7 +1125,7 @@ class MinNode extends Node {
      */
     prepareForEval() {
         if (!this.valid_aabb) {
-            this.aabb = new THREE.Box3(); // Create empty BBox
+            this.aabb = new Box3(); // Create empty BBox
             for (var i = 0; i < this.children.length; ++i) {
                 var c = this.children[i];
                 c.prepareForEval();
@@ -1139,7 +1138,7 @@ class MinNode extends Node {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p, res) {
@@ -1189,7 +1188,7 @@ class MinNode extends Node {
     /**
      *  @link Element.trim for a complete description.
      *
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      *  @param {Array<Element>} trimmed
      *  @param {Array<Node>} parents
      */
@@ -1348,10 +1347,10 @@ class RicciNode extends Node {
         /** @type {Array<Material>} */
         this.tmp_m_arr = [];
         // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g: THREE.Vector3, m:Material}} */
+        /** @type {{v:number, g: Vector3, m:Material}} */
         this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {THREE.Vector3} */
-        this.tmp_g = new THREE.Vector3();
+        /** @type {Vector3} */
+        this.tmp_g = new Vector3();
         /** @type {Material} */
         this.tmp_m = new Material();
     }
@@ -1393,7 +1392,7 @@ class RicciNode extends Node {
      */
     prepareForEval() {
         if (!this.valid_aabb) {
-            this.aabb = new THREE.Box3(); // Create empty BBox
+            this.aabb = new Box3(); // Create empty BBox
             for (let i = 0; i < this.children.length; ++i) {
                 let c = this.children[i];
                 c.prepareForEval();
@@ -1414,7 +1413,7 @@ class RicciNode extends Node {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p, res) {
@@ -1796,8 +1795,8 @@ res // resulting point res.p and gradient res.g (if res.g defined) resulting abs
 /**
  * @typedef {Object} IntersectionResult The result of the intersection
  * @property {number=} distance distance from ray.origin to intersection point,
- * @property {THREE.Vector3} point: intersection point,
- * @property {THREE.Vector3} g: gradient at intersection, if required.
+ * @property {Vector3} point: intersection point,
+ * @property {Vector3} g: gradient at intersection, if required.
  */
 /**
  *  The root of any implicit blobtree. Does behave computationaly like a RicciNode with n = 64.
@@ -1885,7 +1884,7 @@ class RootNode extends RicciNode {
      *  Basically perform a trim but keep track of trimmed elements.
      *  This is usefull if you want to trim, then untrim, then trim, etc...
      *  For example, this is very useful for evaluation optim
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      */
     internalTrim(aabb) {
         if (!(this.trimmed.length === 0 && this.trim_parents.length === 0)) {
@@ -1897,7 +1896,7 @@ class RootNode extends RicciNode {
     /**
      *  Wrapper for trim, will help programmers to make the difference between
      *  internal and external trim.
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      *  @param {Array.<Element>} trimmed Array of trimmed Elements
      *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
      */
@@ -1937,18 +1936,18 @@ class RootNode extends RicciNode {
         return this.children.length == 0;
     };
     intersectRayBlob = function () {
-        var curPos = new THREE.Vector3();
-        var marchingVector = new THREE.Vector3();
-        var currentStep = new THREE.Vector3();
+        var curPos = new Vector3();
+        var marchingVector = new Vector3();
+        var currentStep = new Vector3();
         /** @type {ValueResultType} */
         var tmp_res = {
             v: 0,
-            g: new THREE.Vector3(),
+            g: new Vector3(),
             step: 0
         };
         var conv_res = {
-            p: new THREE.Vector3(),
-            g: new THREE.Vector3(),
+            p: new Vector3(),
+            g: new Vector3(),
             p_absc: 0.0
         };
         var previousStepLength = 0;
@@ -1956,7 +1955,7 @@ class RootNode extends RicciNode {
         var dist = 0;
         /**
          * @this RootNode
-         *  @param {!THREE.Ray} ray Ray to cast for which intersection is seeked.
+         *  @param {!Ray} ray Ray to cast for which intersection is seeked.
          *
          *  @param {IntersectionResult} res
          *  @param {number} maxDistance If the intersection is not located at a distance
@@ -2022,14 +2021,14 @@ class RootNode extends RicciNode {
     intersectOrthoRayBlob = function () {
         // curpos and marching vector are only instanciated once,
         // we are using closure method
-        var curPos = new THREE.Vector3();
-        var resumePos = new THREE.Vector3();
+        var curPos = new Vector3();
+        var resumePos = new Vector3();
         /** @type {ValueResultType} */
         var tmp_res = {
             v: 0,
             step: 0
         };
-        var g = new THREE.Vector3();
+        var g = new Vector3();
         /** @type {ValueResultType} */
         var dicho_res = {
             v: 0
@@ -2148,13 +2147,13 @@ class ScaleNode extends Node {
             });
         }
         // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:THREE.Vector3, m:Material}} */
+        /** @type {{v:number, g:Vector3, m:Material}} */
         this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {THREE.Vector3} */
-        this.tmp_g = new THREE.Vector3();
+        /** @type {Vector3} */
+        this.tmp_g = new Vector3();
         /** @type {Material} */
         this.tmp_m = new Material();
-        this._scale = new THREE.Vector3(1, 1, 1);
+        this._scale = new Vector3(1, 1, 1);
     }
     /**
     * @link Node.toJSON
@@ -2178,7 +2177,7 @@ class ScaleNode extends Node {
      */
     static fromJSON(json) {
         var res = new ScaleNode();
-        res.setScale(new THREE.Vector3(json.scale_x, json.scale_y, json.scale_z));
+        res.setScale(new Vector3(json.scale_x, json.scale_y, json.scale_z));
         for (var i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
         }
@@ -2186,7 +2185,7 @@ class ScaleNode extends Node {
     }
     /**
      * @link ScaleNode.setScale
-     * @param {THREE.Vector3} scale
+     * @param {Vector3} scale
      */
     setScale(scale) {
         this._scale.copy(scale);
@@ -2203,18 +2202,18 @@ class ScaleNode extends Node {
      */
     prepareForEval() {
         if (!this.valid_aabb) {
-            this.aabb = new THREE.Box3(); // Create empty BBox
+            this.aabb = new Box3(); // Create empty BBox
             for (var i = 0; i < this.children.length; ++i) {
                 var c = this.children[i];
                 c.prepareForEval();
                 this.aabb.union(c.getAABB()); // new aabb is computed according to remaining children aabb
             }
-            let bb_size = new THREE.Vector3();
+            let bb_size = new Vector3();
             this.aabb.clone().getSize(bb_size);
             let x_scale = bb_size.x * (this._scale.x - 1.0);
             let y_scale = bb_size.y * (this._scale.y - 1.0);
             let z_scale = bb_size.z * (this._scale.z - 1.0);
-            this.aabb.expandByVector(new THREE.Vector3(x_scale, y_scale, z_scale));
+            this.aabb.expandByVector(new Vector3(x_scale, y_scale, z_scale));
             this.valid_aabb = true;
         }
     }
@@ -2228,17 +2227,17 @@ class ScaleNode extends Node {
             this.children[i].computeAABB();
             this.aabb.union(this.children[i].getAABB());
         }
-        let bb_size = new THREE.Vector3();
+        let bb_size = new Vector3();
         this.aabb.clone().getSize(bb_size);
         let x_scale = bb_size.x * (this._scale.x - 1.0);
         let y_scale = bb_size.y * (this._scale.y - 1.0);
         let z_scale = bb_size.z * (this._scale.z - 1.0);
-        this.aabb.expandByVector(new THREE.Vector3(x_scale, y_scale, z_scale));
+        this.aabb.expandByVector(new Vector3(x_scale, y_scale, z_scale));
     }
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p, res) {
@@ -2262,9 +2261,9 @@ class ScaleNode extends Node {
             res.step = 1000000000;
         }
         if (this.aabb.containsPoint(p) && l !== 0) {
-            let center = new THREE.Vector3();
+            let center = new Vector3();
             this.aabb.getCenter(center);
-            let st_p = new THREE.Vector3((p.x - center.x) / this._scale.x + center.x, (p.y - center.y) / this._scale.y + center.y, (p.z - center.z) / this._scale.z + center.z);
+            let st_p = new Vector3((p.x - center.x) / this._scale.x + center.x, (p.y - center.y) / this._scale.y + center.y, (p.z - center.z) / this._scale.z + center.z);
             res.v = Number.MAX_VALUE;
             for (var i = 0; i < l; ++i) {
                 this.children[i].value(st_p, tmp);
@@ -2288,7 +2287,7 @@ class ScaleNode extends Node {
     /**
      *  @link Element.trim for a complete description.
      *
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      *  @param {Array<Element>} trimmed
      *  @param {Array<Node>} parents
      */
@@ -2330,16 +2329,16 @@ class TwistNode extends Node {
             });
         }
         // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:THREE.Vector3, m:Material}} */
+        /** @type {{v:number, g:Vector3, m:Material}} */
         this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {THREE.Vector3} */
-        this.tmp_g = new THREE.Vector3();
+        /** @type {Vector3} */
+        this.tmp_g = new Vector3();
         /** @type {Material} */
         this.tmp_m = new Material();
         this._twist_amout = 1.0;
-        this._twist_axis = new THREE.Vector3(0.0, 1.0, 0.0);
-        this._twist_axis_mat = new THREE.Matrix4();
-        this._twist_axis_mat_inv = new THREE.Matrix4();
+        this._twist_axis = new Vector3(0.0, 1.0, 0.0);
+        this._twist_axis_mat = new Matrix4();
+        this._twist_axis_mat_inv = new Matrix4();
     }
     /**
     * @link Node.toJSON
@@ -2365,7 +2364,7 @@ class TwistNode extends Node {
     static fromJSON(json) {
         var res = new TwistNode();
         res.setTwistAmount(json.twist_amout);
-        res.setTwistAxis(new THREE.Vector3(json.axis_x, json.axis_y, json.axis_z));
+        res.setTwistAxis(new Vector3(json.axis_x, json.axis_y, json.axis_z));
         for (var i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
         }
@@ -2379,10 +2378,10 @@ class TwistNode extends Node {
         this._computeTransforms();
     }
     _computeTransforms() {
-        let r_angle = Math.acos(this._twist_axis.dot(new THREE.Vector3(0, 1, 0)));
+        let r_angle = Math.acos(this._twist_axis.dot(new Vector3(0, 1, 0)));
         if (Math.abs(r_angle) > 0.0001) {
             let t_axis = this._twist_axis.clone();
-            let rot_axis = t_axis.cross(new THREE.Vector3(0, 1, 0));
+            let rot_axis = t_axis.cross(new Vector3(0, 1, 0));
             rot_axis.normalize();
             this._twist_axis_mat.makeRotationAxis(rot_axis, r_angle);
         }
@@ -2400,7 +2399,7 @@ class TwistNode extends Node {
      */
     prepareForEval() {
         if (!this.valid_aabb) {
-            this.aabb = new THREE.Box3(); // Create empty BBox
+            this.aabb = new Box3(); // Create empty BBox
             for (var i = 0; i < this.children.length; ++i) {
                 var c = this.children[i];
                 c.prepareForEval();
@@ -2413,7 +2412,7 @@ class TwistNode extends Node {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p, res) {
@@ -2437,19 +2436,19 @@ class TwistNode extends Node {
             res.step = 1000000000;
         }
         if (this.aabb.containsPoint(p) && l !== 0) {
-            let center = new THREE.Vector3();
+            let center = new Vector3();
             this.aabb.getCenter(center);
             //Center the input point
-            let t_p = new THREE.Vector3(p.x - center.x, p.y - center.y, p.z - center.z);
+            let t_p = new Vector3(p.x - center.x, p.y - center.y, p.z - center.z);
             //Rotate towards twist axis space
             t_p.applyMatrix4(this._twist_axis_mat);
             //Twist          
             let c_twist = Math.cos(this._twist_amout * t_p.y);
             let s_twist = Math.sin(this._twist_amout * t_p.y);
             //Revert to world space
-            let q = new THREE.Vector3(c_twist * t_p.x - s_twist * t_p.z, t_p.y, s_twist * t_p.x + c_twist * t_p.z);
+            let q = new Vector3(c_twist * t_p.x - s_twist * t_p.z, t_p.y, s_twist * t_p.x + c_twist * t_p.z);
             q.applyMatrix4(this._twist_axis_mat_inv);
-            let t_q = new THREE.Vector3(q.x + center.x, q.y + center.y, q.z + center.z);
+            let t_q = new Vector3(q.x + center.x, q.y + center.y, q.z + center.z);
             res.v = Number.MAX_VALUE;
             for (var i = 0; i < l; ++i) {
                 this.children[i].value(t_q, tmp);
@@ -2473,7 +2472,7 @@ class TwistNode extends Node {
     /**
      *  @link Element.trim for a complete description.
      *
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      *  @param {Array<Element>} trimmed
      *  @param {Array<Node>} parents
      */
@@ -2516,7 +2515,7 @@ const Accuracies = {
 /**
  * @typedef {Object} AreaSphereParam
  * @property {number} radius
- * @property {THREE.Vector3} center
+ * @property {Vector3} center
  */
 /**
  *  Bounding area for a primitive
@@ -2532,7 +2531,7 @@ class Area {
     /**
      *  @abstract
      *  Test intersection of the shape with a sphere
-     *  @param {AreaSphereParam} _sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} _sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {boolean} true if the sphere and the area intersect
      */
     sphereIntersect(_sphere) {
@@ -2541,7 +2540,7 @@ class Area {
     /**
      * @abstract
      * Test if p is in the area.
-     * @param {!THREE.Vector3} _p A point in space
+     * @param {!Vector3} _p A point in space
      * @return {boolean} true if p is in the area, false otherwise.
      */
     contains(_p) {
@@ -2552,7 +2551,7 @@ class Area {
      *  Return the minimum accuracy needed in the intersection of the sphere and the area.
      *  This function is a generic function used in both getNiceAcc and getRawAcc.
      *
-     *  @param {AreaSphereParam}  _sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  _sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @param {number}  _factor  the ratio to determine the wanted accuracy.
      *                   Example : for an AreaScalisSeg, if thick0 is 1 and thick1 is 2, a sphere
      *                      centered at (p0+p1)/2 and of radius 0.2
@@ -2569,7 +2568,7 @@ class Area {
     /**
      *  @abstract
      *  Convenience function, just call getAcc with Nice Accuracy parameters.
-     *  @param {AreaSphereParam} _sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} _sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
     getNiceAcc(_sphere) {
@@ -2578,7 +2577,7 @@ class Area {
     /**
      *  @abstract
      *  Convenience function, just call getAcc with Current Accuracy parameters.
-     *  @param {AreaSphereParam} _sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} _sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Current accuracy needed in the intersection zone
      */
     getCurrAcc(_sphere) {
@@ -2587,7 +2586,7 @@ class Area {
     /**
      *  @abstract
      *  Convenience function, just call getAcc with Raw Accuracy parameters.
-     *  @param {AreaSphereParam} _sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} _sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
     getRawAcc(_sphere) {
@@ -2634,8 +2633,8 @@ class Area {
 class AreaCapsule extends Area {
     /**
      *
-     *  @param {!THREE.Vector3} p1     First point of the shape
-     *  @param {!THREE.Vector3} p2     Second point of the shape
+     *  @param {!Vector3} p1     First point of the shape
+     *  @param {!Vector3} p2     Second point of the shape
      *  @param {number}  r1 radius at p1
      *  @param {number}  r2 radius at p2
      *  @param {number}  accFactor1 Apply an accuracy factor to the standard one, around p1. Default to 1.
@@ -2650,11 +2649,11 @@ class AreaCapsule extends Area {
         this.r2 = r2;
         this.accFactor1 = accFactor1 || 1.0;
         this.accFactor2 = accFactor2 || 1.0;
-        this.unit_dir = new THREE__default.Vector3().subVectors(p2, p1);
+        this.unit_dir = new Vector3().subVectors(p2, p1);
         this.length = this.unit_dir.length();
         this.unit_dir.normalize();
         // tmp var for functions below
-        this.vector = new THREE__default.Vector3();
+        this.vector = new Vector3();
         this.p1_to_p = this.vector; // basically the same as above + smart name
         this.p1_to_p_sqrnorm = 0;
         this.x_p_2D = 0;
@@ -2668,7 +2667,7 @@ class AreaCapsule extends Area {
     }
     /**
      * Compute some of the tmp variables.Used to factorized other functions code.
-     * @param { !THREE.Vector3 } p A point as a THREE.Vector3
+     * @param { !Vector3 } p A point as a Vector3
      *
      * @protected
      */
@@ -2720,7 +2719,7 @@ class AreaCapsule extends Area {
     }
     /**
      * @link Area.contains for a complete description
-     * @param {THREE.Vector3} p
+     * @param {Vector3} p
      */
     contains(p) {
         this.proj_computation(p);
@@ -2754,7 +2753,7 @@ class AreaCapsule extends Area {
      *
      *  @return {number} the accuracy needed in the intersection zone
      *
-     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @param {number}  factor  the ratio to determine the wanted accuracy.
      *
      *  @todo Check the Maths
@@ -2786,7 +2785,7 @@ class AreaCapsule extends Area {
     }
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
     getNiceAcc(sphere) {
@@ -2794,7 +2793,7 @@ class AreaCapsule extends Area {
     }
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Curr accuracy needed in the intersection zone
      */
     getCurrAcc(sphere) {
@@ -2802,7 +2801,7 @@ class AreaCapsule extends Area {
     }
     /**
      *  @link Area.getRawAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
     getRawAcc(sphere) {
@@ -3051,22 +3050,22 @@ const ScalisMath = {
  */
 class AreaScalisSeg extends Area {
     /**
-     * @param {!THREE.Vector3} p0 first point of the shape
-     * @param {!THREE.Vector3} p1 second point of the shape
+     * @param {!Vector3} p0 first point of the shape
+     * @param {!Vector3} p1 second point of the shape
      * @param {number} thick0 radius at p0
      * @param {number} thick1 radius at p1
      */
     constructor(p0, p1, thick0, thick1) {
         super();
-        this.p0 = new THREE__default.Vector3(p0.x, p0.y, p0.z);
-        this.p1 = new THREE__default.Vector3(p1.x, p1.y, p1.z);
+        this.p0 = new Vector3(p0.x, p0.y, p0.z);
+        this.p1 = new Vector3(p1.x, p1.y, p1.z);
         this.thick0 = thick0;
         this.thick1 = thick1;
-        this.unit_dir = new THREE__default.Vector3().subVectors(p1, p0);
+        this.unit_dir = new Vector3().subVectors(p1, p0);
         this.length = this.unit_dir.length();
         this.unit_dir.normalize();
         // tmp var for functions below
-        this.vector = new THREE__default.Vector3();
+        this.vector = new Vector3();
         this.p0_to_p = this.vector; // basically the same as above + smart name
         this.p0_to_p_sqrnorm = 0;
         this.x_p_2D = 0;
@@ -3080,7 +3079,7 @@ class AreaScalisSeg extends Area {
     }
     /**
     * Compute some of the tmp variables.Used to factorized other functions code.
-    * @param { !THREE.Vector3 } p A point as a THREE.Vector3
+    * @param { !Vector3 } p A point as a Vector3
     *
     * @protected
     */
@@ -3131,7 +3130,7 @@ class AreaScalisSeg extends Area {
     }
     /**
      * @link Area.contains for a complete description
-     * @param {THREE.Vector3} p
+     * @param {Vector3} p
      */
     contains(p) {
         this.proj_computation(p);
@@ -3166,7 +3165,7 @@ class AreaScalisSeg extends Area {
      *
      *  @return {number} the accuracy needed in the intersection zone
      *
-     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @param {number}  factor  the ratio to determine the wanted accuracy.
      *
      *  @todo Check the Maths
@@ -3222,7 +3221,7 @@ class AreaScalisSeg extends Area {
     }
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
     getNiceAcc(sphere) {
@@ -3230,7 +3229,7 @@ class AreaScalisSeg extends Area {
     }
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Curr accuracy needed in the intersection zone
      */
     getCurrAcc = function (sphere) {
@@ -3238,7 +3237,7 @@ class AreaScalisSeg extends Area {
     };
     /**
      *  @link Area.getRawAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
     getRawAcc(sphere) {
@@ -3647,15 +3646,15 @@ TriangleUtils.getUVCoord = function (U, V, p0, p) {
 class AreaScalisTri extends Area {
     /**
      *  @param { Array.< !ScalisVertex >} v Array or vertices
-     *  @param {!THREE.Vector3} unit_normal Normal to the plane made by the 3 vertices, as a THREE.Vector3
-     *  @param {!THREE.Vector3} main_dir Main direction dependeing on thicknesses
+     *  @param {!Vector3} unit_normal Normal to the plane made by the 3 vertices, as a Vector3
+     *  @param {!Vector3} main_dir Main direction dependeing on thicknesses
      * @param {!Object}  segParams
      *  @param {number}  min_thick Minimum thickness in the Triangle
      *  @param {number} max_thick Maximum thickness in the triangle
      */
     constructor(v, unit_normal, main_dir, segParams, min_thick, max_thick) {
         super();
-        this.tmpVect = new THREE__default.Vector3();
+        this.tmpVect = new Vector3();
         this.min_thick = min_thick;
         this.max_thick = max_thick;
         this.v = v;
@@ -3678,7 +3677,7 @@ class AreaScalisTri extends Area {
         this.segParams = segParams;
         // Store tmp computation parameters when doing computation on one segment of the triangle
         this.segAttr = {
-            p0_to_p: new THREE__default.Vector3(),
+            p0_to_p: new Vector3(),
             p0_to_p_sqrnorm: 0,
             x_p_2D: 0,
             y_p_2D: 0,
@@ -3704,7 +3703,7 @@ class AreaScalisTri extends Area {
         this.tmpVect.copy(this.unit_normal);
         pri.push(this.tmpVect.clone().addVectors(this.v[2].getPos(), this.tmpVect.multiplyScalar(-this.v[2].getThickness() * ScalisMath.KS)));
         // Compute the normals of top and bottom faces of the prism
-        var tmp2 = new THREE__default.Vector3();
+        var tmp2 = new Vector3();
         this.tmpVect.subVectors(pri[1], pri[0]);
         tmp2.subVectors(pri[2], pri[0]);
         var n4 = this.tmpVect.clone().crossVectors(this.tmpVect, tmp2).normalize();
@@ -3727,7 +3726,7 @@ class AreaScalisTri extends Area {
     ;
     /**
      *  Compute projection (used in other functions)
-     *  @param {!THREE.Vector3} p Point to proj
+     *  @param {!Vector3} p Point to proj
      *  @param {!Object} segParams A seg param object @todo clarify this parameter
      *
      *  @protected
@@ -3779,7 +3778,7 @@ class AreaScalisTri extends Area {
      *  Adapted from the segment sphere intersection. Could be factorised!
      *  @return {boolean} true if the sphere and the area intersect
      *
-     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @param {!Object} segParams A segParams object containing data for a segment
      *  @param {number} KS Kernel Scale, ie ScalisMath.KS (Why is it a parameter, its global!?)
      *
@@ -3808,12 +3807,12 @@ class AreaScalisTri extends Area {
     }
     /**
      * @link Area.contains for a complete description
-     * @param {THREE.Vector3} p
+     * @param {Vector3} p
      */
     contains = (function () {
-        let sphere = { radius: 0, center: new THREE__default.Vector3() };
+        let sphere = { radius: 0, center: new Vector3() };
         /**
-         * @param {THREE.Vector3} p
+         * @param {Vector3} p
          */
         return (p) => {
             /** @type {AreaScalisTri} */
@@ -3825,7 +3824,7 @@ class AreaScalisTri extends Area {
     /**
      *  Copied from AreaSeg.getAcc
      *
-     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @param {!Object} segParams A segParams object containing data for a segment area
      *
      *  @return {!Object} Object containing intersect (boolean) and currAcc (number) attributes
@@ -3863,7 +3862,7 @@ class AreaScalisTri extends Area {
     ;
     /**
      *  Get accuracy for the inner triangle (do not consider segment edges)
-     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      */
     getAccTri(sphere) {
         // Inequal thickness triangle case:
@@ -3917,7 +3916,7 @@ class AreaScalisTri extends Area {
      *
      *  @return {number} the accuracy needed in the intersection zone
      *
-     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @param {number}  factor  the ratio to determine the wanted accuracy.
      *
      *  @todo Check the Maths
@@ -3949,7 +3948,7 @@ class AreaScalisTri extends Area {
     }
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
     getNiceAcc(sphere) {
@@ -3957,7 +3956,7 @@ class AreaScalisTri extends Area {
     }
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Curr accuracy needed in the intersection zone
      */
     getCurrAcc(sphere) {
@@ -3965,7 +3964,7 @@ class AreaScalisTri extends Area {
     }
     /**
      *  @link Area.getRawAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
     getRawAcc(sphere) {
@@ -4011,7 +4010,7 @@ class AreaScalisTri extends Area {
  */
 class AreaSphere extends Area {
     /**
-     *  @param {!THREE.Vector3} p Point to locate the area
+     *  @param {!Vector3} p Point to locate the area
      *  @param {number} r Radius of the area
      *  @param {number=} accFactor Accuracy factor. By default SphereArea will use global Accuracies parameters. However, you can setup a accFactor.
      *                            to change that. You will usually want to have accFactor between 0 (excluded) and 1. Default to 1.0.
@@ -4019,7 +4018,7 @@ class AreaSphere extends Area {
      */
     constructor(p, r, accFactor) {
         super();
-        this.p = new THREE__default.Vector3(p.x, p.y, p.z);
+        this.p = new Vector3(p.x, p.y, p.z);
         this.r = r;
         this.accFactor = accFactor || 1.0;
     }
@@ -4027,10 +4026,10 @@ class AreaSphere extends Area {
      *  Test intersection of the shape with a sphere
      *  @return {boolean} true if the sphere and the area intersect
      *
-     *  @param {!{r:number,c:!THREE.Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {!{r:number,c:!Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      */
     sphereIntersect = (function () {
-        var v = new THREE__default.Vector3();
+        var v = new Vector3();
         return (sphere) => {
             /** @type {AreaSphere} */
             let self = this;
@@ -4041,13 +4040,13 @@ class AreaSphere extends Area {
     })();
     /**
      * @link Area.contains for a complete description
-     * @param {THREE.Vector3} p
+     * @param {Vector3} p
      * @return {boolean}
      */
     contains = (function () {
-        var v = new THREE__default.Vector3();
+        var v = new Vector3();
         /**
-         *  @param {!THREE.Vector3} p A point in space, must comply to THREE.Vector3 API.
+         *  @param {!Vector3} p A point in space, must comply to Vector3 API.
          *
          */
         return (p) => {
@@ -4062,7 +4061,7 @@ class AreaSphere extends Area {
      *
      *  @return {number} the accuracy needed in the intersection zone
      *
-     *  @param {AreaSphereParam} _sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam} _sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @param {number}  factor  the ratio to determine the wanted accuracy.
      *
      */
@@ -4071,7 +4070,7 @@ class AreaSphere extends Area {
     }
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
     getNiceAcc(sphere) {
@@ -4079,7 +4078,7 @@ class AreaSphere extends Area {
     }
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The Curr accuracy needed in the intersection zone
      */
     getCurrAcc(sphere) {
@@ -4087,7 +4086,7 @@ class AreaSphere extends Area {
     }
     /**
      *  @link Area.getRawAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
+     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
     getRawAcc(sphere) {
@@ -4229,10 +4228,10 @@ var verticesIds = 0;
  */
 class ScalisVertex {
     static fromJSON(json) {
-        return new ScalisVertex(new THREE.Vector3(json.position.x, json.position.y, json.position.z), json.thickness);
+        return new ScalisVertex(new Vector3(json.position.x, json.position.y, json.position.z), json.thickness);
     }
     /**
-     *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
+     *  @param {!Vector3} pos A position in space, as a Vector3
      *  @param {number} thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
      */
     constructor(pos, thickness) {
@@ -4242,7 +4241,7 @@ class ScalisVertex {
         this.id = verticesIds++;
         // The primitive using this vertex
         this.prim = null;
-        this.aabb = new THREE.Box3();
+        this.aabb = new Box3();
         this.valid_aabb = false;
     }
     ;
@@ -4271,7 +4270,7 @@ class ScalisVertex {
     }
     /**
      *  Set a new position.
-     *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
+     *  @param {!Vector3} pos A position in space, as a Vector3
      */
     setPos(pos) {
         this.valid_aabb = false;
@@ -4290,7 +4289,7 @@ class ScalisVertex {
     /**
      *  Set a both position and thickness
      *  @param {number} thickness The new thickness
-     *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
+     *  @param {!Vector3} pos A position in space, as a Vector3
      */
     setAll(pos, thickness) {
         this.valid_aabb = false;
@@ -4300,7 +4299,7 @@ class ScalisVertex {
     }
     /**
      *  Get the current position
-     *  @return {!THREE.Vector3} Current position, as a THREE.Vector3
+     *  @return {!Vector3} Current position, as a Vector3
      */
     getPos() {
         return this.pos;
@@ -4315,7 +4314,7 @@ class ScalisVertex {
     ;
     /**
      *  Get the current AxisAlignedBoundingBox
-     *  @return {THREE.Box3} The AABB of this vertex.
+     *  @return {Box3} The AABB of this vertex.
      */
     getAABB() {
         if (!this.valid_aabb) {
@@ -4332,7 +4331,7 @@ class ScalisVertex {
     computeAABB() {
         var pos = this.getPos();
         var boundSupport = this.getThickness() * ScalisMath.KS;
-        this.aabb.set(new THREE.Vector3(pos.x - boundSupport, pos.y - boundSupport, pos.z - boundSupport), new THREE.Vector3(pos.x + boundSupport, pos.y + boundSupport, pos.z + boundSupport));
+        this.aabb.set(new Vector3(pos.x - boundSupport, pos.y - boundSupport, pos.z - boundSupport), new Vector3(pos.x + boundSupport, pos.y + boundSupport, pos.z + boundSupport));
     }
     /**
      *  Check equality between 2 vertices
@@ -4387,7 +4386,7 @@ class ScalisPoint extends ScalisPrimitive {
         this.materials.push(mat);
         // Temporary for eval
         // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
-        this.v_to_p = new THREE.Vector3();
+        this.v_to_p = new Vector3();
     }
     getType() {
         return ScalisPoint.type;
@@ -4463,7 +4462,7 @@ class ScalisPoint extends ScalisPrimitive {
     /**
      *  @link Element.value
      *
-     *  @param {THREE.Vector3} p Point where we want to evaluate the primitive field
+     *  @param {Vector3} p Point where we want to evaluate the primitive field
      *  @param {ValueResultType} res
      */
     value(p, res) {
@@ -4499,7 +4498,7 @@ class ScalisPoint extends ScalisPrimitive {
         }
     }
     /**
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @return {number}
      */
     distanceTo(p) {
@@ -4564,23 +4563,23 @@ class ScalisSegment extends ScalisPrimitive {
         // CONVOL
         this.clipped_l1 = 1.0;
         this.clipped_l2 = 0.0;
-        this.vector = new THREE.Vector3();
-        this.cycle = new THREE.Vector3();
-        this.proj = new THREE.Vector3();
+        this.vector = new Vector3();
+        this.cycle = new Vector3();
+        this.proj = new Vector3();
         // helper attributes
         this.v0_p = this.v[0].getPos();
         this.v1_p = this.v[1].getPos(); // this one is probably useless to be kept for eval since not used....
-        this.dir = new THREE.Vector3();
+        this.dir = new Vector3();
         this.lengthSq = 0;
         this.length = 0;
-        this.unit_dir = new THREE.Vector3();
+        this.unit_dir = new Vector3();
         // weight_p1 is convol's weight_p2 ( >_< )
         this.weight_p1 = 0;
         // c0 and c1 are convol's weight_coeff
         this.c0 = 0;
         this.c1 = 0;
-        this.increase_unit_dir = new THREE.Vector3();
-        this.p_min = new THREE.Vector3();
+        this.increase_unit_dir = new Vector3();
+        this.p_min = new Vector3();
         this.weight_min = 0;
         this.inv_weight_min = 0;
         this.unit_delta_weight = 0;
@@ -4588,9 +4587,9 @@ class ScalisSegment extends ScalisPrimitive {
         this.maxboundSq = 0;
         this.cyl_bd0 = 0;
         this.cyl_bd1 = 0;
-        this.f0f1f2 = new THREE.Vector3();
-        this.tmpVec1 = new THREE.Vector3();
-        this.tmpVec2 = new THREE.Vector3();
+        this.f0f1f2 = new Vector3();
+        this.tmpVec1 = new Vector3();
+        this.tmpVec2 = new Vector3();
         this.computeHelpVariables();
     }
     getType() {
@@ -4659,8 +4658,8 @@ class ScalisSegment extends ScalisPrimitive {
         else {
             return [{
                     aabb: this.aabb,
-                    //new THREE.Box3(-256, -256, -256, 256,256,256),
-                    //new THREE.Box3(this.aabb.min_x-min_thick,this.aabb.min_y-min_thick,this.aabb.min_z-min_thick,
+                    //new Box3(-256, -256, -256, 256,256,256),
+                    //new Box3(this.aabb.min_x-min_thick,this.aabb.min_y-min_thick,this.aabb.min_z-min_thick,
                     //this.aabb.max_x+min_thick,this.aabb.max_y+min_thick,this.aabb.max_z+min_thick),
                     bv: new AreaScalisSeg(this.v[0].getPos(), this.v[1].getPos(), this.v[0].getThickness(), this.v[1].getThickness()),
                     obj: this
@@ -4731,7 +4730,7 @@ class ScalisSegment extends ScalisPrimitive {
      */
     evalDist = (function () {
         var ev_eps = { v: 0 };
-        var p_eps = new THREE.Vector3();
+        var p_eps = new Vector3();
         return function (p, res) {
             var p0_to_p = this.vector;
             p0_to_p.subVectors(p, this.v[0].getPos());
@@ -4783,7 +4782,7 @@ class ScalisSegment extends ScalisPrimitive {
     })();
     /**
      *
-     * @param {THREE.Vector3} p Evaluation point
+     * @param {Vector3} p Evaluation point
      * @param {Object} res Resulting material will be in res.m
      */
     evalMat(p, res) {
@@ -4808,7 +4807,7 @@ class ScalisSegment extends ScalisPrimitive {
     }
     ;
     /**
-     *  @param {!THREE.Vector3} w special_coeff
+     *  @param {!Vector3} w special_coeff
      *  @return {boolean}
      */
     HomotheticClippingSpecial(w) {
@@ -4913,8 +4912,8 @@ class ScalisSegment extends ScalisPrimitive {
     ;
     // [Abstract] see ScalisPrimitive.distanceTo
     distanceTo = (function () {
-        var tmpVector = new THREE.Vector3();
-        var tmpVectorProj = new THREE.Vector3();
+        var tmpVector = new Vector3();
+        var tmpVectorProj = new Vector3();
         return function (p) {
             /** @type {ScalisSegment} */
             let self = this;
@@ -5188,13 +5187,13 @@ class ScalisTriangle extends ScalisPrimitive {
         // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
         this.res_gseg = {};
         this.tmp_res_gseg = {};
-        this.p0p1 = new THREE.Vector3();
-        this.p1p2 = new THREE.Vector3();
-        this.p2p0 = new THREE.Vector3();
-        this.unit_normal = new THREE.Vector3();
-        this.unit_p0p1 = new THREE.Vector3();
-        this.unit_p1p2 = new THREE.Vector3();
-        this.unit_p2p0 = new THREE.Vector3();
+        this.p0p1 = new Vector3();
+        this.p1p2 = new Vector3();
+        this.p2p0 = new Vector3();
+        this.unit_normal = new Vector3();
+        this.unit_p0p1 = new Vector3();
+        this.unit_p1p2 = new Vector3();
+        this.unit_p2p0 = new Vector3();
         this.length_p0p1 = 0;
         this.length_p1p2 = 0;
         this.length_p2p0 = 0;
@@ -5203,21 +5202,21 @@ class ScalisTriangle extends ScalisPrimitive {
         this.diffThick_p0p1 = 0;
         this.diffThick_p1p2 = 0;
         this.diffThick_p2p0 = 0;
-        this.main_dir = new THREE.Vector3();
-        this.point_iso_zero = new THREE.Vector3();
-        this.ortho_dir = new THREE.Vector3();
-        this.unsigned_ortho_dir = new THREE.Vector3();
-        this.proj_dir = new THREE.Vector3();
+        this.main_dir = new Vector3();
+        this.point_iso_zero = new Vector3();
+        this.ortho_dir = new Vector3();
+        this.unsigned_ortho_dir = new Vector3();
+        this.proj_dir = new Vector3();
         this.equal_weights = false; // Use to skip computations for a specific case
         this.coord_max = 0;
         this.coord_middle = 0;
         this.unit_delta_weight = 0;
-        this.longest_dir_special = new THREE.Vector3();
+        this.longest_dir_special = new Vector3();
         this.max_seg_length = 0;
-        this.half_dir_1 = new THREE.Vector3();
-        this.point_half = new THREE.Vector3();
-        this.half_dir_2 = new THREE.Vector3();
-        this.point_min = new THREE.Vector3();
+        this.half_dir_1 = new Vector3();
+        this.point_half = new Vector3();
+        this.half_dir_2 = new Vector3();
+        this.point_min = new Vector3();
         this.weight_min = 0;
         this.valid_aabb = false;
     }
@@ -5318,10 +5317,10 @@ class ScalisTriangle extends ScalisPrimitive {
     }
     // [Abstract] See Primitive.distanceTo for more details
     distanceTo = (function () {
-        var p0p = new THREE.Vector3();
-        var p1p = new THREE.Vector3();
-        var p2p = new THREE.Vector3();
-        var tmp = new THREE.Vector3();
+        var p0p = new Vector3();
+        var p1p = new Vector3();
+        var p2p = new Vector3();
+        var tmp = new Vector3();
         return function (p) {
             /** @type {ScalisTriangle} */
             let self = this;
@@ -5368,7 +5367,7 @@ class ScalisTriangle extends ScalisPrimitive {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p, res) {
@@ -5385,16 +5384,16 @@ class ScalisTriangle extends ScalisPrimitive {
     /**
      *  value function for Distance volume type (distance field).
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     evalDist = (function () {
         var ev_eps = { v: 0 };
-        var p_eps = new THREE.Vector3();
+        var p_eps = new Vector3();
         /**
          *  value function for Distance volume type (distance field).
          *
-         *  @param {THREE.Vector3} p
+         *  @param {Vector3} p
          *  @param {ValueResultType} res
          */
         return function (p, res) {
@@ -5410,7 +5409,7 @@ class ScalisTriangle extends ScalisPrimitive {
             */
             // First compute the distance to the triangle and find the nearest point
             // Code taken from EuclideanDistance functor, can be optimized.
-            var p0_to_p = new THREE.Vector3();
+            var p0_to_p = new Vector3();
             p0_to_p.subVectors(p, self.v[0].getPos());
             var normal_inv = self.unit_normal.clone().multiplyScalar(-1);
             ///////////////////////////////////////////////////////////////////////
@@ -5433,35 +5432,35 @@ class ScalisTriangle extends ScalisPrimitive {
                 var d1 = -self.v[0].getPos().dot(n1);
                 var d2 = -p.dot(n2);
                 var d3 = -self.point_iso_zero.dot(n3);
-                var d1n2n3 = new THREE.Vector3();
+                var d1n2n3 = new Vector3();
                 d1n2n3.crossVectors(n2, n3);
                 d1n2n3.multiplyScalar(-d1);
-                var d2n3n1 = new THREE.Vector3();
+                var d2n3n1 = new Vector3();
                 d2n3n1.crossVectors(n3, n1);
                 d2n3n1.multiplyScalar(-d2);
-                var d3n1n2 = new THREE.Vector3();
+                var d3n1n2 = new Vector3();
                 d3n1n2.crossVectors(n1, n2);
                 d3n1n2.multiplyScalar(-d3);
-                var n2cn3 = new THREE.Vector3();
+                var n2cn3 = new Vector3();
                 n2cn3.crossVectors(n2, n3);
-                var Z = new THREE.Vector3(d1n2n3.x + d2n3n1.x + d3n1n2.x, d1n2n3.y + d2n3n1.y + d3n1n2.y, d1n2n3.z + d2n3n1.z + d3n1n2.z);
+                var Z = new Vector3(d1n2n3.x + d2n3n1.x + d3n1n2.x, d1n2n3.y + d2n3n1.y + d3n1n2.y, d1n2n3.z + d2n3n1.z + d3n1n2.z);
                 Z.divideScalar(n1.dot(n2cn3));
                 // Now we want to project in the direction orthogonal to (pZ) and ortho_dir
-                var pz = new THREE.Vector3(Z.x - p.x, Z.y - p.y, Z.z - p.z);
+                var pz = new Vector3(Z.x - p.x, Z.y - p.y, Z.z - p.z);
                 // set proj_dir
-                self.proj_dir = new THREE.Vector3();
+                self.proj_dir = new Vector3();
                 self.proj_dir.crossVectors(pz, self.unsigned_ortho_dir);
                 self.proj_dir.normalize(); // should be useless
             }
             // Project along the given direction
-            var non_ortho_proj = new THREE.Vector3();
+            var non_ortho_proj = new Vector3();
             non_ortho_proj.copy(self.proj_dir);
             non_ortho_proj.multiplyScalar(-p0_to_p.dot(normal_inv) / self.proj_dir.dot(normal_inv));
             non_ortho_proj.add(p);
-            var tmp_vec = new THREE.Vector3();
-            var tmp_vec0 = new THREE.Vector3();
-            var tmp_vec1 = new THREE.Vector3();
-            var tmp_vec2 = new THREE.Vector3();
+            var tmp_vec = new Vector3();
+            var tmp_vec0 = new Vector3();
+            var tmp_vec1 = new Vector3();
+            var tmp_vec2 = new Vector3();
             tmp_vec0.subVectors(non_ortho_proj, self.v[0].getPos());
             tmp_vec1.subVectors(non_ortho_proj, self.v[1].getPos());
             tmp_vec2.subVectors(non_ortho_proj, self.v[2].getPos());
@@ -5474,19 +5473,19 @@ class ScalisTriangle extends ScalisPrimitive {
                 var p0 = self.v[0].getPos();
                 var p1 = self.v[1].getPos();
                 var p2 = self.v[2].getPos();
-                var tmp_vec_bis = new THREE.Vector3();
+                var tmp_vec_bis = new Vector3();
                 tmp_vec.subVectors(p1, p0);
                 tmp_vec_bis.subVectors(p2, p0);
-                var n = new THREE.Vector3();
+                var n = new Vector3();
                 n.crossVectors(tmp_vec, tmp_vec_bis);
                 tmp_vec.subVectors(p2, p1);
-                var nv1 = new THREE.Vector3();
+                var nv1 = new Vector3();
                 nv1.crossVectors(tmp_vec, tmp_vec1);
                 tmp_vec.subVectors(p0, p2);
-                var nv2 = new THREE.Vector3();
+                var nv2 = new Vector3();
                 nv2.crossVectors(tmp_vec, tmp_vec2);
                 tmp_vec.subVectors(p1, p0);
-                var nv3 = new THREE.Vector3();
+                var nv3 = new Vector3();
                 nv3.crossVectors(tmp_vec, tmp_vec0);
                 var nsq = n.lengthSq();
                 var a1 = n.dot(nv1);
@@ -5579,9 +5578,9 @@ class ScalisTriangle extends ScalisPrimitive {
      *
      *  Segment computations used in Distance triangle evaluation.
      *
-     *  @param {!THREE.Vector3} point Point where value is wanted, as a THREE.Vector3
-     *  @param {!THREE.Vector3} p1 Segment first point, as a THREE.Vector3
-     *  @param {!THREE.Vector3} p1p2 Segment first to second point, as a THREE.Vector3
+     *  @param {!Vector3} point Point where value is wanted, as a Vector3
+     *  @param {!Vector3} p1 Segment first point, as a Vector3
+     *  @param {!Vector3} p1p2 Segment first to second point, as a Vector3
      *  @param {number} length Length of the segment
      *  @param {number} sqr_length Squared length of the segment
      *  @param {number} weight_1 Weight for the first point of the segment
@@ -5591,7 +5590,7 @@ class ScalisTriangle extends ScalisPrimitive {
      */
     GenericSegmentComputation(point, p1, p1p2, length, sqr_length, weight_1, delta_weight, // = weight_2-weight_1
     res) {
-        var origin_to_p = new THREE.Vector3();
+        var origin_to_p = new Vector3();
         origin_to_p.subVectors(point, p1);
         var orig_p_scal_dir = origin_to_p.dot(p1p2);
         var orig_p_sqr = origin_to_p.lengthSq();
@@ -5601,7 +5600,7 @@ class ScalisTriangle extends ScalisPrimitive {
             t = (orig_p_scal_dir * weight_1 + orig_p_sqr * delta_weight) / denum;
             t = (t < 0.0) ? 0.0 : ((t > 1.0) ? 1.0 : t); // clipping (nearest point on segment not line)
         }
-        res.proj_to_p = new THREE.Vector3(t * p1p2.x - origin_to_p.x, t * p1p2.y - origin_to_p.y, t * p1p2.z - origin_to_p.z);
+        res.proj_to_p = new Vector3(t * p1p2.x - origin_to_p.x, t * p1p2.y - origin_to_p.y, t * p1p2.z - origin_to_p.z);
         res.weight_proj = weight_1 + t * delta_weight;
         res.t = t;
         return res;
@@ -5611,18 +5610,18 @@ class ScalisTriangle extends ScalisPrimitive {
     /**
      *  value function for Distance volume type (distance field).
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     evalConvol = (function () {
-        var g = new THREE.Vector3();
+        var g = new Vector3();
         var m = new Material();
         var tmpRes = { v: 0, g: null, m: null };
-        var g2 = new THREE.Vector3();
+        var g2 = new Vector3();
         var m2 = new Material();
         var tmpRes2 = { v: 0, g: null, m: null };
         /**
-         *  @param {THREE.Vector3} p
+         *  @param {Vector3} p
          *  @param {ValueResultType} res
          */
         return function (p, res) {
@@ -5645,7 +5644,7 @@ class ScalisTriangle extends ScalisPrimitive {
                 var t = d_step_size;
                 d_step_size *= 2.0;
                 var res_odd = 0.0;
-                var grad_odd = new THREE.Vector3();
+                var grad_odd = new Vector3();
                 for (var i = 1; i < nb_samples; i += 2) {
                     self.computeLineIntegral(self.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
                     res_odd += tmpRes.v;
@@ -5655,7 +5654,7 @@ class ScalisTriangle extends ScalisPrimitive {
                     t += d_step_size;
                 }
                 var res_even = 0.0;
-                var grad_even = new THREE.Vector3();
+                var grad_even = new Vector3();
                 t = 0.0;
                 for (var j = 2; j < nb_samples; j += 2) {
                     t += d_step_size;
@@ -5673,7 +5672,7 @@ class ScalisTriangle extends ScalisPrimitive {
                 var factor = (local_t_max / (3.0 * (nb_samples))) * ScalisMath.Poly6NF2D;
                 res.v *= factor;
                 if (res.g) {
-                    var grad_res = new THREE.Vector3();
+                    var grad_res = new Vector3();
                     grad_res.addVectors(grad_res, res_low.g);
                     grad_res.addVectors(grad_res, grad_odd.multiplyScalar(4.0));
                     grad_res.addVectors(grad_res, grad_even.multiplyScalar(2.0));
@@ -5683,7 +5682,7 @@ class ScalisTriangle extends ScalisPrimitive {
             }
             else {
                 res.v = 0.0;
-                res.g = new THREE.Vector3();
+                res.g = new Vector3();
             }
             if (res.m) {
                 tmpRes.g = null;
@@ -5716,13 +5715,13 @@ class ScalisTriangle extends ScalisPrimitive {
     }
     /**
      *  @param {number} t
-     *  @param {!THREE.Vector3} p point, as a THREE.Vector3
+     *  @param {!Vector3} p point, as a Vector3
      *  @param {Object} res result containing the wanted elements like res.v for the value, res.g for the gradient, res.m for the material.
      *  @return the res parameter, filled with proper values
      */
     computeLineIntegral(t, p, res) {
         var weight = this.weight_min + t * this.unit_delta_weight;
-        var p_1 = new THREE.Vector3();
+        var p_1 = new Vector3();
         p_1.addVectors(this.point_min, this.longest_dir_special.clone().multiplyScalar(t));
         var length = (t < this.coord_middle) ? (t / this.coord_middle) * this.max_seg_length
             : ((this.coord_max - t) / (this.coord_max - this.coord_middle)) * this.max_seg_length;
@@ -5741,7 +5740,7 @@ class ScalisTriangle extends ScalisPrimitive {
      *          This function is used in Eval function of CompactPolynomial kernel which use a different parametrization for a greater stability.
      *
      *
-     *  @param {!THREE.Vector3} w special_coeff, x, y and z attributes must be defined
+     *  @param {!Vector3} w special_coeff, x, y and z attributes must be defined
      *  @param {number} length
      *  @param {!Object} clipped Result if clipping occured, in l1 and l2, returned
      *                           values are between 0.0 and length/weight_min
@@ -5772,21 +5771,21 @@ class ScalisTriangle extends ScalisPrimitive {
         return false;
     }
     /**
-     *  @param {!THREE.Vector3} p_1
+     *  @param {!Vector3} p_1
      *  @param {number} w_1
-     *  @param {!THREE.Vector3} unit_dir
+     *  @param {!Vector3} unit_dir
      *  @param {number} length
-     *  @param {!THREE.Vector3} point
+     *  @param {!Vector3} point
      *  @return {!Object} Object defining v attribute with the computed value
      *
      *  @protected
      */
     consWeightEvalForSeg(p_1, w_1, unit_dir, length, point, res) {
-        var p_min_to_point = new THREE.Vector3();
+        var p_min_to_point = new Vector3();
         p_min_to_point.subVectors(point, p_1);
         var uv = unit_dir.dot(p_min_to_point);
         var d2 = p_min_to_point.lengthSq();
-        var special_coeff = new THREE.Vector3();
+        var special_coeff = new Vector3();
         special_coeff.set(w_1 * w_1 - ScalisMath.KIS2 * d2, -ScalisMath.KIS2 * uv, -ScalisMath.KIS2);
         var clipped = { l1: 0, l2: 0 };
         if (this.homotheticClippingSpecial(special_coeff, length, clipped)) {
@@ -5801,28 +5800,28 @@ class ScalisTriangle extends ScalisPrimitive {
         return res;
     }
     /**
-     *  @param {!THREE.Vector3} p_1
+     *  @param {!Vector3} p_1
      *  @param {number} w_1
-     *  @param {!THREE.Vector3} unit_dir
+     *  @param {!Vector3} unit_dir
      *  @param {number} length
-     *  @param {!THREE.Vector3} point
+     *  @param {!Vector3} point
      *  @return {!Object} Object defining v attribute with the computed value
      *
      *  @protected
      */
     consWeightEvalGradForSeg(p_1, w_1, unit_dir, length, point, res) {
-        var p_min_to_point = new THREE.Vector3();
+        var p_min_to_point = new Vector3();
         p_min_to_point.subVectors(point, p_1);
         var uv = unit_dir.dot(p_min_to_point);
         var d2 = p_min_to_point.lengthSq();
-        var special_coeff = new THREE.Vector3();
+        var special_coeff = new Vector3();
         special_coeff.set(w_1 * w_1 - ScalisMath.KIS2 * d2, -ScalisMath.KIS2 * uv, -ScalisMath.KIS2);
         var clipped = { l1: 0, l2: 0 };
         if (this.homotheticClippingSpecial(special_coeff, length, clipped)) {
             var inv_local_min_weight = 1.0 / w_1;
             special_coeff.x = 1.0 - ScalisMath.KIS2 * (clipped.l1 * (clipped.l1 - 2.0 * uv) + d2) * inv_local_min_weight * inv_local_min_weight;
             special_coeff.y = -ScalisMath.KIS2 * (uv - clipped.l1) * inv_local_min_weight;
-            var F0F1F2 = new THREE.Vector3();
+            var F0F1F2 = new Vector3();
             this.homotheticCompactPolynomial_segment_FGradF_i6_cste((clipped.l2 - clipped.l1) * inv_local_min_weight, special_coeff, F0F1F2);
             res.v = F0F1F2.x;
             F0F1F2.y *= inv_local_min_weight;
@@ -5839,19 +5838,19 @@ class ScalisTriangle extends ScalisPrimitive {
         return res;
     }
     /**
-     *  @param {!THREE.Vector3} point the point of evaluation, as a THREE.Vector3
+     *  @param {!Vector3} point the point of evaluation, as a Vector3
      *  @param {!Object} clipped Result if clipping occured, in l1 and l2, returned
      *                           values are between 0.0 and length/weight_min
      *  @return {boolean} true if clipping occured
      */
     ComputeTParam(point, clipped) {
-        var p_min_to_point = new THREE.Vector3();
+        var p_min_to_point = new Vector3();
         p_min_to_point.subVectors(point, this.point_min);
         var coord_main_dir = p_min_to_point.dot(this.main_dir);
         var coord_normal = p_min_to_point.dot(this.unit_normal);
         //WARNING : Assume that the compact support is defined in the same way as HomotheticCompactPolynomial kernels
         var dist_sqr = coord_main_dir * coord_main_dir + coord_normal * coord_normal;
-        var special_coeff = new THREE.Vector3();
+        var special_coeff = new Vector3();
         special_coeff.set(this.weight_min * this.weight_min - ScalisMath.KIS2 * dist_sqr, -this.unit_delta_weight * this.weight_min - ScalisMath.KIS2 * coord_main_dir, this.unit_delta_weight * this.unit_delta_weight - ScalisMath.KIS2);
         return this.homotheticClippingSpecial(special_coeff, this.coord_max, clipped);
     }
@@ -5859,7 +5858,7 @@ class ScalisTriangle extends ScalisPrimitive {
      *  Sub-function for optimized convolution value computation (Homothetic Compact Polynomial).*
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
      *  @param {number} l
-     *  @param {!THREE.Vector3} w Some coefficient, as a THREE.Vector3
+     *  @param {!Vector3} w Some coefficient, as a Vector3
      *  @return {number} the value
      */
     homotheticCompactPolynomial_segment_F_i6_cste(l, w) {
@@ -5886,8 +5885,8 @@ class ScalisTriangle extends ScalisPrimitive {
      *  value and gradient computation (Homothetic Compact Polynomial).
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
      *  @param {number} l
-     *  @param {!THREE.Vector3} res result in a THREE.Vector3
-     *  @param {!THREE.Vector3} w a THREE.Vector3
+     *  @param {!Vector3} res result in a Vector3
+     *  @param {!Vector3} w a Vector3
      *
      */
     homotheticCompactPolynomial_segment_FGradF_i6_cste(l, w, res) {
@@ -6090,7 +6089,7 @@ class SDFPrimitive extends Element {
     constructor() {
         super();
         // Default bounding box for a SDF is infinite.
-        this.aabb.set(new THREE.Vector3(-Infinity, -Infinity, -Infinity), new THREE.Vector3(+Infinity, +Infinity, +Infinity));
+        this.aabb.set(new Vector3(-Infinity, -Infinity, -Infinity), new Vector3(+Infinity, +Infinity, +Infinity));
     }
     /**
      * @return {string} Type of the element
@@ -6109,21 +6108,21 @@ class SDFPrimitive extends Element {
      * Ie, the distance field is greater than d everywhere outside the returned box.
      * @param {number} _d Distance
      * @abstract
-     * @return {THREE.Box3}
+     * @return {Box3}
      */
     computeDistanceAABB(_d) {
         console.error("computeDistanceAABB is an abstract function of SDFPrimitive. Please reimplement it in children classes.");
-        return (new THREE.Box3()).makeEmpty();
+        return (new Box3()).makeEmpty();
     }
     /**
-     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
+     * @returns {Array.<{aabb: Box3, bv:Area, obj:Primitive}>}
      */
     getAreas() {
         throw "No Areas for SDFPrimitive.";
     }
     /**
      * @param {number} _d Distance to consider for the area computation.
-     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:SDFPrimitive}>}
+     * @returns {Array.<{aabb: Box3, bv:Area, obj:SDFPrimitive}>}
      */
     getDistanceAreas(_d) {
         console.error("getDistanceAreas is an abstract function of SDFPrimitive. Please reimplement in children classes");
@@ -6134,12 +6133,12 @@ class SDFPrimitive extends Element {
      * an accurate distance to the surface.
      * @abstract
      *
-     * @param {THREE.Vector3} p
+     * @param {Vector3} p
      */
     distanceTo = (function () {
         var res = { v: 0 };
         /**
-         * @param {THREE.Vector3} p
+         * @param {Vector3} p
          */
         return (p) => {
             /** @type {SDFPrimitive} */
@@ -6181,12 +6180,12 @@ class SDFCapsule extends SDFPrimitive {
      */
     static fromJSON(json) {
         //var v = ScalisVertex.fromJSON(json.v[0]);
-        return new SDFCapsule(new THREE.Vector3(json.p1.x, json.p1.y, json.p1.z), new THREE.Vector3(json.p2.x, json.p2.y, json.p2.z), json.r1, json.r2);
+        return new SDFCapsule(new Vector3(json.p1.x, json.p1.y, json.p1.z), new Vector3(json.p2.x, json.p2.y, json.p2.z), json.r1, json.r2);
     }
     /**
      *
-     *  @param {THREE.Vector3} p1 Position of the first segment extremity
-     *  @param {THREE.Vector3} p2 Position of the second segment extremity
+     *  @param {Vector3} p1 Position of the first segment extremity
+     *  @param {Vector3} p2 Position of the second segment extremity
      *  @param {number} r1 Radius of the sphere centered in p1
      *  @param {number} r2 Radius of the sphere centered in p2
      */
@@ -6198,7 +6197,7 @@ class SDFCapsule extends SDFPrimitive {
         this.r2 = r2;
         // Helper for evaluation
         this.rdiff = this.r2 - this.r1;
-        this.unit_dir = new THREE.Vector3().subVectors(this.p2, this.p1);
+        this.unit_dir = new Vector3().subVectors(this.p2, this.p1);
         this.lengthSq = this.unit_dir.lengthSq();
         this.length = this.unit_dir.length();
         this.unit_dir.normalize();
@@ -6259,7 +6258,7 @@ class SDFCapsule extends SDFPrimitive {
     }
     ;
     /**
-     *  @param {THREE.Vector3} p1 The new position of the first segment point.
+     *  @param {Vector3} p1 The new position of the first segment point.
      */
     setPosition1(p1) {
         this.p1.copy(p1);
@@ -6267,7 +6266,7 @@ class SDFCapsule extends SDFPrimitive {
     }
     ;
     /**
-     *  @param {THREE.Vector3} p2 The new position of the second segment point
+     *  @param {Vector3} p2 The new position of the second segment point
      */
     setPosition2(p2) {
         this.p2.copy(p2);
@@ -6275,22 +6274,22 @@ class SDFCapsule extends SDFPrimitive {
     }
     ;
     /**
-     *  @return {THREE.Vector3} Current position of the first segment point
+     *  @return {Vector3} Current position of the first segment point
      */
     getPosition1() {
         return this.p1;
     }
     ;
     /**
-     *  @return {THREE.Vector3} Current position of the second segment point
+     *  @return {Vector3} Current position of the second segment point
      */
     getPosition2() {
         return this.p2;
     }
     ;
     computeDistanceAABB(d) {
-        var b1 = new THREE.Box3(this.p1.clone().add(new THREE.Vector3(-this.r1 - d, -this.r1 - d, -this.r1 - d)), this.p1.clone().add(new THREE.Vector3(this.r1 + d, this.r1 + d, this.r1 + d)));
-        var b2 = new THREE.Box3(this.p2.clone().add(new THREE.Vector3(-this.r2 - d, -this.r2 - d, -this.r2 - d)), this.p2.clone().add(new THREE.Vector3(this.r2 + d, this.r2 + d, this.r2 + d)));
+        var b1 = new Box3(this.p1.clone().add(new Vector3(-this.r1 - d, -this.r1 - d, -this.r1 - d)), this.p1.clone().add(new Vector3(this.r1 + d, this.r1 + d, this.r1 + d)));
+        var b2 = new Box3(this.p2.clone().add(new Vector3(-this.r2 - d, -this.r2 - d, -this.r2 - d)), this.p2.clone().add(new Vector3(this.r2 + d, this.r2 + d, this.r2 + d)));
         return b1.union(b2);
     }
     ;
@@ -6324,14 +6323,14 @@ class SDFCapsule extends SDFPrimitive {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value = (function () {
-        var v = new THREE.Vector3();
-        var proj = new THREE.Vector3();
+        var v = new Vector3();
+        var proj = new Vector3();
         /**
-         *  @param {THREE.Vector3} p
+         *  @param {Vector3} p
          *  @param {ValueResultType} res
          */
         return function (p, res) {
@@ -6350,7 +6349,7 @@ class SDFCapsule extends SDFPrimitive {
             var proj_x = x_p_2D + t * (self.r1 - self.r2);
             // var proj_y = 0.0; // by construction
             // Easy way to compute the distance now that we ave the projection on the segment
-            var a = THREE.MathUtils.clamp(proj_x / self.length, 0, 1.0);
+            var a = MathUtils.clamp(proj_x / self.length, 0, 1.0);
             proj.copy(self.p1).lerp(self.p2, a); // compute the actual 3D projection
             var l = v.subVectors(p, proj).length();
             res.v = l - (a * self.r2 + (1.0 - a) * self.r1);
@@ -6378,7 +6377,7 @@ class SDFNode extends Node {
     constructor() {
         super();
         // Default bounding box for a SDF is infinite.
-        this.aabb.set(new THREE.Vector3(-Infinity, -Infinity, -Infinity), new THREE.Vector3(+Infinity, +Infinity, +Infinity));
+        this.aabb.set(new Vector3(-Infinity, -Infinity, -Infinity), new Vector3(+Infinity, +Infinity, +Infinity));
         /** @type {Array<SDFNode|SDFPrimitive>} */
         this.children;
     }
@@ -6396,11 +6395,11 @@ class SDFNode extends Node {
      *  Ie, the distance field is greater than d everywhere outside the returned box.
      *  @abstract
      *  @param {number} d Distance
-     *  @return {THREE.Box3}
+     *  @return {Box3}
      *
      */
     computeDistanceAABB(d) {
-        let res = new THREE.Box3();
+        let res = new Box3();
         for (let i = 0; i < this.children.length; ++i) {
             res.union(this.children[i].computeDistanceAABB(d));
         }
@@ -6426,7 +6425,7 @@ class SDFNode extends Node {
     ;
     /**
      * @param {number} d Distance to consider for the area computation.
-     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:SDFPrimitive}>}
+     * @returns {Array.<{aabb: Box3, bv:Area, obj:SDFPrimitive}>}
      */
     getDistanceAreas(d) {
         // By default return areas of all children
@@ -6441,7 +6440,7 @@ class SDFNode extends Node {
      * Since SDF Nodes are distance function, this function will return
      * an accurate distance to the surface.
      * @abstract
-     * @param {THREE.Vector3} _p Point
+     * @param {Vector3} _p Point
      * @return {number}
      */
     distanceTo(_p) {
@@ -6479,12 +6478,12 @@ class SDFPoint extends SDFPrimitive {
      * @returns {SDFPoint}
      */
     static fromJSON(json) {
-        return new SDFPoint(new THREE__default.Vector3(json.p.x, json.p.y, json.p.z), json.acc);
+        return new SDFPoint(new Vector3(json.p.x, json.p.y, json.p.z), json.acc);
     }
     ;
     /**
      *
-     *  @param {THREE.Vector3} p Position (ie center) of the point
+     *  @param {Vector3} p Position (ie center) of the point
      *  @param {number} acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
      */
     constructor(p, acc) {
@@ -6527,7 +6526,7 @@ class SDFPoint extends SDFPrimitive {
     }
     ;
     /**
-     *  @param {THREE.Vector3} p The new position (ie center)
+     *  @param {Vector3} p The new position (ie center)
      */
     setPosition(p) {
         this.p.copy(p);
@@ -6535,7 +6534,7 @@ class SDFPoint extends SDFPrimitive {
     }
     ;
     /**
-     *  @return {THREE.Vector3} Current position (ie center)
+     *  @return {Vector3} Current position (ie center)
      */
     getPosition() {
         return this.p;
@@ -6543,7 +6542,7 @@ class SDFPoint extends SDFPrimitive {
     ;
     // [Abstract]
     computeDistanceAABB(d) {
-        return new THREE__default.Box3(this.p.clone().add(new THREE__default.Vector3(-d, -d, -d)), this.p.clone().add(new THREE__default.Vector3(d, d, d)));
+        return new Box3(this.p.clone().add(new Vector3(-d, -d, -d)), this.p.clone().add(new Vector3(d, d, d)));
     }
     ;
     // [Abstract]
@@ -6556,7 +6555,7 @@ class SDFPoint extends SDFPrimitive {
     /**
      * @link SDFPrimitive.getDistanceAreas
      * @param {number} d Distance to consider for the area computation.
-     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:SDFPrimitive}>}
+     * @returns {Array.<{aabb: Box3, bv:Area, obj:SDFPrimitive}>}
      */
     getDistanceAreas(d) {
         if (!this.valid_aabb) {
@@ -6574,11 +6573,11 @@ class SDFPoint extends SDFPrimitive {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value = (function () {
-        var v = new THREE__default.Vector3();
+        var v = new Vector3();
         return function (p, res) {
             if (!this.valid_aabb) {
                 throw "Error : PrepareForEval should have been called";
@@ -6647,7 +6646,7 @@ class SDFRootNode extends Primitive {
         // Tmp vars to speed up computation (no reallocations)
         // TODO : should be pushed in the function static variables since there can be no SDFRoot below the SDFRoot.
         this.tmp_res = { v: 0, g: null };
-        this.tmp_g = new THREE__default.Vector3(0, 0, 0);
+        this.tmp_g = new Vector3(0, 0, 0);
     }
     getType() {
         return SDFRootNode.type;
@@ -6685,7 +6684,7 @@ class SDFRootNode extends Primitive {
     ;
     prepareForEval() {
         if (!this.valid_aabb) {
-            this.aabb = new THREE__default.Box3(); // Create empty BBox
+            this.aabb = new Box3(); // Create empty BBox
             for (let i = 0; i < this.sdfRoot.children.length; ++i) {
                 let c = this.sdfRoot.children[i];
                 c.prepareForEval();
@@ -6700,7 +6699,7 @@ class SDFRootNode extends Primitive {
      *
      *  This function is an attempt to have SDFRootNode behave like a Primitive in the normal Blobtree.
      *
-     *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
+     *  @returns {Array.<{aabb: Box3, bv:Area, obj:Primitive}>}
      */
     getAreas() {
         if (!this.valid_aabb) {
@@ -6723,7 +6722,7 @@ class SDFRootNode extends Primitive {
     /**
      *  @link Node.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value(p, res) {
@@ -6770,8 +6769,8 @@ Types.register(SDFRootNode.type, SDFRootNode);
  *  @constructor
  *  @extends SDFPrimitive
  *
- *  @param {THREE.Vector3} p1 Position of the first segment extremity
- *  @param {THREE.Vector3} p2 Position of the second segment extremity
+ *  @param {Vector3} p1 Position of the first segment extremity
+ *  @param {Vector3} p2 Position of the second segment extremity
  *  @param {number} acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
  */
 class SDFSegment extends SDFPrimitive {
@@ -6781,13 +6780,13 @@ class SDFSegment extends SDFPrimitive {
      * @returns SDFSegment
      */
     static fromJSON(json) {
-        return new SDFSegment(new THREE__default.Vector3(json.p1.x, json.p1.y, json.p1.z), new THREE__default.Vector3(json.p2.x, json.p2.y, json.p2.z), json.acc);
+        return new SDFSegment(new Vector3(json.p1.x, json.p1.y, json.p1.z), new Vector3(json.p2.x, json.p2.y, json.p2.z), json.acc);
     }
     ;
     /**
      *
-     * @param {THREE.Vector3} p1
-     * @param {THREE.Vector3} p2
+     * @param {Vector3} p1
+     * @param {Vector3} p2
      * @param {number} acc
      */
     constructor(p1, p2, acc) {
@@ -6796,8 +6795,8 @@ class SDFSegment extends SDFPrimitive {
         this.p2 = p2.clone();
         this.acc = acc || 1.0;
         // Helper for evaluation
-        /** @type {THREE.Line3} */
-        this.l = new THREE__default.Line3(this.p1, this.p2);
+        /** @type {Line3} */
+        this.l = new Line3(this.p1, this.p2);
     }
     getType() {
         return SDFSegment.type;
@@ -6840,7 +6839,7 @@ class SDFSegment extends SDFPrimitive {
     }
     ;
     /**
-     *  @param {THREE.Vector3} p1 The new position of the first segment point.
+     *  @param {Vector3} p1 The new position of the first segment point.
      */
     setPosition1(p1) {
         this.p1.copy(p1);
@@ -6848,7 +6847,7 @@ class SDFSegment extends SDFPrimitive {
     }
     ;
     /**
-     *  @param {THREE.Vector3} p2 The new position of the second segment point
+     *  @param {Vector3} p2 The new position of the second segment point
      */
     setPosition2(p2) {
         this.p2.copy(p2);
@@ -6856,14 +6855,14 @@ class SDFSegment extends SDFPrimitive {
     }
     ;
     /**
-     *  @return {THREE.Vector3} Current position of the first segment point
+     *  @return {Vector3} Current position of the first segment point
      */
     getPosition1() {
         return this.p1;
     }
     ;
     /**
-     *  @return {THREE.Vector3} Current position of the second segment point
+     *  @return {Vector3} Current position of the second segment point
      */
     getPosition2() {
         return this.p2;
@@ -6871,8 +6870,8 @@ class SDFSegment extends SDFPrimitive {
     ;
     // [Abstract]
     computeDistanceAABB(d) {
-        var b1 = new THREE__default.Box3(this.p1.clone().add(new THREE__default.Vector3(-d, -d, -d)), this.p1.clone().add(new THREE__default.Vector3(d, d, d)));
-        var b2 = new THREE__default.Box3(this.p2.clone().add(new THREE__default.Vector3(-d, -d, -d)), this.p2.clone().add(new THREE__default.Vector3(d, d, d)));
+        var b1 = new Box3(this.p1.clone().add(new Vector3(-d, -d, -d)), this.p1.clone().add(new Vector3(d, d, d)));
+        var b2 = new Box3(this.p2.clone().add(new Vector3(-d, -d, -d)), this.p2.clone().add(new Vector3(d, d, d)));
         return b1.union(b2);
     }
     ;
@@ -6904,14 +6903,14 @@ class SDFSegment extends SDFPrimitive {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value = (function () {
-        var v = new THREE__default.Vector3();
-        var lc = new THREE__default.Vector3();
+        var v = new Vector3();
+        var lc = new Vector3();
         /**
-         *  @param {THREE.Vector3} p
+         *  @param {Vector3} p
          *  @param {ValueResultType} res
          */
         return function (p, res) {
@@ -6935,7 +6934,7 @@ Types.register(SDFSegment.type, SDFSegment);
  *  @constructor
  *  @extends SDFPrimitive
  *
- *  @param {THREE.Vector3} p Position (ie center) of the sphere
+ *  @param {Vector3} p Position (ie center) of the sphere
  *  @param {number} r Radius of the sphere
  */
 class SDFSphere extends SDFPrimitive {
@@ -6945,12 +6944,12 @@ class SDFSphere extends SDFPrimitive {
      * @returns
      */
     static fromJSON(json) {
-        return new SDFSphere(new THREE.Vector3(json.p.x, json.p.y, json.p.z), json.r);
+        return new SDFSphere(new Vector3(json.p.x, json.p.y, json.p.z), json.r);
     }
     ;
     /**
      *
-     * @param {THREE.Vector3} p
+     * @param {Vector3} p
      * @param {number} r The radius of the sphere
      */
     constructor(p, r) {
@@ -6994,7 +6993,7 @@ class SDFSphere extends SDFPrimitive {
     }
     ;
     /**
-     *  @param {THREE.Vector3} p The new position (ie center)
+     *  @param {Vector3} p The new position (ie center)
      */
     setPosition(p) {
         this.p.copy(p);
@@ -7002,7 +7001,7 @@ class SDFSphere extends SDFPrimitive {
     }
     ;
     /**
-     *  @return {THREE.Vector3} Current position (ie center)
+     *  @return {Vector3} Current position (ie center)
      */
     getPosition() {
         return this.p;
@@ -7010,7 +7009,7 @@ class SDFSphere extends SDFPrimitive {
     ;
     // [Abstract]
     computeDistanceAABB(d) {
-        return new THREE.Box3(this.p.clone().add(new THREE.Vector3(-this.r - d, -this.r - d, -this.r - d)), this.p.clone().add(new THREE.Vector3(this.r + d, this.r + d, this.r + d)));
+        return new Box3(this.p.clone().add(new Vector3(-this.r - d, -this.r - d, -this.r - d)), this.p.clone().add(new Vector3(this.r + d, this.r + d, this.r + d)));
     }
     ;
     // [Abstract]
@@ -7041,13 +7040,13 @@ class SDFSphere extends SDFPrimitive {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value = (function () {
-        var v = new THREE.Vector3();
+        var v = new Vector3();
         /**
-         *  @param {THREE.Vector3} p
+         *  @param {Vector3} p
          *  @param {ValueResultType} res
          */
         return function (p, res) {
@@ -7158,12 +7157,12 @@ const Tables = {
 /**
  *  Axis Aligned Bounding Box in 2D carrying accuracy data
  *  @constructor
- *  @extends THREE.Box2
+ *  @extends Box2
  */
 class Box2Acc extends Box2 {
     /**
-     *  @param {THREE.Vector2=} min Minimum x,y coordinate of the box
-     *  @param {THREE.Vector2=} max Maximum x,y coordinate of the box
+     *  @param {Vector2=} min Minimum x,y coordinate of the box
+     *  @param {Vector2=} max Maximum x,y coordinate of the box
      *  @param {number=} nice_acc Nice accuracy in this box
      *  @param {number=} raw_acc Raw accuracy in this box
      */
@@ -7240,7 +7239,7 @@ class Box2Acc extends Box2 {
     ;
     /**
      *  Get corner with the minimum coordinates
-     *  @return {THREE.Vector2}
+     *  @return {Vector2}
      */
     getMinCorner() {
         return this.min;
@@ -7350,19 +7349,19 @@ class SlidingMarchingCubes {
             false,
             false
         ];
-        /** @type {THREE.Vector3} */
-        this.vertex = new THREE.Vector3(0, 0, 0); // vertex associated to the cell if any
-        /** @type {THREE.Vector3} */
-        this.vertex_n = new THREE.Vector3(0, 0, 0); // vertex normal
+        /** @type {Vector3} */
+        this.vertex = new Vector3(0, 0, 0); // vertex associated to the cell if any
+        /** @type {Vector3} */
+        this.vertex_n = new Vector3(0, 0, 0); // vertex normal
         /** @type {Material} */
         this.vertex_m = new Material(); // vertex material
         // Vars and tmp vars for extension checks
         /** @type {boolean} */
         this.extended = false;
-        /** @type {THREE.Box3} */
-        this.dis_o_aabb = new THREE.Box3();
-        /** @type {THREE.Vector3} */
-        this.ext_p = new THREE.Vector3();
+        /** @type {Box3} */
+        this.dis_o_aabb = new Box3();
+        /** @type {Vector3} */
+        this.ext_p = new Vector3();
         /**
          * Resulting mesh data
          * @type {ResultingGeometry}
@@ -7378,34 +7377,34 @@ class SlidingMarchingCubes {
                 //Var and tmp var pre allocated and Scoped
                 //for optimization of triangulation criteria
                 //assuming a v1v2v3v4 quad
-                /** @type {THREE.Vector3} */
-                let p1 = new THREE.Vector3(); //v1 position
-                /** @type {THREE.Vector3} */
-                let p2 = new THREE.Vector3(); //v2 position
-                /** @type {THREE.Vector3} */
-                let p3 = new THREE.Vector3(); //v3 position
-                /** @type {THREE.Vector3} */
-                let p4 = new THREE.Vector3(); //v4 position
+                /** @type {Vector3} */
+                let p1 = new Vector3(); //v1 position
+                /** @type {Vector3} */
+                let p2 = new Vector3(); //v2 position
+                /** @type {Vector3} */
+                let p3 = new Vector3(); //v3 position
+                /** @type {Vector3} */
+                let p4 = new Vector3(); //v4 position
                 //Edges from v2
-                /** @type {THREE.Vector3} */
-                let pp_2_1 = new THREE.Vector3(); //v2v1 edge
-                /** @type {THREE.Vector3} */
-                let pp_2_3 = new THREE.Vector3(); //v2v3 edge
-                /** @type {THREE.Vector3} */
-                let pp_2_4 = new THREE.Vector3(); //v2v4 edge
+                /** @type {Vector3} */
+                let pp_2_1 = new Vector3(); //v2v1 edge
+                /** @type {Vector3} */
+                let pp_2_3 = new Vector3(); //v2v3 edge
+                /** @type {Vector3} */
+                let pp_2_4 = new Vector3(); //v2v4 edge
                 //Edges from v4
-                /** @type {THREE.Vector3} */
-                let pp_4_1 = new THREE.Vector3(); //v4v1 edge
-                /** @type {THREE.Vector3} */
-                let pp_4_3 = new THREE.Vector3(); //v3v1 edge
-                /** @type {THREE.Vector3} */
-                let n_2 = new THREE.Vector3(); //123 normal
-                /** @type {THREE.Vector3} */
-                let n_4 = new THREE.Vector3(); //341 normal
-                /** @type {THREE.Vector3} */
-                let n_23 = new THREE.Vector3(); //234 normal
-                /** @type {THREE.Vector3} */
-                let n_42 = new THREE.Vector3(); //412 normal
+                /** @type {Vector3} */
+                let pp_4_1 = new Vector3(); //v4v1 edge
+                /** @type {Vector3} */
+                let pp_4_3 = new Vector3(); //v3v1 edge
+                /** @type {Vector3} */
+                let n_2 = new Vector3(); //123 normal
+                /** @type {Vector3} */
+                let n_4 = new Vector3(); //341 normal
+                /** @type {Vector3} */
+                let n_23 = new Vector3(); //234 normal
+                /** @type {Vector3} */
+                let n_42 = new Vector3(); //412 normal
                 return function (v1, v2, v3, v4) {
                     //Quad opposes v1 and v3 and v2 and v4
                     //check min curvature
@@ -7480,13 +7479,13 @@ class SlidingMarchingCubes {
      *  @private
      */
     buildResultingBufferGeometry() {
-        var res = new THREE.BufferGeometry();
-        res.setAttribute("position", new THREE.BufferAttribute(new Float32Array(this.geometry.position), 3));
-        res.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(this.geometry.normal), 3));
-        res.setAttribute("color", new THREE.BufferAttribute(new Float32Array(this.geometry.color), 3));
-        res.setAttribute("roughness", new THREE.BufferAttribute(new Float32Array(this.geometry.roughness), 1));
-        res.setAttribute("metalness", new THREE.BufferAttribute(new Float32Array(this.geometry.metalness), 1));
-        res.setIndex(new THREE.BufferAttribute(this.geometry.nVertices > 65535
+        var res = new BufferGeometry();
+        res.setAttribute("position", new BufferAttribute(new Float32Array(this.geometry.position), 3));
+        res.setAttribute("normal", new BufferAttribute(new Float32Array(this.geometry.normal), 3));
+        res.setAttribute("color", new BufferAttribute(new Float32Array(this.geometry.color), 3));
+        res.setAttribute("roughness", new BufferAttribute(new Float32Array(this.geometry.roughness), 1));
+        res.setAttribute("metalness", new BufferAttribute(new Float32Array(this.geometry.metalness), 1));
+        res.setIndex(new BufferAttribute(this.geometry.nVertices > 65535
             ? new Uint32Array(this.geometry.faces)
             : new Uint16Array(this.geometry.faces), 1));
         return res;
@@ -7543,8 +7542,8 @@ class SlidingMarchingCubes {
         let nx = x1 - x0;
         let ny = y1 - y0;
         /*
-        this.computeFrontValAtBoxCorners(cx,cy,cz, new THREE.Vector2(x0,y0), new THREE.Vector2(x1,y1));
-        var mask = this.computeBoxMask(new THREE.Vector2(x0,y0), new THREE.Vector2(x1,y1));
+        this.computeFrontValAtBoxCorners(cx,cy,cz, new Vector2(x0,y0), new Vector2(x1,y1));
+        var mask = this.computeBoxMask(new Vector2(x0,y0), new Vector2(x1,y1));
         if(!(mask === 0xf || mask === 0x0)){
             throw "Error bad mask when interpolating";
         }
@@ -7608,7 +7607,7 @@ class SlidingMarchingCubes {
      */
     computeFrontValAtClosure = (function () {
         var eval_res = { v: 0 };
-        var p = new THREE.Vector3();
+        var p = new Vector3();
         return function (cx, cy, cz, x, y) {
             /** @type {SlidingMarchingCubes} */
             let self = this;
@@ -7626,8 +7625,8 @@ class SlidingMarchingCubes {
      *  @param {number} cx X coordinate of the front buffer corner
      *  @param {number} cy Y coordinate of the front buffer corner
      *  @param {number} cz Z coordinate of the front buffer corner
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      */
     computeFrontValAtBoxCorners(cx, cy, cz, min, max) {
         this.computeFrontValAt(cx, cy, cz, min.x, min.y);
@@ -7641,8 +7640,8 @@ class SlidingMarchingCubes {
      *  @param {number} cx X coordinate of the front buffer corner
      *  @param {number} cy Y coordinate of the front buffer corner
      *  @param {number} cz Z coordinate of the front buffer corner
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      */
     computeFrontValInBox(cx, cy, cz, min, max) {
         for (var xx = min.x; xx <= max.x; ++xx) {
@@ -7654,8 +7653,8 @@ class SlidingMarchingCubes {
     ;
     /**
      *  Set all values in 2D box min,max at 0.
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      */
     setFrontValZeroInBox(min, max) {
         for (var ix = min.x; ix <= max.x; ++ix) {
@@ -7668,8 +7667,8 @@ class SlidingMarchingCubes {
     /**
      *  Compute 2D mask of a given 2D box. Mask is an hex integer unique for each
      *  combination of iso value crossing (like in 3D marching cubes, but in 2D).
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      *  @return {number} The mask
      */
     computeBoxMask(min, max) {
@@ -7699,8 +7698,8 @@ class SlidingMarchingCubes {
     ;
     /**
      *  Return 0 if and only if all coners value of 2D box min,max are 0
-     *  @param {!THREE.Vector2} min 2D box min
-     *  @param {!THREE.Vector2} max 2D box max
+     *  @param {!Vector2} min 2D box min
+     *  @param {!Vector2} max 2D box max
      *  @return {number}
      */
     checkZeroBox(min, max) {
@@ -7725,13 +7724,13 @@ class SlidingMarchingCubes {
     recursiveBoxComputation(cx, cy, cz, box, boxes2D) {
         // split the current box in 2 boxes in the largest dimension
         var new_boxes = null;
-        var diff = new THREE.Vector2(Math.round(box.max.x - box.min.x), Math.round(box.max.y - box.min.y));
+        var diff = new Vector2(Math.round(box.max.x - box.min.x), Math.round(box.max.y - box.min.y));
         if (diff.x > 1 && diff.x >= diff.y) {
             // cut in x
             var x_cut = box.min.x + Math.floor(diff.x / 2);
             new_boxes = [
-                new Box2Acc(box.min, new THREE.Vector2(x_cut, box.max.y), 10000, 10000),
-                new Box2Acc(new THREE.Vector2(x_cut, box.min.y), box.max, 10000, 10000)
+                new Box2Acc(box.min, new Vector2(x_cut, box.max.y), 10000, 10000),
+                new Box2Acc(new Vector2(x_cut, box.min.y), box.max, 10000, 10000)
             ];
             this.computeFrontValAt(cx, cy, cz, x_cut, box.min.y);
             this.computeFrontValAt(cx, cy, cz, x_cut, box.max.y);
@@ -7743,8 +7742,8 @@ class SlidingMarchingCubes {
             if (diff.y > 1) {
                 var y_cut = box.min.y + Math.floor(diff.y / 2);
                 new_boxes = [
-                    new Box2Acc(box.min, new THREE.Vector2(box.max.x, y_cut), 10000, 10000),
-                    new Box2Acc(new THREE.Vector2(box.min.x, y_cut), box.max, 10000, 10000)
+                    new Box2Acc(box.min, new Vector2(box.max.x, y_cut), 10000, 10000),
+                    new Box2Acc(new Vector2(box.min.x, y_cut), box.max, 10000, 10000)
                 ];
                 this.computeFrontValAt(cx, cy, cz, box.min.x, y_cut);
                 this.computeFrontValAt(cx, cy, cz, box.max.x, y_cut);
@@ -7774,7 +7773,7 @@ class SlidingMarchingCubes {
         }
         for (let k = 0; k < new_boxes.length; ++k) {
             let b = new_boxes[k];
-            let bsize = b.getSize(new THREE.Vector2());
+            let bsize = b.getSize(new Vector2());
             if (boxes2D_rec[k].length === 0) {
                 this.setFrontValZeroInBox(b.min, b.max);
             }
@@ -7831,10 +7830,10 @@ class SlidingMarchingCubes {
             var y_min = Math.max(0, Math.floor((areas[i].aabb.min.y - cy) / this.min_acc));
             var x_max = Math.min(this.reso[0] - 1, Math.ceil((areas[i].aabb.max.x - cx) / this.min_acc));
             var y_max = Math.min(this.reso[1] - 1, Math.ceil((areas[i].aabb.max.y - cy) / this.min_acc));
-            boxes2D.push(new Box2Acc(new THREE.Vector2(x_min, y_min), new THREE.Vector2(x_max, y_max), nice_acc, raw_acc));
+            boxes2D.push(new Box2Acc(new Vector2(x_min, y_min), new Vector2(x_max, y_max), nice_acc, raw_acc));
             bigbox.unionWithAcc(boxes2D[boxes2D.length - 1]);
         }
-        bigbox.intersect(new Box2Acc(new THREE.Vector2(0, 0), new THREE.Vector2(this.reso[0], this.reso[1]), bigbox.getNiceAcc(), bigbox.getRawAcc()));
+        bigbox.intersect(new Box2Acc(new Vector2(0, 0), new Vector2(this.reso[0], this.reso[1]), bigbox.getNiceAcc(), bigbox.getRawAcc()));
         this.computeFrontValAtBoxCorners(cx, cy, cz, bigbox.min, bigbox.max);
         this.recursiveBoxComputation(cx, cy, cz, bigbox, boxes2D);
         this.setFrontToZeroIfMinus();
@@ -7842,7 +7841,7 @@ class SlidingMarchingCubes {
     ;
     /**
      *   get the min accuracy needed for this zone
-     *   @param {THREE.Box3} bbox the zone for which we want the minAcc
+     *   @param {Box3} bbox the zone for which we want the minAcc
      *   @return {number} the min acc for this zone
      */
     getMinAcc(bbox) {
@@ -7865,7 +7864,7 @@ class SlidingMarchingCubes {
     ;
     /**
      *   get the max accuracy needed for this zone
-     *   @param {THREE.Box3} bbox the zone for which we want the minAcc
+     *   @param {Box3} bbox the zone for which we want the minAcc
      *   @return {number} the max acc for this zone
      */
     getMaxAcc(bbox) {
@@ -7888,7 +7887,7 @@ class SlidingMarchingCubes {
     /**
      *  Note : returned mesh data will be accurate only if extened AABB difference
      *  with o_aabb is small. compared to o_aabb size.
-     *  @param {THREE.Box3} o_aabb The aabb where to compute the surface, if null, the blobtree AABB will be used
+     *  @param {Box3} o_aabb The aabb where to compute the surface, if null, the blobtree AABB will be used
      *  @param {boolean=} extended True if we want the agorithm to extend the computation zone
      *                            to ensure overlap with a mesh resulting from a computation
      *                            in a neighbouring aabb (Especially usefull for parallelism).
@@ -7906,7 +7905,7 @@ class SlidingMarchingCubes {
         }
         this.extended = extended !== undefined ? extended : false;
         if (this.extended) {
-            let adims = aabb.getSize(new THREE.Vector3());
+            let adims = aabb.getSize(new Vector3());
             let minAcc = Math.min(Math.min(this.getMinAcc(aabb), adims[0]), Math.min(adims[1], adims[2]));
             let acc_box = aabb.clone();
             let final_bbox = aabb.clone();
@@ -7945,7 +7944,7 @@ class SlidingMarchingCubes {
         }
         this.min_acc = this.min_acc * this.detail_ratio;
         var corner = aabb.min;
-        var dims = aabb.getSize(new THREE.Vector3());
+        var dims = aabb.getSize(new Vector3());
         this.steps.z = new Float32Array(Math.ceil(dims.z / this.min_acc) + 2);
         this.steps.z[0] = corner.z;
         var index = 1;
@@ -7972,7 +7971,7 @@ class SlidingMarchingCubes {
         // Reminder : dis_o_aabb is the discret o_aabb, ie indices for which we are in the o_aabb.
         if (this.extended) {
             var i = 0;
-            this.dis_o_aabb.set(new THREE.Vector3(-1, -1, -1), new THREE.Vector3(-1, -1, -1));
+            this.dis_o_aabb.set(new Vector3(-1, -1, -1), new Vector3(-1, -1, -1));
             while (i < this.reso[2] && this.dis_o_aabb.min.z === -1) {
                 if (this.steps.z[i] >= o_aabb.min.z) {
                     this.dis_o_aabb.min.z = i;
@@ -8010,7 +8009,7 @@ class SlidingMarchingCubes {
         this.vertices_xy[0] = new Int32Array(this.reso[0] * this.reso[1]);
         this.vertices_xy[1] = new Int32Array(this.reso[0] * this.reso[1]);
         // Aabb for trimming the blobtree
-        var trim_aabb = new THREE.Box3();
+        var trim_aabb = new Box3();
         this.computeFrontValues(corner.x, corner.y, corner.z);
         var percent = 0;
         for (var iz = 0; iz < this.reso[2] - 1; ++iz) {
@@ -8022,7 +8021,7 @@ class SlidingMarchingCubes {
             this.vertices_xy[0] = this.vertices_xy[1];
             this.vertices_xy[1] = verticesSwitcher;
             var z1 = this.steps.z[iz + 1];
-            trim_aabb.set(new THREE.Vector3(corner.x, corner.y, z1 - this.min_acc / 64), new THREE.Vector3(corner.x + this.reso[0] * this.min_acc, corner.y + this.reso[1] * this.min_acc, z1 + this.min_acc / 64));
+            trim_aabb.set(new Vector3(corner.x, corner.y, z1 - this.min_acc / 64), new Vector3(corner.x + this.reso[0] * this.min_acc, corner.y + this.reso[1] * this.min_acc, z1 + this.min_acc / 64));
             this.blobtree.internalTrim(trim_aabb);
             this.blobtree.prepareForEval();
             this.computeFrontValues(corner.x, corner.y, z1);
@@ -8065,7 +8064,7 @@ class SlidingMarchingCubes {
      *  compute marching cube mask, build the resulting vertex and faces if necessary.
      *  @param {number} x
      *  @param {number} y
-     *  @param {THREE.Vector3} corner Bottom left corner of front array.
+     *  @param {Vector3} corner Bottom left corner of front array.
      */
     fetchAndTriangulate(x, y, z, corner) {
         var idx_y_0 = y * this.reso[0] + x;
@@ -8210,10 +8209,10 @@ class SlidingMarchingCubes {
         // Function static variable
         var eval_res = {
             v: null,
-            g: new THREE.Vector3(0, 0, 0),
+            g: new Vector3(0, 0, 0),
             m: new Material()
         };
-        var conv_res = new THREE.Vector3();
+        var conv_res = new Vector3();
         return function () {
             eval_res.v = this.blobtree.getNeutralValue();
             // Optimization note :
@@ -8265,7 +8264,7 @@ class SlidingMarchingCubes {
             //        and the result does not seem 15 et 20% better...
             if (this.convergence) {
                 Convergence.safeNewton3D(this.blobtree, // Scalar Field to eval
-                this.vertex, // 3D point where we start, must comply to THREE.Vector3 API
+                this.vertex, // 3D point where we start, must comply to Vector3 API
                 this.blobtree.getIsoValue(), // iso value we are looking for
                 this.min_acc * this.convergence.ratio, // Geometrical limit to stop
                 this.convergence.step, // limit of number of step
@@ -8485,8 +8484,8 @@ class SplitSMC extends SlidingMarchingCubes {
      */
     computeVertex = (function () {
         // Function static variable
-        var eval_res = { v: null, g: new THREE.Vector3(0, 0, 0), m: new Material() };
-        var conv_res = new THREE.Vector3();
+        var eval_res = { v: null, g: new Vector3(0, 0, 0), m: new Material() };
+        var conv_res = new Vector3();
         return function () {
             /** @type {SplitSMC} */
             let self = this;
@@ -8538,7 +8537,7 @@ class SplitSMC extends SlidingMarchingCubes {
             //        and the result does not seem 15 et 20% better...
             if (self.convergence) {
                 Convergence.safeNewton3D(self.blobtree, // Scalar Field to eval
-                self.vertex, // 3D point where we start, must comply to THREE.Vector3 API
+                self.vertex, // 3D point where we start, must comply to Vector3 API
                 self.blobtree.getIsoValue(), // iso value we are looking for
                 self.min_acc * self.convergence.ratio, // Geometrical limit to stop
                 self.convergence.step, // limit of number of step

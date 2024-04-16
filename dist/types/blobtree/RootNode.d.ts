@@ -11,8 +11,8 @@ import { RicciNode } from "./RicciNode.js";
 /**
  * @typedef {Object} IntersectionResult The result of the intersection
  * @property {number=} distance distance from ray.origin to intersection point,
- * @property {THREE.Vector3} point: intersection point,
- * @property {THREE.Vector3} g: gradient at intersection, if required.
+ * @property {Vector3} point: intersection point,
+ * @property {Vector3} g: gradient at intersection, if required.
  */
 /**
  *  The root of any implicit blobtree. Does behave computationaly like a RicciNode with n = 64.
@@ -64,13 +64,13 @@ export declare class RootNode extends RicciNode {
      *  Basically perform a trim but keep track of trimmed elements.
      *  This is usefull if you want to trim, then untrim, then trim, etc...
      *  For example, this is very useful for evaluation optim
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      */
     internalTrim(aabb: any): void;
     /**
      *  Wrapper for trim, will help programmers to make the difference between
      *  internal and external trim.
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      *  @param {Array.<Element>} trimmed Array of trimmed Elements
      *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
      */

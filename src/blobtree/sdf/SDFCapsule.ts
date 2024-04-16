@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { Vector3, Box3, MathUtils } from "three"
 import { Types } from "../Types";
 import { SDFPrimitive } from "./SDFPrimitive";
 import { AreaCapsule } from "../areas/AreaCapsule";
@@ -30,8 +30,8 @@ export class SDFCapsule extends SDFPrimitive {
     static fromJSON(json) {
         //var v = ScalisVertex.fromJSON(json.v[0]);
         return new SDFCapsule(
-            new THREE.Vector3(json.p1.x, json.p1.y, json.p1.z),
-            new THREE.Vector3(json.p2.x, json.p2.y, json.p2.z),
+            new Vector3(json.p1.x, json.p1.y, json.p1.z),
+            new Vector3(json.p2.x, json.p2.y, json.p2.z),
             json.r1,
             json.r2
         );
@@ -39,8 +39,8 @@ export class SDFCapsule extends SDFPrimitive {
 
     /**
      *
-     *  @param {THREE.Vector3} p1 Position of the first segment extremity
-     *  @param {THREE.Vector3} p2 Position of the second segment extremity
+     *  @param {Vector3} p1 Position of the first segment extremity
+     *  @param {Vector3} p2 Position of the second segment extremity
      *  @param {number} r1 Radius of the sphere centered in p1
      *  @param {number} r2 Radius of the sphere centered in p2
      */
@@ -54,7 +54,7 @@ export class SDFCapsule extends SDFPrimitive {
 
         // Helper for evaluation
         this.rdiff = this.r2 - this.r1;
-        this.unit_dir = new THREE.Vector3().subVectors(this.p2, this.p1);
+        this.unit_dir = new Vector3().subVectors(this.p2, this.p1);
         this.lengthSq = this.unit_dir.lengthSq();
         this.length = this.unit_dir.length();
         this.unit_dir.normalize();
@@ -119,7 +119,7 @@ export class SDFCapsule extends SDFPrimitive {
     };
 
     /**
-     *  @param {THREE.Vector3} p1 The new position of the first segment point.
+     *  @param {Vector3} p1 The new position of the first segment point.
      */
     setPosition1(p1) {
         this.p1.copy(p1);
@@ -127,7 +127,7 @@ export class SDFCapsule extends SDFPrimitive {
     };
 
     /**
-     *  @param {THREE.Vector3} p2 The new position of the second segment point
+     *  @param {Vector3} p2 The new position of the second segment point
      */
     setPosition2(p2) {
         this.p2.copy(p2);
@@ -135,27 +135,27 @@ export class SDFCapsule extends SDFPrimitive {
     };
 
     /**
-     *  @return {THREE.Vector3} Current position of the first segment point
+     *  @return {Vector3} Current position of the first segment point
      */
     getPosition1() {
         return this.p1;
     };
 
     /**
-     *  @return {THREE.Vector3} Current position of the second segment point
+     *  @return {Vector3} Current position of the second segment point
      */
     getPosition2() {
         return this.p2;
     };
 
     computeDistanceAABB(d) {
-        var b1 = new THREE.Box3(
-            this.p1.clone().add(new THREE.Vector3(-this.r1 - d, -this.r1 - d, -this.r1 - d)),
-            this.p1.clone().add(new THREE.Vector3(this.r1 + d, this.r1 + d, this.r1 + d))
+        var b1 = new Box3(
+            this.p1.clone().add(new Vector3(-this.r1 - d, -this.r1 - d, -this.r1 - d)),
+            this.p1.clone().add(new Vector3(this.r1 + d, this.r1 + d, this.r1 + d))
         );
-        var b2 = new THREE.Box3(
-            this.p2.clone().add(new THREE.Vector3(-this.r2 - d, -this.r2 - d, -this.r2 - d)),
-            this.p2.clone().add(new THREE.Vector3(this.r2 + d, this.r2 + d, this.r2 + d))
+        var b2 = new Box3(
+            this.p2.clone().add(new Vector3(-this.r2 - d, -this.r2 - d, -this.r2 - d)),
+            this.p2.clone().add(new Vector3(this.r2 + d, this.r2 + d, this.r2 + d))
         );
         return b1.union(b2);
     };
@@ -195,14 +195,14 @@ export class SDFCapsule extends SDFPrimitive {
     /**
      *  @link Element.value for a complete description
      *
-     *  @param {THREE.Vector3} p
+     *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
     value = (function () {
-        var v = new THREE.Vector3();
-        var proj = new THREE.Vector3();
+        var v = new Vector3();
+        var proj = new Vector3();
         /**
-         *  @param {THREE.Vector3} p
+         *  @param {Vector3} p
          *  @param {ValueResultType} res
          */
         return function (p, res) {
@@ -227,7 +227,7 @@ export class SDFCapsule extends SDFPrimitive {
             // var proj_y = 0.0; // by construction
 
             // Easy way to compute the distance now that we ave the projection on the segment
-            var a = THREE.MathUtils.clamp(proj_x / self.length, 0, 1.0);
+            var a = MathUtils.clamp(proj_x / self.length, 0, 1.0);
             proj.copy(self.p1).lerp(self.p2, a); // compute the actual 3D projection
             var l = v.subVectors(p, proj).length();
             res.v = l - (a * self.r2 + (1.0 - a) * self.r1);

@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { Vector3, Box3 } from "three"
 import { Types } from "../Types";
 import { Node } from '../Node';
 
@@ -26,8 +26,8 @@ export class SDFNode extends Node {
 
         // Default bounding box for a SDF is infinite.
         this.aabb.set(
-            new THREE.Vector3(- Infinity, - Infinity, - Infinity),
-            new THREE.Vector3(+ Infinity, + Infinity, + Infinity)
+            new Vector3(- Infinity, - Infinity, - Infinity),
+            new Vector3(+ Infinity, + Infinity, + Infinity)
         );
 
         /** @type {Array<SDFNode|SDFPrimitive>} */
@@ -48,11 +48,11 @@ export class SDFNode extends Node {
      *  Ie, the distance field is greater than d everywhere outside the returned box.
      *  @abstract
      *  @param {number} d Distance
-     *  @return {THREE.Box3}
+     *  @return {Box3}
      *
      */
     computeDistanceAABB(d) {
-        let res = new THREE.Box3();
+        let res = new Box3();
         for (let i = 0; i < this.children.length; ++i) {
             res.union(this.children[i].computeDistanceAABB(d));
         }
@@ -79,7 +79,7 @@ export class SDFNode extends Node {
 
     /**
      * @param {number} d Distance to consider for the area computation.
-     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:SDFPrimitive}>}
+     * @returns {Array.<{aabb: Box3, bv:Area, obj:SDFPrimitive}>}
      */
     getDistanceAreas(d) {
         // By default return areas of all children
@@ -95,7 +95,7 @@ export class SDFNode extends Node {
      * Since SDF Nodes are distance function, this function will return
      * an accurate distance to the surface.
      * @abstract
-     * @param {THREE.Vector3} _p Point
+     * @param {Vector3} _p Point
      * @return {number}
      */
     distanceTo(_p) {

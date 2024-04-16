@@ -52,12 +52,12 @@ export declare class DifferenceNode extends Node {
      *  Compute the value and/or gradient and/or material
      *  of the element at position p in space. return computations in res (see below)
      *
-     *  @param {THREE.Vector3} p Point where we want to evaluate the primitive field
+     *  @param {Vector3} p Point where we want to evaluate the primitive field
      *  @param {Object} res Computed values will be stored here. Each values should exist and
      *                       be allocated already.
      *  @param {number} res.v Value, must be defined
      *  @param {Material} res.m Material, must be allocated and defined if wanted
-     *  @param {THREE.Vector3} res.g Gradient, must be allocated and defined if wanted
+     *  @param {Vector3} res.g Gradient, must be allocated and defined if wanted
      *  @param {number=} res.step The next step we can safely walk without missing the iso (0). Mostly used for convergence function or ray marching.
      *  @param {number=} res.stepOrtho
      */
@@ -67,7 +67,7 @@ export declare class DifferenceNode extends Node {
      *
      *  Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
      *
-     *  @param {THREE.Box3} aabb
+     *  @param {Box3} aabb
      *  @param {Array.<Element>} trimmed
      *  @param {Array.<Node>} parents
      */

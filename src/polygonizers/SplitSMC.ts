@@ -1,5 +1,4 @@
-import * as THREE from "three";
-
+import { Vector3 } from "three";
 import { Material } from "../blobtree/Material.js"
 import { Tables } from "./MCTables.js"
 import { Convergence } from "../utils/Convergence.js"
@@ -47,8 +46,8 @@ export class SplitSMC extends SlidingMarchingCubes {
      */
     computeVertex = (function () {
         // Function static variable
-        var eval_res = { v: null, g: new THREE.Vector3(0, 0, 0), m: new Material() };
-        var conv_res = new THREE.Vector3();
+        var eval_res = { v: null, g: new Vector3(0, 0, 0), m: new Material() };
+        var conv_res = new Vector3();
 
         return function () {
 
@@ -114,7 +113,7 @@ export class SplitSMC extends SlidingMarchingCubes {
             if (self.convergence) {
                 Convergence.safeNewton3D(
                     self.blobtree,      // Scalar Field to eval
-                    self.vertex,                  // 3D point where we start, must comply to THREE.Vector3 API
+                    self.vertex,                  // 3D point where we start, must comply to Vector3 API
                     self.blobtree.getIsoValue(),               // iso value we are looking for
                     self.min_acc * self.convergence.ratio,               // Geometrical limit to stop
                     self.convergence.step,                           // limit of number of step
