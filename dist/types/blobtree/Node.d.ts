@@ -1,4 +1,4 @@
-export = Node;
+import { Element } from './Element';
 /**
  * @typedef {import('./Element.js').Json} Json
  * @typedef {import('./Element.js').ElementJSON} ElementJSON
@@ -11,21 +11,38 @@ export = Node;
  *  @constructor
  *  @extends {Element}
  */
-declare class Node extends Element {
+export declare class Node extends Element {
+    static type: string;
     /**
      * @param {NodeJSON} _json
      */
-    static fromJSON(_json: NodeJSON): void;
-    /** @type {Array.<!Element>} */
-    children: Array<Element>;
+    static fromJSON(_json: any): void;
+    constructor();
+    getType(): string;
     /**
      * @return {NodeJSON}
      */
-    toJSON(): NodeJSON;
+    toJSON(): {
+        children: never[];
+        type: string;
+    };
     /**
      *  Clone current node and itss hierarchy
      */
     clone(): any;
+    /**
+     *  @link Element.prepareForEval
+     */
+    prepareForEval(): void;
+    /**
+     *  Invalid the bounding boxes recursively down for all children
+     */
+    invalidAll(): void;
+    /**
+     *  Destroy the node and its children. The node is removed from the blobtree
+     *  (basically clean up the links between blobtree elements).
+     */
+    destroy(): void;
     /**
      *  Only works with nary nodes, otherwise a set function would be more appropriate.
      *  -> TODO : check that if we have something else than n-ary nodes one day...
@@ -34,7 +51,7 @@ declare class Node extends Element {
      *
      *  @param {Element} c The child to add.
      */
-    addChild(c: Element): this;
+    addChild(c: any): this;
     /**
      *  Only works with n-ary nodes, otherwise order matters and we therefore
      *  have to set "null" and node cannot be evaluated.
@@ -45,19 +62,40 @@ declare class Node extends Element {
      *          To move a node to another parent : use addChild.
      *  @param {Element} c The child to remove.
      */
-    removeChild(c: Element): void;
+    removeChild(c: any): void;
+    /**
+     * @link Element.computeAABB for a complete description
+     */
+    computeAABB(): void;
+    /**
+     *  @link Element.getAreas for a complete description
+     *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
+     */
+    getAreas(): any[];
+    /**
+     * @link Element.distanceTo for a complete description
+     * @param {THREE.Vector3} p
+     * @returns {number}
+     */
+    distanceTo(p: any): number;
+    /**
+     * @returns
+     */
+    heuristicStepWithin(): number;
+    /**
+     *  @link Element.trim for a complete description.
+     *
+     *  @param {THREE.Box3} aabb
+     *  @param {Array.<Element>} trimmed
+     *  @param {Array.<Node>} parents
+     */
+    trim(aabb: any, trimmed: any, parents: any): void;
+    /**
+     *  @link Element.count for a complete description.
+     *
+     *  @param {Function} cls
+     *  @return {number}
+     */
+    count(cls: any): number;
 }
-declare namespace Node {
-    export { Json, ElementJSON, Primitive, Area, NodeJSON };
-}
-import Element = require("./Element.js");
-type Json = import('./Element.js').Json;
-type ElementJSON = import('./Element.js').ElementJSON;
-type Primitive = import('./Primitive.js');
-type Area = import('./areas/Area');
-type NodeJSON = {
-    children: Array<{
-        ElementJSON;
-    }>;
-} & ElementJSON;
 //# sourceMappingURL=Node.d.ts.map

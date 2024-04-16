@@ -1,4 +1,4 @@
-export = Primitive;
+import { Element } from './Element';
 /**
  * @typedef {import('./Material.js')} Material
  * @typedef {import('./Material.js').MaterialJSON} MaterialJSON
@@ -16,42 +16,53 @@ export = Primitive;
  *  @constructor
  *  @extends {Element}
  */
-declare class Primitive extends Element {
+export declare class Primitive extends Element {
+    static type: string;
     /**
      * @param {PrimitiveJSON} _json
      */
-    static fromJSON(_json: PrimitiveJSON): void;
-    /** @type {!Array.<!Material>} */
-    materials: Array<Material>;
+    static fromJSON(_json: any): void;
+    constructor();
     /**
      * @returns {PrimitiveJSON}
      */
-    toJSON(): PrimitiveJSON;
+    toJSON(): {
+        materials: never[];
+        type: string;
+    };
     /**
      *  @param {Array.<!Material>} mats Array of materials to set. they will be copied to the primitive materials
      */
-    setMaterials(mats: Array<Material>): void;
+    setMaterials(mats: any): void;
     /**
      *  @return {Array.<!Material>} Current primitive materials
      */
-    getMaterials: () => Array<Material>;
+    getMaterials: () => any;
+    /**
+     * @link Element.computeAABB for a complete description
+     */
+    computeAABB(): void;
+    /**
+     *  @abstract
+     *  Destroy the current primitive and remove it from the blobtree (basically
+     *  clean up the links between blobtree elements).
+     */
+    destroy(): void;
+    /**
+     * @abstract
+     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
+     */
+    getAreas(): never[];
+    /**
+     * @abstract
+     * Compute variables to help with value computation.
+     */
+    computeHelpVariables(): void;
     /**
      * @abstract
      * Compute variables to help with value computation.
      * @param {*} cls The class to count. Primitives have no children so no complexty here.
      */
-    count(cls: any): 1 | 0;
+    count(cls: any): 0 | 1;
 }
-declare namespace Primitive {
-    export { Material, MaterialJSON, ElementJSON, Json, Area, PrimitiveJSON };
-}
-import Element = require("./Element.js");
-type Material = import('./Material.js');
-type MaterialJSON = import('./Material.js').MaterialJSON;
-type ElementJSON = import('./Element.js').ElementJSON;
-type Json = import('./Element.js').Json;
-type Area = import('./areas/Area.js');
-type PrimitiveJSON = {
-    materials: Array<MaterialJSON>;
-} & ElementJSON;
 //# sourceMappingURL=Primitive.d.ts.map

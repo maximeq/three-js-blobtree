@@ -1,4 +1,4 @@
-import RootNode from "../blobtree/RootNode";
+import { RootNode } from "../blobtree/RootNode";
 type ConvergenceParams = {
     ratio?: number;
     step?: number;

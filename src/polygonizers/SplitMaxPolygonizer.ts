@@ -1,16 +1,16 @@
-import { BufferGeometryUtils } from "three/examples/jsm/utils/BufferGeometryUtils";
+import { BufferGeometryUtils } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 // Does not work yet, so just suppose that Blobtree is defined externally
 // const Blobtree = require('three-js-blobtree");
 
-import RootNode from "../blobtree/RootNode";
-import RicciNode from "../blobtree/RicciNode";
-import MaxNode from "../blobtree/MaxNode";
-import ScalisPoint from "../blobtree/scalis/ScalisPoint";
-import ScalisSegment from "../blobtree/scalis/ScalisSegment";
-import ScalisTriangle from "../blobtree/scalis/ScalisTriangle";
+import { RootNode } from "../blobtree/RootNode";
+import { RicciNode } from "../blobtree/RicciNode";
+import { MaxNode } from "../blobtree/MaxNode";
+import { ScalisPoint } from "../blobtree/scalis/ScalisPoint";
+import { ScalisSegment } from "../blobtree/scalis/ScalisSegment";
+import { ScalisTriangle } from "../blobtree/scalis/ScalisTriangle";
 
-import SlidingMarchingCubes from "./SlidingMarchingCubes";
+import { SlidingMarchingCubes } from "./SlidingMarchingCubes";
 
 // Copied from SlidingMarchingCubes.js
 // @todo migrate SlidingMarchingCubes to ts and import parameters type properly

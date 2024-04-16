@@ -1,4 +1,4 @@
-export = ScalisPrimitive;
+import { Primitive } from "../Primitive.js";
 /** @typedef {import('../Element.js')} Element */
 /** @typedef {import('../Element.js').Json} Json */
 /** @typedef {import('../Element.js').ElementJSON} ElementJSON */
@@ -14,18 +14,27 @@ export = ScalisPrimitive;
  *  @constructor
  *  @extends {Primitive}
  */
-declare class ScalisPrimitive extends Primitive {
+export declare class ScalisPrimitive extends Primitive {
+    static type: string;
     static DIST: string;
     static CONVOL: string;
-    volType: string;
+    constructor();
     /**
-     * @type {!Array.<!ScalisVertex>}
+     *  @return {string} Type of the element
      */
-    v: Array<ScalisVertex>;
+    getType(): string;
     /**
      *  @return {ScalisPrimitiveJSON}
      */
-    toJSON(): ScalisPrimitiveJSON;
+    toJSON(): {
+        v: never[];
+        volType: any;
+        /**
+         * @type {!Array.<!ScalisVertex>}
+         */
+        materials: never[];
+        type: string;
+    };
     /**
      *  @abstract Specify if the voltype can be changed
      *  @return {boolean} True if and only if the VolType can be changed.
@@ -34,24 +43,14 @@ declare class ScalisPrimitive extends Primitive {
     /**
      *  @param {string} vt New VolType to set (Only for SCALIS primitives)
      */
-    setVolType(vt: string): void;
+    setVolType(vt: any): void;
     /**
      *  @return {string} Current volType
      */
-    getVolType(): string;
+    getVolType(): any;
+    /**
+     * @link Element.computeAABB for a complete description
+     */
+    computeAABB(): void;
 }
-declare namespace ScalisPrimitive {
-    export { Element, Json, ElementJSON, PrimitiveJSON, ScalisVertex, ScalisVertexJSON, ScalisPrimitiveJSON };
-}
-import Primitive = require("../Primitive.js");
-type ScalisVertex = import('./ScalisVertex');
-type Element = import('../Element.js');
-type Json = import('../Element.js').Json;
-type ElementJSON = import('../Element.js').ElementJSON;
-type PrimitiveJSON = import('../Primitive.js').PrimitiveJSON;
-type ScalisVertexJSON = import('./ScalisVertex').ScalisVertexJSON;
-type ScalisPrimitiveJSON = {
-    v: Array<ScalisVertexJSON>;
-    volType: string;
-} & PrimitiveJSON;
 //# sourceMappingURL=ScalisPrimitive.d.ts.map

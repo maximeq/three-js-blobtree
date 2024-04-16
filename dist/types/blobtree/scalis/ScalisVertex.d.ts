@@ -1,85 +1,71 @@
-export = ScalisVertex;
 /**
  *  A scalis ScalisVertex. Basically a point and a wanted thickness.
  */
-declare class ScalisVertex {
-    static fromJSON(json: any): import("./ScalisVertex.js");
+export declare class ScalisVertex {
+    static fromJSON(json: any): ScalisVertex;
     /**
      *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
      *  @param {number} thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
      */
-    constructor(pos: THREE.Vector3, thickness: number);
-    pos: THREE.Vector3;
-    thickness: number;
-    id: number;
-    prim: import("./ScalisPrimitive") | null;
-    aabb: THREE.Box3;
-    valid_aabb: boolean;
+    constructor(pos: any, thickness: any);
     /**
      *  Set an internal pointer to the primitive using this vertex.
      *  Should be called from primitive constructor.
      * @param {ScalisPrimitive} prim
      */
-    setPrimitive(prim: ScalisPrimitive): void;
+    setPrimitive(prim: any): void;
     /**
      * @returns {ScalisVertexJSON}
      */
-    toJSON(): ScalisVertexJSON;
+    toJSON(): {
+        position: {
+            x: any;
+            y: any;
+            z: any;
+        };
+        thickness: any;
+    };
     /**
      *  Set a new position.
      *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
      */
-    setPos(pos: THREE.Vector3): void;
+    setPos(pos: any): void;
     /**
      *  Set a new thickness
      *  @param {number} thickness The new thickness
      */
-    setThickness(thickness: number): void;
+    setThickness(thickness: any): void;
     /**
      *  Set a both position and thickness
      *  @param {number} thickness The new thickness
      *  @param {!THREE.Vector3} pos A position in space, as a THREE.Vector3
      */
-    setAll(pos: THREE.Vector3, thickness: number): void;
+    setAll(pos: any, thickness: any): void;
     /**
      *  Get the current position
      *  @return {!THREE.Vector3} Current position, as a THREE.Vector3
      */
-    getPos(): THREE.Vector3;
+    getPos(): any;
     /**
      *  Get the current Thickness
      *  @return {number} Current Thickness
      */
-    getThickness(): number;
+    getThickness(): any;
     /**
      *  Get the current AxisAlignedBoundingBox
      *  @return {THREE.Box3} The AABB of this vertex.
      */
-    getAABB(): THREE.Box3;
+    getAABB(): any;
     /**
      *  Compute the current AABB.
      *  @protected
      */
-    protected computeAABB(): void;
+    computeAABB(): void;
     /**
      *  Check equality between 2 vertices
      *  @param {ScalisVertex} other
      *  @return {boolean}
      */
-    equals(other: ScalisVertex): boolean;
+    equals(other: any): any;
 }
-declare namespace ScalisVertex {
-    export { ScalisPrimitive, Json, ScalisVertexJSON };
-}
-import THREE = require("three");
-type ScalisPrimitive = import('./ScalisPrimitive');
-type Json = import('../Element.js').Json;
-type ScalisVertexJSON = {
-    position: {
-        x: number;
-        y: number;
-        z: number;
-    };
-    thickness: number;
-};
 //# sourceMappingURL=ScalisVertex.d.ts.map

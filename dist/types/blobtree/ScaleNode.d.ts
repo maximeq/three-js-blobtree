@@ -1,4 +1,4 @@
-export = ScaleNode;
+import { Node } from "./Node";
 /** @typedef {import('./Element.js')} Element */
 /** @typedef {import('./Element.js').Json} Json */
 /** @typedef {import('./Element.js').ValueResultType} ValueResultType */
@@ -13,55 +13,61 @@ export = ScaleNode;
  *  @constructor
  *  @extends Node
  */
-declare class ScaleNode extends Node {
+export declare class ScaleNode extends Node {
+    static type: string;
+    /**
+    *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+    */
+    constructor(children: any);
+    /**
+    * @link Node.toJSON
+    * @returns {ScaleNodeJSON}
+    */
+    toJSON(): {
+        scale_x: any;
+        scale_y: any;
+        scale_z: any;
+        children: never[];
+        type: string;
+    };
     /**
      * @link Node.fromJSON
      *
      * @param {ScaleNodeJSON} json
      * @returns {ScaleNode}
      */
-    static fromJSON(json: ScaleNodeJSON): ScaleNode;
-    /**
-    *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
-    */
-    constructor(children?: Array<Node> | undefined);
-    /** @type {{v:number, g:THREE.Vector3, m:Material}} */
-    tmp_res: {
-        v: number;
-        g: THREE.Vector3;
-        m: Material;
-    };
-    /** @type {THREE.Vector3} */
-    tmp_g: THREE.Vector3;
-    /** @type {Material} */
-    tmp_m: Material;
-    _scale: THREE.Vector3;
-    /**
-    * @link Node.toJSON
-    * @returns {ScaleNodeJSON}
-    */
-    toJSON(): ScaleNodeJSON;
+    static fromJSON(json: any): ScaleNode;
     /**
      * @link ScaleNode.setScale
      * @param {THREE.Vector3} scale
      */
-    setScale(scale: THREE.Vector3): void;
+    setScale(scale: any): void;
+    /**
+     * @link Node.getType
+     */
+    getType(): string;
+    /**
+     *  @link Element.prepareForEval for a complete description
+     */
+    prepareForEval(): void;
+    /**
+    * @link Element.computeAABB for a complete description
+    */
+    computeAABB(): void;
+    /**
+     *  @link Element.value for a complete description
+     *
+     *  @param {THREE.Vector3} p
+     *  @param {ValueResultType} res
+     */
+    value(p: any, res: any): void;
+    /**
+     *  @link Element.trim for a complete description.
+     *
+     *  @param {THREE.Box3} aabb
+     *  @param {Array<Element>} trimmed
+     *  @param {Array<Node>} parents
+     */
+    trim(aabb: any, trimmed: any, parents: any): void;
 }
-declare namespace ScaleNode {
-    export { Element, Json, ValueResultType, NodeJSON, ScaleNodeJSON };
-}
-import Node = require("./Node.js");
-import THREE = require("three");
-import Material = require("./Material.js");
-type Element = import('./Element.js');
-type Json = import('./Element.js').Json;
-type ValueResultType = import('./Element.js').ValueResultType;
-type NodeJSON = import('./Node.js').NodeJSON;
-type ScaleNodeJSON = {
-    scale_x: number;
-} & {
-    scale_y: number;
-} & {
-    scale_z: number;
-} & NodeJSON;
 //# sourceMappingURL=ScaleNode.d.ts.map

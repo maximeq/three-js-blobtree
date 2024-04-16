@@ -1,4 +1,3 @@
-export = Area;
 /**
  * @typedef {Object} AreaSphereParam
  * @property {number} radius
@@ -14,21 +13,21 @@ export = Area;
  *  propose an intersection test.
  *
  */
-declare class Area {
+export declare class Area {
     /**
      *  @abstract
      *  Test intersection of the shape with a sphere
      *  @param {AreaSphereParam} _sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {boolean} true if the sphere and the area intersect
      */
-    sphereIntersect(_sphere: AreaSphereParam): boolean;
+    sphereIntersect(_sphere: any): void;
     /**
      * @abstract
      * Test if p is in the area.
      * @param {!THREE.Vector3} _p A point in space
      * @return {boolean} true if p is in the area, false otherwise.
      */
-    contains(_p: THREE.Vector3): boolean;
+    contains(_p: any): void;
     /**
      *  @abstract
      *  Return the minimum accuracy needed in the intersection of the sphere and the area.
@@ -45,38 +44,38 @@ declare class Area {
      *  @return {number} the accuracy needed in the intersection zone, as a ratio of the linear variation
      *         of the radius along (this.p0,this.p1)
      */
-    getAcc(_sphere: AreaSphereParam, _factor: number): number;
+    getAcc(_sphere: any, _factor: any): void;
     /**
      *  @abstract
      *  Convenience function, just call getAcc with Nice Accuracy parameters.
      *  @param {AreaSphereParam} _sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The Nice accuracy needed in the intersection zone
      */
-    getNiceAcc(_sphere: AreaSphereParam): number;
+    getNiceAcc(_sphere: any): void;
     /**
      *  @abstract
      *  Convenience function, just call getAcc with Current Accuracy parameters.
      *  @param {AreaSphereParam} _sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The Current accuracy needed in the intersection zone
      */
-    getCurrAcc(_sphere: AreaSphereParam): number;
+    getCurrAcc(_sphere: any): void;
     /**
      *  @abstract
      *  Convenience function, just call getAcc with Raw Accuracy parameters.
      *  @param {AreaSphereParam} _sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a THREE.Vector3)
      *  @return {number} The raw accuracy needed in the intersection zone
      */
-    getRawAcc(_sphere: AreaSphereParam): number;
+    getRawAcc(_sphere: any): void;
     /**
      *  @abstract
      *  @return {number} the minimum accuracy needed in the whole area
      */
-    getMinAcc(): number;
+    getMinAcc(): void;
     /**
      *  @abstract
      *  @return {number} the minimum raw accuracy needed in the whole area
      */
-    getMinRawAcc(): number;
+    getMinRawAcc(): void;
     /**
      *  @abstract
      *  Return the minimum accuracy required at some point on the given axis, according to Accuracies.curr
@@ -86,14 +85,6 @@ declare class Area {
      *  @param {number} _t Coordinate on the axis
      *  @return {number} The step you can safely do in axis direction
      */
-    getAxisProjectionMinStep(_axis: string, _t: number): number;
+    getAxisProjectionMinStep(_axis: any, _t: any): number;
 }
-declare namespace Area {
-    export { AreaSphereParam };
-}
-import THREE = require("three");
-type AreaSphereParam = {
-    radius: number;
-    center: THREE.Vector3;
-};
 //# sourceMappingURL=Area.d.ts.map

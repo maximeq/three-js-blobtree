@@ -1,4 +1,4 @@
-export = DifferenceNode;
+import { Node } from "./Node";
 /**
  * @typedef {import('./Element.js')} Element
  * @typedef {import('./Element.js').Json} Json
@@ -14,62 +14,40 @@ export = DifferenceNode;
  *  @constructor
  *  @extends Node
  */
-declare class DifferenceNode extends Node {
+export declare class DifferenceNode extends Node {
+    static type: string;
     /**
      * @param {DifferenceNodeJSON} json
      * @returns {DifferenceNode}
      */
-    static fromJSON(json: DifferenceNodeJSON): DifferenceNode;
+    static fromJSON(json: any): DifferenceNode;
     /**
      *
      *  @param {!Node} node0 The first node
      *  @param {!Node} node1 The second node, its value will be substracted to the node 0 value.
      *  @param {number} alpha Power of the second field : the greater alpha the sharper the difference. Default is 1, must be > 1.
      */
-    constructor(node0: Node, node1: Node, alpha: number);
-    /** @type {number} */
-    alpha: number;
-    /**
-     * For now, this field value is clamped to 0
-     * @type {number}
-     */
-    clamped: number;
-    /** @type {{v:number, g:THREE.Vector3, m:Material}} */
-    tmp_res0: {
-        v: number;
-        g: THREE.Vector3;
-        m: Material;
-    };
-    /** @type {{v:number, g:THREE.Vector3, m:Material}} */
-    tmp_res1: {
-        v: number;
-        g: THREE.Vector3;
-        m: Material;
-    };
-    /** @type {THREE.Vector3} */
-    g0: THREE.Vector3;
-    /** @type {Material} */
-    m0: Material;
-    /** @type {THREE.Vector3} */
-    g1: THREE.Vector3;
-    /** @type {Material} */
-    m1: Material;
-    /** @type {Float32Array} */
-    tmp_v_arr: Float32Array;
-    /** @type {Array<Material|null>} */
-    tmp_m_arr: Array<Material | null>;
+    constructor(node0: any, node1: any, alpha: any);
     /**
      * @returns {number}
      */
-    getAlpha(): number;
+    getAlpha(): any;
     /**
      * @param {number} alpha
      */
-    setAlpha(alpha: number): void;
+    setAlpha(alpha: any): void;
     /**
      * @returns {DifferenceNodeJSON}
      */
-    toJSON(): DifferenceNodeJSON;
+    toJSON(): {
+        alpha: any;
+        children: never[];
+        type: string;
+    };
+    /**
+     * @link Node.prepareForEval for a complete description
+     **/
+    prepareForEval(): void;
     /**
      *  Compute the value and/or gradient and/or material
      *  of the element at position p in space. return computations in res (see below)
@@ -83,24 +61,16 @@ declare class DifferenceNode extends Node {
      *  @param {number=} res.step The next step we can safely walk without missing the iso (0). Mostly used for convergence function or ray marching.
      *  @param {number=} res.stepOrtho
      */
-    value(p: THREE.Vector3, res: {
-        v: number;
-        m: Material;
-        g: THREE.Vector3;
-        step?: number | undefined;
-        stepOrtho?: number | undefined;
-    }): void;
+    value(p: any, res: any): void;
+    /**
+     *  @link Element.trim for a complete description.
+     *
+     *  Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
+     *
+     *  @param {THREE.Box3} aabb
+     *  @param {Array.<Element>} trimmed
+     *  @param {Array.<Node>} parents
+     */
+    trim(aabb: any, trimmed: any, parents: any): void;
 }
-declare namespace DifferenceNode {
-    export { Element, Json, NodeJSON, DifferenceNodeJSON };
-}
-import Node = require("./Node.js");
-import THREE = require("three");
-import Material = require("./Material.js");
-type Element = import('./Element.js');
-type Json = import('./Element.js').Json;
-type NodeJSON = import('./Node.js').NodeJSON;
-type DifferenceNodeJSON = {
-    alpha: number;
-} & NodeJSON;
 //# sourceMappingURL=DifferenceNode.d.ts.map

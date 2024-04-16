@@ -1,4 +1,4 @@
-export = MinNode;
+import { Node } from "./Node";
 /** @typedef {import('./Element.js')} Element */
 /** @typedef {import('./Element.js').Json} Json */
 /** @typedef {import('./Element.js').ValueResultType} ValueResultType */
@@ -13,37 +13,37 @@ export = MinNode;
  *  @constructor
  *  @extends Node
  */
-declare class MinNode extends Node {
+export declare class MinNode extends Node {
+    static type: string;
     /**
      *
      * @param {MinNodeJSON} json
      * @returns {MinNode}
      */
-    static fromJSON(json: MinNodeJSON): MinNode;
+    static fromJSON(json: any): MinNode;
     /**
     *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
-    constructor(children?: Array<Node> | undefined);
-    /** @type {{v:number, g:THREE.Vector3, m:Material}} */
-    tmp_res: {
-        v: number;
-        g: THREE.Vector3;
-        m: Material;
-    };
-    /** @type {THREE.Vector3} */
-    tmp_g: THREE.Vector3;
-    /** @type {Material} */
-    tmp_m: Material;
+    constructor(children: any);
+    getType(): string;
+    /**
+     *  @link Element.prepareForEval for a complete description
+     */
+    prepareForEval(): void;
+    /**
+     *  @link Element.value for a complete description
+     *
+     *  @param {THREE.Vector3} p
+     *  @param {ValueResultType} res
+     */
+    value(p: any, res: any): void;
+    /**
+     *  @link Element.trim for a complete description.
+     *
+     *  @param {THREE.Box3} aabb
+     *  @param {Array<Element>} trimmed
+     *  @param {Array<Node>} parents
+     */
+    trim(aabb: any, trimmed: any, parents: any): void;
 }
-declare namespace MinNode {
-    export { Element, Json, ValueResultType, NodeJSON, MinNodeJSON };
-}
-import Node = require("./Node.js");
-import THREE = require("three");
-import Material = require("./Material.js");
-type Element = import('./Element.js');
-type Json = import('./Element.js').Json;
-type ValueResultType = import('./Element.js').ValueResultType;
-type NodeJSON = import('./Node.js').NodeJSON;
-type MinNodeJSON = NodeJSON;
 //# sourceMappingURL=MinNode.d.ts.map

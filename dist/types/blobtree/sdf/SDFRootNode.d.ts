@@ -1,4 +1,4 @@
-export = SDFRootNode;
+import { Primitive } from "../Primitive.js";
 /** @typedef {import('../areas/Area')} Area */
 /** @typedef {import('../Element.js').ValueResultType} ValueResultType */
 /** @typedef {import('../Primitive.js').PrimitiveJSON} PrimitiveJSON */
@@ -11,13 +11,14 @@ export = SDFRootNode;
  *  For now SDF nodes do not have materials. A unique material is defined in the SDFRootNode.
  *
  */
-declare class SDFRootNode extends Primitive {
+export declare class SDFRootNode extends Primitive {
+    static type: string;
     /**
      *
      * @param {SDFRootNodeJSON} json
      * @returns
      */
-    static fromJSON(json: SDFRootNodeJSON): import("./SDFRootNode.js");
+    static fromJSON(json: any): SDFRootNode;
     /**
      *
      * @param {DistanceFunctor} f The distance function to be applied to the distance field.
@@ -25,43 +26,40 @@ declare class SDFRootNode extends Primitive {
      * @param {Material} material
      * @param {SDFNode | SDFPrimitive=} sdfRoot The child containng the complete SDF. SDFRootNode can have only one child.
      */
-    constructor(f: DistanceFunctor, material: Material, sdfRoot?: (SDFNode | SDFPrimitive) | undefined);
-    f: DistanceFunctor;
-    sdfRoot: SDFNode;
-    tmp_res: {
-        v: number;
-        g: null;
-    };
-    tmp_g: THREE.Vector3;
+    constructor(f: any, material: any, sdfRoot: any);
+    getType(): string;
     /**
      * @param {SDFNode | SDFPrimitive} c
      */
-    addChild(c: SDFNode | SDFPrimitive): void;
+    addChild(c: any): void;
     /**
      * @param {SDFNode | SDFPrimitive} c
      */
-    removeChild(c: SDFNode | SDFPrimitive): void;
+    removeChild(c: any): void;
     /**
      * @returns {SDFRootNodeJSON}
      */
-    toJSON(): SDFRootNodeJSON;
+    toJSON(): {
+        f: any;
+        sdfRoot: any;
+        materials: never[];
+        type: string;
+    };
+    prepareForEval(): void;
+    /**
+     *  @link Element.getAreas for a complete description
+     *
+     *  This function is an attempt to have SDFRootNode behave like a Primitive in the normal Blobtree.
+     *
+     *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
+     */
+    getAreas(): any[];
+    /**
+     *  @link Node.value for a complete description
+     *
+     *  @param {THREE.Vector3} p
+     *  @param {ValueResultType} res
+     */
+    value(p: any, res: any): void;
 }
-declare namespace SDFRootNode {
-    export { Area, ValueResultType, PrimitiveJSON, SDFNodeJSON, DistanceFunctorJSON, SDFRootNodeJSON };
-}
-import Primitive = require("../Primitive.js");
-import DistanceFunctor = require("./DistanceFunctor");
-import SDFNode = require("./SDFNode.js");
-import THREE = require("three");
-import SDFPrimitive = require("./SDFPrimitive");
-import Material = require("../Material.js");
-type Area = import('../areas/Area');
-type ValueResultType = import('../Element.js').ValueResultType;
-type PrimitiveJSON = import('../Primitive.js').PrimitiveJSON;
-type SDFNodeJSON = import('./SDFNode').SDFNodeJSON;
-type DistanceFunctorJSON = import('./DistanceFunctor').DistanceFunctorJSON;
-type SDFRootNodeJSON = {
-    f: DistanceFunctorJSON;
-    sdfRoot: SDFNodeJSON;
-} & PrimitiveJSON;
 //# sourceMappingURL=SDFRootNode.d.ts.map

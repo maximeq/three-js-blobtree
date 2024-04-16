@@ -1,4 +1,4 @@
-export = SplitSMC;
+import { SlidingMarchingCubes } from "./SlidingMarchingCubes.js";
 /**
  * @typedef {import('../blobtree/RootNode')} RootNode
  * @typedef {import('./SlidingMarchingCubes')} SMCParams
@@ -15,25 +15,16 @@ export = SplitSMC;
  *  is not the complete blobtree and we want to use the normal from
  *  the complete blobtree.
  */
-declare class SplitSMC extends SlidingMarchingCubes {
+export declare class SplitSMC extends SlidingMarchingCubes {
     /**
      *  @param {RootNode} blobtree
      *  @param {SplitSMCParams} params
      */
-    constructor(blobtree: RootNode, params: SplitSMCParams);
-    metaBlobtree: import("../blobtree/RootNode");
+    constructor(blobtree: any, params: any);
+    /**
+     *  Compute the vertex in the current cube.
+     *  Use this.x, this.y, this.z
+     */
+    computeVertex: () => void;
 }
-declare namespace SplitSMC {
-    export { RootNode, SMCParams, SplitSMCParams };
-}
-import SlidingMarchingCubes = require("./SlidingMarchingCubes");
-type RootNode = import('../blobtree/RootNode');
-type SMCParams = import('./SlidingMarchingCubes');
-/**
- * metaBlobtree is The blobtree from which normals will be computed.
- * Usually a blobtree containing blobtree.
- */
-type SplitSMCParams = {
-    metaBlobtree: RootNode;
-} & SMCParams;
 //# sourceMappingURL=SplitSMC.d.ts.map

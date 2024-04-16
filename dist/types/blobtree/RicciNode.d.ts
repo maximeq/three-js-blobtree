@@ -1,4 +1,4 @@
-export = RicciNode;
+import { Node } from "./Node";
 /** @typedef {import('./Element.js').Json} Json */
 /** @typedef {import('./Element.js').ValueResultType} ValueResultType */
 /** @typedef {import('./Node.js').NodeJSON} NodeJSON */
@@ -12,58 +12,52 @@ export = RicciNode;
  *  @constructor
  *  @extends Node
  */
-declare class RicciNode extends Node {
+export declare class RicciNode extends Node {
+    static type: string;
+    /**
+     *  @param {number} ricci_n The value for ricci
+     *  @param {Array<Node>=} children The children to add to this node. Just a convenient parameter, you can do it manually using addChild
+     */
+    constructor(ricci_n: any, children: any);
+    /**
+     * @link Node.getType
+     * @returns {string}
+     */
+    getType(): string;
+    /**
+     * @link Node.toJSON
+     * @returns {RicciNodeJSON}
+     */
+    toJSON(): {
+        ricci_n: any;
+        children: never[];
+        /** @type {THREE.Vector3} */
+        type: string;
+    };
     /**
      * @link Node.fromJSON
      * @param {Json} json
      * @returns
      */
-    static fromJSON(json: Json): import("./RicciNode.js");
+    static fromJSON(json: any): RicciNode;
     /**
-     *  @param {number} ricci_n The value for ricci
-     *  @param {Array<Node>=} children The children to add to this node. Just a convenient parameter, you can do it manually using addChild
+     * @link Node.prepareForEval
      */
-    constructor(ricci_n: number, children?: Array<Node> | undefined);
-    /** @type {number} */
-    ricci_n: number;
-    /** @type {Float32Array} */
-    tmp_v_arr: Float32Array;
-    /** @type {Array<Material>} */
-    tmp_m_arr: Array<Material>;
-    /** @type {{v:number, g: THREE.Vector3, m:Material}} */
-    tmp_res: {
-        v: number;
-        g: THREE.Vector3;
-        m: Material;
-    };
-    /** @type {THREE.Vector3} */
-    tmp_g: THREE.Vector3;
-    /** @type {Material} */
-    tmp_m: Material;
+    prepareForEval(): void;
     /**
-     * @link Node.toJSON
-     * @returns {RicciNodeJSON}
+     *  @link Element.value for a complete description
+     *
+     *  @param {THREE.Vector3} p
+     *  @param {ValueResultType} res
      */
-    toJSON(): RicciNodeJSON;
+    value(p: any, res: any): void;
     /**
      * @param {number} n
      */
-    setRicciN(n: number): void;
+    setRicciN(n: any): void;
     /**
      * @returns {number}
      */
-    getRicciN: () => number;
+    getRicciN: () => any;
 }
-declare namespace RicciNode {
-    export { Json, ValueResultType, NodeJSON, RicciNodeJSON };
-}
-import Node = require("./Node.js");
-import Material = require("./Material.js");
-import THREE = require("three");
-type Json = import('./Element.js').Json;
-type ValueResultType = import('./Element.js').ValueResultType;
-type NodeJSON = import('./Node.js').NodeJSON;
-type RicciNodeJSON = {
-    ricci_n: number;
-} & NodeJSON;
 //# sourceMappingURL=RicciNode.d.ts.map
