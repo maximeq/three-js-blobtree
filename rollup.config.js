@@ -28,7 +28,7 @@ export default [
         ],
     },
 
-    // TODO: uncommented this when package is fully ported to TS
+    // TODO: uncomment this when package is fully ported to TS
     // bundle types
     // {
     //     input: "./dist/types/exports.d.ts",
