@@ -1,1 +1,0 @@
-//# sourceMappingURL=AreaScalisPoint.d.ts.map
