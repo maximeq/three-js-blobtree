@@ -8,25 +8,27 @@
     "type": "module",
     "scripts": {
         "build": "npx rollup -c",
-        "start": "npx http-server ./ -c-1 -o test/",
+        "start": "npx http-server ./ -c-1 -o test/browser",
         "dev": "npm run build && npm run start"
     },
     "peerDependencies": {
         "three": "0.130.x"
     },
-
     "devDependencies": {
         "@rollup/plugin-commonjs": "^24.0.1",
         "@rollup/plugin-node-resolve": "^15.0.1",
         "@rollup/plugin-typescript": "^11.1.1",
         "@types/three": "^0.130.0",
+        "dat.gui": "^0.7.9",
         "http-server": "^14.1.1",
         "rollup": "^3.15.0",
         "rollup-plugin-delete": "^2.0.0",
         "rollup-plugin-dts": "^6.1.0",
         "tslib": "^2.6.0"
     },
-    "files": [ "dist/*" ],
+    "files": [
+        "dist/*"
+    ],
     "author": "Maxime Quiblier <maximequiblier@gmail.com>",
     "license": "MIT",
     "hash": "cbb66061ffd05bc5f6673756895b3f6f03e7202a"

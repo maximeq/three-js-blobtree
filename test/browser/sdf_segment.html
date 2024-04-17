@@ -1,96 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>Blobtree - Basic</title>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-        <style>
-            body {
-                color: #000;
-                font-family:Monospace;
-                font-size:13px;
-                text-align:center;
-                font-weight: bold;
 
-                background-color: #fff;
-                margin: 0px;
-                overflow: hidden;
-            }
+<head>
+    <title>Blobtree - Basic</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "../../node_modules/three/build/three.module.js",
+            "three/": "../../node_modules/three/",
+            "@dioxygen-software/three-js-blobtree": "../../dist/three-js-blobtree.module.js",
+            "dat.gui": "../../node_modules/dat.gui/build/dat.gui.module.js"
+          }
+        }
+    </script>
+    <link rel="stylesheet" href="../../node_modules/dat.gui/build/dat.gui.css">
+</head>
 
-            #info {
-                color:#000;
-                position: absolute;
-                top: 0px; width: 100%;
-                padding: 5px;
+<script type="module" src="./js/SimpleFunctor.js"></script>
+<script type="module" src="./js/ExDistanceFunctor.js"></script>
 
-            }
+<script type="module">
+    import { Vector3, MeshPhongMaterial, MeshBasicMaterial, Mesh } from "three"
+    import * as Blobtree from "@dioxygen-software/three-js-blobtree"
+    import * as dat from "dat.gui"
 
-            a {
-                color: red;
-            }
-        </style>
-    </head>
+    var root = new Blobtree.RootNode();
+    var seg = new Blobtree.SDFSegment(
+        new Vector3(0, 0, 0),
+        new Vector3(10, 10, 0),
+        0.5 // accuracy factor, default to 1.0 but depending on your functions you may want more, you can also increase Marching cube detailRatio
+    );
 
-    <body>
-        <div id="info">
-            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Scalar Distance Field Capsule (weighted segment)
-        </div>
+    root.addChild(
+        new Blobtree.SDFRootNode(
+            new SimpleFunctor(
+                function (d) {
+                    if (d > 10) {
+                        return 0.0;
+                    } else if (d < 0.0) {
+                        return 2.0;
+                    } else {
+                        return (2.0 * (1 - d / 10));
+                    }
+                },
+                10
+            ),
+            new Blobtree.Material({ color: '#4a8af4' }),
+            seg
+        )
+    );
 
-        <script src="../../node_modules/three/build/three.js"></script>
-        <script src="../../node_modules/three/examples/js/controls/OrbitControls.js"></script>
-        <script src="../../dist/three-js-blobtree.js"></script>
-        <script src="./js/SimpleFunctor.js"></script>
-        <script src="./js/ExDistanceFunctor.js"></script>
-        <script>
+    var smc = new Blobtree.SlidingMarchingCubes(
+        root,
+        {
+            convergence: {
+                ratio: 0.0001,
+                step: 5
+            },
+            detailRatio: 1.0
+        }
+    );
 
-            var root = new Blobtree.RootNode();
-            var seg = new Blobtree.SDFSegment(
-                new THREE.Vector3(0,0,0),
-                new THREE.Vector3(10,10,0),
-                0.5 // accuracy factor, default to 1.0 but depending on your functions you may want more, you can also increase Marching cube detailRatio
-            );
+    // Compute the geometry using the SlidingMarchingCubes
+    // geometry is kept as a global variable to be used in the following script.
+    var geometry = smc.compute();
+    geometry.computeBoundingBox();
+    var material = new MeshPhongMaterial({ vertexColors: true });
+    var mesh = new Mesh(geometry, material);
+    globalThis.mesh = mesh
+</script>
 
-            root.addChild(
-                new Blobtree.SDFRootNode(
-                    new SimpleFunctor(
-                        function(d){
-                            if(d>10){
-                                return 0.0;
-                            }else if(d<0.0){
-                                return 2.0;
-                            }else{
-                                return (2.0*(1-d/10));
-                            }
-                        },
-                        10
-                    ),
-                    new Blobtree.Material({color:'#4a8af4'}),
-                    seg
-                )
-            );
+<!-- Main script containing js setup for the page -->
+<script type="module" src="./js/smc-main-script.js"></script>
 
-            var smc = new Blobtree.SlidingMarchingCubes(
-                root,
-                {
-                    convergence:{
-                        ratio:0.0001,
-                        step:5
-                    },
-                    detailRatio: 1.0
-                }
-            );
+<body>
+    <div id="info">
+        <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank"
+            rel="noopener">Blobtree</a> - Scalar Distance Field Capsule (weighted segment)
+    </div>
+</body>
 
-            // Compute the geometry using the SlidingMarchingCubes
-            // geometry is kept as a global variable to be used in the following script.
-            var geometry = smc.compute();
-            geometry.computeBoundingBox();
-            var material = new THREE.MeshPhongMaterial( {vertexColors:true} );
+<style>
+    body {
+        color: #000;
+        font-family: Monospace;
+        font-size: 13px;
+        text-align: center;
+        font-weight: bold;
 
-            var mesh = new THREE.Mesh( geometry, material );
+        background-color: #fff;
+        margin: 0px;
+        overflow: hidden;
+    }
 
-        </script>
-        <!-- Main script containing THREE.js setup for the page -->
-        <script src="./js/smc-main-script.js"></script>
+    #info {
+        color: #000;
+        position: absolute;
+        top: 0px;
+        width: 100%;
+        padding: 5px;
 
-    </body>
+    }
+
+    a {
+        color: red;
+    }
+</style>
+
 </html>

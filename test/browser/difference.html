@@ -1,106 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>Blobtree - Ricci</title>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-        <style>
-            body {
-                color: #000;
-                font-family:Monospace;
-                font-size:13px;
-                text-align:center;
-                font-weight: bold;
 
-                background-color: #fff;
-                margin: 0px;
-                overflow: hidden;
-            }
+<head>
+    <title>Blobtree - Ricci</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "../../node_modules/three/build/three.module.js",
+            "three/": "../../node_modules/three/",
+            "@dioxygen-software/three-js-blobtree": "../../dist/three-js-blobtree.module.js",
+            "dat.gui": "../../node_modules/dat.gui/build/dat.gui.module.js"
+          }
+        }
+    </script>
+    <link rel="stylesheet" href="../../node_modules/dat.gui/build/dat.gui.css">
+</head>
 
-            #info {
-                color:#000;
-                position: absolute;
-                top: 0px; width: 100%;
-                padding: 5px;
+<script type="module">
+    import { Vector3, MeshPhongMaterial, MeshBasicMaterial, Mesh } from "three"
+    import * as Blobtree from "@dioxygen-software/three-js-blobtree"
+    import * as dat from "dat.gui"
 
-            }
+    var root = new Blobtree.RootNode();
+    var diff_node = new Blobtree.DifferenceNode(
+        new Blobtree.SDFRootNode(
+            new Blobtree.Poly6DistanceFunctor(4.0),
+            new Blobtree.Material({ color: '#ffcd41' }),
+            new Blobtree.SDFSphere(
+                new Vector3(-8, 0, 0),
+                12
+            )
+        ),
+        new Blobtree.SDFRootNode(
+            new Blobtree.Poly6DistanceFunctor(4.0),
+            new Blobtree.Material({ color: '#dd4f43' }),
+            new Blobtree.SDFSphere(
+                new Vector3(0, 0, 0),
+                6
+            )
+        ),
+        1
+    );
 
-            a {
-                color: red;
-            }
-        </style>
-    </head>
+    root.addChild(diff_node);
 
-    <body>
-        <div id="info">
-            <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank" rel="noopener">Blobtree</a> - Diffence Node example (Warning : Alpha exponent is buggy)
-        </div>
+    var smc = new Blobtree.SlidingMarchingCubes(
+        root,
+        {
+            detailRatio: 0.25    // Double resolution with respect to the primitives setup.
+        }
+    );
 
-        <script src="../../node_modules/three/build/three.js"></script>
-        <script src="./lib/dat.gui.min.js"></script>
-        <script src="../../node_modules/three/examples/js/controls/OrbitControls.js"></script>
-        <script src="../../dist/three-js-blobtree.js"></script>
-        <script>
+    // Compute the geometry using the SlidingMarchingCubes
+    // geometry is kept as a global variable to be used in the following script.
+    var geometry = smc.compute();
+    geometry.computeBoundingBox();
+    var material = new MeshPhongMaterial({ vertexColors: true });
+    var mesh = new Mesh(geometry, material);
+    globalThis.mesh = mesh
 
-            var root = new Blobtree.RootNode();
-            var diff_node = new Blobtree.DifferenceNode(
-                new Blobtree.SDFRootNode(
-                    new Blobtree.Poly6DistanceFunctor(4.0),
-                    new Blobtree.Material({color:'#ffcd41'}),
-                    new Blobtree.SDFSphere(
-                        new THREE.Vector3(-8,0,0),
-                        12
-                    )
-                ),
-                new Blobtree.SDFRootNode(
-                    new Blobtree.Poly6DistanceFunctor(4.0),
-                    new Blobtree.Material({color:'#dd4f43'}),
-                    new Blobtree.SDFSphere(
-                        new THREE.Vector3(0,0,0),
-                        6
-                    )
-                ),
-                1
-            );
+    // init GUI to change the Ricci parameter
+    var gui = new dat.GUI();
 
-            root.addChild(diff_node);
+    var DiffControls = function () {
+        this.alpha = diff_node.getAlpha();
+    };
 
-            var smc = new Blobtree.SlidingMarchingCubes(
-                root,
-                {
-                    detailRatio: 0.25    // Double resolution with respect to the primitives setup.
-                }
-            );
+    var diffControls = new DiffControls();
+    var diffFolder = gui.addFolder('Difference Control');
 
-            // Compute the geometry using the SlidingMarchingCubes
-            // geometry is kept as a global variable to be used in the following script.
-            var geometry = smc.compute();
-            geometry.computeBoundingBox();
-            var material = new THREE.MeshPhongMaterial( {vertexColors:true} );
+    // Limit range of Ricci N to 8 since the SMC accuracy is not sufficient to capture the detail when
+    diffFolder.add(diffControls, 'alpha').min(1).max(16).step(1).onChange(function () {
+        diff_node.setAlpha(diffControls.alpha);
+        mesh.geometry = smc.compute();
+    });
 
-            var mesh = new THREE.Mesh( geometry, material );
+    diffFolder.open();
 
-            // init GUI to change the Ricci parameter
-            var gui = new dat.GUI();
+</script>
+<!-- Main script containing THREE.js setup for the page -->
+<script type="module" src="./js/smc-main-script.js"></script>
 
-            var DiffControls = function() {
-                this.alpha =  diff_node.getAlpha();
-            };
+<body>
+    <div id="info">
+        <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank"
+            rel="noopener">Blobtree</a> - Diffence Node example (Warning : Alpha exponent is buggy)
+    </div>
+</body>
 
-            var diffControls = new DiffControls();
-            var diffFolder = gui.addFolder( 'Difference Control' );
+<style>
+    body {
+        color: #000;
+        font-family: Monospace;
+        font-size: 13px;
+        text-align: center;
+        font-weight: bold;
 
-            // Limit range of Ricci N to 8 since the SMC accuracy is not sufficient to capture the detail when
-            diffFolder.add(diffControls, 'alpha' ).min(1).max(16).step(1).onChange(function() {
-                diff_node.setAlpha(diffControls.alpha);
-                mesh.geometry = smc.compute();
-            });
+        background-color: #fff;
+        margin: 0px;
+        overflow: hidden;
+    }
 
-            diffFolder.open();
+    #info {
+        color: #000;
+        position: absolute;
+        top: 0px;
+        width: 100%;
+        padding: 5px;
 
-        </script>
-        <!-- Main script containing THREE.js setup for the page -->
-        <script src="./js/smc-main-script.js"></script>
+    }
 
-    </body>
+    a {
+        color: red;
+    }
+</style>
+
 </html>

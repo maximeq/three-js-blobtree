@@ -1,5 +1,4 @@
-'use strict';
-
+import { DistanceFunctor, Types } from "@dioxygen-software/three-js-blobtree"
 /**
  *  Specialised Distance Functor using a 6 degree polynomial function.
  *  This is the function similar to the one used in SCALIS primitives.
@@ -10,7 +9,7 @@
  *
  *  @param {number} scale Functors can easily take parameter. Here, a scaling factor.
  */
-class ExDistanceFunctor extends Blobtree.DistanceFunctor {
+export class ExDistanceFunctor extends DistanceFunctor {
 
     static type = "ExDistanceFunctor";
 
@@ -56,9 +55,9 @@ class ExDistanceFunctor extends Blobtree.DistanceFunctor {
     };
 
 
-/*****************************************************************************/
-/* Following methods are optional                                            */
-/*****************************************************************************/
+    /*****************************************************************************/
+    /* Following methods are optional                                            */
+    /*****************************************************************************/
 
     // Optionnal : this function is used to save the current functor as a JSON object.
     //            The resulting JSON can then be imported using Blobtree.Types.fromJSON()
@@ -94,7 +93,7 @@ class ExDistanceFunctor extends Blobtree.DistanceFunctor {
     };
 };
 
-Blobtree.Types.register(ExDistanceFunctor.type, ExDistanceFunctor);
-
+Types.register(ExDistanceFunctor.type, ExDistanceFunctor);
+globalThis.ExDistanceFunctor = ExDistanceFunctor
 
 
