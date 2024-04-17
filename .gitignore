@@ -1,11 +1,6 @@
 syntax: glob
 
 node_modules/
-doc/*
-examples/*/*.obj
-*.orig
-*npm-debug.log
-*.lock
-**.lock
 package-lock.json
-**.DS_Store
+**/.DS_Store
+*.obj

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Blobtree - Basic</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "../../node_modules/three/build/three.module.js",
+            "three/": "../../node_modules/three/",
+            "@dioxygen-software/three-js-blobtree": "../../dist/three-js-blobtree.module.js",
+            "dat.gui": "../../node_modules/dat.gui/build/dat.gui.module.js"
+          }
+        }
+    </script>
+    <link rel="stylesheet" href="../../node_modules/dat.gui/build/dat.gui.css">
+</head>
+
+<script type="module" src="./js/ExDistanceFunctor.js"></script>
+<script type="module">
+
+    import { Vector3, MeshPhongMaterial, MeshBasicMaterial, Mesh, Object3D } from "three"
+    import * as Blobtree from "@dioxygen-software/three-js-blobtree"
+    import * as dat from "dat.gui"
+
+    var root = new Blobtree.RootNode();
+    /*
+            root.addChild(
+                new Blobtree.SDFRootNode(
+                    new Blobtree.Poly6DistanceFunctor(4.0),
+                    // new ExDistanceFunctor(4.0),
+                    new Blobtree.Material({color:'#ffcd41'}),
+                    new Blobtree.SDFSphere(
+                        new Vector3(0,0,0),
+                        5
+                    )
+                )
+            );
+        */
+
+    var ricci_node = new Blobtree.RicciNode(
+        1,
+        [
+            new Blobtree.ScalisPoint(
+                new Blobtree.ScalisVertex(
+                    new Vector3(-8, 0, 0),
+                    12
+                ),
+                Blobtree.ScalisPrimitive.DIST,
+                1.0,
+                new Blobtree.Material({ color: '#dd4f43' })
+            ),
+            new Blobtree.ScalisPoint(
+                new Blobtree.ScalisVertex(
+                    new Vector3(8, 0, 0),
+                    12
+                ),
+                Blobtree.ScalisPrimitive.DIST,
+                1.0,
+                new Blobtree.Material({ color: '#ffcd41' })
+            )
+        ]
+    );
+    root.addChild(ricci_node);
+
+    var smc = new Blobtree.SlidingMarchingCubes(
+        root,
+        {
+            convergence: {
+                ratio: 0.001,
+                step: 10
+            },
+            detailRatio: 1    // Double resolution with respect to the primitives setup.
+        }
+    );
+
+    // Compute the geometry using the SlidingMarchingCubes
+    // geometry is kept as a global variable to be used in the following script.
+    var geometry = smc.compute();
+    geometry.computeBoundingBox();
+    var material = new MeshPhongMaterial({ vertexColors: true, wireframe: true });
+
+    var smc2 = new Blobtree.SlidingMarchingCubes(
+        root,
+        {
+            detailRatio: 1
+        }
+    );
+
+    var geometry_nocv = smc2.compute();
+    geometry_nocv.computeBoundingBox();
+
+    var mesh = new Object3D();
+    mesh.add(
+        new Mesh(geometry, new MeshPhongMaterial({ color: "#00ff00", wireframe: true }))
+    );
+    mesh.add(
+        new Mesh(geometry_nocv, new MeshPhongMaterial({ color: "#ff0000", wireframe: true }))
+    );
+    /*
+    var m = new Mesh( geometry, new MeshPhongMaterial( {color:"#00ff00"} ) );
+    m.position.set(20,0,0);
+    mesh.add(m);
+    m = new Mesh( geometry_nocv, new MeshPhongMaterial( {color:"#ff0000"} ) );
+    m.position.set(-20,0,0);
+    mesh.add(m);
+    */
+
+    globalThis.mesh = mesh
+</script>
+
+<!-- Main script containing js setup for the page -->
+<script type="module" src="./js/smc-main-script.js"></script>
+
+<body>
+    <div id="info">
+        <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank"
+            rel="noopener">Blobtree</a> - Test Newton convergence in Sliding Marching Cube
+        <hr>
+        <span>Red mesh vertices are positioned using linear interpolation, Green mesh vertices use Newton Convergence.</span>
+    </div>
+</body>
+
+<style>
+    body {
+        color: #000;
+        font-family: Monospace;
+        font-size: 13px;
+        text-align: center;
+        font-weight: bold;
+
+        background-color: #fff;
+        margin: 0px;
+        overflow: hidden;
+    }
+
+    #info {
+        color: #000;
+        position: absolute;
+        top: 0px;
+        width: 100%;
+        padding: 5px;
+
+    }
+
+    a {
+        color: red;
+    }
+</style>
+
+</html>

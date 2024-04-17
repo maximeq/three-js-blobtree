@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Blobtree - Basic</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "../../node_modules/three/build/three.module.js",
+            "three/": "../../node_modules/three/",
+            "@dioxygen-software/three-js-blobtree": "../../dist/three-js-blobtree.module.js",
+            "dat.gui": "../../node_modules/dat.gui/build/dat.gui.module.js"
+          }
+        }
+    </script>
+    <link rel="stylesheet" href="../../node_modules/dat.gui/build/dat.gui.css">
+</head>
+
+<script type="module">
+    import { Vector3, MeshPhongMaterial, MeshBasicMaterial, Mesh } from "three"
+    import * as Blobtree from "@dioxygen-software/three-js-blobtree"
+    import * as dat from "dat.gui"
+
+    var root = new Blobtree.RootNode();
+
+    root.addChild(
+        new Blobtree.ScalisPoint(
+            new Blobtree.ScalisVertex(
+                new Vector3(0, 0, 0),
+                5
+            ),
+            Blobtree.ScalisPrimitive.DIST,
+            1.0,
+            new Blobtree.Material({ color: '#dd4f43' })
+        )
+    );
+
+    var smc = new Blobtree.SlidingMarchingCubes(
+        root,
+        {
+            detailRatio: 0.25    // Double resolution with respect to the primitives setup.
+        }
+    );
+
+    // Compute the geometry using the SlidingMarchingCubes
+    // geometry is kept as a global variable to be used in the following script.
+    var geometry = smc.compute();
+    geometry.computeBoundingBox();
+    var material = new MeshPhongMaterial({ vertexColors: true, flatShading: true });
+    var mesh = new Mesh(geometry, material);
+    globalThis.mesh = mesh
+
+    var guiProp;
+
+    var gui = new dat.GUI({ name: 'Curvature', width: 350 });
+    let curvatureParams = gui.addFolder('Curvature');
+    guiProp = { minCurvOrient: smc.minCurvOrient };
+
+    curvatureParams.add(guiProp, 'minCurvOrient').listen().onChange(function () {
+        smc.minCurvOrient = guiProp.minCurvOrient;
+        mesh.geometry = smc.compute();
+
+    });
+</script>
+
+<!-- Main script containing js setup for the page -->
+<script type="module" src="./js/smc-main-script.js"></script>
+
+<body>
+    <div id="info">
+        <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <a href="https://github.com/dualbox/three-js-blobtree" target="_blank"
+            rel="noopener">Blobtree</a> - Basic example
+    </div>
+</body>
+
+<style>
+    body {
+        color: #000;
+        font-family: Monospace;
+        font-size: 13px;
+        text-align: center;
+        font-weight: bold;
+
+        background-color: #fff;
+        margin: 0px;
+        overflow: hidden;
+    }
+
+    #info {
+        color: #000;
+        position: absolute;
+        top: 0px;
+        width: 100%;
+        padding: 5px;
+
+    }
+
+    a {
+        color: red;
+    }
+</style>
+
+</html>

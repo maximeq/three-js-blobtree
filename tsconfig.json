@@ -1,17 +1,17 @@
 {
     "compilerOptions": {
-        "module": "es6",
+        "module": "ESNext",
         "target": "ESNext",
-        "checkJs": true,
-        "moduleResolution": "node",
+        "moduleResolution": "Bundler",
+        "strict": true,
         "allowJs": true,
+        "checkJs": true,
         "declaration": true,
-        "emitDeclarationOnly":true,
+        "sourceMap": true,
         "declarationMap": true,
-        "outDir": "dist/",
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true
+        "outDir": "dist/types"
     },
-    "include": ["src/**/*"],
-    "exclude": ["node_modules", "**/node_modules/*"]
+    "include": [
+        "src/**/*"
+    ]
 }
