@@ -1,61 +1,67 @@
+import { Vector3, Box3 } from "three";
+import type { ScalisPrimitive } from "./ScalisPrimitive.js";
+export type ScalisVertexJSON = {
+    position: {
+        x: number;
+        y: number;
+        z: number;
+    };
+    thickness: number;
+};
 /**
  *  A scalis ScalisVertex. Basically a point and a wanted thickness.
  */
 export declare class ScalisVertex {
-    static fromJSON(json: any): ScalisVertex;
+    static fromJSON(json: ScalisVertexJSON): ScalisVertex;
+    pos: Vector3;
+    thickness: number;
+    id: number;
+    prim: ScalisPrimitive | null;
+    aabb: Box3;
+    valid_aabb: boolean;
     /**
-     *  @param {!Vector3} pos A position in space, as a Vector3
-     *  @param {number} thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
+     *  @param  pos A position in space, as a Vector3
+     *  @param  thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
      */
-    constructor(pos: any, thickness: any);
+    constructor(pos: Vector3, thickness: number);
     /**
      *  Set an internal pointer to the primitive using this vertex.
      *  Should be called from primitive constructor.
-     * @param {ScalisPrimitive} prim
+     * @param prim
      */
-    setPrimitive(prim: any): void;
-    /**
-     * @returns {ScalisVertexJSON}
-     */
-    toJSON(): {
-        position: {
-            x: any;
-            y: any;
-            z: any;
-        };
-        thickness: any;
-    };
+    setPrimitive(prim: ScalisPrimitive): void;
+    toJSON(): ScalisVertexJSON;
     /**
      *  Set a new position.
-     *  @param {!Vector3} pos A position in space, as a Vector3
+     *  @param pos A position in space, as a Vector3
      */
-    setPos(pos: any): void;
+    setPos(pos: Vector3): void;
     /**
      *  Set a new thickness
-     *  @param {number} thickness The new thickness
+     *  @param thickness The new thickness
      */
-    setThickness(thickness: any): void;
+    setThickness(thickness: number): void;
     /**
      *  Set a both position and thickness
-     *  @param {number} thickness The new thickness
-     *  @param {!Vector3} pos A position in space, as a Vector3
+     *  @param thickness The new thickness
+     *  @param pos A position in space, as a Vector3
      */
-    setAll(pos: any, thickness: any): void;
+    setAll(pos: Vector3, thickness: number): void;
     /**
      *  Get the current position
-     *  @return {!Vector3} Current position, as a Vector3
+     *  @return Current position, as a Vector3
      */
-    getPos(): any;
+    getPos(): Vector3;
     /**
      *  Get the current Thickness
      *  @return {number} Current Thickness
      */
-    getThickness(): any;
+    getThickness(): number;
     /**
      *  Get the current AxisAlignedBoundingBox
-     *  @return {Box3} The AABB of this vertex.
+     *  @return The AABB of this vertex.
      */
-    getAABB(): any;
+    getAABB(): Box3;
     /**
      *  Compute the current AABB.
      *  @protected
@@ -63,9 +69,7 @@ export declare class ScalisVertex {
     computeAABB(): void;
     /**
      *  Check equality between 2 vertices
-     *  @param {ScalisVertex} other
-     *  @return {boolean}
      */
-    equals(other: any): any;
+    equals(other: ScalisVertex): boolean;
 }
 //# sourceMappingURL=ScalisVertex.d.ts.map

@@ -1,26 +1,27 @@
-import { Box3 } from "three";
+import { Box3, Vector3 } from "three";
 import { Types } from "./Types";
+import type { Node } from "./Node";
+import type { Area } from "./areas";
+import type { Primitive } from "./Primitive";
+import type { Material } from "./Material";
 
-// Types
-/** @typedef {import('./Material.js')} Material */
-/** @typedef {import('./Node.js')} Node */
-/** @typedef {import('./Primitive')} Primitive */
-/** @typedef {*} Json */
-/** @typedef {import('./areas/Area')} Area */
-
-/**
- * @typedef {{type:string}} ElementJSON
- */
-
-/**
- * @typedef {Object} ValueResultType Computed values will be stored here. Each values should exist and
- *                    be allocated already.
+/**   
+ * Computed values will be stored here. Each values should exist and be allocated already.              
  * @property {number} v Value, must be defined
  * @property {Material=} m Material, must be allocated and defined if wanted
  * @property {Vector3=} g Gradient, must be allocated and defined if wanted
  * @property {number=} step ??? Not sure, probably a "safe" step for raymarching
  * @property {number=} stepOrtho ??? Same as step but in orthogonal direction ?
  */
+export type ValueResultType = {
+    v: number,
+    m: Material,
+    g: Vector3,
+    step: number,
+    stepOrtho: number,
+};
+
+export type ElementJSON = { type: string }
 
 let elementIds = 0;
 
@@ -36,26 +37,24 @@ export class Element {
     /**
      * @param {ElementJSON} _json
      */
-    static fromJSON(_json) {
+    static fromJSON(_json: any) {
         throw new Error("Element.fromJSON should never be called as Element is abstract.");
     }
 
+    id: number;
+    aabb = new Box3();
+    valid_aabb: boolean = false;
+    parentNode: Node | null = null;
+
     constructor() {
         this.id = elementIds++;
-
-        this.aabb = new Box3();
-        this.valid_aabb = false;
-
-        /** @type {Node} */
-        this.parentNode = null;
     }
 
     /**
      *  Return a Javscript Object respecting JSON convention.
      *  All classes must defined it.
-     *  @return {ElementJSON}
      */
-    toJSON() {
+    toJSON(): ElementJSON {
         return {
             type: this.getType()
         };
@@ -63,23 +62,22 @@ export class Element {
 
     /**
      *  Clone the object.
-     * @return {Element}
      */
-    clone() {
+    clone(): Element {
         return Types.fromJSON(this.toJSON());
     }
 
     /**
-     *  @return {Node} The parent node of this primitive.
+     *  @return The parent node of this primitive.
      */
-    getParentNode() {
+    getParentNode(): Node | null {
         return this.parentNode;
     }
 
     /**
-     *  @return {string} Type of the element
+     *  @return Type of the element
      */
-    getType() {
+    getType(): string {
         return Element.type;
     }
 
@@ -88,7 +86,7 @@ export class Element {
      *  especially on calls to value.
      *  @protected
      */
-    computeHelpVariables() {
+    computeHelpVariables(): void {
         this.computeAABB();
     }
 
@@ -98,7 +96,7 @@ export class Element {
      *  By default, the AABB returned is the unionns of all vertices AABB (This is
      *  good for almost all basic primitives).
      */
-    computeAABB() {
+    computeAABB(): void {
         throw "Error : computeAABB is abstract, should have been overwritten";
     }
 
@@ -107,22 +105,22 @@ export class Element {
      *  isValidAABB before to ensure the current AABB does correspond to the primitive
      *  settings.
      */
-    getAABB() {
+    getAABB(): Box3 {
         return this.aabb;
     }
 
     /**
-     *  @return {boolean} True if the current aabb is valid, ie it does
+     *  @return True if the current aabb is valid, ie it does
      *  correspond to the internal primitive parameters.
      */
-    isValidAABB() {
+    isValidAABB(): boolean {
         return this.valid_aabb;
     }
 
     /**
      *  Invalid the bounding boxes recursively up to the root
      */
-    invalidAABB() {
+    invalidAABB(): void {
         this.valid_aabb = false;
         if (this.parentNode !== null && this.parentNode.isValidAABB()) {
             this.parentNode.invalidAABB();
@@ -133,7 +131,7 @@ export class Element {
      *  Note : This function was made for Node to recursively invalidate
      *  children AABB. Default is to invalidate only this AABB.
      */
-    invalidAll() {
+    invalidAll(): void {
         this.invalidAABB();
     }
 
@@ -159,7 +157,7 @@ export class Element {
      *  @param {Vector3} _p Point where we want to evaluate the primitive field
      *  @param {ValueResultType} _res
      */
-    value(_p, _res) {
+    value(_p: Vector3, _res: ValueResultType) {
         throw new Error("ERROR : value is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");
     };
 
@@ -171,12 +169,8 @@ export class Element {
     numericalGradient = (function () {
         let tmp = { v: 0 };
         let coord = ['x', 'y', 'z'];
-        /**
-         * @param {Vector3} p
-         * @param {Vector3} res
-         * @param {number} epsilon
-         */
-        return function (p, res, epsilon) {
+
+        return function (this: Element, p: Vector3, res: Vector3, epsilon: number) {
 
             /** @type Element */
             let self = this;
@@ -202,19 +196,19 @@ export class Element {
      *  Area objects do provide methods useful when rasterizing, raytracing or polygonizing
      *  the area (intersections with other areas, minimum level of detail needed to
      *  capture the feature nicely, etc etc...).
-     *  @returns {Array.<{aabb: Box3, bv:Area, obj:Primitive}>} The Areas object corresponding to the node/primitive, in an array
+     *  @returns The Areas object corresponding to the node/primitive, in an array
      */
-    getAreas() {
+    getAreas(): { aabb: Box3, bv: Area, obj: Primitive }[] {
         return [];
     }
 
     /**
      *  @abstract
      *  This function is called when a point is outside of the potential influence of a primitive/node.
-     *  @param {Vector3} _p
-     *  @return {number} The next step length to do with respect to this primitive/node
+     *  @param  _p
+     *  @return  The next step length to do with respect to this primitive/node
      */
-    distanceTo(_p) {
+    distanceTo(_p: Vector3): number {
         throw new Error("ERROR : distanceTo is a virtual function, should be reimplemented in all classes extending Element. Concerned type: " + this.getType() + ".");
     }
 
@@ -233,20 +227,20 @@ export class Element {
      *  Default behaviour is doing nothing, leaves cannot be sub-trimmed, only nodes.
      *  Note : only the root can untrim
      *
-     *  @param {Box3} _aabb
-     *  @param {Array.<Element>} _trimmed Array of trimmed Elements
-     *  @param {Array.<Node>} _parents Array of fathers from which each trimmed element has been removed.
+     *  @param _aabb
+     *  @param _trimmed Array of trimmed Elements
+     *  @param _parents Array of fathers from which each trimmed element has been removed.
      */
-    trim(_aabb, _trimmed, _parents) {
+    trim(_aabb: Box3, _trimmed: Element[], _parents: Node[]) {
         // Do nothing by default
     };
 
     /**
      *  count the number of elements of class cls in this node and subnodes
-     *  @param {Function} _cls the class of the elements we want to count
-     *  @return {number} The number of element of class cls
+     *  @param  _cls the class of the elements we want to count
+     *  @return  The number of element of class cls
      */
-    count(_cls) {
+    count(_cls: Function): number {
         return 0;
     }
 

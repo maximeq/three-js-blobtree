@@ -1,3 +1,26 @@
+import { Box3, Vector3 } from "three";
+import type { Node } from "./Node";
+import type { Area } from "./areas";
+import type { Primitive } from "./Primitive";
+import type { Material } from "./Material";
+/**
+ * Computed values will be stored here. Each values should exist and be allocated already.
+ * @property {number} v Value, must be defined
+ * @property {Material=} m Material, must be allocated and defined if wanted
+ * @property {Vector3=} g Gradient, must be allocated and defined if wanted
+ * @property {number=} step ??? Not sure, probably a "safe" step for raymarching
+ * @property {number=} stepOrtho ??? Same as step but in orthogonal direction ?
+ */
+export type ValueResultType = {
+    v: number;
+    m: Material;
+    g: Vector3;
+    step: number;
+    stepOrtho: number;
+};
+export type ElementJSON = {
+    type: string;
+};
 /**
  *  A superclass for Node and Primitive in the blobtree.
  *  @class
@@ -9,26 +32,26 @@ export declare class Element {
      * @param {ElementJSON} _json
      */
     static fromJSON(_json: any): void;
+    id: number;
+    aabb: Box3;
+    valid_aabb: boolean;
+    parentNode: Node | null;
     constructor();
     /**
      *  Return a Javscript Object respecting JSON convention.
      *  All classes must defined it.
-     *  @return {ElementJSON}
      */
-    toJSON(): {
-        type: string;
-    };
+    toJSON(): ElementJSON;
     /**
      *  Clone the object.
-     * @return {Element}
      */
-    clone(): any;
+    clone(): Element;
     /**
-     *  @return {Node} The parent node of this primitive.
+     *  @return The parent node of this primitive.
      */
-    getParentNode(): any;
+    getParentNode(): Node | null;
     /**
-     *  @return {string} Type of the element
+     *  @return Type of the element
      */
     getType(): string;
     /**
@@ -49,12 +72,12 @@ export declare class Element {
      *  isValidAABB before to ensure the current AABB does correspond to the primitive
      *  settings.
      */
-    getAABB(): any;
+    getAABB(): Box3;
     /**
-     *  @return {boolean} True if the current aabb is valid, ie it does
+     *  @return True if the current aabb is valid, ie it does
      *  correspond to the internal primitive parameters.
      */
-    isValidAABB(): any;
+    isValidAABB(): boolean;
     /**
      *  Invalid the bounding boxes recursively up to the root
      */
@@ -79,29 +102,33 @@ export declare class Element {
      *  @param {Vector3} _p Point where we want to evaluate the primitive field
      *  @param {ValueResultType} _res
      */
-    value(_p: any, _res: any): void;
+    value(_p: Vector3, _res: ValueResultType): void;
     /**
      * @param {Vector3} p The point where we want the numerical gradient
      * @param {Vector3} res The resulting gradient
      * @param {number} epsilon The step value for the numerical evaluation
      */
-    numericalGradient: (p: any, res: any, epsilon: any) => void;
+    numericalGradient: (this: Element, p: Vector3, res: Vector3, epsilon: number) => void;
     /**
      *  @abstract
      *  Get the Area object.
      *  Area objects do provide methods useful when rasterizing, raytracing or polygonizing
      *  the area (intersections with other areas, minimum level of detail needed to
      *  capture the feature nicely, etc etc...).
-     *  @returns {Array.<{aabb: Box3, bv:Area, obj:Primitive}>} The Areas object corresponding to the node/primitive, in an array
+     *  @returns The Areas object corresponding to the node/primitive, in an array
      */
-    getAreas(): never[];
+    getAreas(): {
+        aabb: Box3;
+        bv: Area;
+        obj: Primitive;
+    }[];
     /**
      *  @abstract
      *  This function is called when a point is outside of the potential influence of a primitive/node.
-     *  @param {Vector3} _p
-     *  @return {number} The next step length to do with respect to this primitive/node
+     *  @param  _p
+     *  @return  The next step length to do with respect to this primitive/node
      */
-    distanceTo(_p: any): void;
+    distanceTo(_p: Vector3): number;
     /**
      *  @abstract
      *  This function is called when a point is within the potential influence of a primitive/node.
@@ -114,17 +141,17 @@ export declare class Element {
      *  Default behaviour is doing nothing, leaves cannot be sub-trimmed, only nodes.
      *  Note : only the root can untrim
      *
-     *  @param {Box3} _aabb
-     *  @param {Array.<Element>} _trimmed Array of trimmed Elements
-     *  @param {Array.<Node>} _parents Array of fathers from which each trimmed element has been removed.
+     *  @param _aabb
+     *  @param _trimmed Array of trimmed Elements
+     *  @param _parents Array of fathers from which each trimmed element has been removed.
      */
-    trim(_aabb: any, _trimmed: any, _parents: any): void;
+    trim(_aabb: Box3, _trimmed: Element[], _parents: Node[]): void;
     /**
      *  count the number of elements of class cls in this node and subnodes
-     *  @param {Function} _cls the class of the elements we want to count
-     *  @return {number} The number of element of class cls
+     *  @param  _cls the class of the elements we want to count
+     *  @return  The number of element of class cls
      */
-    count(_cls: any): number;
+    count(_cls: Function): number;
     destroy(): void;
 }
 //# sourceMappingURL=Element.d.ts.map

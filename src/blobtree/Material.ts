@@ -1,6 +1,8 @@
 import { Color } from "three";
+
+export type MaterialJSON = Object;
+
 /**
- * @typedef {Object} MaterialJSON
  * @property {string} color
  * @property {number} roughness
  * @property {number} metalness

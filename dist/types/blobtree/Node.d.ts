@@ -24,7 +24,9 @@ export declare class Node extends Element {
      */
     toJSON(): {
         children: never[];
-        type: string;
+        type: string; /**
+         * @return {NodeJSON}
+         */
     };
     /**
      *  Clone current node and itss hierarchy

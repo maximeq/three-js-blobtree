@@ -3,6 +3,7 @@
         "module": "ESNext",
         "target": "ESNext",
         "moduleResolution": "Bundler",
+        "verbatimModuleSyntax": true,
         "strict": true,
         "allowJs": true,
         "checkJs": true,

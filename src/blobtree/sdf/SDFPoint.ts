@@ -1,40 +1,28 @@
 import { Vector3, Box3 } from "three"
 import { Types } from "../Types.js";
-import { SDFPrimitive } from "./SDFPrimitive.js";
+import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive.js";
 import { AreaSphere } from "../areas/AreaSphere.js";
+import type { Area } from "../areas/Area.js";
+import type { ValueResultType } from "../Element.js";
 
-/** @typedef {import('../areas/Area')} Area */
-/** @typedef {import('../Element.js').Json} Json */
-/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./SDFPrimitive').SDFPrimitiveJSON} SDFPrimitiveJSON */
+export type SDFPointJSON = { p: { x: number, y: number, z: number }, acc: number } & SDFPrimitiveJSON
 
-/**
- * @typedef {{p:{x:number,y:number,z:number},acc:number} & SDFPrimitiveJSON} SDFPointJSON
- */
-
-/**
- *  @constructor
- *  @extends SDFPrimitive
- *s
- */
 export class SDFPoint extends SDFPrimitive {
 
     static type = "SDFPoint";
 
-    /**
-     * @param {SDFPointJSON} json
-     * @returns {SDFPoint}
-     */
-    static fromJSON(json) {
+    static fromJSON(json: SDFPointJSON): SDFPoint {
         return new SDFPoint(new Vector3(json.p.x, json.p.y, json.p.z), json.acc);
     };
 
+    p: Vector3;
+    acc: number;
+
     /**
-     *
-     *  @param {Vector3} p Position (ie center) of the point
-     *  @param {number} acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
+     *  @param p Position (ie center) of the point
+     *  @param acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
      */
-    constructor(p, acc) {
+    constructor(p: Vector3, acc?: number) {
         super();
 
         this.p = p.clone();
@@ -46,10 +34,7 @@ export class SDFPoint extends SDFPrimitive {
         return SDFPoint.type;
     };
 
-    /**
-     * @returns {SDFPointJSON}
-     */
-    toJSON() {
+    toJSON(): SDFPointJSON {
         return {
             ...super.toJSON(),
             p: {
@@ -62,44 +47,44 @@ export class SDFPoint extends SDFPrimitive {
     };
 
     /**
-     *  @param {number} acc The new accuracy factor
+     *  @param acc The new accuracy factor
      */
-    setAccuracy(acc) {
+    setAccuracy(acc: number) {
         this.acc = acc;
         this.invalidAABB();
     };
 
     /**
-     *  @return {number} Current accuracy factor
+     *  @return Current accuracy factor
      */
-    getAccuracy() {
+    getAccuracy(): number {
         return this.acc;
     };
 
     /**
-     *  @param {Vector3} p The new position (ie center)
+     *  @param p The new position (ie center)
      */
-    setPosition(p) {
+    setPosition(p: Vector3) {
         this.p.copy(p);
         this.invalidAABB();
     };
 
     /**
-     *  @return {Vector3} Current position (ie center)
+     *  @return Current position (ie center)
      */
-    getPosition() {
+    getPosition(): Vector3 {
         return this.p;
     };
 
     // [Abstract]
-    computeDistanceAABB(d) {
+    computeDistanceAABB(d: number) {
         return new Box3(
             this.p.clone().add(new Vector3(-d, -d, -d)),
             this.p.clone().add(new Vector3(d, d, d))
         );
     };
     // [Abstract]
-    prepareForEval() {
+    prepareForEval(): void {
         if (!this.valid_aabb) {
             this.valid_aabb = true;
         }
@@ -107,10 +92,10 @@ export class SDFPoint extends SDFPrimitive {
 
     /**
      * @link SDFPrimitive.getDistanceAreas
-     * @param {number} d Distance to consider for the area computation.
-     * @returns {Array.<{aabb: Box3, bv:Area, obj:SDFPrimitive}>}
+     * @param d Distance to consider for the area computation.
+     * @returns {Array.<>}
      */
-    getDistanceAreas(d) {
+    getDistanceAreas(d: number): { aabb: Box3, bv: Area, obj: SDFPoint }[] {
         if (!this.valid_aabb) {
             throw "ERROR : Cannot get area of invalid primitive";
         } else {
@@ -128,14 +113,11 @@ export class SDFPoint extends SDFPrimitive {
 
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
     value = (function () {
         var v = new Vector3();
 
-        return function (p, res) {
+        return function (p: Vector3, res: ValueResultType) {
             if (!this.valid_aabb) {
                 throw "Error : PrepareForEval should have been called";
             }

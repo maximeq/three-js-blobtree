@@ -35,24 +35,6 @@ const Types = {
     }
 };
 
-// Types
-/** @typedef {import('./Material.js')} Material */
-/** @typedef {import('./Node.js')} Node */
-/** @typedef {import('./Primitive')} Primitive */
-/** @typedef {*} Json */
-/** @typedef {import('./areas/Area')} Area */
-/**
- * @typedef {{type:string}} ElementJSON
- */
-/**
- * @typedef {Object} ValueResultType Computed values will be stored here. Each values should exist and
- *                    be allocated already.
- * @property {number} v Value, must be defined
- * @property {Material=} m Material, must be allocated and defined if wanted
- * @property {Vector3=} g Gradient, must be allocated and defined if wanted
- * @property {number=} step ??? Not sure, probably a "safe" step for raymarching
- * @property {number=} stepOrtho ??? Same as step but in orthogonal direction ?
- */
 let elementIds = 0;
 /**
  *  A superclass for Node and Primitive in the blobtree.
@@ -67,17 +49,16 @@ class Element {
     static fromJSON(_json) {
         throw new Error("Element.fromJSON should never be called as Element is abstract.");
     }
+    id;
+    aabb = new Box3();
+    valid_aabb = false;
+    parentNode = null;
     constructor() {
         this.id = elementIds++;
-        this.aabb = new Box3();
-        this.valid_aabb = false;
-        /** @type {Node} */
-        this.parentNode = null;
     }
     /**
      *  Return a Javscript Object respecting JSON convention.
      *  All classes must defined it.
-     *  @return {ElementJSON}
      */
     toJSON() {
         return {
@@ -86,19 +67,18 @@ class Element {
     }
     /**
      *  Clone the object.
-     * @return {Element}
      */
     clone() {
         return Types.fromJSON(this.toJSON());
     }
     /**
-     *  @return {Node} The parent node of this primitive.
+     *  @return The parent node of this primitive.
      */
     getParentNode() {
         return this.parentNode;
     }
     /**
-     *  @return {string} Type of the element
+     *  @return Type of the element
      */
     getType() {
         return Element.type;
@@ -129,7 +109,7 @@ class Element {
         return this.aabb;
     }
     /**
-     *  @return {boolean} True if the current aabb is valid, ie it does
+     *  @return True if the current aabb is valid, ie it does
      *  correspond to the internal primitive parameters.
      */
     isValidAABB() {
@@ -184,11 +164,6 @@ class Element {
     numericalGradient = (function () {
         let tmp = { v: 0 };
         let coord = ['x', 'y', 'z'];
-        /**
-         * @param {Vector3} p
-         * @param {Vector3} res
-         * @param {number} epsilon
-         */
         return function (p, res, epsilon) {
             /** @type Element */
             let self = this;
@@ -210,7 +185,7 @@ class Element {
      *  Area objects do provide methods useful when rasterizing, raytracing or polygonizing
      *  the area (intersections with other areas, minimum level of detail needed to
      *  capture the feature nicely, etc etc...).
-     *  @returns {Array.<{aabb: Box3, bv:Area, obj:Primitive}>} The Areas object corresponding to the node/primitive, in an array
+     *  @returns The Areas object corresponding to the node/primitive, in an array
      */
     getAreas() {
         return [];
@@ -218,8 +193,8 @@ class Element {
     /**
      *  @abstract
      *  This function is called when a point is outside of the potential influence of a primitive/node.
-     *  @param {Vector3} _p
-     *  @return {number} The next step length to do with respect to this primitive/node
+     *  @param  _p
+     *  @return  The next step length to do with respect to this primitive/node
      */
     distanceTo(_p) {
         throw new Error("ERROR : distanceTo is a virtual function, should be reimplemented in all classes extending Element. Concerned type: " + this.getType() + ".");
@@ -239,9 +214,9 @@ class Element {
      *  Default behaviour is doing nothing, leaves cannot be sub-trimmed, only nodes.
      *  Note : only the root can untrim
      *
-     *  @param {Box3} _aabb
-     *  @param {Array.<Element>} _trimmed Array of trimmed Elements
-     *  @param {Array.<Node>} _parents Array of fathers from which each trimmed element has been removed.
+     *  @param _aabb
+     *  @param _trimmed Array of trimmed Elements
+     *  @param _parents Array of fathers from which each trimmed element has been removed.
      */
     trim(_aabb, _trimmed, _parents) {
         // Do nothing by default
@@ -249,8 +224,8 @@ class Element {
     ;
     /**
      *  count the number of elements of class cls in this node and subnodes
-     *  @param {Function} _cls the class of the elements we want to count
-     *  @return {number} The number of element of class cls
+     *  @param  _cls the class of the elements we want to count
+     *  @return  The number of element of class cls
      */
     count(_cls) {
         return 0;
@@ -490,7 +465,6 @@ class Node extends Element {
 Types.register(Node.type, Node);
 
 /**
- * @typedef {Object} MaterialJSON
  * @property {string} color
  * @property {number} roughness
  * @property {number} metalness
@@ -1203,17 +1177,6 @@ class MinNode extends Node {
 Types.register(MinNode.type, MinNode);
 
 /**
- * @typedef {import('./Material.js')} Material
- * @typedef {import('./Material.js').MaterialJSON} MaterialJSON
- * @typedef {import('./Element.js').ElementJSON} ElementJSON
- * @typedef {import('./Element.js').Json} Json
- *
- * @typedef {import('./areas/Area.js')} Area
- */
-/**
- * @typedef {{materials:Array<MaterialJSON>} & ElementJSON} PrimitiveJSON
- */
-/**
  *  Represent a blobtree primitive.
  *
  *  @constructor
@@ -1221,20 +1184,13 @@ Types.register(MinNode.type, MinNode);
  */
 class Primitive extends Element {
     static type = "Primitive";
-    /**
-     * @param {PrimitiveJSON} _json
-     */
     static fromJSON(_json) {
         throw new Error("Primitibe.fromJSON should never be called as Primitibe is abstract.");
     }
+    materials = [];
     constructor() {
         super();
-        /** @type {!Array.<!Material>} */
-        this.materials = [];
     }
-    /**
-     * @returns {PrimitiveJSON}
-     */
     toJSON() {
         var res = { ...super.toJSON(), materials: [] };
         res.materials = [];
@@ -1245,7 +1201,7 @@ class Primitive extends Element {
     }
     ;
     /**
-     *  @param {Array.<!Material>} mats Array of materials to set. they will be copied to the primitive materials
+     *  @param  mats Array of materials to set. they will be copied to the primitive materials
      */
     setMaterials(mats) {
         if (mats.length !== this.materials.length) {
@@ -1260,11 +1216,12 @@ class Primitive extends Element {
     }
     ;
     /**
-     *  @return {Array.<!Material>} Current primitive materials
+     *  @return Current primitive materials
      */
-    getMaterials = function () {
+    getMaterials() {
         return this.materials;
-    };
+    }
+    ;
     /**
      * @link Element.computeAABB for a complete description
      */
@@ -1285,7 +1242,6 @@ class Primitive extends Element {
     ;
     /**
      * @abstract
-     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
      */
     getAreas() {
         console.error("ERROR : getAreas is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");
@@ -1303,7 +1259,7 @@ class Primitive extends Element {
     /**
      * @abstract
      * Compute variables to help with value computation.
-     * @param {*} cls The class to count. Primitives have no children so no complexty here.
+     * @param cls The class to count. Primitives have no children so no complexty here.
      */
     count(cls) {
         return this instanceof cls ? 1 : 0;
@@ -4128,15 +4084,6 @@ class AreaSphere extends Area {
     ;
 }
 
-/** @typedef {import('../Element.js')} Element */
-/** @typedef {import('../Element.js').Json} Json */
-/** @typedef {import('../Element.js').ElementJSON} ElementJSON */
-/** @typedef {import('../Primitive.js').PrimitiveJSON} PrimitiveJSON */
-/** @typedef {import('./ScalisVertex')} ScalisVertex */
-/** @typedef {import('./ScalisVertex').ScalisVertexJSON} ScalisVertexJSON */
-/**
- * @typedef {{v:Array<ScalisVertexJSON>, volType:string} & PrimitiveJSON} ScalisPrimitiveJSON
- */
 /**
  *  Represent an implicit primitive respecting the SCALIS model developped by Cedrric Zanni
  *
@@ -4147,17 +4094,15 @@ class ScalisPrimitive extends Primitive {
     static type = "ScalisPrimitive";
     static DIST = "dist";
     static CONVOL = "convol";
+    volType;
+    v = [];
     constructor() {
         super();
         // Type of volume (convolution or distance funtion)
         this.volType = ScalisPrimitive.DIST;
-        /**
-         * @type {!Array.<!ScalisVertex>}
-         */
-        this.v = []; // vertex array
     }
     /**
-     *  @return {string} Type of the element
+     *  @return Type of the element
      */
     getType() {
         return ScalisPrimitive.type;
@@ -4180,13 +4125,13 @@ class ScalisPrimitive extends Primitive {
     }
     /**
      *  @abstract Specify if the voltype can be changed
-     *  @return {boolean} True if and only if the VolType can be changed.
+     *  @return True if and only if the VolType can be changed.
      */
     mutableVolType() {
         return false;
     }
     /**
-     *  @param {string} vt New VolType to set (Only for SCALIS primitives)
+     *  @param vt New VolType to set (Only for SCALIS primitives)
      */
     setVolType(vt) {
         if (vt !== this.volType) {
@@ -4195,7 +4140,7 @@ class ScalisPrimitive extends Primitive {
         }
     }
     /**
-     *  @return {string} Current volType
+     *  @return  Current volType
      */
     getVolType() {
         return this.volType;
@@ -4212,16 +4157,6 @@ class ScalisPrimitive extends Primitive {
 }
 Types.register(ScalisPrimitive.type, ScalisPrimitive);
 
-/** @typedef {import('./ScalisPrimitive')} ScalisPrimitive */
-/** @typedef {import('../Element.js').Json} Json */
-/**
- * @typedef {Object} ScalisVertexJSON
- * @property {Object} position
- * @property {number} position.x
- * @property {number} position.y
- * @property {number} position.z
- * @property {number} thickness
- */
 var verticesIds = 0;
 /**
  *  A scalis ScalisVertex. Basically a point and a wanted thickness.
@@ -4230,34 +4165,33 @@ class ScalisVertex {
     static fromJSON(json) {
         return new ScalisVertex(new Vector3(json.position.x, json.position.y, json.position.z), json.thickness);
     }
+    pos;
+    thickness;
+    id;
+    prim = null; // The primitive using this vertex
+    aabb = new Box3();
+    valid_aabb = false;
     /**
-     *  @param {!Vector3} pos A position in space, as a Vector3
-     *  @param {number} thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
+     *  @param  pos A position in space, as a Vector3
+     *  @param  thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
      */
     constructor(pos, thickness) {
         this.pos = pos.clone();
         this.thickness = thickness;
         // Only used for quick fix Zanni Correction. Should be removed as soon as it's not useful anymore.
         this.id = verticesIds++;
-        // The primitive using this vertex
-        this.prim = null;
-        this.aabb = new Box3();
-        this.valid_aabb = false;
     }
     ;
     /**
      *  Set an internal pointer to the primitive using this vertex.
      *  Should be called from primitive constructor.
-     * @param {ScalisPrimitive} prim
+     * @param prim
      */
     setPrimitive(prim) {
         if (this.prim === null) {
             this.prim = prim;
         }
     }
-    /**
-     * @returns {ScalisVertexJSON}
-     */
     toJSON() {
         return {
             position: {
@@ -4270,36 +4204,36 @@ class ScalisVertex {
     }
     /**
      *  Set a new position.
-     *  @param {!Vector3} pos A position in space, as a Vector3
+     *  @param pos A position in space, as a Vector3
      */
     setPos(pos) {
         this.valid_aabb = false;
         this.pos.copy(pos);
-        this.prim.invalidAABB();
+        this.prim?.invalidAABB();
     }
     /**
      *  Set a new thickness
-     *  @param {number} thickness The new thickness
+     *  @param thickness The new thickness
      */
     setThickness(thickness) {
         this.valid_aabb = false;
         this.thickness = thickness;
-        this.prim.invalidAABB();
+        this.prim?.invalidAABB();
     }
     /**
      *  Set a both position and thickness
-     *  @param {number} thickness The new thickness
-     *  @param {!Vector3} pos A position in space, as a Vector3
+     *  @param thickness The new thickness
+     *  @param pos A position in space, as a Vector3
      */
     setAll(pos, thickness) {
         this.valid_aabb = false;
         this.pos = pos;
         this.thickness = thickness;
-        this.prim.invalidAABB();
+        this.prim?.invalidAABB();
     }
     /**
      *  Get the current position
-     *  @return {!Vector3} Current position, as a Vector3
+     *  @return Current position, as a Vector3
      */
     getPos() {
         return this.pos;
@@ -4314,7 +4248,7 @@ class ScalisVertex {
     ;
     /**
      *  Get the current AxisAlignedBoundingBox
-     *  @return {Box3} The AABB of this vertex.
+     *  @return The AABB of this vertex.
      */
     getAABB() {
         if (!this.valid_aabb) {
@@ -4335,25 +4269,12 @@ class ScalisVertex {
     }
     /**
      *  Check equality between 2 vertices
-     *  @param {ScalisVertex} other
-     *  @return {boolean}
      */
     equals(other) {
         return this.pos.equals(other.pos) && this.thickness === other.thickness;
     }
 }
 
-// AreaScalisPoint is deprecated since the more genreal AreaSphere is now supposed to do the job.
-// Uncomment if you see any difference.
-// const AreaScalisPoint = require("../areas/deprecated/AreaScalisPoint.js");
-/** @typedef {import('../Element.js')} Element */
-/** @typedef {import('../Element.js').Json} Json */
-/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./ScalisVertex').ScalisVertexJSON} ScalisVertexJSON */
-/** @typedef {import('./ScalisPrimitive').ScalisPrimitiveJSON} ScalisPrimitiveJSON */
-/**
- * @typedef {{density:number} & ScalisPrimitiveJSON} ScalisPointJSON
- */
 class ScalisPoint extends ScalisPrimitive {
     static type = "ScalisPoint";
     /**
@@ -4366,16 +4287,20 @@ class ScalisPoint extends ScalisPrimitive {
         return new ScalisPoint(v, json.volType, json.density, m);
     }
     ;
+    density;
+    // Temporary for eval
+    // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
+    v_to_p = new Vector3();
     /**
-     *  @param {!ScalisVertex} vertex The vertex with point parameters.
-     *  @param {string} volType The volume type wanted for this primitive.
+     *  @param vertex The vertex with point parameters.
+     *  @param volType The volume type wanted for this primitive.
      *                          Note : "convolution" does not make sens for a point, so technically,
      *                                 ScalisPrimitive.DIST or ScalisPrimitive.CONVOL will give the same results.
      *                                 However, since this may be a simple way of sorting for later blending,
      *                                 you can still choose between the 2 options.
-     *  @param {number} density Implicit field density.
+     *  @param density Implicit field density.
      *                          Gives afiner control of the created implicit field.
-     *  @param {!Material} mat Material for the point
+     *  @param mat Material for the point
      */
     constructor(vertex, volType, density, mat) {
         super();
@@ -4384,9 +4309,6 @@ class ScalisPoint extends ScalisPrimitive {
         this.volType = volType;
         this.density = density;
         this.materials.push(mat);
-        // Temporary for eval
-        // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
-        this.v_to_p = new Vector3();
     }
     getType() {
         return ScalisPoint.type;
@@ -4400,21 +4322,21 @@ class ScalisPoint extends ScalisPrimitive {
     }
     ;
     /**
-     *  @param {number} d New density to set
+     *  @param d New density to set
      */
     setDensity(d) {
         this.density = d;
         this.invalidAABB();
     }
     /**
-     *  @return {number} Current density
+     *  @return  Current density
      */
     getDensity() {
         return this.density;
     }
     /**
      *  Set material for this point
-     *  @param {!Material} m
+     *  @param  m
      */
     setMaterial(m) {
         this.materials[0].copy(m);
@@ -4462,8 +4384,8 @@ class ScalisPoint extends ScalisPrimitive {
     /**
      *  @link Element.value
      *
-     *  @param {Vector3} p Point where we want to evaluate the primitive field
-     *  @param {ValueResultType} res
+     *  @param p Point where we want to evaluate the primitive field
+     *  @param res
      */
     value(p, res) {
         if (!this.valid_aabb) {
@@ -4498,8 +4420,8 @@ class ScalisPoint extends ScalisPrimitive {
         }
     }
     /**
-     *  @param {Vector3} p
-     *  @return {number}
+     *  @param p
+     *  @return
      */
     distanceTo(p) {
         // return distance point/segment
@@ -4510,10 +4432,6 @@ class ScalisPoint extends ScalisPrimitive {
 }
 Types.register(ScalisPoint.type, ScalisPoint);
 
-/** @typedef {import('./ScalisPrimitive').ScalisPrimitiveJSON} ScalisPrimitiveJSON */
-/**
- * @typedef {{density:number} & ScalisPrimitiveJSON} ScalisSegmentJSON
- */
 /**
  *  Implicit segment class in the blobtree.
  *
@@ -4522,10 +4440,6 @@ Types.register(ScalisPoint.type, ScalisPoint);
  */
 class ScalisSegment extends ScalisPrimitive {
     static type = "ScalisSegment";
-    /**
-     * @param {ScalisSegmentJSON} json
-     * @returns {ScalisSegment}
-     */
     static fromJSON(json) {
         var v0 = ScalisVertex.fromJSON(json.v[0]);
         var v1 = ScalisVertex.fromJSON(json.v[1]);
@@ -4536,17 +4450,49 @@ class ScalisSegment extends ScalisPrimitive {
         return new ScalisSegment(v0, v1, json.volType, json.density, m);
     }
     ;
+    density;
+    // Temporary for eval
+    // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
+    // CONVOL
+    clipped_l1 = 1.0;
+    clipped_l2 = 0.0;
+    vector = new Vector3();
+    cycle = new Vector3();
+    proj = new Vector3();
+    // helper attributes
+    v0_p;
+    v1_p;
+    dir = new Vector3();
+    lengthSq = 0;
+    length = 0;
+    unit_dir = new Vector3();
+    // weight_p1 is convol's weight_p2 ( >_< )
+    weight_p1 = 0;
+    // c0 and c1 are convol's weight_coeff
+    c0 = 0;
+    c1 = 0;
+    increase_unit_dir = new Vector3();
+    p_min = new Vector3();
+    weight_min = 0;
+    inv_weight_min = 0;
+    unit_delta_weight = 0;
+    maxbound = 0;
+    maxboundSq = 0;
+    cyl_bd0 = 0;
+    cyl_bd1 = 0;
+    f0f1f2 = new Vector3();
+    tmpVec1 = new Vector3();
+    tmpVec2 = new Vector3();
     /**
-     *  @param {!ScalisVertex} v0 First vertex for the segment
-     *  @param {!ScalisVertex} v1 Second vertex for the segment
-     *  @param {!string} volType Volume type, can be ScalisPrimitive.CONVOL
+     *  @param v0 First vertex for the segment
+     *  @param v1 Second vertex for the segment
+     *  @param volType Volume type, can be ScalisPrimitive.CONVOL
      *                 (homothetic convolution surfaces, Zanni and al), or
      *                 ScalisPrimitive.DIST (classic weighted distance field)
-     *  @param {number} density Density is another constant to modulate the implicit
+     *  @param density Density is another constant to modulate the implicit
      *                  field. Used only for DIST voltype.
-     *  @param {!Array.<Material>} mats Material for this primitive.
-     *                                  Use [Material.defaultMaterial.clone(), Material.defaultMaterial.clone()] by default.
-     *
+     *  @param mats Material for this primitive.
+     *              Use [Material.defaultMaterial.clone(), Material.defaultMaterial.clone()] by default.
      */
     constructor(v0, v1, volType, density, mats) {
         super();
@@ -4558,47 +4504,15 @@ class ScalisSegment extends ScalisPrimitive {
         this.volType = volType;
         this.density = density;
         this.materials = mats;
-        // Temporary for eval
-        // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
-        // CONVOL
-        this.clipped_l1 = 1.0;
-        this.clipped_l2 = 0.0;
-        this.vector = new Vector3();
-        this.cycle = new Vector3();
-        this.proj = new Vector3();
         // helper attributes
         this.v0_p = this.v[0].getPos();
         this.v1_p = this.v[1].getPos(); // this one is probably useless to be kept for eval since not used....
-        this.dir = new Vector3();
-        this.lengthSq = 0;
-        this.length = 0;
-        this.unit_dir = new Vector3();
-        // weight_p1 is convol's weight_p2 ( >_< )
-        this.weight_p1 = 0;
-        // c0 and c1 are convol's weight_coeff
-        this.c0 = 0;
-        this.c1 = 0;
-        this.increase_unit_dir = new Vector3();
-        this.p_min = new Vector3();
-        this.weight_min = 0;
-        this.inv_weight_min = 0;
-        this.unit_delta_weight = 0;
-        this.maxbound = 0;
-        this.maxboundSq = 0;
-        this.cyl_bd0 = 0;
-        this.cyl_bd1 = 0;
-        this.f0f1f2 = new Vector3();
-        this.tmpVec1 = new Vector3();
-        this.tmpVec2 = new Vector3();
         this.computeHelpVariables();
     }
     getType() {
         return ScalisSegment.type;
     }
     ;
-    /**
-     * @returns {ScalisSegmentJSON}
-     */
     toJSON() {
         return {
             ...super.toJSON(),
@@ -4611,7 +4525,7 @@ class ScalisSegment extends ScalisPrimitive {
     }
     ;
     /**
-     *  @param {number} d The new density
+     *  @param d The new density
      */
     setDensity(d) {
         this.density = d;
@@ -4619,7 +4533,7 @@ class ScalisSegment extends ScalisPrimitive {
     }
     ;
     /**
-     *  @return {number} The current density
+     *  @return The current density
      */
     getDensity() {
         return this.density;
@@ -4782,8 +4696,8 @@ class ScalisSegment extends ScalisPrimitive {
     })();
     /**
      *
-     * @param {Vector3} p Evaluation point
-     * @param {Object} res Resulting material will be in res.m
+     * @param p Evaluation point
+     * @param res Resulting material will be in res.m
      */
     evalMat(p, res) {
         var p0_to_p = this.vector;
@@ -4807,8 +4721,7 @@ class ScalisSegment extends ScalisPrimitive {
     }
     ;
     /**
-     *  @param {!Vector3} w special_coeff
-     *  @return {boolean}
+     *  @param w special_coeff
      */
     HomotheticClippingSpecial(w) {
         // we search solution t \in [0,1] such that at^2-2bt+c<=0
@@ -4900,10 +4813,7 @@ class ScalisSegment extends ScalisPrimitive {
     ;
     /**
      *  Clamps a number. Based on Zevan's idea: http://actionsnippet.com/?p=475
-     *  @param {number} a
-     *  @param {number} b
-     *  @param {number} c
-     *  @return {number} Clamped value
+     *  @return Clamped value
      *  Author: Jakub Korzeniowski
      *  Agency: Softhis
      *  http://www.softhis.com
@@ -4933,10 +4843,7 @@ class ScalisSegment extends ScalisPrimitive {
     /**
      *  Sub-function for optimized convolution value computation (Homothetic Compact Polynomial).*
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
-     *  @param {number} l
-     *  @param {number} d
-     *  @param {!Object} w
-     *  @return {number} the value
+     *  @return the value
      */
     HomotheticCompactPolynomial_segment_F_i6(l, d, w) {
         var t6247 = d * l + 0.1e1;
@@ -4972,10 +4879,6 @@ class ScalisSegment extends ScalisPrimitive {
      *  Sub-function for optimized convolution value computation (Homothetic Compact Polynomial).
      *  (Approximation? Faster?).
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
-     *  @param {number} l
-     *  @param {number} d
-     *  @param {number} q
-     *  @param {!Object} w
      */
     HomotheticCompactPolynomial_approx_segment_F_i6(l, d, q, w) {
         var t6386 = q * d;
@@ -5014,10 +4917,6 @@ class ScalisSegment extends ScalisPrimitive {
      *  Sub-function for optimized convolution value and gradient computation (Homothetic Compact Polynomial).
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
      *  Result is stored in this.f0f1f2
-     *  @param {number} l
-     *  @param {number} d
-     *  @param {!Object} w
-     *
      */
     HomotheticCompactPolynomial_segment_FGradF_i6(l, d, w) {
         var t6320 = d * l + 0.1e1;
@@ -5066,9 +4965,6 @@ class ScalisSegment extends ScalisPrimitive {
      *  Sub-function for optimized convolution value and gradient computation (Homothetic Compact Polynomial).
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
      *  Result is stored in this.f0f1f2
-     *  @param {number} l
-     *  @param {number} d
-     *  @param {!Object} w
      */
     HomotheticCompactPolynomial_approx_segment_FGradF_i6(l, d, q, w) {
         var t6478 = q * d;
@@ -5126,11 +5022,6 @@ Types.register(ScalisSegment.type, ScalisSegment);
 
 // Number of sample in the Simpsons integration.
 var sampleNumber = 10;
-/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./ScalisPrimitive').ScalisPrimitiveJSON} ScalisPrimitiveJSON */
-/**
- * @typedef {ScalisPrimitiveJSON} ScalisTriangleJSON
- */
 /**
  * This class implements a ScalisTriangle primitive.
  *  CONVOL Evaluation is not exact so we use simpsons numerical integration.
@@ -5139,12 +5030,7 @@ var sampleNumber = 10;
  *  @extends ScalisPrimitive
  */
 class ScalisTriangle extends ScalisPrimitive {
-    /** @type {"ScalisTriangle"} */
     static type = "ScalisTriangle";
-    /**
-     * @param {ScalisTriangleJSON} json
-     * @returns
-     */
     static fromJSON(json) {
         var v = [
             ScalisVertex.fromJSON(json.v[0]),
@@ -5159,14 +5045,52 @@ class ScalisTriangle extends ScalisPrimitive {
         return new ScalisTriangle(v, json.volType, 1.0, m);
     }
     ;
+    min_thick;
+    max_thick;
+    // Temporary for eval
+    // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
+    res_gseg = {};
+    tmp_res_gseg = {};
+    p0p1 = new Vector3();
+    p1p2 = new Vector3();
+    p2p0 = new Vector3();
+    unit_normal = new Vector3();
+    unit_p0p1 = new Vector3();
+    unit_p1p2 = new Vector3();
+    unit_p2p0 = new Vector3();
+    length_p0p1 = 0;
+    length_p1p2 = 0;
+    length_p2p0 = 0;
+    diffThick_p0p1 = 0;
+    diffThick_p0p1 = 0;
+    diffThick_p0p1 = 0;
+    diffThick_p1p2 = 0;
+    diffThick_p2p0 = 0;
+    main_dir = new Vector3();
+    point_iso_zero = new Vector3();
+    ortho_dir = new Vector3();
+    unsigned_ortho_dir = new Vector3();
+    proj_dir = new Vector3();
+    equal_weights = false; // Use to skip computations for a specific case
+    coord_max = 0;
+    coord_middle = 0;
+    unit_delta_weight = 0;
+    longest_dir_special = new Vector3();
+    max_seg_length = 0;
+    half_dir_1 = new Vector3();
+    point_half = new Vector3();
+    half_dir_2 = new Vector3();
+    point_min = new Vector3();
+    weight_min = 0;
+    valid_aabb = false;
     /**
-     *  @param {!Array.<ScalisVertex>} v the 3 vertices for the triangle
-     *  @param {!string} volType Volume type, can be ScalisPrimitive.CONVOL
+     *  @param v the 3 vertices for the triangle
+     *  @param volType Volume type, can be ScalisPrimitive.CONVOL
      *                 (homothetic convolution surfaces, Zanni and al), or
      *                 ScalisPrimitive.DIST (classic weighted distance field)
-     *  @param {number} density Density is another constant to modulate the implicit
+     *  @param density Density is another constant to modulate the implicit
      *                  field. Used only for DIST voltype.
-     *  @param {!Array.<Material>} mats Material for this primitive.
+     *  @param mats Material for this primitive.
      *                                  Use [Material.defaultMaterial.clone(), Material.defaultMaterial.clone()] by default.
      *
      */
@@ -5183,50 +5107,10 @@ class ScalisTriangle extends ScalisPrimitive {
         this.v[2].setPrimitive(this);
         this.min_thick = Math.min(this.v[0].getThickness(), this.v[1].getThickness(), this.v[2].getThickness());
         this.max_thick = Math.max(this.v[0].getThickness(), this.v[1].getThickness(), this.v[2].getThickness());
-        // Temporary for eval
-        // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
-        this.res_gseg = {};
-        this.tmp_res_gseg = {};
-        this.p0p1 = new Vector3();
-        this.p1p2 = new Vector3();
-        this.p2p0 = new Vector3();
-        this.unit_normal = new Vector3();
-        this.unit_p0p1 = new Vector3();
-        this.unit_p1p2 = new Vector3();
-        this.unit_p2p0 = new Vector3();
-        this.length_p0p1 = 0;
-        this.length_p1p2 = 0;
-        this.length_p2p0 = 0;
-        this.diffThick_p0p1 = 0;
-        this.diffThick_p0p1 = 0;
-        this.diffThick_p0p1 = 0;
-        this.diffThick_p1p2 = 0;
-        this.diffThick_p2p0 = 0;
-        this.main_dir = new Vector3();
-        this.point_iso_zero = new Vector3();
-        this.ortho_dir = new Vector3();
-        this.unsigned_ortho_dir = new Vector3();
-        this.proj_dir = new Vector3();
-        this.equal_weights = false; // Use to skip computations for a specific case
-        this.coord_max = 0;
-        this.coord_middle = 0;
-        this.unit_delta_weight = 0;
-        this.longest_dir_special = new Vector3();
-        this.max_seg_length = 0;
-        this.half_dir_1 = new Vector3();
-        this.point_half = new Vector3();
-        this.half_dir_2 = new Vector3();
-        this.point_min = new Vector3();
-        this.weight_min = 0;
-        this.valid_aabb = false;
     }
     getType() {
         return ScalisTriangle.type;
     }
-    /**
-     *
-     * @returns {ScalisTriangleJSON}
-     */
     toJSON() {
         return {
             ...super.toJSON()
@@ -5304,10 +5188,7 @@ class ScalisTriangle extends ScalisPrimitive {
     }
     /**
      *  Clamps a number. Based on Zevan's idea: http://actionsnippet.com/?p=475
-     *  @param {number} a
-     *  @param {number} b
-     *  @param {number} c
-     *  @return {number} Clamped value
+     *  @return Clamped value
      *  Author: Jakub Korzeniowski
      *  Agency: Softhis
      *  http://www.softhis.com
@@ -5366,9 +5247,6 @@ class ScalisTriangle extends ScalisPrimitive {
     ;
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
     value(p, res) {
         switch (this.volType) {
@@ -5383,9 +5261,6 @@ class ScalisTriangle extends ScalisPrimitive {
     }
     /**
      *  value function for Distance volume type (distance field).
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
     evalDist = (function () {
         var ev_eps = { v: 0 };
@@ -5578,14 +5453,14 @@ class ScalisTriangle extends ScalisPrimitive {
      *
      *  Segment computations used in Distance triangle evaluation.
      *
-     *  @param {!Vector3} point Point where value is wanted, as a Vector3
-     *  @param {!Vector3} p1 Segment first point, as a Vector3
-     *  @param {!Vector3} p1p2 Segment first to second point, as a Vector3
-     *  @param {number} length Length of the segment
-     *  @param {number} sqr_length Squared length of the segment
-     *  @param {number} weight_1 Weight for the first point of the segment
-     *  @param {number} delta_weight weight_2 - weight_1
-     *  @param {!Object} res {proj_to_p, weight_proj}
+     *  @param  point Point where value is wanted, as a Vector3
+     *  @param  p1 Segment first point, as a Vector3
+     *  @param  p1p2 Segment first to second point, as a Vector3
+     *  @param  length Length of the segment
+     *  @param  sqr_length Squared length of the segment
+     *  @param  weight_1 Weight for the first point of the segment
+     *  @param  delta_weight weight_2 - weight_1
+     *  @param  res {proj_to_p, weight_proj}
      *
      */
     GenericSegmentComputation(point, p1, p1p2, length, sqr_length, weight_1, delta_weight, // = weight_2-weight_1
@@ -5620,10 +5495,6 @@ class ScalisTriangle extends ScalisPrimitive {
         var g2 = new Vector3();
         var m2 = new Material();
         var tmpRes2 = { v: 0, g: null, m: null };
-        /**
-         *  @param {Vector3} p
-         *  @param {ValueResultType} res
-         */
         return function (p, res) {
             /** @type {ScalisTriangle} */
             let self = this;
@@ -5692,8 +5563,7 @@ class ScalisTriangle extends ScalisPrimitive {
         };
     })();
     /**
-     *  @param {number} t
-     *  @return {number} Warped value
+     *  @return Warped value
      */
     warpAbscissa(t) {
         // Compute approx of ln(d*l+1)/d
@@ -5705,8 +5575,7 @@ class ScalisTriangle extends ScalisPrimitive {
         return 2.0 * t * inv_dtp2 * serie_approx;
     }
     /**
-     *  @param {number} t
-     *  @return {number} Unwarped value
+     *  @return Unwarped value
      */
     unwarpAbscissa(t) {
         // Compute approx of (exp(d*l)-1)/d
@@ -5714,9 +5583,9 @@ class ScalisTriangle extends ScalisPrimitive {
         return t * (1.0 + dt * (1.0 / 2.0 + dt * (1.0 / 6.0 + dt * (1.0 / 24.0 + dt * (1.0 / 120.0 + dt * 1.0 / 720.0)))));
     }
     /**
-     *  @param {number} t
-     *  @param {!Vector3} p point, as a Vector3
-     *  @param {Object} res result containing the wanted elements like res.v for the value, res.g for the gradient, res.m for the material.
+     *  @param  t
+     *  @param  p point, as a Vector3
+     *  @param  res result containing the wanted elements like res.v for the value, res.g for the gradient, res.m for the material.
      *  @return the res parameter, filled with proper values
      */
     computeLineIntegral(t, p, res) {
@@ -5740,12 +5609,12 @@ class ScalisTriangle extends ScalisPrimitive {
      *          This function is used in Eval function of CompactPolynomial kernel which use a different parametrization for a greater stability.
      *
      *
-     *  @param {!Vector3} w special_coeff, x, y and z attributes must be defined
-     *  @param {number} length
-     *  @param {!Object} clipped Result if clipping occured, in l1 and l2, returned
+     *  @param w special_coeff, x, y and z attributes must be defined
+     *  @param length
+     *  @param clipped Result if clipping occured, in l1 and l2, returned
      *                           values are between 0.0 and length/weight_min
      *
-     *  @return {boolean} true if clipping occured
+     *  @return  true if clipping occured
      *
      *  @protected
      */
@@ -5771,12 +5640,8 @@ class ScalisTriangle extends ScalisPrimitive {
         return false;
     }
     /**
-     *  @param {!Vector3} p_1
-     *  @param {number} w_1
-     *  @param {!Vector3} unit_dir
-     *  @param {number} length
      *  @param {!Vector3} point
-     *  @return {!Object} Object defining v attribute with the computed value
+     *  @return Object defining v attribute with the computed value
      *
      *  @protected
      */
@@ -5800,13 +5665,7 @@ class ScalisTriangle extends ScalisPrimitive {
         return res;
     }
     /**
-     *  @param {!Vector3} p_1
-     *  @param {number} w_1
-     *  @param {!Vector3} unit_dir
-     *  @param {number} length
-     *  @param {!Vector3} point
-     *  @return {!Object} Object defining v attribute with the computed value
-     *
+     *  @return  Object defining v attribute with the computed value
      *  @protected
      */
     consWeightEvalGradForSeg(p_1, w_1, unit_dir, length, point, res) {
@@ -5838,10 +5697,10 @@ class ScalisTriangle extends ScalisPrimitive {
         return res;
     }
     /**
-     *  @param {!Vector3} point the point of evaluation, as a Vector3
-     *  @param {!Object} clipped Result if clipping occured, in l1 and l2, returned
+     *  @param  point the point of evaluation, as a Vector3
+     *  @param  clipped Result if clipping occured, in l1 and l2, returned
      *                           values are between 0.0 and length/weight_min
-     *  @return {boolean} true if clipping occured
+     *  @return  true if clipping occured
      */
     ComputeTParam(point, clipped) {
         var p_min_to_point = new Vector3();
@@ -5857,9 +5716,8 @@ class ScalisTriangle extends ScalisPrimitive {
     /**
      *  Sub-function for optimized convolution value computation (Homothetic Compact Polynomial).*
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
-     *  @param {number} l
-     *  @param {!Vector3} w Some coefficient, as a Vector3
-     *  @return {number} the value
+     *  @param w Some coefficient, as a Vector3
+     *  @return  the value
      */
     homotheticCompactPolynomial_segment_F_i6_cste(l, w) {
         var t7068 = w.z;
@@ -5884,9 +5742,9 @@ class ScalisTriangle extends ScalisPrimitive {
      *  Sub-function for optimized convolution for segment of constant weight,
      *  value and gradient computation (Homothetic Compact Polynomial).
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
-     *  @param {number} l
-     *  @param {!Vector3} res result in a Vector3
-     *  @param {!Vector3} w a Vector3
+     *  @param  l
+     *  @param  res result in a Vector3
+     *  @param  w a Vector3
      *
      */
     homotheticCompactPolynomial_segment_FGradF_i6_cste(l, w, res) {
@@ -6072,12 +5930,6 @@ class Poly6DistanceFunctor extends DistanceFunctor {
 }
 Types.register(Poly6DistanceFunctor.type, Poly6DistanceFunctor);
 
-/** @typedef {import('../areas/Area')} Area */
-/** @typedef {import('../Element').ElementJSON} ElementJSON */
-/** @typedef {import('../Primitive')} Primitive */
-/**
- * @typedef {ElementJSON} SDFPrimitiveJSON
- */
 /**
  *  This class implements an abstract primitve class for signed distance field.
  *  SDFPrimitive subclasses must define a scalar field being the distance to a geometry.
@@ -6158,12 +6010,6 @@ class SDFPrimitive extends Element {
 }
 Types.register(SDFPrimitive.type, SDFPrimitive);
 
-/** @typedef {import('../Element.js').Json} Json */
-/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./SDFPrimitive').SDFPrimitiveJSON} SDFPrimitiveJSON */
-/**
- * @typedef {{p1:{x:number,y:number,z:number},r1:number,p2:{x:number,y:number,z:number},r2:number} & SDFPrimitiveJSON} SDFCapsuleJSON
- */
 /**
  *  This primitive implements a distance field to an extanded "capsule geometry", which is actually a weighted segment.
  *  You can find more on Capsule geometry here https://github.com/maximeq/three-js-capsule-geometry
@@ -6174,14 +6020,18 @@ Types.register(SDFPrimitive.type, SDFPrimitive);
  */
 class SDFCapsule extends SDFPrimitive {
     static type = "SDFCapsule";
-    /**
-     * @param {SDFCapsuleJSON} json
-     * @returns {SDFCapsule}
-     */
     static fromJSON(json) {
         //var v = ScalisVertex.fromJSON(json.v[0]);
         return new SDFCapsule(new Vector3(json.p1.x, json.p1.y, json.p1.z), new Vector3(json.p2.x, json.p2.y, json.p2.z), json.r1, json.r2);
     }
+    p1;
+    p2;
+    r1;
+    r2;
+    rdiff;
+    unit_dir;
+    lengthSq;
+    length;
     /**
      *
      *  @param {Vector3} p1 Position of the first segment extremity
@@ -6203,14 +6053,11 @@ class SDFCapsule extends SDFPrimitive {
         this.unit_dir.normalize();
     }
     /**
-     *  @return {string} Type of the element
+     *  @return  Type of the element
      */
     getType() {
         return SDFCapsule.type;
     }
-    /**
-     * @returns {SDFCapsuleJSON}
-     */
     toJSON() {
         return {
             ...super.toJSON(),
@@ -6229,14 +6076,14 @@ class SDFCapsule extends SDFPrimitive {
         };
     }
     /**
-     *  @param {number} r1 The new radius at p1
+     *  @param r1 The new radius at p1
      */
     setRadius1(r1) {
         this.r1 = r1;
         this.invalidAABB();
     }
     /**
-     *  @param {number} r2 The new radius at p2
+     *  @param r2 The new radius at p2
      */
     setRadius2(r2) {
         this.r2 = r2;
@@ -6244,21 +6091,21 @@ class SDFCapsule extends SDFPrimitive {
     }
     ;
     /**
-     *  @return {number} Current radius at p1
+     *  @return Current radius at p1
      */
     getRadius1() {
         return this.r1;
     }
     ;
     /**
-     *  @return {number} Current radius at p2
+     *  @return Current radius at p2
      */
     getRadius2() {
         return this.r2;
     }
     ;
     /**
-     *  @param {Vector3} p1 The new position of the first segment point.
+     *  @param p1 The new position of the first segment point.
      */
     setPosition1(p1) {
         this.p1.copy(p1);
@@ -6266,7 +6113,7 @@ class SDFCapsule extends SDFPrimitive {
     }
     ;
     /**
-     *  @param {Vector3} p2 The new position of the second segment point
+     *  @param p2 The new position of the second segment point
      */
     setPosition2(p2) {
         this.p2.copy(p2);
@@ -6274,14 +6121,14 @@ class SDFCapsule extends SDFPrimitive {
     }
     ;
     /**
-     *  @return {Vector3} Current position of the first segment point
+     *  @return Current position of the first segment point
      */
     getPosition1() {
         return this.p1;
     }
     ;
     /**
-     *  @return {Vector3} Current position of the second segment point
+     *  @return Current position of the second segment point
      */
     getPosition2() {
         return this.p2;
@@ -6303,8 +6150,8 @@ class SDFCapsule extends SDFPrimitive {
     }
     ;
     /**
-     * @param {number} d
-     * @return {Object} The Areas object corresponding to the node/primitive, in an array
+     * @param  d
+     * @return The Areas object corresponding to the node/primitive, in an array
      */
     getDistanceAreas(d) {
         if (!this.valid_aabb) {
@@ -6322,9 +6169,6 @@ class SDFCapsule extends SDFPrimitive {
     ;
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
     value = (function () {
         var v = new Vector3();
@@ -6459,32 +6303,17 @@ class SDFNode extends Node {
 }
 Types.register(SDFNode.type, SDFNode);
 
-/** @typedef {import('../areas/Area')} Area */
-/** @typedef {import('../Element.js').Json} Json */
-/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./SDFPrimitive').SDFPrimitiveJSON} SDFPrimitiveJSON */
-/**
- * @typedef {{p:{x:number,y:number,z:number},acc:number} & SDFPrimitiveJSON} SDFPointJSON
- */
-/**
- *  @constructor
- *  @extends SDFPrimitive
- *s
- */
 class SDFPoint extends SDFPrimitive {
     static type = "SDFPoint";
-    /**
-     * @param {SDFPointJSON} json
-     * @returns {SDFPoint}
-     */
     static fromJSON(json) {
         return new SDFPoint(new Vector3(json.p.x, json.p.y, json.p.z), json.acc);
     }
     ;
+    p;
+    acc;
     /**
-     *
-     *  @param {Vector3} p Position (ie center) of the point
-     *  @param {number} acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
+     *  @param p Position (ie center) of the point
+     *  @param acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
      */
     constructor(p, acc) {
         super();
@@ -6495,9 +6324,6 @@ class SDFPoint extends SDFPrimitive {
         return SDFPoint.type;
     }
     ;
-    /**
-     * @returns {SDFPointJSON}
-     */
     toJSON() {
         return {
             ...super.toJSON(),
@@ -6511,7 +6337,7 @@ class SDFPoint extends SDFPrimitive {
     }
     ;
     /**
-     *  @param {number} acc The new accuracy factor
+     *  @param acc The new accuracy factor
      */
     setAccuracy(acc) {
         this.acc = acc;
@@ -6519,14 +6345,14 @@ class SDFPoint extends SDFPrimitive {
     }
     ;
     /**
-     *  @return {number} Current accuracy factor
+     *  @return Current accuracy factor
      */
     getAccuracy() {
         return this.acc;
     }
     ;
     /**
-     *  @param {Vector3} p The new position (ie center)
+     *  @param p The new position (ie center)
      */
     setPosition(p) {
         this.p.copy(p);
@@ -6534,7 +6360,7 @@ class SDFPoint extends SDFPrimitive {
     }
     ;
     /**
-     *  @return {Vector3} Current position (ie center)
+     *  @return Current position (ie center)
      */
     getPosition() {
         return this.p;
@@ -6554,8 +6380,8 @@ class SDFPoint extends SDFPrimitive {
     ;
     /**
      * @link SDFPrimitive.getDistanceAreas
-     * @param {number} d Distance to consider for the area computation.
-     * @returns {Array.<{aabb: Box3, bv:Area, obj:SDFPrimitive}>}
+     * @param d Distance to consider for the area computation.
+     * @returns {Array.<>}
      */
     getDistanceAreas(d) {
         if (!this.valid_aabb) {
@@ -6572,9 +6398,6 @@ class SDFPoint extends SDFPrimitive {
     ;
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
     value = (function () {
         var v = new Vector3();
@@ -6758,54 +6581,33 @@ class SDFRootNode extends Primitive {
 }
 Types.register(SDFRootNode.type, SDFRootNode);
 
-/** @typedef {import('../Element.js').Json} Json */
-/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./SDFPrimitive').SDFPrimitiveJSON} SDFPrimitiveJSON */
-/**
- * @typedef {{p1:{x:number,y:number,z:number},p2:{x:number,y:number,z:number}, acc:number} & SDFPrimitiveJSON} SDFSegmentJSON
- */
-/**
- *
- *  @constructor
- *  @extends SDFPrimitive
- *
- *  @param {Vector3} p1 Position of the first segment extremity
- *  @param {Vector3} p2 Position of the second segment extremity
- *  @param {number} acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
- */
 class SDFSegment extends SDFPrimitive {
     static type = "SDFSegment";
-    /**
-     * @param {SDFSegmentJSON} json
-     * @returns SDFSegment
-     */
     static fromJSON(json) {
         return new SDFSegment(new Vector3(json.p1.x, json.p1.y, json.p1.z), new Vector3(json.p2.x, json.p2.y, json.p2.z), json.acc);
     }
     ;
+    p1;
+    p2;
+    acc;
+    // Helper for evaluation
+    l;
     /**
-     *
-     * @param {Vector3} p1
-     * @param {Vector3} p2
-     * @param {number} acc
-     */
+    *  @param p1 Position of the first segment extremity
+    *  @param p2 Position of the second segment extremity
+    *  @param acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
+    */
     constructor(p1, p2, acc) {
         super();
         this.p1 = p1.clone();
         this.p2 = p2.clone();
         this.acc = acc || 1.0;
-        // Helper for evaluation
-        /** @type {Line3} */
         this.l = new Line3(this.p1, this.p2);
     }
     getType() {
         return SDFSegment.type;
     }
     ;
-    /**
-     *
-     * @returns {SDFSegmentJSON}
-     */
     toJSON() {
         return {
             ...super.toJSON(),
@@ -6824,7 +6626,7 @@ class SDFSegment extends SDFPrimitive {
     }
     ;
     /**
-     *  @param {number} acc The new accuracy factor
+     *  @param acc The new accuracy factor
      */
     setAccuracy(acc) {
         this.acc = acc;
@@ -6832,14 +6634,14 @@ class SDFSegment extends SDFPrimitive {
     }
     ;
     /**
-     *  @return {number} Current accuracy factor
+     *  @return Current accuracy factor
      */
     getAccuracy() {
         return this.acc;
     }
     ;
     /**
-     *  @param {Vector3} p1 The new position of the first segment point.
+     *  @param  p1 The new position of the first segment point.
      */
     setPosition1(p1) {
         this.p1.copy(p1);
@@ -6847,7 +6649,7 @@ class SDFSegment extends SDFPrimitive {
     }
     ;
     /**
-     *  @param {Vector3} p2 The new position of the second segment point
+     *  @param p2 The new position of the second segment point
      */
     setPosition2(p2) {
         this.p2.copy(p2);
@@ -6902,9 +6704,6 @@ class SDFSegment extends SDFPrimitive {
     ;
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
     value = (function () {
         var v = new Vector3();
@@ -6924,33 +6723,17 @@ class SDFSegment extends SDFPrimitive {
 }
 Types.register(SDFSegment.type, SDFSegment);
 
-/** @typedef {import('../Element.js').Json} Json */
-/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./SDFPrimitive').SDFPrimitiveJSON} SDFPrimitiveJSON */
-/**
- * @typedef {{p:{x:number,y:number,z:number}, r:number} & SDFPrimitiveJSON} SDFSphereJSON
- */
-/**
- *  @constructor
- *  @extends SDFPrimitive
- *
- *  @param {Vector3} p Position (ie center) of the sphere
- *  @param {number} r Radius of the sphere
- */
 class SDFSphere extends SDFPrimitive {
     static type = "SDFSphere";
-    /**
-     * @param {SDFSphereJSON} json
-     * @returns
-     */
     static fromJSON(json) {
         return new SDFSphere(new Vector3(json.p.x, json.p.y, json.p.z), json.r);
     }
     ;
+    p;
+    r;
     /**
-     *
-     * @param {Vector3} p
-     * @param {number} r The radius of the sphere
+     *  @param  p Position (ie center) of the sphere
+     *  @param  r Radius of the sphere
      */
     constructor(p, r) {
         super();
@@ -6961,10 +6744,6 @@ class SDFSphere extends SDFPrimitive {
         return SDFSphere.type;
     }
     ;
-    /**
-     *
-     * @returns {SDFSphereJSON}
-     */
     toJSON() {
         return {
             ...super.toJSON(),
@@ -6978,7 +6757,7 @@ class SDFSphere extends SDFPrimitive {
     }
     ;
     /**
-     *  @param {number} r The new radius
+     *  @param r The new radius
      */
     setRadius(r) {
         this.r = r;
@@ -6986,14 +6765,14 @@ class SDFSphere extends SDFPrimitive {
     }
     ;
     /**
-     *  @return {number} Current radius
+     *  @return Current radius
      */
     getRadius() {
         return this.r;
     }
     ;
     /**
-     *  @param {Vector3} p The new position (ie center)
+     *  @param p The new position (ie center)
      */
     setPosition(p) {
         this.p.copy(p);
@@ -7001,7 +6780,7 @@ class SDFSphere extends SDFPrimitive {
     }
     ;
     /**
-     *  @return {Vector3} Current position (ie center)
+     *  @return  Current position (ie center)
      */
     getPosition() {
         return this.p;
@@ -7039,9 +6818,6 @@ class SDFSphere extends SDFPrimitive {
     ;
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
     value = (function () {
         var v = new Vector3();

@@ -42,7 +42,7 @@ export declare class SDFRootNode extends Primitive {
     toJSON(): {
         f: any;
         sdfRoot: any;
-        materials: never[];
+        materials: Object[];
         type: string;
     };
     prepareForEval(): void;

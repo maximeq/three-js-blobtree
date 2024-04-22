@@ -1,17 +1,8 @@
 import { Vector3, Box3 } from "three"
 import { ScalisMath } from "./ScalisMath.js"
+import type { ScalisPrimitive } from "./ScalisPrimitive.js";
 
-/** @typedef {import('./ScalisPrimitive')} ScalisPrimitive */
-/** @typedef {import('../Element.js').Json} Json */
-
-/**
- * @typedef {Object} ScalisVertexJSON
- * @property {Object} position
- * @property {number} position.x
- * @property {number} position.y
- * @property {number} position.z
- * @property {number} thickness
- */
+export type ScalisVertexJSON = { position: { x: number, y: number, z: number }, thickness: number }
 
 var verticesIds = 0;
 
@@ -20,43 +11,41 @@ var verticesIds = 0;
  */
 export class ScalisVertex {
 
-    static fromJSON(json) {
+    static fromJSON(json: ScalisVertexJSON) {
         return new ScalisVertex(new Vector3(json.position.x, json.position.y, json.position.z), json.thickness);
     }
 
+    pos: Vector3;
+    thickness: number;
+    id: number;
+    prim: ScalisPrimitive | null = null;        // The primitive using this vertex
+    aabb = new Box3();
+    valid_aabb: boolean = false;
+
     /**
-     *  @param {!Vector3} pos A position in space, as a Vector3
-     *  @param {number} thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
+     *  @param  pos A position in space, as a Vector3
+     *  @param  thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
      */
-    constructor(pos, thickness) {
+    constructor(pos: Vector3, thickness: number) {
         this.pos = pos.clone();
         this.thickness = thickness;
 
         // Only used for quick fix Zanni Correction. Should be removed as soon as it's not useful anymore.
         this.id = verticesIds++;
-
-        // The primitive using this vertex
-        this.prim = null;
-
-        this.aabb = new Box3();
-        this.valid_aabb = false;
     };
 
     /**
      *  Set an internal pointer to the primitive using this vertex.
      *  Should be called from primitive constructor.
-     * @param {ScalisPrimitive} prim
+     * @param prim
      */
-    setPrimitive(prim) {
+    setPrimitive(prim: ScalisPrimitive) {
         if (this.prim === null) {
             this.prim = prim;
         }
     }
 
-    /**
-     * @returns {ScalisVertexJSON}
-     */
-    toJSON() {
+    toJSON(): ScalisVertexJSON {
         return {
             position: {
                 x: this.pos.x,
@@ -69,41 +58,41 @@ export class ScalisVertex {
 
     /**
      *  Set a new position.
-     *  @param {!Vector3} pos A position in space, as a Vector3
+     *  @param pos A position in space, as a Vector3
      */
-    setPos(pos) {
+    setPos(pos: Vector3) {
         this.valid_aabb = false;
         this.pos.copy(pos);
-        this.prim.invalidAABB();
+        this.prim?.invalidAABB();
     }
 
     /**
      *  Set a new thickness
-     *  @param {number} thickness The new thickness
+     *  @param thickness The new thickness
      */
-    setThickness(thickness) {
+    setThickness(thickness: number) {
         this.valid_aabb = false;
         this.thickness = thickness;
-        this.prim.invalidAABB();
+        this.prim?.invalidAABB();
     }
 
     /**
      *  Set a both position and thickness
-     *  @param {number} thickness The new thickness
-     *  @param {!Vector3} pos A position in space, as a Vector3
+     *  @param thickness The new thickness
+     *  @param pos A position in space, as a Vector3
      */
-    setAll(pos, thickness) {
+    setAll(pos: Vector3, thickness: number) {
         this.valid_aabb = false;
         this.pos = pos;
         this.thickness = thickness;
-        this.prim.invalidAABB();
+        this.prim?.invalidAABB();
     }
 
     /**
      *  Get the current position
-     *  @return {!Vector3} Current position, as a Vector3
+     *  @return Current position, as a Vector3
      */
-    getPos() {
+    getPos(): Vector3 {
         return this.pos;
     }
 
@@ -111,15 +100,15 @@ export class ScalisVertex {
      *  Get the current Thickness
      *  @return {number} Current Thickness
      */
-    getThickness() {
+    getThickness(): number {
         return this.thickness;
     };
 
     /**
      *  Get the current AxisAlignedBoundingBox
-     *  @return {Box3} The AABB of this vertex.
+     *  @return The AABB of this vertex.
      */
-    getAABB() {
+    getAABB(): Box3 {
         if (!this.valid_aabb) {
             this.computeAABB();
             this.valid_aabb = true;
@@ -131,7 +120,7 @@ export class ScalisVertex {
      *  Compute the current AABB.
      *  @protected
      */
-    computeAABB() {
+    computeAABB(): void {
         var pos = this.getPos();
         var boundSupport = this.getThickness() * ScalisMath.KS;
         this.aabb.set(new Vector3(
@@ -149,10 +138,8 @@ export class ScalisVertex {
 
     /**
      *  Check equality between 2 vertices
-     *  @param {ScalisVertex} other
-     *  @return {boolean}
      */
-    equals(other) {
+    equals(other: ScalisVertex): boolean {
         return this.pos.equals(other.pos) && this.thickness === other.thickness;
     }
 }

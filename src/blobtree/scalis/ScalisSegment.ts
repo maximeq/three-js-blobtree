@@ -1,16 +1,13 @@
-import { Vector3 } from "three"
+import { Box3, Vector3 } from "three"
 import { Types } from "../Types.js";
 import { Material } from "../Material.js";
-import { ScalisPrimitive } from "./ScalisPrimitive.js";
+import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType } from "./ScalisPrimitive.js";
 import { ScalisVertex } from "./ScalisVertex.js";
 import { ScalisMath } from "./ScalisMath.js";
 import { AreaScalisSeg } from "../areas/AreaScalisSeg.js";
+import type { ValueResultType } from "../Element.js";
 
-/** @typedef {import('./ScalisPrimitive').ScalisPrimitiveJSON} ScalisPrimitiveJSON */
-
-/**
- * @typedef {{density:number} & ScalisPrimitiveJSON} ScalisSegmentJSON
- */
+export type ScalisSegmentJSON = { density: number } & ScalisPrimitiveJSON
 
 /**
  *  Implicit segment class in the blobtree.
@@ -20,13 +17,9 @@ import { AreaScalisSeg } from "../areas/AreaScalisSeg.js";
  */
 export class ScalisSegment extends ScalisPrimitive {
 
-    static type = "ScalisSegment";
+    static type = "ScalisSegment" as const;
 
-    /**
-     * @param {ScalisSegmentJSON} json
-     * @returns {ScalisSegment}
-     */
-    static fromJSON(json) {
+    static fromJSON(json: ScalisSegmentJSON): ScalisSegment {
         var v0 = ScalisVertex.fromJSON(json.v[0]);
         var v1 = ScalisVertex.fromJSON(json.v[1]);
         var m = [
@@ -36,19 +29,58 @@ export class ScalisSegment extends ScalisPrimitive {
         return new ScalisSegment(v0, v1, json.volType, json.density, m);
     };
 
+    density: number;
+
+    // Temporary for eval
+    // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
+    // CONVOL
+    clipped_l1 = 1.0;
+    clipped_l2 = 0.0;
+    vector = new Vector3();
+    cycle = new Vector3();
+    proj = new Vector3();
+
+    // helper attributes
+    v0_p: Vector3;
+    v1_p: Vector3;
+    dir = new Vector3();
+    lengthSq = 0;
+    length = 0;
+    unit_dir = new Vector3();
+
+    // weight_p1 is convol's weight_p2 ( >_< )
+    weight_p1 = 0;
+    // c0 and c1 are convol's weight_coeff
+    c0 = 0;
+    c1 = 0;
+
+    increase_unit_dir = new Vector3();
+    p_min = new Vector3();
+    weight_min = 0;
+    inv_weight_min = 0;
+    unit_delta_weight = 0;
+
+    maxbound = 0;
+    maxboundSq = 0;
+    cyl_bd0 = 0;
+    cyl_bd1 = 0;
+    f0f1f2 = new Vector3();
+
+    tmpVec1 = new Vector3();
+    tmpVec2 = new Vector3();
+
     /**
-     *  @param {!ScalisVertex} v0 First vertex for the segment
-     *  @param {!ScalisVertex} v1 Second vertex for the segment
-     *  @param {!string} volType Volume type, can be ScalisPrimitive.CONVOL
+     *  @param v0 First vertex for the segment
+     *  @param v1 Second vertex for the segment
+     *  @param volType Volume type, can be ScalisPrimitive.CONVOL
      *                 (homothetic convolution surfaces, Zanni and al), or
      *                 ScalisPrimitive.DIST (classic weighted distance field)
-     *  @param {number} density Density is another constant to modulate the implicit
+     *  @param density Density is another constant to modulate the implicit
      *                  field. Used only for DIST voltype.
-     *  @param {!Array.<Material>} mats Material for this primitive.
-     *                                  Use [Material.defaultMaterial.clone(), Material.defaultMaterial.clone()] by default.
-     *
+     *  @param mats Material for this primitive.
+     *              Use [Material.defaultMaterial.clone(), Material.defaultMaterial.clone()] by default.
      */
-    constructor(v0, v1, volType, density, mats) {
+    constructor(v0: ScalisVertex, v1: ScalisVertex, volType: ScalisPrimitiveVolType, density: number, mats: Material[]) {
         super();
 
         this.v.length = 2;
@@ -61,41 +93,9 @@ export class ScalisSegment extends ScalisPrimitive {
         this.density = density;
         this.materials = mats;
 
-        // Temporary for eval
-        // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
-        // CONVOL
-        this.clipped_l1 = 1.0;
-        this.clipped_l2 = 0.0;
-        this.vector = new Vector3();
-        this.cycle = new Vector3();
-        this.proj = new Vector3();
         // helper attributes
         this.v0_p = this.v[0].getPos();
         this.v1_p = this.v[1].getPos(); // this one is probably useless to be kept for eval since not used....
-        this.dir = new Vector3();
-        this.lengthSq = 0;
-        this.length = 0;
-        this.unit_dir = new Vector3();
-        // weight_p1 is convol's weight_p2 ( >_< )
-        this.weight_p1 = 0;
-        // c0 and c1 are convol's weight_coeff
-        this.c0 = 0;
-        this.c1 = 0;
-
-        this.increase_unit_dir = new Vector3();
-        this.p_min = new Vector3();
-        this.weight_min = 0;
-        this.inv_weight_min = 0;
-        this.unit_delta_weight = 0;
-
-        this.maxbound = 0;
-        this.maxboundSq = 0;
-        this.cyl_bd0 = 0;
-        this.cyl_bd1 = 0;
-        this.f0f1f2 = new Vector3();
-
-        this.tmpVec1 = new Vector3();
-        this.tmpVec2 = new Vector3();
 
         this.computeHelpVariables();
     }
@@ -104,37 +104,34 @@ export class ScalisSegment extends ScalisPrimitive {
         return ScalisSegment.type;
     };
 
-    /**
-     * @returns {ScalisSegmentJSON}
-     */
-    toJSON() {
+    toJSON(): ScalisSegmentJSON {
         return {
             ...super.toJSON(),
             density: this.density
         };
     };
 
-    mutableVolType() {
+    mutableVolType(): boolean {
         return true;
     };
 
     /**
-     *  @param {number} d The new density
+     *  @param d The new density
      */
-    setDensity(d) {
+    setDensity(d: number): void {
         this.density = d;
         this.invalidAABB();
     };
 
     /**
-     *  @return {number} The current density
+     *  @return The current density
      */
-    getDensity() {
+    getDensity(): number {
         return this.density;
     };
 
     // [Abstract] See Primitive.setVolType for more details
-    setVolType(vt) {
+    setVolType(vt: ScalisPrimitiveVolType) {
         if (!(vt == ScalisPrimitive.CONVOL || vt == ScalisPrimitive.DIST)) {
             throw "ERROR : volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST";
         }
@@ -146,12 +143,12 @@ export class ScalisSegment extends ScalisPrimitive {
     };
 
     // [Abstract] See Primitive.getVolType for more details
-    getVolType() {
+    getVolType(): ScalisPrimitiveVolType {
         return this.volType;
     };
 
     // [Abstract] See Primitive.prepareForEval for more details
-    prepareForEval() {
+    prepareForEval(): void {
         if (!this.valid_aabb) {
             this.computeHelpVariables();
             this.valid_aabb = true;
@@ -159,7 +156,11 @@ export class ScalisSegment extends ScalisPrimitive {
     };
 
     // [Abstract] See Primtive.getArea for more details
-    getAreas() {
+    getAreas(): {
+        aabb: Box3,
+        bv: AreaScalisSeg,
+        obj: ScalisSegment,
+    }[] {
         if (!this.valid_aabb) {
             console.error("ERROR : Cannot get area of invalid primitive");
             return [];
@@ -181,7 +182,7 @@ export class ScalisSegment extends ScalisPrimitive {
     };
 
     // [Abstract] See Primitive.computeHelpVariables for more details
-    computeHelpVariables() {
+    computeHelpVariables(): void {
         this.v0_p = this.v[0].getPos();
         this.v1_p = this.v[1].getPos(); // this one is probably useless to be kept for eval since not used....
 
@@ -228,7 +229,7 @@ export class ScalisSegment extends ScalisPrimitive {
     };
 
     // [Abstract] See Primitive.value for more details
-    value(p, res) {
+    value(p: Vector3, res: ValueResultType) {
         switch (this.volType) {
             case ScalisPrimitive.DIST:
                 this.evalDist(p, res);
@@ -252,7 +253,8 @@ export class ScalisSegment extends ScalisPrimitive {
     evalDist = (function () {
         var ev_eps = { v: 0 };
         var p_eps = new Vector3();
-        return function (p, res) {
+
+        return function (p: Vector3, res: ValueResultType) {
 
             var p0_to_p = this.vector;
             p0_to_p.subVectors(p, this.v[0].getPos());
@@ -313,10 +315,10 @@ export class ScalisSegment extends ScalisPrimitive {
 
     /**
      *
-     * @param {Vector3} p Evaluation point
-     * @param {Object} res Resulting material will be in res.m
+     * @param p Evaluation point
+     * @param res Resulting material will be in res.m
      */
-    evalMat(p, res) {
+    evalMat(p: Vector3, res: ValueResultType) {
         var p0_to_p = this.vector;
         p0_to_p.subVectors(p, this.v[0].getPos());
         var udir_dot = this.unit_dir.dot(p0_to_p);
@@ -339,10 +341,9 @@ export class ScalisSegment extends ScalisPrimitive {
     };
 
     /**
-     *  @param {!Vector3} w special_coeff
-     *  @return {boolean}
+     *  @param w special_coeff
      */
-    HomotheticClippingSpecial(w) {
+    HomotheticClippingSpecial(w: Vector3): boolean {
         // we search solution t \in [0,1] such that at^2-2bt+c<=0
         var a = -w.z;
         var b = -w.y;
@@ -375,7 +376,7 @@ export class ScalisSegment extends ScalisPrimitive {
     /**
      *  value function for Convol volume type (Homothetic convolution).
      */
-    evalConvol(p, res) {
+    evalConvol(p: Vector3, res: ValueResultType) {
         if (!this.valid_aabb) {
             throw "Error : prepareForEval should have been called";
         }
@@ -452,21 +453,18 @@ export class ScalisSegment extends ScalisPrimitive {
 
     /**
      *  Clamps a number. Based on Zevan's idea: http://actionsnippet.com/?p=475
-     *  @param {number} a
-     *  @param {number} b
-     *  @param {number} c
-     *  @return {number} Clamped value
+     *  @return Clamped value
      *  Author: Jakub Korzeniowski
      *  Agency: Softhis
      *  http://www.softhis.com
      */
-    clamp(a, b, c) { return Math.max(b, Math.min(c, a)); };
+    clamp(a: number, b: number, c: number): number { return Math.max(b, Math.min(c, a)); };
 
     // [Abstract] see ScalisPrimitive.distanceTo
     distanceTo = (function () {
         var tmpVector = new Vector3();
         var tmpVectorProj = new Vector3();
-        return function (p) {
+        return function (p: Vector3) {
             /** @type {ScalisSegment} */
             let self = this;
             // var thickness = Math.min(this.c0,this.c0+this.c1);
@@ -488,12 +486,9 @@ export class ScalisSegment extends ScalisPrimitive {
     /**
      *  Sub-function for optimized convolution value computation (Homothetic Compact Polynomial).*
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
-     *  @param {number} l
-     *  @param {number} d
-     *  @param {!Object} w
-     *  @return {number} the value
+     *  @return the value
      */
-    HomotheticCompactPolynomial_segment_F_i6(l, d, w) {
+    HomotheticCompactPolynomial_segment_F_i6(l: number, d: number, w: { x: number, y: number, z: number }): number {
         var t6247 = d * l + 0.1e1;
         var t6241 = 0.1e1 / t6247;
         var t6263 = t6247 * t6247;
@@ -527,12 +522,8 @@ export class ScalisSegment extends ScalisPrimitive {
      *  Sub-function for optimized convolution value computation (Homothetic Compact Polynomial).
      *  (Approximation? Faster?).
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
-     *  @param {number} l
-     *  @param {number} d
-     *  @param {number} q
-     *  @param {!Object} w
      */
-    HomotheticCompactPolynomial_approx_segment_F_i6(l, d, q, w) {
+    HomotheticCompactPolynomial_approx_segment_F_i6(l: number, d: number, q: number, w: { x: number, y: number, z: number }) {
         var t6386 = q * d;
         var t6361 = t6386 + 0.1e1;
         var t6387 = 0.1e1 / t6361;
@@ -569,12 +560,8 @@ export class ScalisSegment extends ScalisPrimitive {
      *  Sub-function for optimized convolution value and gradient computation (Homothetic Compact Polynomial).
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
      *  Result is stored in this.f0f1f2
-     *  @param {number} l
-     *  @param {number} d
-     *  @param {!Object} w
-     *
      */
-    HomotheticCompactPolynomial_segment_FGradF_i6(l, d, w) {
+    HomotheticCompactPolynomial_segment_FGradF_i6(l: number, d: number, w: { x: number, y: number, z: number }) {
         var t6320 = d * l + 0.1e1;
         var t6314 = 0.1e1 / t6320;
         var t6336 = t6320 * t6320;
@@ -621,11 +608,8 @@ export class ScalisSegment extends ScalisPrimitive {
      *  Sub-function for optimized convolution value and gradient computation (Homothetic Compact Polynomial).
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
      *  Result is stored in this.f0f1f2
-     *  @param {number} l
-     *  @param {number} d
-     *  @param {!Object} w
      */
-    HomotheticCompactPolynomial_approx_segment_FGradF_i6(l, d, q, w) {
+    HomotheticCompactPolynomial_approx_segment_FGradF_i6(l: number, d: number, q: number, w: { x: number, y: number, z: number }) {
         var t6478 = q * d;
         var t6443 = t6478 + 0.1e1;
         var t6479 = 0.1e1 / t6443;

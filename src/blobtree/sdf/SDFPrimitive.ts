@@ -1,14 +1,12 @@
 import { Vector3, Box3 } from "three"
 import { Types } from "../Types";
-import { Element } from "../Element";
+import { Element, type ElementJSON } from "../Element";
 
 /** @typedef {import('../areas/Area')} Area */
 /** @typedef {import('../Element').ElementJSON} ElementJSON */
 /** @typedef {import('../Primitive')} Primitive */
 
-/**
- * @typedef {ElementJSON} SDFPrimitiveJSON
- */
+export type SDFPrimitiveJSON = ElementJSON
 
 /**
  *  This class implements an abstract primitve class for signed distance field.

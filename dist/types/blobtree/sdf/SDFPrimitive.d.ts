@@ -1,11 +1,9 @@
 import { Box3 } from "three";
-import { Element } from "../Element";
+import { Element, type ElementJSON } from "../Element";
 /** @typedef {import('../areas/Area')} Area */
 /** @typedef {import('../Element').ElementJSON} ElementJSON */
 /** @typedef {import('../Primitive')} Primitive */
-/**
- * @typedef {ElementJSON} SDFPrimitiveJSON
- */
+export type SDFPrimitiveJSON = ElementJSON;
 /**
  *  This class implements an abstract primitve class for signed distance field.
  *  SDFPrimitive subclasses must define a scalar field being the distance to a geometry.

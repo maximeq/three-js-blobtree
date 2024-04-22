@@ -1,24 +1,17 @@
-import { Vector3 } from "three"
+import { Box3, Vector3 } from "three"
 import { Types } from "../Types.js";
 import { Material } from "../Material.js";
-import { ScalisPrimitive } from "./ScalisPrimitive.js";
+import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType } from "./ScalisPrimitive.js";
 import { ScalisVertex } from "./ScalisVertex.js";
 import { ScalisMath } from "./ScalisMath.js";
 import { AreaSphere } from "../areas/AreaSphere.js";
+import type { ValueResultType } from "../Element.js";
 
 // AreaScalisPoint is deprecated since the more genreal AreaSphere is now supposed to do the job.
 // Uncomment if you see any difference.
 // const AreaScalisPoint = require("../areas/deprecated/AreaScalisPoint.js");
 
-/** @typedef {import('../Element.js')} Element */
-/** @typedef {import('../Element.js').Json} Json */
-/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./ScalisVertex').ScalisVertexJSON} ScalisVertexJSON */
-/** @typedef {import('./ScalisPrimitive').ScalisPrimitiveJSON} ScalisPrimitiveJSON */
-
-/**
- * @typedef {{density:number} & ScalisPrimitiveJSON} ScalisPointJSON
- */
+export type ScalisPointJSON = { density: number } & ScalisPrimitiveJSON
 
 export class ScalisPoint extends ScalisPrimitive {
 
@@ -28,24 +21,30 @@ export class ScalisPoint extends ScalisPrimitive {
      * @param {ScalisPointJSON} json
      * @returns
      */
-    static fromJSON(json) {
+    static fromJSON(json: ScalisPointJSON) {
         var v = ScalisVertex.fromJSON(json.v[0]);
         var m = Material.fromJSON(json.materials[0]);
         return new ScalisPoint(v, json.volType, json.density, m);
     };
 
+    density: number;
+
+    // Temporary for eval
+    // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
+    v_to_p = new Vector3();
+
     /**
-     *  @param {!ScalisVertex} vertex The vertex with point parameters.
-     *  @param {string} volType The volume type wanted for this primitive.
+     *  @param vertex The vertex with point parameters.
+     *  @param volType The volume type wanted for this primitive.
      *                          Note : "convolution" does not make sens for a point, so technically,
      *                                 ScalisPrimitive.DIST or ScalisPrimitive.CONVOL will give the same results.
      *                                 However, since this may be a simple way of sorting for later blending,
      *                                 you can still choose between the 2 options.
-     *  @param {number} density Implicit field density.
+     *  @param density Implicit field density.
      *                          Gives afiner control of the created implicit field.
-     *  @param {!Material} mat Material for the point
+     *  @param mat Material for the point
      */
-    constructor(vertex, volType, density, mat) {
+    constructor(vertex: ScalisVertex, volType: ScalisPrimitiveVolType, density: number, mat: Material) {
         super();
 
         this.v.push(vertex);
@@ -54,10 +53,6 @@ export class ScalisPoint extends ScalisPrimitive {
         this.volType = volType;
         this.density = density;
         this.materials.push(mat);
-
-        // Temporary for eval
-        // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
-        this.v_to_p = new Vector3();
     }
 
     getType() {
@@ -72,25 +67,25 @@ export class ScalisPoint extends ScalisPrimitive {
     };
 
     /**
-     *  @param {number} d New density to set
+     *  @param d New density to set
      */
-    setDensity(d) {
+    setDensity(d: number) {
         this.density = d;
         this.invalidAABB();
     }
 
     /**
-     *  @return {number} Current density
+     *  @return  Current density
      */
-    getDensity() {
+    getDensity(): number {
         return this.density;
     }
 
     /**
      *  Set material for this point
-     *  @param {!Material} m
+     *  @param  m
      */
-    setMaterial(m) {
+    setMaterial(m: Material) {
         this.materials[0].copy(m);
         this.invalidAABB();
     }
@@ -98,21 +93,21 @@ export class ScalisPoint extends ScalisPrimitive {
     /**
      * @link Primitive.computeHelpVariables
      */
-    computeHelpVariables() {
+    computeHelpVariables(): void {
         this.computeAABB();
     }
 
     /**
      * @link Element.prepareForEval
      */
-    prepareForEval() {
+    prepareForEval(): void {
         if (!this.valid_aabb) {
             this.computeHelpVariables();
             this.valid_aabb = true;
         }
     };
 
-    getAreas() {
+    getAreas(): { aabb: Box3, bv: AreaSphere, obj: ScalisPoint }[] {
         if (!this.valid_aabb) {
             console.error("ERROR : Cannot get area of invalid primitive");
             return [];
@@ -138,10 +133,10 @@ export class ScalisPoint extends ScalisPrimitive {
     /**
      *  @link Element.value
      *
-     *  @param {Vector3} p Point where we want to evaluate the primitive field
-     *  @param {ValueResultType} res
+     *  @param p Point where we want to evaluate the primitive field
+     *  @param res
      */
-    value(p, res) {
+    value(p: Vector3, res: ValueResultType) {
         if (!this.valid_aabb) {
             throw "Error : PrepareForEval should have been called";
         }
@@ -173,10 +168,10 @@ export class ScalisPoint extends ScalisPrimitive {
     }
 
     /**
-     *  @param {Vector3} p
-     *  @return {number}
+     *  @param p
+     *  @return 
      */
-    distanceTo(p) {
+    distanceTo(p: Vector3): number {
         // return distance point/segment
         // don't take thickness into account
         return p.distanceTo(this.v[0].getPos());

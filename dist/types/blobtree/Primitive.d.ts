@@ -1,4 +1,6 @@
-import { Element } from './Element';
+import { Element, type ElementJSON } from './Element';
+import { Material, type MaterialJSON } from './Material';
+import type { Area } from './areas';
 /**
  * @typedef {import('./Material.js')} Material
  * @typedef {import('./Material.js').MaterialJSON} MaterialJSON
@@ -7,9 +9,9 @@ import { Element } from './Element';
  *
  * @typedef {import('./areas/Area.js')} Area
  */
-/**
- * @typedef {{materials:Array<MaterialJSON>} & ElementJSON} PrimitiveJSON
- */
+export type PrimitiveJSON = {
+    materials: Array<MaterialJSON>;
+} & ElementJSON;
 /**
  *  Represent a blobtree primitive.
  *
@@ -18,26 +20,18 @@ import { Element } from './Element';
  */
 export declare class Primitive extends Element {
     static type: string;
-    /**
-     * @param {PrimitiveJSON} _json
-     */
-    static fromJSON(_json: any): void;
+    static fromJSON(_json: PrimitiveJSON): void;
+    materials: Material[];
     constructor();
+    toJSON(): PrimitiveJSON;
     /**
-     * @returns {PrimitiveJSON}
+     *  @param  mats Array of materials to set. they will be copied to the primitive materials
      */
-    toJSON(): {
-        materials: never[];
-        type: string;
-    };
+    setMaterials(mats: Material[]): void;
     /**
-     *  @param {Array.<!Material>} mats Array of materials to set. they will be copied to the primitive materials
+     *  @return Current primitive materials
      */
-    setMaterials(mats: any): void;
-    /**
-     *  @return {Array.<!Material>} Current primitive materials
-     */
-    getMaterials: () => any;
+    getMaterials(): Material[];
     /**
      * @link Element.computeAABB for a complete description
      */
@@ -50,9 +44,12 @@ export declare class Primitive extends Element {
     destroy(): void;
     /**
      * @abstract
-     * @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
      */
-    getAreas(): never[];
+    getAreas(): {
+        aabb: THREE.Box3;
+        bv: Area;
+        obj: Primitive;
+    }[];
     /**
      * @abstract
      * Compute variables to help with value computation.
@@ -61,8 +58,8 @@ export declare class Primitive extends Element {
     /**
      * @abstract
      * Compute variables to help with value computation.
-     * @param {*} cls The class to count. Primitives have no children so no complexty here.
+     * @param cls The class to count. Primitives have no children so no complexty here.
      */
-    count(cls: any): 0 | 1;
+    count(cls: Function): 1 | 0;
 }
 //# sourceMappingURL=Primitive.d.ts.map

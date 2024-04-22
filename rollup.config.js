@@ -21,7 +21,6 @@ export default [
             {
                 dir: `./dist`,
                 entryFileNames: `${PACKAGE_NAME}.[name].js`,
-                chunkFileNames: `${PACKAGE_NAME}.internal.js`,
                 format: "esm",
                 sourcemap: true,
             },
@@ -30,9 +29,9 @@ export default [
 
     // TODO: uncomment this when package is fully ported to TS
     // bundle types
-    // {
-    //     input: "./dist/types/exports.d.ts",
-    //     output: [{ file: `dist/${PACKAGE_NAME}.module.d.ts`, format: "es" }],
-    //     plugins: [dts()],
-    // }
+    {
+        input: "./dist/types/exports.d.ts",
+        output: [{ file: `dist/${PACKAGE_NAME}.module.d.ts`, format: "es" }],
+        plugins: [dts()],
+    }
 ]

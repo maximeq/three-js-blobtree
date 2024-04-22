@@ -1,41 +1,27 @@
 import { Vector3, Box3 } from "three"
 import { Types } from "../Types.js";
-import { SDFPrimitive } from "./SDFPrimitive.js";
+import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive.js";
 import { AreaSphere } from "../areas/AreaSphere.js";
+import type { ValueResultType } from "../Element.js";
 
-/** @typedef {import('../Element.js').Json} Json */
-/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./SDFPrimitive').SDFPrimitiveJSON} SDFPrimitiveJSON */
+export type SDFSphereJSON = { p: { x: number, y: number, z: number }, r: number } & SDFPrimitiveJSON
 
-/**
- * @typedef {{p:{x:number,y:number,z:number}, r:number} & SDFPrimitiveJSON} SDFSphereJSON
- */
-
-/**
- *  @constructor
- *  @extends SDFPrimitive
- *
- *  @param {Vector3} p Position (ie center) of the sphere
- *  @param {number} r Radius of the sphere
- */
 export class SDFSphere extends SDFPrimitive {
 
     static type = "SDFSphere";
 
-    /**
-     * @param {SDFSphereJSON} json
-     * @returns
-     */
-    static fromJSON(json) {
+    static fromJSON(json: SDFSphereJSON): SDFSphere {
         return new SDFSphere(new Vector3(json.p.x, json.p.y, json.p.z), json.r);
     };
 
+    p: Vector3;
+    r: number;
+
     /**
-     *
-     * @param {Vector3} p
-     * @param {number} r The radius of the sphere
+     *  @param  p Position (ie center) of the sphere
+     *  @param  r Radius of the sphere
      */
-    constructor(p, r) {
+    constructor(p: Vector3, r: number) {
         super();
 
         this.p = p.clone();
@@ -46,11 +32,7 @@ export class SDFSphere extends SDFPrimitive {
         return SDFSphere.type;
     };
 
-    /**
-     *
-     * @returns {SDFSphereJSON}
-     */
-    toJSON() {
+    toJSON(): SDFSphereJSON {
         return {
             ...super.toJSON(),
             p: {
@@ -63,37 +45,37 @@ export class SDFSphere extends SDFPrimitive {
     };
 
     /**
-     *  @param {number} r The new radius
+     *  @param r The new radius
      */
-    setRadius(r) {
+    setRadius(r: number) {
         this.r = r;
         this.invalidAABB();
     };
 
     /**
-     *  @return {number} Current radius
+     *  @return Current radius
      */
-    getRadius() {
+    getRadius(): number {
         return this.r;
     };
 
     /**
-     *  @param {Vector3} p The new position (ie center)
+     *  @param p The new position (ie center)
      */
-    setPosition(p) {
+    setPosition(p: Vector3) {
         this.p.copy(p);
         this.invalidAABB();
     };
 
     /**
-     *  @return {Vector3} Current position (ie center)
+     *  @return  Current position (ie center)
      */
-    getPosition() {
+    getPosition(): Vector3 {
         return this.p;
     };
 
     // [Abstract]
-    computeDistanceAABB(d) {
+    computeDistanceAABB(d: number): Box3 {
         return new Box3(
             this.p.clone().add(new Vector3(-this.r - d, -this.r - d, -this.r - d)),
             this.p.clone().add(new Vector3(this.r + d, this.r + d, this.r + d))
@@ -101,7 +83,7 @@ export class SDFSphere extends SDFPrimitive {
     };
 
     // [Abstract]
-    prepareForEval() {
+    prepareForEval(): void {
         if (!this.valid_aabb) {
             this.valid_aabb = true;
         }
@@ -111,7 +93,11 @@ export class SDFSphere extends SDFPrimitive {
      * @param {number} d
      * @return {Object} The Areas object corresponding to the node/primitive, in an array
      */
-    getDistanceAreas(d) {
+    getDistanceAreas(d: number): {
+        aabb: Box3,
+        bv: AreaSphere,
+        obj: SDFSphere
+    }[] {
         if (!this.valid_aabb) {
             throw "ERROR : Cannot get area of invalid primitive";
         } else {
@@ -129,9 +115,6 @@ export class SDFSphere extends SDFPrimitive {
 
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
     value = (function () {
         var v = new Vector3();
@@ -139,7 +122,7 @@ export class SDFSphere extends SDFPrimitive {
          *  @param {Vector3} p
          *  @param {ValueResultType} res
          */
-        return function (p, res) {
+        return function (p: Vector3, res: ValueResultType) {
             /** @type {SDFSphere} */
             let self = this;
 

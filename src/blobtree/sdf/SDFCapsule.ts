@@ -1,15 +1,10 @@
 import { Vector3, Box3, MathUtils } from "three"
 import { Types } from "../Types";
-import { SDFPrimitive } from "./SDFPrimitive";
+import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive";
 import { AreaCapsule } from "../areas/AreaCapsule";
+import type { ValueResultType } from "../Element";
 
-/** @typedef {import('../Element.js').Json} Json */
-/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./SDFPrimitive').SDFPrimitiveJSON} SDFPrimitiveJSON */
-
-/**
- * @typedef {{p1:{x:number,y:number,z:number},r1:number,p2:{x:number,y:number,z:number},r2:number} & SDFPrimitiveJSON} SDFCapsuleJSON
- */
+export type SDFCapsuleJSON = { p1: { x: number, y: number, z: number }, r1: number, p2: { x: number, y: number, z: number }, r2: number } & SDFPrimitiveJSON
 
 /**
  *  This primitive implements a distance field to an extanded "capsule geometry", which is actually a weighted segment.
@@ -21,13 +16,9 @@ import { AreaCapsule } from "../areas/AreaCapsule";
  */
 export class SDFCapsule extends SDFPrimitive {
 
-    static type = "SDFCapsule";
+    static type = "SDFCapsule" as const;
 
-    /**
-     * @param {SDFCapsuleJSON} json
-     * @returns {SDFCapsule}
-     */
-    static fromJSON(json) {
+    static fromJSON(json: SDFCapsuleJSON): SDFCapsule {
         //var v = ScalisVertex.fromJSON(json.v[0]);
         return new SDFCapsule(
             new Vector3(json.p1.x, json.p1.y, json.p1.z),
@@ -37,6 +28,15 @@ export class SDFCapsule extends SDFPrimitive {
         );
     }
 
+    p1: Vector3
+    p2: Vector3
+    r1: number
+    r2: number
+    rdiff: number
+    unit_dir: Vector3
+    lengthSq: number
+    length: number
+
     /**
      *
      *  @param {Vector3} p1 Position of the first segment extremity
@@ -44,7 +44,7 @@ export class SDFCapsule extends SDFPrimitive {
      *  @param {number} r1 Radius of the sphere centered in p1
      *  @param {number} r2 Radius of the sphere centered in p2
      */
-    constructor(p1, p2, r1, r2) {
+    constructor(p1: Vector3, p2: Vector3, r1: number, r2: number) {
         super();
 
         this.p1 = p1.clone();
@@ -61,16 +61,13 @@ export class SDFCapsule extends SDFPrimitive {
     }
 
     /**
-     *  @return {string} Type of the element
+     *  @return  Type of the element
      */
     getType() {
         return SDFCapsule.type;
     }
 
-    /**
-     * @returns {SDFCapsuleJSON}
-     */
-    toJSON() {
+    toJSON(): SDFCapsuleJSON {
         return {
             ...super.toJSON(),
             p1: {
@@ -89,66 +86,66 @@ export class SDFCapsule extends SDFPrimitive {
     }
 
     /**
-     *  @param {number} r1 The new radius at p1
+     *  @param r1 The new radius at p1
      */
-    setRadius1(r1) {
+    setRadius1(r1: number) {
         this.r1 = r1;
         this.invalidAABB();
     }
 
     /**
-     *  @param {number} r2 The new radius at p2
+     *  @param r2 The new radius at p2
      */
-    setRadius2(r2) {
+    setRadius2(r2: number) {
         this.r2 = r2;
         this.invalidAABB();
     };
 
     /**
-     *  @return {number} Current radius at p1
+     *  @return Current radius at p1
      */
-    getRadius1() {
+    getRadius1(): number {
         return this.r1;
     };
 
     /**
-     *  @return {number} Current radius at p2
+     *  @return Current radius at p2
      */
-    getRadius2() {
+    getRadius2(): number {
         return this.r2;
     };
 
     /**
-     *  @param {Vector3} p1 The new position of the first segment point.
+     *  @param p1 The new position of the first segment point.
      */
-    setPosition1(p1) {
+    setPosition1(p1: Vector3) {
         this.p1.copy(p1);
         this.invalidAABB();
     };
 
     /**
-     *  @param {Vector3} p2 The new position of the second segment point
+     *  @param p2 The new position of the second segment point
      */
-    setPosition2(p2) {
+    setPosition2(p2: Vector3) {
         this.p2.copy(p2);
         this.invalidAABB();
     };
 
     /**
-     *  @return {Vector3} Current position of the first segment point
+     *  @return Current position of the first segment point
      */
-    getPosition1() {
+    getPosition1(): Vector3 {
         return this.p1;
     };
 
     /**
-     *  @return {Vector3} Current position of the second segment point
+     *  @return Current position of the second segment point
      */
-    getPosition2() {
+    getPosition2(): Vector3 {
         return this.p2;
     };
 
-    computeDistanceAABB(d) {
+    computeDistanceAABB(d: number): Box3 {
         var b1 = new Box3(
             this.p1.clone().add(new Vector3(-this.r1 - d, -this.r1 - d, -this.r1 - d)),
             this.p1.clone().add(new Vector3(this.r1 + d, this.r1 + d, this.r1 + d))
@@ -163,17 +160,21 @@ export class SDFCapsule extends SDFPrimitive {
     /**
      * @link Element.prepareForEval for a complete description
      */
-    prepareForEval() {
+    prepareForEval(): void {
         if (!this.valid_aabb) {
             this.valid_aabb = true;
         }
     };
 
     /**
-     * @param {number} d
-     * @return {Object} The Areas object corresponding to the node/primitive, in an array
+     * @param  d
+     * @return The Areas object corresponding to the node/primitive, in an array
      */
-    getDistanceAreas(d) {
+    getDistanceAreas(d: number): {
+        aabb: Box3,
+        bv: AreaCapsule,
+        obj: SDFCapsule
+    }[] {
         if (!this.valid_aabb) {
             throw "ERROR : Cannot get area of invalid primitive";
         } else {
@@ -194,9 +195,6 @@ export class SDFCapsule extends SDFPrimitive {
 
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
     value = (function () {
         var v = new Vector3();
@@ -205,7 +203,7 @@ export class SDFCapsule extends SDFPrimitive {
          *  @param {Vector3} p
          *  @param {ValueResultType} res
          */
-        return function (p, res) {
+        return function (p: Vector3, res: ValueResultType) {
             /** @type {SDFCapsule} */
             let self = this;
             v.subVectors(p, self.p1);
