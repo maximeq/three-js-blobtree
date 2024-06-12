@@ -7,18 +7,18 @@ import type { Material } from "./Material";
 
 /**   
  * Computed values will be stored here. Each values should exist and be allocated already.              
- * @property {number} v Value, must be defined
- * @property {Material=} m Material, must be allocated and defined if wanted
- * @property {Vector3=} g Gradient, must be allocated and defined if wanted
- * @property {number=} step ??? Not sure, probably a "safe" step for raymarching
- * @property {number=} stepOrtho ??? Same as step but in orthogonal direction ?
+ * @property v Value, must be defined
+ * @property m Material, must be allocated and defined if wanted
+ * @property g Gradient, must be allocated and defined if wanted
+ * @property step ??? Not sure, probably a "safe" step for raymarching
+ * @property stepOrtho ??? Same as step but in orthogonal direction ?
  */
 export type ValueResultType = {
     v: number,
-    m: Material,
-    g: Vector3,
-    step: number,
-    stepOrtho: number,
+    m: Material | null,
+    g: Vector3 | null,
+    step?: number,
+    stepOrtho?: number,
 };
 
 export type ElementJSON = { type: string }
@@ -30,14 +30,11 @@ let elementIds = 0;
  *  @class
  *  @constructor
  */
-export class Element {
+export abstract class Element {
 
     static type = "Element";
 
-    /**
-     * @param {ElementJSON} _json
-     */
-    static fromJSON(_json: any) {
+    static fromJSON(_json: ElementJSON) {
         throw new Error("Element.fromJSON should never be called as Element is abstract.");
     }
 
@@ -96,12 +93,10 @@ export class Element {
      *  By default, the AABB returned is the unionns of all vertices AABB (This is
      *  good for almost all basic primitives).
      */
-    computeAABB(): void {
-        throw "Error : computeAABB is abstract, should have been overwritten";
-    }
+    abstract computeAABB(): void;
 
     /**
-     *  @return {Box3} The AABB of this Element (primitive or node). WARNING : call
+     *  @return The AABB of this Element (primitive or node). WARNING : call
      *  isValidAABB before to ensure the current AABB does correspond to the primitive
      *  settings.
      */
@@ -141,34 +136,30 @@ export class Element {
      *  Important note: For now, a primitive is considered prepared for eval if and only
      *                  if its bounding box is valid (valid_aabb is true).
      */
-    prepareForEval() {
-        console.error("Blobtree.Element: prepareForEval is a virtual function, should be re-implemented in all element(error occured in Element.js");
+    abstract prepareForEval(): void;
         // Possible improvement: return the list of deleted objects and new ares,
         // for example to launch a Marching Cube in the changed area only
         // @return {{del_obj:Array<Object>, new_areas:Array<Object>}}
         // return {del_obj:[], new_areas:[]};
-    }
 
     /**
      *  @abstract
      *  Compute the value and/or gradient and/or material
      *  of the element at position p in space. return computations in res (see below)
      *
-     *  @param {Vector3} _p Point where we want to evaluate the primitive field
-     *  @param {ValueResultType} _res
+     *  @param p Point where we want to evaluate the primitive field
      */
-    value(_p: Vector3, _res: ValueResultType) {
-        throw new Error("ERROR : value is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");
-    };
+    abstract value(p: Vector3, res: ValueResultType): void;
 
     /**
-     * @param {Vector3} p The point where we want the numerical gradient
-     * @param {Vector3} res The resulting gradient
-     * @param {number} epsilon The step value for the numerical evaluation
+     * @param p The point where we want the numerical gradient
+     * @param res The resulting gradient
+     * @param epsilon The step value for the numerical evaluation
      */
     numericalGradient = (function () {
-        let tmp = { v: 0 };
-        let coord = ['x', 'y', 'z'];
+        type coordinate = "x" | "y" | "z";
+        let tmp = { v: 0, m: null, g: null };
+        let coord: coordinate[] = ['x', 'y', 'z'];
 
         return function (this: Element, p: Vector3, res: Vector3, epsilon: number) {
 
@@ -215,11 +206,9 @@ export class Element {
     /**
      *  @abstract
      *  This function is called when a point is within the potential influence of a primitive/node.
-     *  @return {number} The next step length to do with respect to this primitive/node.
+     *  @return The next step length to do with respect to this primitive/node.
      */
-    heuristicStepWithin() {
-        throw new Error("ERROR : heuristicStepWithin is a virtual function, should be reimplemented in all classes extending Element. Concerned type: " + this.getType() + ".");
-    };
+    abstract heuristicStepWithin(): number;
 
     /**
      *  Trim the tree to keep only nodes influencing a given bounding box.

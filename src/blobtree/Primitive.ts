@@ -3,15 +3,6 @@ import { Material, type MaterialJSON } from './Material';
 import { Types } from "./Types";
 import type { Area } from './areas';
 
-/**
- * @typedef {import('./Material.js')} Material
- * @typedef {import('./Material.js').MaterialJSON} MaterialJSON
- * @typedef {import('./Element.js').ElementJSON} ElementJSON
- * @typedef {import('./Element.js').Json} Json
- *
- * @typedef {import('./areas/Area.js')} Area
- */
-
 export type PrimitiveJSON = { materials: Array<MaterialJSON> } & ElementJSON
 
 /**
@@ -20,11 +11,11 @@ export type PrimitiveJSON = { materials: Array<MaterialJSON> } & ElementJSON
  *  @constructor
  *  @extends {Element}
  */
-export class Primitive extends Element {
+export abstract class Primitive extends Element {
 
-    static type = "Primitive";
+    static override type = "Primitive";
 
-    static fromJSON(_json: PrimitiveJSON) {
+    static override fromJSON(_json: PrimitiveJSON) {
         throw new Error("Primitibe.fromJSON should never be called as Primitibe is abstract.");
     }
 
@@ -33,8 +24,8 @@ export class Primitive extends Element {
         super();
     }
 
-    toJSON(): PrimitiveJSON {
-        var res = { ...super.toJSON(), materials: [] as Object[] };
+    override toJSON(): PrimitiveJSON {
+        var res = { ...super.toJSON(), materials: [] as MaterialJSON[] };
         res.materials = [];
         for (var i = 0; i < this.materials.length; ++i) {
             res.materials.push(this.materials[i].toJSON());
@@ -76,7 +67,7 @@ export class Primitive extends Element {
      *  Destroy the current primitive and remove it from the blobtree (basically
      *  clean up the links between blobtree elements).
      */
-    destroy(): void {
+    override destroy(): void {
         if (this.parentNode !== null) {
             this.parentNode.removeChild(this);
         }
@@ -85,7 +76,7 @@ export class Primitive extends Element {
     /**
      * @abstract
      */
-    getAreas(): { aabb: THREE.Box3, bv: Area, obj: Primitive }[] {
+    override getAreas(): { aabb: THREE.Box3, bv: Area, obj: Primitive }[] {
         console.error("ERROR : getAreas is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");
         return [];
     };
@@ -94,16 +85,14 @@ export class Primitive extends Element {
      * @abstract
      * Compute variables to help with value computation.
      */
-    computeHelpVariables() {
-        throw "ERROR : computeHelpVariables is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
-    };
+    abstract override computeHelpVariables(): void;
 
     /**
      * @abstract
      * Compute variables to help with value computation.
      * @param cls The class to count. Primitives have no children so no complexty here.
      */
-    count(cls: Function) {
+    override count(cls: Function) {
         return this instanceof cls ? 1 : 0;
     };
 

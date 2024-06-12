@@ -2,16 +2,12 @@ import { Vector3 } from "three";
 import { Types } from "./Types";
 import { Node } from "./Node";
 import { Material } from "./Material";
+import { Element } from './Element';
+import { type NodeJSON } from './Node.js';
 
-/**
- * @typedef {import('./Element.js')} Element
- * @typedef {import('./Element.js').Json} Json
- * @typedef {import('./Node.js').NodeJSON} NodeJSON
- */
-
-/**
- * @typedef {{alpha:number} & NodeJSON} DifferenceNodeJSON
- */
+type DifferenceNodeJSON = {
+  alpha: number;
+} & NodeJSON;
 
 
 /**
@@ -23,50 +19,53 @@ import { Material } from "./Material";
  */
 export class DifferenceNode extends Node {
 
-    static type = "DifferenceNode";
+    alpha: number;
+    clamped: number;
+    tmp_res0: { v: number, g: Vector3, m: Material };
+    tmp_res1: { v: number, g: Vector3, m: Material };
+    g0: Vector3;
+    m0: Material;
+    g1: Vector3;
+    m1: Material;
+    tmp_v_arr: Float32Array;
+    tmp_m_arr: (Material | null)[];
+
+    static override type = "DifferenceNode";
 
     /**
      * @param {DifferenceNodeJSON} json
      * @returns {DifferenceNode}
      */
-    static fromJSON(json) {
+    static override fromJSON(json: DifferenceNodeJSON) {
         return new DifferenceNode(Types.fromJSON(json.children[0]), Types.fromJSON(json.children[1]), json.alpha);
     };
 
     /**
      *
-     *  @param {!Node} node0 The first node
-     *  @param {!Node} node1 The second node, its value will be substracted to the node 0 value.
-     *  @param {number} alpha Power of the second field : the greater alpha the sharper the difference. Default is 1, must be > 1.
+     *  @param node0 The first node
+     *  @param node1 The second node, its value will be substracted to the node 0 value.
+     *  @param alpha Power of the second field : the greater alpha the sharper the difference. Default is 1, must be > 1.
      */
-    constructor(node0, node1, alpha) {
+    constructor(node0: Node, node1: Node, alpha: number) {
         super();
         this.addChild(node0);
         this.addChild(node1)
 
-        /** @type {number} */
         this.alpha = alpha || 1;
 
         /**
          * For now, this field value is clamped to 0
-         * @type {number}
          */
         this.clamped = 0.0;
 
         // Tmp vars to speed up computation (no reallocations)
-        /** @type {{v:number, g:Vector3, m:Material}} */
         this.tmp_res0 = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
 
-        /** @type {{v:number, g:Vector3, m:Material}} */
         this.tmp_res1 = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
 
-        /** @type {Vector3} */
         this.g0 = new Vector3();
-        /** @type {Material} */
         this.m0 = new Material();
-        /** @type {Vector3} */
         this.g1 = new Vector3();
-        /** @type {Material} */
         this.m1 = new Material();
 
         /** @type {Float32Array} */

@@ -1,48 +1,36 @@
-import { Element } from './Element';
+import { Element, type ElementJSON } from './Element';
 import { Types } from "./Types";
+import { Box3, Vector3 } from 'three';
+import { Primitive } from './Primitive';
+import { Area } from './areas/Area';
 
-// Types
-/**
- * @typedef {import('./Element.js').Json} Json
- * @typedef {import('./Element.js').ElementJSON} ElementJSON
- * @typedef {import('./Primitive.js')} Primitive
- * @typedef {import('./areas/Area')} Area
- */
-
-/** @typedef {{children:Array<{ElementJSON}>} & ElementJSON} NodeJSON*/
+export type NodeJSON = {
+    children: ElementJSON[];
+} & ElementJSON;
 
 /**
  *  This class implements an abstract Node class for implicit blobtree.
  *  @constructor
  *  @extends {Element}
  */
-export class Node extends Element {
+export abstract class Node extends Element {
+    children: Element[];
 
-    static type = "Node";
+    static override type = "Node";
 
-    /**
-     * @param {NodeJSON} _json
-     */
-    static fromJSON(_json) {
-        throw new Error("Node.fromJSON should never be called as Node is abstract.");
-    }
+    abstract fromJSON(json: NodeJSON): Node;
 
     constructor() {
         super();
-
-        /** @type {Array.<!Element>} */
         this.children = [];
     }
 
-    getType() {
+    override getType(): string {
         return Node.type;
     }
 
-    /**
-     * @return {NodeJSON}
-     */
-    toJSON() {
-        var res = {
+    override toJSON(): NodeJSON {
+        var res: NodeJSON = {
             ...super.toJSON(),
             children: []
         };
@@ -55,22 +43,19 @@ export class Node extends Element {
     /**
      *  Clone current node and itss hierarchy
      */
-    clone() {
+    override clone(): Node {
         return Types.fromJSON(this.toJSON());
     }
 
     /**
      *  @link Element.prepareForEval
      */
-    prepareForEval() {
-        console.error("Blobtree.Node: prepareForEval is a pure abstract function, should be reimplemented in every node class.");
-        return super.prepareForEval();
-    }
+    abstract override prepareForEval(): void;
 
     /**
      *  Invalid the bounding boxes recursively down for all children
      */
-    invalidAll() {
+    override invalidAll(): void {
         this.invalidAABB();
         if (this.children) {
             for (var i = 0; i < this.children.length; i++) {
@@ -83,7 +68,7 @@ export class Node extends Element {
      *  Destroy the node and its children. The node is removed from the blobtree
      *  (basically clean up the links between blobtree elements).
      */
-    destroy() {
+    override destroy(): void {
         // need to Copy the array since indices will change.
         var arr_c = this.children.slice(0, this.children.length);
         for (var i = 0; i < arr_c.length; i++) {
@@ -107,9 +92,9 @@ export class Node extends Element {
      *  If c already belongs to the tree, it is removed from its current parent
      *  children list before anything (ie it is "moved").
      *
-     *  @param {Element} c The child to add.
+     *  @param c The child to add.
      */
-    addChild(c) {
+    addChild(c: Element) {
         if (c.parentNode !== null) {
             c.parentNode.removeChild(c);
         }
@@ -130,9 +115,9 @@ export class Node extends Element {
      *      Should only be called when a Primitive is deleted.
      *      Otherwise :
      *          To move a node to another parent : use addChild.
-     *  @param {Element} c The child to remove.
+     *  @param c The child to remove.
      */
-    removeChild(c) {
+    removeChild(c: Element) {
         var i = 0;
         var cdn = this.children; // minimize the code
 
@@ -166,11 +151,11 @@ export class Node extends Element {
      *  @link Element.getAreas for a complete description
      *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
      */
-    getAreas() {
+    override getAreas() {
         if (!this.valid_aabb) {
             throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
         }
-        var res = [];
+        var res: { aabb: Box3, bv: Area, obj: Primitive }[] = [];
         for (var i = 0; i < this.children.length; i++) {
             res.push.apply(res, this.children[i].getAreas());
         }
@@ -179,10 +164,8 @@ export class Node extends Element {
 
     /**
      * @link Element.distanceTo for a complete description
-     * @param {THREE.Vector3} p
-     * @returns {number}
      */
-    distanceTo(p) {
+    override distanceTo(p: Vector3): number {
         var res = 10000000;
         for (var i = 0; i < this.children.length; i++) {
             res = Math.min(res, this.children[i].distanceTo(p));
@@ -193,7 +176,7 @@ export class Node extends Element {
     /**
      * @returns
      */
-    heuristicStepWithin() {
+    override heuristicStepWithin(): number {
         var res = 10000000;
         for (var i = 0; i < this.children.length; i++) {
             res = Math.min(res, this.children[i].heuristicStepWithin());
@@ -203,12 +186,8 @@ export class Node extends Element {
 
     /**
      *  @link Element.trim for a complete description.
-     *
-     *  @param {THREE.Box3} aabb
-     *  @param {Array.<Element>} trimmed
-     *  @param {Array.<Node>} parents
      */
-    trim(aabb, trimmed, parents) {
+    override trim(aabb: Box3, trimmed: Element[], parents: Node[]) {
         let idx = trimmed.length;
         for (let i = 0; i < this.children.length; i++) {
             if (!this.children[i].getAABB().intersectsBox(aabb)) {
@@ -228,11 +207,8 @@ export class Node extends Element {
 
     /**
      *  @link Element.count for a complete description.
-     *
-     *  @param {Function} cls
-     *  @return {number}
      */
-    count(cls) {
+    override count(cls: Function): number {
         var count = 0;
 
         if (this instanceof cls) {
