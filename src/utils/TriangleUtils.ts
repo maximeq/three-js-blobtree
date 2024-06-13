@@ -1,8 +1,95 @@
 import { Vector3, Matrix4 } from "three";
 import { Material } from "../blobtree/Material";
 
+interface VertexLike {
+    getPos: () => Vector3;
+    getThickness: () => number;
+}
+
+interface TriangleLike {
+    v: VertexLike[];
+    p0p1: Vector3;
+    p1p2: Vector3;
+    p2p0: Vector3;
+    unit_p0p1: Vector3;
+    unit_p1p2: Vector3;
+    unit_p2p0: Vector3;
+    unit_normal: Vector3;
+    length_p0p1?: number;
+    length_p1p2?: number;
+    length_p2p0?: number;
+    diffThick_p0p1?: number;
+    diffThick_p1p2?: number;
+    diffThick_p2p0?: number;
+    ortho_dir: Vector3;
+    point_min?: Vector3;
+    weight_min?: number;
+    main_dir: Vector3;
+    point_iso_zero?: Vector3;
+    proj_dir?: Vector3;
+    equal_weights?: boolean;
+    half_dir_1?: Vector3;
+    point_half?: Vector3;
+    half_dir_2?: Vector3;
+    coord_max?: number;
+    coord_middle?: number;
+    unit_delta_weight?: number;
+    longest_dir_special?: Vector3;
+    // The following properties seem to be intended as calculated properties or methods, which cannot be directly declared in TypeScript interfaces.
+    max_seg_length?: number; // This should be calculated in a method, not directly in the interface.
+    unsigned_ortho_dir?: Vector3; // This should be calculated in a method, not directly in the interface.
+}
+
+type TriangleComputedAttributes = {
+    p0p1?: Vector3;
+    p1p2?: Vector3;
+    p2p0?: Vector3;
+    unit_p0p1?: Vector3;
+    unit_p1p2?: Vector3;
+    unit_p2p0?: Vector3;
+    unit_normal?: Vector3;
+    length_p0p1?: number;
+    length_p1p2?: number;
+    length_p2p0?: number;
+    diffThick_p0p1?: number;
+    diffThick_p1p2?: number;
+    diffThick_p2p0?: number;
+    ortho_dir: Vector3;
+    point_min?: Vector3;
+    weight_min?: number;
+    main_dir?: Vector3;
+    point_iso_zero?: Vector3;
+    proj_dir?: Vector3;
+    equal_weights?: boolean;
+    half_dir_1?: Vector3;
+    point_half?: Vector3;
+    half_dir_2?: Vector3;
+    coord_max?: number;
+    coord_middle?: number;
+    unit_delta_weight?: number;
+    longest_dir_special?: Vector3;
+    // The following properties seem to be intended as calculated properties or methods, which cannot be directly declared in TypeScript interfaces.
+    max_seg_length?: number; // This should be calculated in a method, not directly in the interface.
+    unsigned_ortho_dir?: Vector3; // This should be calculated in a method, not directly in the interface.
+}
+
+/**
+ * Triangle structure from CapsuleSketch. Shouldn't be here.
+ * To be moved ASAP. 
+*/
+type CapsuleTriangle = {
+    v: [CapsuleVertex, CapsuleVertex, CapsuleVertex];
+    materials: [Material, Material, Material] | null;
+}
+/**
+ * Misplaced as well
+ */
+type CapsuleVertex = {
+    getMaterial: () => Material;
+}
+
 const EPSILON = 0.000001;
-export const TriangleUtils = {};
+export const TriangleUtils = {
 
 /*
   ! Triangle extends Primitive and must have the following properties in constructor: !
@@ -43,7 +130,7 @@ export const TriangleUtils = {};
 /**
  * intermediary functions used in computeVectorsDirs
  */
-let cleanIndex = function (ind: number, lengthArray: number) {
+cleanIndex(ind: number, lengthArray: number) {
     let res = ind;
     if (lengthArray === 0) {
         throw new Error("Lenght of the array should not be 0");
@@ -58,52 +145,20 @@ let cleanIndex = function (ind: number, lengthArray: number) {
         res = ind % lengthArray;
     }
     return res;
-};
+},
 
-interface VertexLike {
-    getPos: () => Vector3;
-    getThickness: () => number;
-  }
-
-interface TriangleLike {
-    v: VertexLike[];
-    p0p1: Vector3;
-    p1p2: Vector3;
-    p2p0: Vector3;
-    unit_p0p1: Vector3;
-    unit_p1p2: Vector3;
-    unit_p2p0: Vector3;
-    unit_normal: Vector3;
-    length_p0p1: number;
-    length_p1p2: number;
-    length_p2p0: number;
-    diffThick_p0p1: number;
-    diffThick_p1p2: number;
-    diffThick_p2p0: number;
-    ortho_dir: Vector3;
-    point_min: Vector3;
-    weight_min: number;
-    main_dir: Vector3;
-    point_iso_zero: Vector3;
-    proj_dir: Vector3;
-    equal_weights: boolean;
-    half_dir_1: Vector3;
-    point_half: Vector3;
-    half_dir_2: Vector3;
-    coord_max: number;
-    coord_middle: number;
-    unit_delta_weight: number;
-    longest_dir_special: Vector3;
-    // The following properties seem to be intended as calculated properties or methods, which cannot be directly declared in TypeScript interfaces.
-    max_seg_length: number; // This should be calculated in a method, not directly in the interface.
-    unsigned_ortho_dir: Vector3; // This should be calculated in a method, not directly in the interface.
-  }
+/**
+ * Updates the cached values of the triangle
+ * @param triangle The triangles who's internal values need to be updated
+ */
+updateComputedAttributes(triangle: TriangleLike) {},
 
 /**
  *  Compute some internal consts for triangle
  *  @param triangle The triangle to compute consts for (blobtree or skel)
+ *  @deprecated Please use updateComputedAtrributes instead
  */
-TriangleUtils.computeVectorsDirs = function (triangle: TriangleLike) {
+computeVectorsDirs(triangle: TriangleLike) {
 
     let v0_p = triangle.v[0].getPos();
     let v1_p = triangle.v[1].getPos();
@@ -146,10 +201,10 @@ TriangleUtils.computeVectorsDirs = function (triangle: TriangleLike) {
     triangle.point_min = sortingArr[0].vert;
     triangle.weight_min = sortingArr[0].thick;
     // Cycle throught the other points
-    let idx = cleanIndex(sortingArr[0].idx + 1, 3);
+    let idx = TriangleUtils.cleanIndex(sortingArr[0].idx + 1, 3);
     let point_1 = triangle.v[idx].getPos();
     let weight_1 = triangle.v[idx].getThickness();
-    idx = cleanIndex(sortingArr[0].idx + 2, 3);
+    idx = TriangleUtils.cleanIndex(sortingArr[0].idx + 2, 3);
     let point_2 = triangle.v[idx].getPos();
     let weight_2 = triangle.v[idx].getThickness();
     let dir_1 = new Vector3();
@@ -261,7 +316,7 @@ TriangleUtils.computeVectorsDirs = function (triangle: TriangleLike) {
     if ((triangle.ortho_dir.dot(tmp)) < 0.0) {
         triangle.ortho_dir.multiplyScalar(-1.0);
     }
-};
+},
 
 /**
  *  @param triangle
@@ -269,7 +324,7 @@ TriangleUtils.computeVectorsDirs = function (triangle: TriangleLike) {
  *     v parametrisation of the point to compute along the axis V0->V2
  *  @return An object with the computed pos and thickness
  */
-TriangleUtils.getParametrisedVertexAttr = function (triangle: TriangleLike, u: number, v: number): { pos: Vector3, thick: number } {
+getParametrisedVertexAttr(triangle: TriangleLike, u: number, v: number): { pos: Vector3, thick: number } {
     let meanThick = TriangleUtils.getMeanThick(triangle, u, v);
     // create new point
     let pos = new Vector3();
@@ -279,26 +334,28 @@ TriangleUtils.getParametrisedVertexAttr = function (triangle: TriangleLike, u: n
     pos.addVectors(pos, vAdd);
 
     return { "pos": pos, "thick": meanThick };
-};
+},
 
 /**
  *  @param triangle The concerned triangle
  *  @param u u coordinate
  *  @param v v coordinate
  */
-TriangleUtils.getMeanThick = function (triangle: TriangleLike, u: number, v: number): number {
+getMeanThick (triangle: TriangleLike, u: number, v: number): number {
     return triangle.v[0].getThickness() * (1 - u - v) + triangle.v[1].getThickness() * u + triangle.v[2].getThickness() * v;
-};
+},
 
 /**
- *  @param {!Object} triangle The concerned triangle
- *  @param {number} u u coordinate
- *  @param {number} v v coordinate
- *  @return {!Material} Interpolated material
+ * TODO Move this function, it shouldn't be a part of this repository
+ *  @param triangle The concerned triangle
+ *  @param u u coordinate
+ *  @param v v coordinate
+ *  @return Interpolated material
+ * @deprecated
  */
-TriangleUtils.getMeanMat = function (triangle: TriangleLike, u: number, v: number) {
+ getMeanMat (triangle: CapsuleTriangle, u: number, v: number): Material {
     let res = new Material();
-    let m_arr = triangle.materials === null ?
+    let m_arr: Material[] = triangle.materials === null ?
         [triangle.v[0].getMaterial(), triangle.v[0].getMaterial(), triangle.v[0].getMaterial()] :
         [triangle.materials[0], triangle.materials[1], triangle.materials[2]];
     res.weightedMean(
@@ -306,7 +363,7 @@ TriangleUtils.getMeanMat = function (triangle: TriangleLike, u: number, v: numbe
         [1 - u - v, u, v]
     );
     return res;
-};
+},
 
 
 /*  Cf. http://math.stackexchange.com/questions/148199/equation-for-non-orthogonal-projection-of-a-point-onto-two-vectors-representing
@@ -339,7 +396,7 @@ TriangleUtils.getMeanMat = function (triangle: TriangleLike, u: number, v: numbe
  *
  *  @return {{u:number,v:number}} Coordinate of barycenter
  */
-TriangleUtils.getTriBaryCoord = function (p0p1: Vector3, p2p0: Vector3, p0: Vector3, p: Vector3) {
+getTriBaryCoord (p0p1: Vector3, p2p0: Vector3, p0: Vector3, p: Vector3): {u: number, v: number} {
     let U = p0p1;
     let V = p2p0.clone().multiplyScalar(-1);
     let W = new Vector3().subVectors(p, p0);
@@ -353,9 +410,9 @@ TriangleUtils.getTriBaryCoord = function (p0p1: Vector3, p2p0: Vector3, p0: Vect
     let v = (a * e - b * c) / (a * d - b * b);
     let u = (c - v * b) / a;
     return { "u": u, "v": v };
-};
+},
 
-TriangleUtils.getUVCoord = function (U: Vector3, V: Vector3, p0: Vector3, p: Vector3) {
+    getUVCoord(U: Vector3, V: Vector3, p0: Vector3, p: Vector3) {
     let W = new Vector3();
     W.crossVectors(U, V);
     let mat = new Matrix4();
@@ -369,4 +426,5 @@ TriangleUtils.getUVCoord = function (U: Vector3, V: Vector3, p0: Vector3, p: Vec
     vec.applyMatrix4(mat1);
 
     return { u: vec.x, v: vec.y };
+}
 };

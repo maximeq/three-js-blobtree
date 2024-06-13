@@ -3,8 +3,8 @@ import { Types } from "./Types";
 import { Node } from "./Node";
 import { Material } from "./Material";
 
-import type { ValueResultType, Element } from './Element.js';
-import type { NodeJSON } from './Node.js';
+import type { ValueResultType, Element } from './Element';
+import type { NodeJSON } from './Node';
 
 type ScaleNodeJSON = {
   scale_x: number;

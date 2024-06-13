@@ -7,12 +7,12 @@ let KIS2 = 1 / (KS * KS);
  *  Compute the iso value at a given distance for a given polynomial degree
  *  and scale in 0 dimension (point)
  *
- *  @param {number} degree  Polynomial degree of the kernel
- *  @param {number} scale   Kernel scale
- *  @param {number} dist    Distance
- *  @return {number} The iso value at a given distance for a given polynomial degree and scale
+ *  @param degree  Polynomial degree of the kernel
+ *  @param scale   Kernel scale
+ *  @param dist    Distance
+ *  @return The iso value at a given distance for a given polynomial degree and scale
  */
-let GetIsoValueAtDistanceGeom0D = function (degree, scale, dist) {
+let GetIsoValueAtDistanceGeom0D = function (degree: number, scale: number, dist: number): number {
     if (degree % 2 !== 0) {
         throw "degree should be even";
     }
@@ -30,12 +30,12 @@ let GetIsoValueAtDistanceGeom0D = function (degree, scale, dist) {
  *  Compute the iso value at a given distance for a given polynomial degree
  *  and scale in 1 dimension
  *
- *  @param {number} degree  Polynomial degree of the kernel
- *  @param {number} scale   Kernel scale
- *  @param {number} dist    Distance
- *  @return {number} The iso value at a given distance for a given polynomial degree and scale
+ *  @param degree  Polynomial degree of the kernel
+ *  @param scale   Kernel scale
+ *  @param dist    Distance
+ *  @return The iso value at a given distance for a given polynomial degree and scale
  */
-let GetIsoValueAtDistanceGeom1D = function (degree, scale, dist) {
+let GetIsoValueAtDistanceGeom1D = function (degree: number, scale: number, dist: number) {
     if (degree % 2 !== 0) {
         throw "degree should be even";
     }
@@ -59,12 +59,12 @@ let GetIsoValueAtDistanceGeom1D = function (degree, scale, dist) {
  *  Compute the iso value at a given distance for a given polynomial degree
  *  and scale in 2 dimensions
  *
- *  @param {number} degree  Polynomial degree of the kernel
- *  @param {number} scale   Kernel scale
- *  @param {number} dist    Distance
- *  @return {number} The iso value at a given distance for a given polynomial degree and scale
+ *  @param degree  Polynomial degree of the kernel
+ *  @param scale   Kernel scale
+ *  @param dist    Distance
+ *  @return The iso value at a given distance for a given polynomial degree and scale
  */
-let GetIsoValueAtDistanceGeom2D = function (degree, scale, dist) {
+let GetIsoValueAtDistanceGeom2D = function (degree: number, scale: number, dist: number) {
     if (dist < scale) {
         var i_p_2 = degree + 2;
         var func_dist_scale = 1.0 - (dist * dist) / (scale * scale);
@@ -82,9 +82,9 @@ export const ScalisMath = {
     KIS2: KIS2,
     /**
      *  Compact Polynomial of degree 6 evaluation function
-     *  @param {number} r Radius (ie distance)
+     *  @param r Radius (ie distance)
      */
-    Poly6Eval: function (r) {
+    Poly6Eval: function (r: number): number {
         var aux = 1.0 - KIS2 * r * r;
 
         if (aux > 0.0) {
@@ -96,9 +96,9 @@ export const ScalisMath = {
     /**
      *  Compact Polynomial of degree 6 evaluation function from a squared radius.
      *  (avoid square roots in some cases)
-     *  @param {number} r2 Radius squared (ie distance squared)
+     *  @param r2 Radius squared (ie distance squared)
      */
-    Poly6EvalSq: function (r2) {
+    Poly6EvalSq: function (r2: number): number {
         var aux = 1.0 - KIS2 * r2;
 
         if (aux > 0.0) {
@@ -111,19 +111,19 @@ export const ScalisMath = {
      *  Compute the iso value at a given distance for a given polynomial degree
      *  and scale in 0 dimension (point)
      *
-     *  @param {number} degree  Polynomial degree of the kernel
-     *  @param {number} scale   Kernel scale
-     *  @param {number} dist    Distance
-     *  @return {number} The iso value at a given distance for a given polynomial degree and scale
+     *  @param degree  Polynomial degree of the kernel
+     *  @param scale   Kernel scale
+     *  @param dist    Distance
+     *  @return The iso value at a given distance for a given polynomial degree and scale
      */
     GetIsoValueAtDistanceGeom0D: GetIsoValueAtDistanceGeom0D,
     /**
-     * @type {number} Normalization Factor for polynomial 4 in 0 dimension
+     * Normalization Factor for polynomial 4 in 0 dimension
      * @const
      */
     Poly4NF0D: 1.0 / GetIsoValueAtDistanceGeom0D(4, KS, 1.0),
     /**
-     * @type {number} Normalization Factor for polynomial 6 in 0 dimension
+     * Normalization Factor for polynomial 6 in 0 dimension
      * @const
      */
     Poly6NF0D: 1.0 / GetIsoValueAtDistanceGeom0D(6, KS, 1.0),
@@ -131,19 +131,19 @@ export const ScalisMath = {
      *  Compute the iso value at a given distance for a given polynomial degree
      *  and scale in 1 dimension
      *
-     *  @param {number} degree  Polynomial degree of the kernel
-     *  @param {number} scale   Kernel scale
-     *  @param {number} dist    Distance
-     *  @return {number} The iso value at a given distance for a given polynomial degree and scale
+     *  @param degree  Polynomial degree of the kernel
+     *  @param scale   Kernel scale
+     *  @param dist    Distance
+     *  @return The iso value at a given distance for a given polynomial degree and scale
      */
     GetIsoValueAtDistanceGeom1D: GetIsoValueAtDistanceGeom1D,
     /**
-     * @type {number} Normalization Factor for polynomial 4 in 1 dimension
+     * Normalization Factor for polynomial 4 in 1 dimension
      * @const
      */
     Poly4NF1D: 1.0 / GetIsoValueAtDistanceGeom1D(4, KS, 1.0),
     /**
-     * @type {number} Normalization Factor for polynomial 6 in 1 dimension
+     * Normalization Factor for polynomial 6 in 1 dimension
      * @const
      */
     Poly6NF1D: 1.0 / GetIsoValueAtDistanceGeom1D(6, KS, 1.0),
@@ -151,19 +151,19 @@ export const ScalisMath = {
      *  Compute the iso value at a given distance for a given polynomial degree
      *  and scale in 2 dimensions
      *
-     *  @param {number} degree  Polynomial degree of the kernel
-     *  @param {number} scale   Kernel scale
-     *  @param {number} dist    Distance
-     *  @return {number} The iso value at a given distance for a given polynomial degree and scale
+     *  @param degree  Polynomial degree of the kernel
+     *  @param scale   Kernel scale
+     *  @param dist    Distance
+     *  @return The iso value at a given distance for a given polynomial degree and scale
      */
     GetIsoValueAtDistanceGeom2D: GetIsoValueAtDistanceGeom2D,
     /**
-     * @type {number} Normalization Factor for polynomial 4 in 2 dimension
+     * Normalization Factor for polynomial 4 in 2 dimension
      * @const
      */
     Poly4NF2D: 1.0 / GetIsoValueAtDistanceGeom2D(4, KS, 1.0),
     /**
-     * @type {number} Normalization Factor for polynomial 6 in 2 dimension
+     * Normalization Factor for polynomial 6 in 2 dimension
      * @const
      */
     Poly6NF2D: 1.0 / GetIsoValueAtDistanceGeom2D(6, KS, 1.0)
