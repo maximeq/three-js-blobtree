@@ -1,17 +1,15 @@
 import { Vector3, Matrix4, Box3 } from "three"
 import { Types } from "./Types";
-import { Node } from "./Node";
+import { Node, type NodeJSON } from "./Node";
 import { Material } from "./Material";
+import type { ValueResultType, Element } from './Element';
 
-/** @typedef {import('./Element.js')} Element */
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-
-/**
- * @typedef { {twist_amout:number} & {axis_x:number} & {axis_y:number} & {axis_z:number} & NodeJSON} TwistNodeJSON
- */
-
+type TwistNodeJSON = {
+  twist_amount: number;
+  axis_x: number;
+  axis_y: number;
+  axis_z: number;
+} & NodeJSON;
 /**
  *  This class implement a TwistNode node.
  *  It will return the minimum value of the field of each primitive.
@@ -20,24 +18,31 @@ import { Material } from "./Material";
  *  @extends Node
  */
 export class TwistNode extends Node {
+    _twist_amount: number;
+    _twist_axis: Vector3;
+    _twist_axis_mat: Matrix4;
+    _twist_axis_mat_inv: Matrix4;
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
 
-    static type = "TwistNode";
+    static override type = "TwistNode";
 
     /**
-    *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
-    constructor(children) {
+    constructor(children?: Node[]) {
 
         super();
 
         if (children) {
-            var self = this;
+            const self = this;
             children.forEach(function (c) {
                 self.addChild(c);
             });
         }
 
-        // temp vars to speed up evaluation by avoiding allocations
+        // temp consts to speed up evaluation by avoiding allocations
         /** @type {{v:number, g:Vector3, m:Material}} */
         this.tmp_res = { v: 0, g: null, m: null };
         /** @type {Vector3} */
@@ -45,7 +50,7 @@ export class TwistNode extends Node {
         /** @type {Material} */
         this.tmp_m = new Material();
 
-        this._twist_amout = 1.0;
+        this._twist_amount = 1.0;
         this._twist_axis = new Vector3(0.0, 1.0, 0.0);
         this._twist_axis_mat = new Matrix4();
         this._twist_axis_mat_inv = new Matrix4();
@@ -57,10 +62,10 @@ export class TwistNode extends Node {
     * @link Node.toJSON
     * @returns {TwistNodeJSON}
     */
-    toJSON() {
+    override toJSON(): TwistNodeJSON {
         let res = {
             ...super.toJSON(),
-            twist_amout: this._twist_amout,
+            twist_amount: this._twist_amount,
             axis_x: this._twist_axis.x,
             axis_y: this._twist_axis.y,
             axis_z: this._twist_axis.z,
@@ -75,23 +80,23 @@ export class TwistNode extends Node {
      * @param {TwistNodeJSON} json
      * @returns {TwistNode}
      */
-    static fromJSON(json) {
-        var res = new TwistNode();
-        res.setTwistAmount(json.twist_amout);
+    override fromJSON(json: TwistNodeJSON): TwistNode {
+        const res = new TwistNode();
+        res.setTwistAmount(json.twist_amount);
         res.setTwistAxis(new Vector3(json.axis_x
             , json.axis_y
             , json.axis_z));
-        for (var i = 0; i < json.children.length; ++i) {
+        for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
         }
         return res;
     }
 
-    setTwistAmount(amount) {
-        this._twist_amout = amount;
+    setTwistAmount(amount: number) {
+        this._twist_amount = amount;
     }
 
-    setTwistAxis(axis) {
+    setTwistAxis(axis: Vector3) {
         this._twist_axis = axis;
         this._computeTransforms();
     }
@@ -111,7 +116,7 @@ export class TwistNode extends Node {
         this._twist_axis_mat_inv.invert();
     }
 
-    getType() {
+    override getType() {
         return TwistNode.type;
     }
 
@@ -121,8 +126,8 @@ export class TwistNode extends Node {
     prepareForEval() {
         if (!this.valid_aabb) {
             this.aabb = new Box3();  // Create empty BBox
-            for (var i = 0; i < this.children.length; ++i) {
-                var c = this.children[i];
+            for (let i = 0; i < this.children.length; ++i) {
+                const c = this.children[i];
                 c.prepareForEval();
                 this.aabb.union(c.getAABB());     // new aabb is computed according to remaining children aabb
             }
@@ -133,16 +138,13 @@ export class TwistNode extends Node {
 
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
-    value(p, res) {
+    value(p: Vector3, res: ValueResultType) {
         // TODO : check that all bounding box of all children and subchildrens are valid
         //        This enable not to do it in prim and limit the number of assert call (and string built)
 
-        var l = this.children.length;
-        var tmp = this.tmp_res;
+        const l = this.children.length;
+        const tmp = this.tmp_res;
         tmp.g = res.g ? this.tmp_g : null;
         tmp.m = res.m ? this.tmp_m : null;
 
@@ -175,8 +177,8 @@ export class TwistNode extends Node {
             t_p.applyMatrix4(this._twist_axis_mat);
 
             //Twist          
-            let c_twist = Math.cos(this._twist_amout * t_p.y);
-            let s_twist = Math.sin(this._twist_amout * t_p.y);
+            let c_twist = Math.cos(this._twist_amount * t_p.y);
+            let s_twist = Math.sin(this._twist_amount * t_p.y);
 
             //Revert to world space
             let q = new Vector3(c_twist * t_p.x - s_twist * t_p.z,
@@ -190,14 +192,14 @@ export class TwistNode extends Node {
                 , q.z + center.z);
 
             res.v = Number.MAX_VALUE;
-            for (var i = 0; i < l; ++i) {
+            for (let i = 0; i < l; ++i) {
                 this.children[i].value(t_q, tmp);
                 res.v = tmp.v;
 
-                if (res.g) {
+                if (res.g && tmp.g) {
                     res.g.copy(tmp.g);
                 }
-                if (res.m) {
+                if (res.m && tmp.m) {
                     res.m.copy(tmp.m);
                 }
                 // within primitive potential
@@ -213,14 +215,10 @@ export class TwistNode extends Node {
 
     /**
      *  @link Element.trim for a complete description.
-     *
-     *  @param {Box3} aabb
-     *  @param {Array<Element>} trimmed
-     *  @param {Array<Node>} parents
      */
-    trim(aabb, trimmed, parents) {
+    override trim(aabb: Box3, trimmed: Element[], parents: Node[]) {
         // Trim remaining nodes
-        for (var i = 0; i < this.children.length; i++) {
+        for (let i = 0; i < this.children.length; i++) {
             this.children[i].trim(aabb, trimmed, parents);
         }
     };

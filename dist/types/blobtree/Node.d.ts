@@ -1,41 +1,30 @@
-import { Element } from './Element';
-/**
- * @typedef {import('./Element.js').Json} Json
- * @typedef {import('./Element.js').ElementJSON} ElementJSON
- * @typedef {import('./Primitive.js')} Primitive
- * @typedef {import('./areas/Area')} Area
- */
-/** @typedef {{children:Array<{ElementJSON}>} & ElementJSON} NodeJSON*/
+import { Element, type ElementJSON } from './Element';
+import type { Box3, Vector3 } from 'three';
+import { Primitive } from './Primitive';
+import { Area } from './areas/Area';
+export type NodeJSON = {
+    children: ElementJSON[];
+} & ElementJSON;
 /**
  *  This class implements an abstract Node class for implicit blobtree.
  *  @constructor
  *  @extends {Element}
  */
-export declare class Node extends Element {
+export declare abstract class Node extends Element {
+    children: Element[];
     static type: string;
-    /**
-     * @param {NodeJSON} _json
-     */
-    static fromJSON(_json: any): void;
+    abstract fromJSON(json: NodeJSON): Node;
     constructor();
     getType(): string;
-    /**
-     * @return {NodeJSON}
-     */
-    toJSON(): {
-        children: never[];
-        type: string; /**
-         * @return {NodeJSON}
-         */
-    };
+    toJSON(): NodeJSON;
     /**
      *  Clone current node and itss hierarchy
      */
-    clone(): any;
+    clone(): Node;
     /**
      *  @link Element.prepareForEval
      */
-    prepareForEval(): void;
+    abstract prepareForEval(): void;
     /**
      *  Invalid the bounding boxes recursively down for all children
      */
@@ -51,9 +40,9 @@ export declare class Node extends Element {
      *  If c already belongs to the tree, it is removed from its current parent
      *  children list before anything (ie it is "moved").
      *
-     *  @param {Element} c The child to add.
+     *  @param c The child to add.
      */
-    addChild(c: any): this;
+    addChild(c: Element): this;
     /**
      *  Only works with n-ary nodes, otherwise order matters and we therefore
      *  have to set "null" and node cannot be evaluated.
@@ -62,9 +51,9 @@ export declare class Node extends Element {
      *      Should only be called when a Primitive is deleted.
      *      Otherwise :
      *          To move a node to another parent : use addChild.
-     *  @param {Element} c The child to remove.
+     *  @param c The child to remove.
      */
-    removeChild(c: any): void;
+    removeChild(c: Element): void;
     /**
      * @link Element.computeAABB for a complete description
      */
@@ -73,31 +62,26 @@ export declare class Node extends Element {
      *  @link Element.getAreas for a complete description
      *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
      */
-    getAreas(): any[];
+    getAreas(): {
+        aabb: Box3;
+        bv: Area;
+        obj: Primitive;
+    }[];
     /**
      * @link Element.distanceTo for a complete description
-     * @param {THREE.Vector3} p
-     * @returns {number}
      */
-    distanceTo(p: any): number;
+    distanceTo(p: Vector3): number;
     /**
      * @returns
      */
     heuristicStepWithin(): number;
     /**
      *  @link Element.trim for a complete description.
-     *
-     *  @param {THREE.Box3} aabb
-     *  @param {Array.<Element>} trimmed
-     *  @param {Array.<Node>} parents
      */
-    trim(aabb: any, trimmed: any, parents: any): void;
+    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
     /**
      *  @link Element.count for a complete description.
-     *
-     *  @param {Function} cls
-     *  @return {number}
      */
-    count(cls: any): number;
+    count(cls: Function): number;
 }
 //# sourceMappingURL=Node.d.ts.map

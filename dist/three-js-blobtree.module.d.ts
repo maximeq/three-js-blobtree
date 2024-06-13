@@ -1,5 +1,5 @@
 import * as three from 'three';
-import { Vector3, Box3, Line3, BufferGeometry } from 'three';
+import { Color, Vector3, Box3, Ray, Matrix4, Line3, BufferGeometry } from 'three';
 
 /**
  * @typedef {Object} AreaSphereParam
@@ -472,34 +472,28 @@ declare class AreaSphere extends Area {
     getAxisProjectionMinStep(axis: any, t: any): number;
 }
 
-type MaterialJSON = Object;
-/**
- * @property {string} color
- * @property {number} roughness
- * @property {number} metalness
- * @property {string} emissive
- */
+type MaterialJSON = {
+    color: string;
+    roughness: number;
+    metalness: number;
+    emissive: string;
+};
+interface MaterialParams {
+    color?: Color;
+    roughness?: number;
+    metalness?: number;
+    emissive?: Color;
+}
 /**
  *  Material object for blobtree. It is an internal material, that should especially
  *  be used in implicit elements. It is the internal representation of the material,
  *  not the openGL material that will be used for display.
- *  @constructor
- *
- *  @param {!Object} params Parameters for the material. As a dictionary to be easily extended later.
- *
- *  @param {Color?}   params.color        Base diffuse color for the material.
- *                                              Defaults to #aaaaaa
- *
- *  @param {number?}        params.roughness    Roughness for the material.
- *                                              Defaults to 0.
- *
- *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
- *                                              Defaults to 0.
- *
- *  @param {Color?} params.emissive       Emissive color for the material.
- *                                              Defaults to pitch black. (no light emission)
  */
 declare class Material {
+    color: Color;
+    roughness: number;
+    metalness: number;
+    emissive: Color;
     static defaultMaterial: Material;
     /**
      *  Compare arrays of materials.
@@ -512,28 +506,28 @@ declare class Material {
      *  @param {Array.<Material>=} arr4
      *  @param {Array.<Material>=} arr5
      *
-     *  @return {boolean} true if and only if all arguments are arrays of the same length and containing the same material values.
+     *  @return true if and only if all arguments are arrays of the same length and containing the same material values.
      */
-    static areEqualsArrays(arr1: any): boolean;
-    static fromJSON(json: any): Material;
+    static areEqualsArrays(arr1: Material[]): boolean;
+    static fromJSON(json: MaterialJSON): Material;
     /**
     *  @constructor
     *
-    *  @param { !Object } params Parameters for the material.As a dictionary to be easily extended later.
+    *  @param params Parameters for the material.As a dictionary to be easily extended later.
     *
-    *  @param { Color ?} params.color Base diffuse color for the material. Defaults to #aaaaaa
+    *  @param params.color Base diffuse color for the material. Defaults to #aaaaaa
     *
-    *  @param { number ?} params.roughness Roughness for the material. Defaults to 0.
+    *  @param params.roughness Roughness for the material. Defaults to 0.
     *
-    *  @param { number ?} params.metalness Metalness aspect of the material, 1 for metalness, 0 for dielectric. Defaults to 0.
+    *  @param params.metalness Metalness aspect of the material, 1 for metalness, 0 for dielectric. Defaults to 0.
     *
-    *  @param { Color ?} params.emissive Emissive color for the material. Defaults to pitch black. (no light emission)
+    *  @param params.emissive Emissive color for the material. Defaults to pitch black. (no light emission)
     */
-    constructor(params: any);
+    constructor(params?: MaterialParams);
     toJSON(): {
         color: string;
-        roughness: any;
-        metalness: any;
+        roughness: number;
+        metalness: number;
         emissive: string;
     };
     /**
@@ -545,7 +539,7 @@ declare class Material {
      *  Copy the given material parameters
      *  @param {!Material} mat Material to be copied
      */
-    copy(mat: any): void;
+    copy(mat: Material): void;
     /**
      *  @deprecated Use setParams instead
      *  Set Material parameters at once. DEPRECATED. Use setParams
@@ -553,64 +547,52 @@ declare class Material {
      *  @param {number!} r roughness
      *  @param {number!} m Metalness
      */
-    set(c: any, r: any, m: any): void;
+    set(c: Color, r: number, m: number): void;
     /**
      *  Set Material parameters (all or just some)
      *
-     *  @param {Object} params Parameters for the material. As a dictionary to be easily extended later.
-     *  @param {Color?}   params.color        Base diffuse color for the material.
-     *  @param {number?}        params.roughness    Roughness for the material.
-     *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
-     *  @param {Color?} params.emissive       Emissive color for the material.
+     *  @param params Parameters for the material. As a dictionary to be easily extended later.
+     *  @param params.color        Base diffuse color for the material.
+     *  @param params.roughness    Roughness for the material.
+     *  @param params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
+     *  @param params.emissive       Emissive color for the material.
      */
-    setParams(params: any): void;
-    /** @return {Color} */
-    getColor(): any;
-    /** @return {number} */
-    getRoughness(): any;
-    /** @return {number} */
-    getMetalness: () => any;
-    /** @return {Color} */
-    getEmissive(): any;
-    equals(m: any): any;
+    setParams(params: MaterialParams): void;
+    getColor(): Color;
+    getRoughness(): number;
+    getMetalness: (this: Material) => number;
+    getEmissive(): Color;
+    equals(m: Material): boolean;
     /**
      *  Perform a linear interpolation between this material and a given other.
      * (1-s)*this + s*m = this +(m1-this)*s
-     *  @param {!Material} m The material to interpolate with this
-     *  @param {number} s the interpolation coefficient
+     *  @param m The material to interpolate with this
+     *  @param s the interpolation coefficient
      */
-    lerp(m: any, s: any): void;
+    lerp(m: Material, s: number): void;
     /**
      *  Used in triangles (ok it's specific, still we need it :)
      *  Linear interpolation over a triangle? Store the result in this
-     *  @param {!Material} m1 The material of first corner
-     *  @param {!Material} m2 The material of second corner
-     *  @param {!Material} m3 The material of third corner
-     *  @param {number} a1 the interpolation coefficient 1
-     *  @param {number} a2 the interpolation coefficient 2
-     *  @param {number} a3 the interpolation coefficient 3
-     *  @param {number} denum Normalizing the result (division)
-     *  @return {Material} this
+     *  @param m1 The material of first corner
+     *  @param m2 The material of second corner
+     *  @param m3 The material of third corner
+     *  @param a1 the interpolation coefficient 1
+     *  @param a2 the interpolation coefficient 2
+     *  @param a3 the interpolation coefficient 3
+     *  @param denum Normalizing the result (division)
+     *  @return this
      */
-    triMean(m1: any, m2: any, m3: any, a1: any, a2: any, a3: any, denum: any): this;
+    triMean(m1: Material, m2: Material, m3: Material, a1: number, a2: number, a3: number, denum: number): Material;
     /**
      *  Perform a weighted mean over several materials and set to this.
      *  Note that m_arr.length must equals v_arr.length
-     *  @param {Array.<!Material>} m_arr Array of materials
-     *  @param {Array.<number>|Float32Array} v_arr Array of values being the corresponding weights
-     *  @param {number=} n Can be set if you want to mean only the n first element of the arrays
+     *  @param m_arr Array of materials
+     *  @param v_arr Array of values being the corresponding weights
+     *  @param n Can be set if you want to mean only the n first element of the arrays
      */
-    weightedMean(m_arr: any, v_arr: any, n: any): this;
+    weightedMean(m_arr: Material[], v_arr: (number[] | Float32Array), n: number): this;
 }
 
-/**
- * @typedef {import('./Material.js')} Material
- * @typedef {import('./Material.js').MaterialJSON} MaterialJSON
- * @typedef {import('./Element.js').ElementJSON} ElementJSON
- * @typedef {import('./Element.js').Json} Json
- *
- * @typedef {import('./areas/Area.js')} Area
- */
 type PrimitiveJSON = {
     materials: Array<MaterialJSON>;
 } & ElementJSON;
@@ -620,7 +602,7 @@ type PrimitiveJSON = {
  *  @constructor
  *  @extends {Element}
  */
-declare class Primitive extends Element {
+declare abstract class Primitive extends Element {
     static type: string;
     static fromJSON(_json: PrimitiveJSON): void;
     materials: Material[];
@@ -654,12 +636,12 @@ declare class Primitive extends Element {
     }[];
     /**
      * @abstract
-     * Compute variables to help with value computation.
+     * Compute constiables to help with value computation.
      */
-    computeHelpVariables(): void;
+    abstract computeHelpVariables(): void;
     /**
      * @abstract
-     * Compute variables to help with value computation.
+     * Compute constiables to help with value computation.
      * @param cls The class to count. Primitives have no children so no complexty here.
      */
     count(cls: Function): 1 | 0;
@@ -667,18 +649,18 @@ declare class Primitive extends Element {
 
 /**
  * Computed values will be stored here. Each values should exist and be allocated already.
- * @property {number} v Value, must be defined
- * @property {Material=} m Material, must be allocated and defined if wanted
- * @property {Vector3=} g Gradient, must be allocated and defined if wanted
- * @property {number=} step ??? Not sure, probably a "safe" step for raymarching
- * @property {number=} stepOrtho ??? Same as step but in orthogonal direction ?
+ * @property v Value, must be defined
+ * @property m Material, must be allocated and defined if wanted
+ * @property g Gradient, must be allocated and defined if wanted
+ * @property step ??? Not sure, probably a "safe" step for raymarching
+ * @property stepOrtho ??? Same as step but in orthogonal direction ?
  */
 type ValueResultType = {
     v: number;
-    m: Material;
-    g: Vector3;
-    step: number;
-    stepOrtho: number;
+    m: Material | null;
+    g: Vector3 | null;
+    step?: number;
+    stepOrtho?: number;
 };
 type ElementJSON = {
     type: string;
@@ -688,12 +670,9 @@ type ElementJSON = {
  *  @class
  *  @constructor
  */
-declare class Element {
+declare abstract class Element {
     static type: string;
-    /**
-     * @param {ElementJSON} _json
-     */
-    static fromJSON(_json: any): void;
+    static fromJSON(_json: ElementJSON): void;
     id: number;
     aabb: Box3;
     valid_aabb: boolean;
@@ -728,9 +707,9 @@ declare class Element {
      *  By default, the AABB returned is the unionns of all vertices AABB (This is
      *  good for almost all basic primitives).
      */
-    computeAABB(): void;
+    abstract computeAABB(): void;
     /**
-     *  @return {Box3} The AABB of this Element (primitive or node). WARNING : call
+     *  @return The AABB of this Element (primitive or node). WARNING : call
      *  isValidAABB before to ensure the current AABB does correspond to the primitive
      *  settings.
      */
@@ -755,20 +734,19 @@ declare class Element {
      *  Important note: For now, a primitive is considered prepared for eval if and only
      *                  if its bounding box is valid (valid_aabb is true).
      */
-    prepareForEval(): void;
+    abstract prepareForEval(): void;
     /**
      *  @abstract
      *  Compute the value and/or gradient and/or material
      *  of the element at position p in space. return computations in res (see below)
      *
-     *  @param {Vector3} _p Point where we want to evaluate the primitive field
-     *  @param {ValueResultType} _res
+     *  @param p Point where we want to evaluate the primitive field
      */
-    value(_p: Vector3, _res: ValueResultType): void;
+    abstract value(p: Vector3, res: ValueResultType): void;
     /**
-     * @param {Vector3} p The point where we want the numerical gradient
-     * @param {Vector3} res The resulting gradient
-     * @param {number} epsilon The step value for the numerical evaluation
+     * @param p The point where we want the numerical gradient
+     * @param res The resulting gradient
+     * @param epsilon The step value for the numerical evaluation
      */
     numericalGradient: (this: Element, p: Vector3, res: Vector3, epsilon: number) => void;
     /**
@@ -794,9 +772,9 @@ declare class Element {
     /**
      *  @abstract
      *  This function is called when a point is within the potential influence of a primitive/node.
-     *  @return {number} The next step length to do with respect to this primitive/node.
+     *  @return The next step length to do with respect to this primitive/node.
      */
-    heuristicStepWithin(): void;
+    abstract heuristicStepWithin(): number;
     /**
      *  Trim the tree to keep only nodes influencing a given bounding box.
      *  The tree must be prepared for eval for this process to be working.
@@ -817,43 +795,29 @@ declare class Element {
     destroy(): void;
 }
 
-/**
- * @typedef {import('./Element.js').Json} Json
- * @typedef {import('./Element.js').ElementJSON} ElementJSON
- * @typedef {import('./Primitive.js')} Primitive
- * @typedef {import('./areas/Area')} Area
- */
-/** @typedef {{children:Array<{ElementJSON}>} & ElementJSON} NodeJSON*/
+type NodeJSON = {
+    children: ElementJSON[];
+} & ElementJSON;
 /**
  *  This class implements an abstract Node class for implicit blobtree.
  *  @constructor
  *  @extends {Element}
  */
-declare class Node extends Element {
+declare abstract class Node extends Element {
+    children: Element[];
     static type: string;
-    /**
-     * @param {NodeJSON} _json
-     */
-    static fromJSON(_json: any): void;
+    abstract fromJSON(json: NodeJSON): Node;
     constructor();
     getType(): string;
-    /**
-     * @return {NodeJSON}
-     */
-    toJSON(): {
-        children: never[];
-        type: string; /**
-         * @return {NodeJSON}
-         */
-    };
+    toJSON(): NodeJSON;
     /**
      *  Clone current node and itss hierarchy
      */
-    clone(): any;
+    clone(): Node;
     /**
      *  @link Element.prepareForEval
      */
-    prepareForEval(): void;
+    abstract prepareForEval(): void;
     /**
      *  Invalid the bounding boxes recursively down for all children
      */
@@ -869,9 +833,9 @@ declare class Node extends Element {
      *  If c already belongs to the tree, it is removed from its current parent
      *  children list before anything (ie it is "moved").
      *
-     *  @param {Element} c The child to add.
+     *  @param c The child to add.
      */
-    addChild(c: any): this;
+    addChild(c: Element): this;
     /**
      *  Only works with n-ary nodes, otherwise order matters and we therefore
      *  have to set "null" and node cannot be evaluated.
@@ -880,9 +844,9 @@ declare class Node extends Element {
      *      Should only be called when a Primitive is deleted.
      *      Otherwise :
      *          To move a node to another parent : use addChild.
-     *  @param {Element} c The child to remove.
+     *  @param c The child to remove.
      */
-    removeChild(c: any): void;
+    removeChild(c: Element): void;
     /**
      * @link Element.computeAABB for a complete description
      */
@@ -891,42 +855,32 @@ declare class Node extends Element {
      *  @link Element.getAreas for a complete description
      *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
      */
-    getAreas(): any[];
+    getAreas(): {
+        aabb: Box3;
+        bv: Area;
+        obj: Primitive;
+    }[];
     /**
      * @link Element.distanceTo for a complete description
-     * @param {THREE.Vector3} p
-     * @returns {number}
      */
-    distanceTo(p: any): number;
+    distanceTo(p: Vector3): number;
     /**
      * @returns
      */
     heuristicStepWithin(): number;
     /**
      *  @link Element.trim for a complete description.
-     *
-     *  @param {THREE.Box3} aabb
-     *  @param {Array.<Element>} trimmed
-     *  @param {Array.<Node>} parents
      */
-    trim(aabb: any, trimmed: any, parents: any): void;
+    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
     /**
      *  @link Element.count for a complete description.
-     *
-     *  @param {Function} cls
-     *  @return {number}
      */
-    count(cls: any): number;
+    count(cls: Function): number;
 }
 
-/**
- * @typedef {import('./Element.js')} Element
- * @typedef {import('./Element.js').Json} Json
- * @typedef {import('./Node.js').NodeJSON} NodeJSON
- */
-/**
- * @typedef {{alpha:number} & NodeJSON} DifferenceNodeJSON
- */
+type DifferenceNodeJSON = {
+    alpha: number;
+} & NodeJSON;
 /**
  *  This class implement a difference blending node.
  *  The scalar field of the second child of this node will be substracted to the first node field.
@@ -935,35 +889,28 @@ declare class Node extends Element {
  *  @extends Node
  */
 declare class DifferenceNode extends Node {
+    alpha: number;
+    clamped: number;
+    tmp_res0: ValueResultType;
+    tmp_res1: ValueResultType;
+    g0: Vector3;
+    m0: Material;
+    g1: Vector3;
+    m1: Material;
+    tmp_v_arr: Float32Array;
+    tmp_m_arr: [Material | null, Material | null];
     static type: string;
-    /**
-     * @param {DifferenceNodeJSON} json
-     * @returns {DifferenceNode}
-     */
-    static fromJSON(json: any): DifferenceNode;
+    fromJSON(json: DifferenceNodeJSON): DifferenceNode;
     /**
      *
-     *  @param {!Node} node0 The first node
-     *  @param {!Node} node1 The second node, its value will be substracted to the node 0 value.
-     *  @param {number} alpha Power of the second field : the greater alpha the sharper the difference. Default is 1, must be > 1.
+     *  @param node0 The first node
+     *  @param node1 The second node, its value will be substracted to the node 0 value.
+     *  @param alpha Power of the second field : the greater alpha the sharper the difference. Default is 1, must be > 1.
      */
-    constructor(node0: any, node1: any, alpha: any);
-    /**
-     * @returns {number}
-     */
-    getAlpha(): any;
-    /**
-     * @param {number} alpha
-     */
-    setAlpha(alpha: any): void;
-    /**
-     * @returns {DifferenceNodeJSON}
-     */
-    toJSON(): {
-        alpha: any;
-        children: never[];
-        type: string;
-    };
+    constructor(node0: Node, node1: Node, alpha: number);
+    getAlpha(): number;
+    setAlpha(alpha: number): void;
+    toJSON(): DifferenceNodeJSON;
     /**
      * @link Node.prepareForEval for a complete description
      **/
@@ -972,34 +919,25 @@ declare class DifferenceNode extends Node {
      *  Compute the value and/or gradient and/or material
      *  of the element at position p in space. return computations in res (see below)
      *
-     *  @param {Vector3} p Point where we want to evaluate the primitive field
-     *  @param {Object} res Computed values will be stored here. Each values should exist and
+     *  @param p Point where we want to evaluate the primitive field
+     *  @param res Computed values will be stored here. Each values should exist and
      *                       be allocated already.
-     *  @param {number} res.v Value, must be defined
-     *  @param {Material} res.m Material, must be allocated and defined if wanted
-     *  @param {Vector3} res.g Gradient, must be allocated and defined if wanted
-     *  @param {number=} res.step The next step we can safely walk without missing the iso (0). Mostly used for convergence function or ray marching.
-     *  @param {number=} res.stepOrtho
+     *  @param res.v Value, must be defined
+     *  @param res.m Material, must be allocated and defined if wanted
+     *  @param res.g Gradient, must be allocated and defined if wanted
+     *  @param res.step The next step we can safely walk without missing the iso (0). Mostly used for convergence function or ray marching.
+     *  @param res.stepOrtho
      */
-    value(p: any, res: any): void;
+    value(p: Vector3, res: ValueResultType): void;
     /**
      *  @link Element.trim for a complete description.
      *
      *  Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
-     *
-     *  @param {Box3} aabb
-     *  @param {Array.<Element>} trimmed
-     *  @param {Array.<Node>} parents
      */
-    trim(aabb: any, trimmed: any, parents: any): void;
+    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
 }
 
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-/**
- * @typedef {NodeJSON} MaxNodeJSON
- */
+type MaxNodeJSON = NodeJSON;
 /**
  *  This class implement a Max node.
  *  It will return the maximum value of the field of each primitive.
@@ -1008,42 +946,28 @@ declare class DifferenceNode extends Node {
  *  @extends Node
  */
 declare class MaxNode extends Node {
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
     static type: string;
-    /**
-     *
-     * @param {Json} json
-     * @returns
-     */
-    static fromJSON(json: any): MaxNode;
+    fromJSON(json: MaxNodeJSON): MaxNode;
     /**
      *  @constructor
-     *  @param {Array<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+     *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
      */
-    constructor(children: any);
-    /**
-     * @returns {string}
-     */
-    getType: () => string;
+    constructor(children?: Node[]);
+    getType(): string;
     /**
      * @link Node.prepareForEval for a complete description
      **/
     prepareForEval(): void;
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
-    value(p: any, res: any): void;
+    value(p: Vector3, res: ValueResultType): void;
 }
 
-/** @typedef {import('./Element.js')} Element */
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-/**
- * @typedef {NodeJSON} MinNodeJSON
- */
+type MinNodeJSON = NodeJSON;
 /**
  *  This class implement a Min node.
  *  It will return the minimum value of the field of each primitive.
@@ -1052,17 +976,15 @@ declare class MaxNode extends Node {
  *  @extends Node
  */
 declare class MinNode extends Node {
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
     static type: string;
+    fromJSON(json: MinNodeJSON): MinNode;
     /**
-     *
-     * @param {MinNodeJSON} json
-     * @returns {MinNode}
-     */
-    static fromJSON(json: any): MinNode;
-    /**
-    *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
-    constructor(children: any);
+    constructor(children?: Node[]);
     getType(): string;
     /**
      *  @link Element.prepareForEval for a complete description
@@ -1070,27 +992,17 @@ declare class MinNode extends Node {
     prepareForEval(): void;
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
-    value(p: any, res: any): void;
+    value(p: Vector3, res: ValueResultType): void;
     /**
      *  @link Element.trim for a complete description.
-     *
-     *  @param {Box3} aabb
-     *  @param {Array<Element>} trimmed
-     *  @param {Array<Node>} parents
      */
-    trim(aabb: any, trimmed: any, parents: any): void;
+    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
 }
 
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-/**
- * @typedef {{ricci_n:number} & NodeJSON} RicciNodeJSON
- */
+type RicciNodeJSON = {
+    ricci_n: number;
+} & NodeJSON;
 /**
  *  This class implement a n-ary blend node which use a Ricci Blend.
  *  Ricci blend is : v = k-root( Sum(c.value^k) ) for all c in node children.
@@ -1099,68 +1011,50 @@ declare class MinNode extends Node {
  *  @extends Node
  */
 declare class RicciNode extends Node {
+    ricci_n: number;
+    tmp_v_arr: Float32Array;
+    tmp_m_arr: Material[];
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
     static type: string;
     /**
-     *  @param {number} ricci_n The value for ricci
-     *  @param {Array<Node>=} children The children to add to this node. Just a convenient parameter, you can do it manually using addChild
+     *  @param ricci_n The value for ricci
+     *  @param children The children to add to this node. Just a convenient parameter, you can do it manually using addChild
      */
-    constructor(ricci_n: any, children: any);
+    constructor(ricci_n: number, children?: Node[]);
     /**
      * @link Node.getType
-     * @returns {string}
      */
     getType(): string;
     /**
      * @link Node.toJSON
-     * @returns {RicciNodeJSON}
      */
-    toJSON(): {
-        ricci_n: any;
-        children: never[];
-        type: string;
-    };
+    toJSON(): RicciNodeJSON;
     /**
      * @link Node.fromJSON
-     * @param {Json} json
-     * @returns
      */
-    static fromJSON(json: any): RicciNode;
+    fromJSON(json: RicciNodeJSON): RicciNode;
     /**
      * @link Node.prepareForEval
      */
     prepareForEval(): void;
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
-    value(p: any, res: any): void;
-    /**
-     * @param {number} n
-     */
-    setRicciN(n: any): void;
-    /**
-     * @returns {number}
-     */
-    getRicciN: () => any;
+    value(p: Vector3, res: ValueResultType): void;
+    setRicciN(n: number): void;
+    getRicciN(): number;
 }
 
-/** @typedef {import('./Element')} Element */
-/** @typedef {import('./Node')} Node */
-/** @typedef {import('./Material')} Material */
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./RicciNode').RicciNodeJSON} RicciNodeJSON */
-/**
- * @typedef {{iso:number} & RicciNodeJSON} RootNodeJSON
- */
-/**
- * @typedef {Object} IntersectionResult The result of the intersection
- * @property {number=} distance distance from ray.origin to intersection point,
- * @property {Vector3} point: intersection point,
- * @property {Vector3} g: gradient at intersection, if required.
- */
+type RootNodeJSON = {
+    iso: number;
+} & RicciNodeJSON;
+interface IntersectionResult {
+    distance?: number;
+    point: Vector3;
+    g?: Vector3;
+}
 /**
  *  The root of any implicit blobtree. Does behave computationaly like a RicciNode with n = 64.
  *  The RootNode is the only node to be its own parent.
@@ -1168,38 +1062,24 @@ declare class RicciNode extends Node {
  *  @extends RicciNode
  */
 declare class RootNode extends RicciNode {
+    iso_value: number;
+    trimmed: Element[];
+    trim_parents: Node[];
     static type: string;
-    /**
-     * @param {RootNodeJSON} json
-     * @returns {RootNode}
-     */
-    static fromJSON(json: any): RootNode;
+    fromJSON(json: RootNodeJSON): RootNode;
     constructor();
     /**
      * @link Node.getType
-     * @returns {string}
      */
     getType(): string;
     /**
      * @link RicciNode.toJSON
-     * @returns {RootNodeJSON}
      */
-    toJSON(): {
-        iso: any;
-        ricci_n: any;
-        children: never[];
-        type: string;
-    };
+    toJSON(): RootNodeJSON;
+    getIsoValue(): number;
+    setIsoValue(v: number): void;
     /**
-     * @returns {number}
-     */
-    getIsoValue(): any;
-    /**
-     * @param {number} v
-     */
-    setIsoValue(v: any): void;
-    /**
-     *  @return {number} The neutral value of this tree, ie the value of the field in empty region of space.
+     *  @return The neutral value of this tree, ie the value of the field in empty region of space.
      *                   This is an API for external use and future development. For now it is hard set to 0.
      */
     getNeutralValue(): number;
@@ -1210,18 +1090,16 @@ declare class RootNode extends RicciNode {
     /**
      *  Basically perform a trim but keep track of trimmed elements.
      *  This is usefull if you want to trim, then untrim, then trim, etc...
-     *  For example, this is very useful for evaluation optim
-     *  @param {Box3} aabb
+     *  For example, this is very useful for evaluation optimization.
      */
-    internalTrim(aabb: any): void;
+    internalTrim(aabb: Box3): void;
     /**
      *  Wrapper for trim, will help programmers to make the difference between
      *  internal and external trim.
-     *  @param {Box3} aabb
-     *  @param {Array.<Element>} trimmed Array of trimmed Elements
-     *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
+     *  @param trimmed Array of trimmed Elements
+     *  @param parents Array of fathers from which each trimmed element has been removed.
      */
-    externalTrim(aabb: any, trimmed: any, parents: any): void;
+    externalTrim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
     /**
      *  Reset the full blobtree
      */
@@ -1229,32 +1107,39 @@ declare class RootNode extends RicciNode {
     /**
      *  Reset the full blobtree given previous trimming data.
      *  Note : don't forget to recall prepareForEval if you want to perform evaluation.
-     *  @param {Array.<Element>} trimmed Array of trimmed Elements
-     *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
+     *  @param trimmed Array of trimmed Elements
+     *  @param parents Array of fathers from which each trimmed element has been removed.
      */
-    untrim(trimmed: any, parents: any): void;
+    untrim(trimmed: Element[], parents: Node[]): void;
     /**
      *  Tell if the blobtree is empty
      *  @return true if blobtree is empty
      */
-    isEmpty: () => boolean;
-    intersectRayBlob: (ray: any, res: any, maxDistance: any, _precision: any) => boolean;
+    isEmpty(): boolean;
+    intersectRayBlob: (this: RootNode, ray: Ray, res: IntersectionResult, maxDistance: number, _precision: number) => boolean;
     /**
      *  Kaiser function for some intersection and raycasting...
      *  Undocumented.
      *  TODO : check, it is probably an optimized intersection for blob intersection
      *         in X, Y or Z directions.
      */
-    intersectOrthoRayBlob: (wOffset: any, hOffset: any, res: any, dim: any) => void;
+    intersectOrthoRayBlob: (this: RootNode, wOffset: number, hOffset: number, res: IntersectionResult[], dim: {
+        axis: {
+            x: boolean;
+            y: boolean;
+            z: boolean;
+        };
+        get: (v: Vector3) => number;
+        add: (v: Vector3, s: number) => void;
+        divide: (v: Vector3, s: number) => void;
+    }) => void;
 }
 
-/** @typedef {import('./Element.js')} Element */
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-/**
- * @typedef { {scale_x:number} & {scale_y:number} & {scale_z:number} & NodeJSON} ScaleNodeJSON
- */
+type ScaleNodeJSON = {
+    scale_x: number;
+    scale_y: number;
+    scale_z: number;
+} & NodeJSON;
 /**
  *  This class implement a ScaleNode node.
  *  It will return the minimum value of the field of each primitive.
@@ -1263,34 +1148,27 @@ declare class RootNode extends RicciNode {
  *  @extends Node
  */
 declare class ScaleNode extends Node {
+    _scale: Vector3;
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
     static type: string;
     /**
-    *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
-    constructor(children: any);
+    constructor(children?: Node[]);
     /**
     * @link Node.toJSON
-    * @returns {ScaleNodeJSON}
     */
-    toJSON(): {
-        scale_x: any;
-        scale_y: any;
-        scale_z: any;
-        children: never[];
-        type: string;
-    };
+    toJSON(): ScaleNodeJSON;
     /**
      * @link Node.fromJSON
-     *
-     * @param {ScaleNodeJSON} json
-     * @returns {ScaleNode}
      */
-    static fromJSON(json: any): ScaleNode;
+    fromJSON(json: ScaleNodeJSON): ScaleNode;
     /**
      * @link ScaleNode.setScale
-     * @param {Vector3} scale
      */
-    setScale(scale: any): void;
+    setScale(scale: Vector3): void;
     /**
      * @link Node.getType
      */
@@ -1305,28 +1183,20 @@ declare class ScaleNode extends Node {
     computeAABB(): void;
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
-    value(p: any, res: any): void;
+    value(p: Vector3, res: ValueResultType): void;
     /**
      *  @link Element.trim for a complete description.
-     *
-     *  @param {Box3} aabb
-     *  @param {Array<Element>} trimmed
-     *  @param {Array<Node>} parents
      */
-    trim(aabb: any, trimmed: any, parents: any): void;
+    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
 }
 
-/** @typedef {import('./Element.js')} Element */
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-/**
- * @typedef { {twist_amout:number} & {axis_x:number} & {axis_y:number} & {axis_z:number} & NodeJSON} TwistNodeJSON
- */
+type TwistNodeJSON = {
+    twist_amount: number;
+    axis_x: number;
+    axis_y: number;
+    axis_z: number;
+} & NodeJSON;
 /**
  *  This class implement a TwistNode node.
  *  It will return the minimum value of the field of each primitive.
@@ -1335,32 +1205,32 @@ declare class ScaleNode extends Node {
  *  @extends Node
  */
 declare class TwistNode extends Node {
+    _twist_amount: number;
+    _twist_axis: Vector3;
+    _twist_axis_mat: Matrix4;
+    _twist_axis_mat_inv: Matrix4;
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
     static type: string;
     /**
-    *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
-    constructor(children: any);
+    constructor(children?: Node[]);
     /**
     * @link Node.toJSON
     * @returns {TwistNodeJSON}
     */
-    toJSON(): {
-        twist_amout: any;
-        axis_x: any;
-        axis_y: any;
-        axis_z: any;
-        children: never[];
-        type: string;
-    };
+    toJSON(): TwistNodeJSON;
     /**
      *@link Node.fromJSON
      *
      * @param {TwistNodeJSON} json
      * @returns {TwistNode}
      */
-    static fromJSON(json: any): TwistNode;
-    setTwistAmount(amount: any): void;
-    setTwistAxis(axis: any): void;
+    fromJSON(json: TwistNodeJSON): TwistNode;
+    setTwistAmount(amount: number): void;
+    setTwistAxis(axis: Vector3): void;
     _computeTransforms(): void;
     getType(): string;
     /**
@@ -1369,43 +1239,30 @@ declare class TwistNode extends Node {
     prepareForEval(): void;
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
-    value(p: any, res: any): void;
+    value(p: Vector3, res: ValueResultType): void;
     /**
      *  @link Element.trim for a complete description.
-     *
-     *  @param {Box3} aabb
-     *  @param {Array<Element>} trimmed
-     *  @param {Array<Node>} parents
      */
-    trim(aabb: any, trimmed: any, parents: any): void;
+    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
 }
 
+type Types = {
+    types: {
+        [key: string]: {
+            fromJSON: Function;
+        };
+    };
+    register(name: string, cls: {
+        fromJSON: Function;
+    }): void;
+    fromJSON(json: ElementJSON): any;
+};
 /**
  *  Keep track of all Types added to the Blobtree library.
  *  For now just a list of strings registered by the classes.
  */
-declare const Types: {
-    /**
-     * @type {Object<string,{fromJSON:Function}>}
-     */
-    types: {};
-    /**
-     *  Register a type in the list.
-     *  @param {string} name The name of the type.
-     *  @param {{fromJSON:Function}} cls The class of the registered type.
-     */
-    register(name: any, cls: any): void;
-    /**
-     *  Parse a JSON recursively to return a Blobtree or a blobtree element.
-     *  @param {Object} json A javascript Object resulting from a JSON interpretation.
-     *  @return {any}
-     */
-    fromJSON(json: any): any;
-};
+declare const Types: Types;
 
 /**
  * Accuracies Contains the accuracies needed in Areas. Can be changed when importing blobtree.js.
@@ -1658,7 +1515,7 @@ declare class ScalisPoint extends ScalisPrimitive {
         density: number;
         v: ScalisVertexJSON[];
         volType: ScalisPrimitiveVolType;
-        materials: Object[];
+        materials: MaterialJSON[];
         type: string;
     };
     /**
@@ -2448,7 +2305,7 @@ declare class SDFRootNode extends Primitive {
     toJSON(): {
         f: any;
         sdfRoot: any;
-        materials: Object[];
+        materials: MaterialJSON[];
         type: string;
     };
     prepareForEval(): void;
@@ -2910,10 +2767,26 @@ declare class SplitSMC extends SlidingMarchingCubes {
 /**
  * @author Maxime Quiblier
  */
-declare const Convergence: {};
+
+type SafeNewton1DResult = {
+    p: Vector3;
+    g: Vector3;
+    p_absc: number;
+};
+type Convergence = {
+    last_mov_pt: Vector3;
+    grad: Vector3;
+    eval_res_g: Vector3;
+    eval_res: ValueResultType;
+    vec: Vector3;
+    safeNewton3D(pot: Element, starting_point: Vector3, value: number, epsilon: number, n_max_step: number, r_max: number, res: Vector3): void;
+    safeNewton1D(pot: Element, origin: Vector3, search_dir_unit: Vector3, min_absc_inside: number, max_absc_outside: number, starting_point_absc: number, value: number, epsilon: number, n_max_step: number, res: SafeNewton1DResult): void;
+    dichotomy1D(pot: Element, origin: Vector3, search_dir_unit: Vector3, startStepLength: number, value: number, epsilon: number, n_max_step: number, res: SafeNewton1DResult): void;
+};
+declare const Convergence: Convergence;
 
 declare const TriangleUtils: {};
 
 declare const version = "1.0.0";
 
-export { Accuracies, Area, AreaCapsule, AreaScalisSeg, AreaScalisTri, AreaSphere, Convergence, DifferenceNode, DistanceFunctor, Element, type ElementJSON, Material, type MaterialJSON, MaxNode, MinNode, Node, Poly6DistanceFunctor, Primitive, type PrimitiveJSON, RicciNode, RootNode, SDFCapsule, type SDFCapsuleJSON, SDFNode, SDFPoint, type SDFPointJSON, SDFPrimitive, type SDFPrimitiveJSON, SDFRootNode, SDFSegment, type SDFSegmentJSON, SDFSphere, type SDFSphereJSON, ScaleNode, ScalisMath, ScalisPoint, type ScalisPointJSON, ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType, ScalisSegment, type ScalisSegmentJSON, ScalisTriangle, type ScalisTriangleJSON, ScalisVertex, type ScalisVertexJSON, SlidingMarchingCubes, SplitMaxPolygonizer, type SplitMaxPolygonizerParams, SplitSMC, Tables, TriangleUtils, TwistNode, Types, type ValueResultType, version };
+export { Accuracies, Area, AreaCapsule, AreaScalisSeg, AreaScalisTri, AreaSphere, Convergence, DifferenceNode, DistanceFunctor, Element, type ElementJSON, Material, type MaterialJSON, MaxNode, MinNode, Node, type NodeJSON, Poly6DistanceFunctor, Primitive, type PrimitiveJSON, RicciNode, type RicciNodeJSON, RootNode, SDFCapsule, type SDFCapsuleJSON, SDFNode, SDFPoint, type SDFPointJSON, SDFPrimitive, type SDFPrimitiveJSON, SDFRootNode, SDFSegment, type SDFSegmentJSON, SDFSphere, type SDFSphereJSON, ScaleNode, ScalisMath, ScalisPoint, type ScalisPointJSON, ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType, ScalisSegment, type ScalisSegmentJSON, ScalisTriangle, type ScalisTriangleJSON, ScalisVertex, type ScalisVertexJSON, SlidingMarchingCubes, SplitMaxPolygonizer, type SplitMaxPolygonizerParams, SplitSMC, Tables, TriangleUtils, TwistNode, Types, type ValueResultType, version };

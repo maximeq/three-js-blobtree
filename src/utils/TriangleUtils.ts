@@ -42,11 +42,8 @@ export const TriangleUtils = {};
 
 /**
  * intermediary functions used in computeVectorsDirs
- * @param {number} ind
- * @param {number} lengthArray
- * @return {number}
  */
-let cleanIndex = function (ind, lengthArray) {
+let cleanIndex = function (ind: number, lengthArray: number) {
     let res = ind;
     if (lengthArray === 0) {
         throw new Error("Lenght of the array should not be 0");
@@ -63,54 +60,50 @@ let cleanIndex = function (ind, lengthArray) {
     return res;
 };
 
-/**
- * A number, or a string containing a number.
- * @typedef {Object} VertexLike
- * @property {() => Vector3} getPos
- * @property {() => number} getThickness
- */
+interface VertexLike {
+    getPos: () => Vector3;
+    getThickness: () => number;
+  }
+
+interface TriangleLike {
+    v: VertexLike[];
+    p0p1: Vector3;
+    p1p2: Vector3;
+    p2p0: Vector3;
+    unit_p0p1: Vector3;
+    unit_p1p2: Vector3;
+    unit_p2p0: Vector3;
+    unit_normal: Vector3;
+    length_p0p1: number;
+    length_p1p2: number;
+    length_p2p0: number;
+    diffThick_p0p1: number;
+    diffThick_p1p2: number;
+    diffThick_p2p0: number;
+    ortho_dir: Vector3;
+    point_min: Vector3;
+    weight_min: number;
+    main_dir: Vector3;
+    point_iso_zero: Vector3;
+    proj_dir: Vector3;
+    equal_weights: boolean;
+    half_dir_1: Vector3;
+    point_half: Vector3;
+    half_dir_2: Vector3;
+    coord_max: number;
+    coord_middle: number;
+    unit_delta_weight: number;
+    longest_dir_special: Vector3;
+    // The following properties seem to be intended as calculated properties or methods, which cannot be directly declared in TypeScript interfaces.
+    max_seg_length: number; // This should be calculated in a method, not directly in the interface.
+    unsigned_ortho_dir: Vector3; // This should be calculated in a method, not directly in the interface.
+  }
 
 /**
- * A number, or a string containing a number.
- * @typedef {Object} TriangleLike
- * @property {Array<VertexLike>} v
- * @property {Vector3} p0p1
- * @property {Vector3} p1p2
- * @property {Vector3} p2p0
- * @property {Vector3} unit_p0p1
- * @property {Vector3} unit_p1p2
- * @property {Vector3} unit_p2p0
- * @property {Vector3} unit_normal
- * @property {number} length_p0p1
- * @property {number} length_p1p2
- * @property {number} length_p2p0
- * @property {Vector3} unit_p0p1
- * @property {number} diffThick_p0p1
- * @property {number} diffThick_p1p2
- * @property {number} diffThick_p2p0
- * @property {Vector3} ortho_dir
- * @property {Vector3} point_min
- * @property {number} weight_min
- * @property {Vector3} main_dir
- * @property {Vector3} point_iso_zero
- * @property {Vector3} proj_dir
- * @property {boolean} equal_weights
- * @property {Vector3} half_dir_1
- * @property {Vector3} point_half
- * @property {Vector3} half_dir_2
- * @property {number} coord_max
- * @property {number} coord_middle
- * @property {number} unit_delta_weight
- * @property {Vector3} longest_dir_special
- * @property {number} max_seg_length = tmp.length();
- * @property {Vector3} unsigned_ortho_dir = triangle.ortho_dir.clone();
+ *  Compute some internal consts for triangle
+ *  @param triangle The triangle to compute consts for (blobtree or skel)
  */
-
-/**
- *  Compute some internal vars for triangle
- *  @param {TriangleLike} triangle The triangle to compute vars for (blobtree or skel)
- */
-TriangleUtils.computeVectorsDirs = function (triangle) {
+TriangleUtils.computeVectorsDirs = function (triangle: TriangleLike) {
 
     let v0_p = triangle.v[0].getPos();
     let v1_p = triangle.v[1].getPos();
@@ -140,7 +133,7 @@ TriangleUtils.computeVectorsDirs = function (triangle) {
     triangle.diffThick_p2p0 = triangle.v[2].getThickness() - triangle.v[0].getThickness();
 
     // Precomputation Used in mech computation
-    // So we first find the direction of maximum weight variation.
+    // So we first find the direction of maximum weight constiation.
 
     /** @type Array<{vert: Vector3, thick: number, idx: number}> */
     let sortingArr = [];
@@ -170,7 +163,7 @@ TriangleUtils.computeVectorsDirs = function (triangle) {
             triangle.ortho_dir = dir_1.clone();
             triangle.ortho_dir.normalize();
 
-            // direction of fastest variation of weight
+            // direction of fastest constiation of weight
             triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
             triangle.main_dir.normalize();
             if ((triangle.main_dir.dot(dir_2)) < 0.0) {
@@ -185,7 +178,7 @@ TriangleUtils.computeVectorsDirs = function (triangle) {
             triangle.ortho_dir = dir_2.clone();
             triangle.ortho_dir.normalize();
 
-            // direction of fastest variation of weight
+            // direction of fastest constiation of weight
             triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
             triangle.main_dir.normalize();
             if ((triangle.main_dir.dot(dir_1)) < 0.0) {
@@ -217,7 +210,7 @@ TriangleUtils.computeVectorsDirs = function (triangle) {
         triangle.ortho_dir.subVectors(point_iso_zero2, point_iso_zero1);
         triangle.ortho_dir.normalize();
 
-        // direction of fastest variation of weight
+        // direction of fastest constiation of weight
         triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
         triangle.main_dir.normalize();
         if ((triangle.main_dir.dot(dir_1)) < 0.0 || (triangle.main_dir.dot(dir_2)) < 0.0) {
@@ -271,12 +264,12 @@ TriangleUtils.computeVectorsDirs = function (triangle) {
 };
 
 /**
- *  @param {!Object} triangle
+ *  @param triangle
  *     u parametrisation of the point to compute along the axis V0->V1
  *     v parametrisation of the point to compute along the axis V0->V2
- *  @return {{pos:!Vector3, thick:number}} An object with the computed pos and thickness
+ *  @return An object with the computed pos and thickness
  */
-TriangleUtils.getParametrisedVertexAttr = function (triangle, u, v) {
+TriangleUtils.getParametrisedVertexAttr = function (triangle: TriangleLike, u: number, v: number): { pos: Vector3, thick: number } {
     let meanThick = TriangleUtils.getMeanThick(triangle, u, v);
     // create new point
     let pos = new Vector3();
@@ -289,12 +282,11 @@ TriangleUtils.getParametrisedVertexAttr = function (triangle, u, v) {
 };
 
 /**
- *  @param {!Object} triangle The concerned triangle
- *  @param {number} u u coordinate
- *  @param {number} v v coordinate
- *  @return {number}
+ *  @param triangle The concerned triangle
+ *  @param u u coordinate
+ *  @param v v coordinate
  */
-TriangleUtils.getMeanThick = function (triangle, u, v) {
+TriangleUtils.getMeanThick = function (triangle: TriangleLike, u: number, v: number): number {
     return triangle.v[0].getThickness() * (1 - u - v) + triangle.v[1].getThickness() * u + triangle.v[2].getThickness() * v;
 };
 
@@ -304,7 +296,7 @@ TriangleUtils.getMeanThick = function (triangle, u, v) {
  *  @param {number} v v coordinate
  *  @return {!Material} Interpolated material
  */
-TriangleUtils.getMeanMat = function (triangle, u, v) {
+TriangleUtils.getMeanMat = function (triangle: TriangleLike, u: number, v: number) {
     let res = new Material();
     let m_arr = triangle.materials === null ?
         [triangle.v[0].getMaterial(), triangle.v[0].getMaterial(), triangle.v[0].getMaterial()] :
@@ -340,14 +332,14 @@ TriangleUtils.getMeanMat = function (triangle, u, v) {
 /**
  *  Get the triangle barycenter coordinates. The projection is non orthogonal.
  *  WTF is that? Barycentirc coordinates are 3 components, not 2 !
- *  @param {!Vector3} p0p1 Vector from p0 to p1
- *  @param {!Vector3} p2p0 Vector from p2 to p0
- *  @param {!Vector3} p0 Point 0 in triangle
- *  @param {!Vector3} p Point in space
+ *  @param p0p1 Vector from p0 to p1
+ *  @param p2p0 Vector from p2 to p0
+ *  @param p0 Point 0 in triangle
+ *  @param p Point in space
  *
  *  @return {{u:number,v:number}} Coordinate of barycenter
  */
-TriangleUtils.getTriBaryCoord = function (p0p1, p2p0, p0, p) {
+TriangleUtils.getTriBaryCoord = function (p0p1: Vector3, p2p0: Vector3, p0: Vector3, p: Vector3) {
     let U = p0p1;
     let V = p2p0.clone().multiplyScalar(-1);
     let W = new Vector3().subVectors(p, p0);
@@ -363,7 +355,7 @@ TriangleUtils.getTriBaryCoord = function (p0p1, p2p0, p0, p) {
     return { "u": u, "v": v };
 };
 
-TriangleUtils.getUVCoord = function (U, V, p0, p) {
+TriangleUtils.getUVCoord = function (U: Vector3, V: Vector3, p0: Vector3, p: Vector3) {
     let W = new Vector3();
     W.crossVectors(U, V);
     let mat = new Matrix4();

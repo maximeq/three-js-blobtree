@@ -1,18 +1,27 @@
+import type { ElementJSON } from "./Element";
+
+type Types = {
+    types: {
+        [key: string]: {
+            fromJSON: Function
+        }
+    },
+    register(name: string, cls: { fromJSON: Function }): void,
+    fromJSON(json: ElementJSON): any
+}
 /**
  *  Keep track of all Types added to the Blobtree library.
  *  For now just a list of strings registered by the classes.
  */
-export const Types = {
-    /**
-     * @type {Object<string,{fromJSON:Function}>}
-     */
+export const Types: Types = {
+
     types: {},
     /**
      *  Register a type in the list.
-     *  @param {string} name The name of the type.
-     *  @param {{fromJSON:Function}} cls The class of the registered type.
+     *  @param name The name of the type.
+     *  @param cls The class of the registered type.
      */
-    register(name, cls) {
+    register(name: string, cls: { fromJSON: Function }): void {
         if (this.types[name]) {
             throw "Error : cannot register type " + name + ", this name is already registered.";
         }
@@ -20,11 +29,10 @@ export const Types = {
     },
     /**
      *  Parse a JSON recursively to return a Blobtree or a blobtree element.
-     *  @param {Object} json A javascript Object resulting from a JSON interpretation.
-     *  @return {any}
+     *  @param json A javascript Object resulting from a JSON interpretation.
      */
-    fromJSON(json) {
-        var cls = this.types[json.type];
+    fromJSON(json: ElementJSON & {[key: string]: any}): any {
+        const cls = this.types[json.type];
         if (!cls) {
             throw "Error : type found in JSON (" + json.type + " is not registered in the Blobtree library.";
         }

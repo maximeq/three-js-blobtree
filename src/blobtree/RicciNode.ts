@@ -1,15 +1,12 @@
 import { Vector3, Box3 } from "three";
 import { Types } from "./Types";
-import { Node } from "./Node";
+import { Node, type NodeJSON } from "./Node";
 import { Material } from "./Material";
+import { type ValueResultType } from './Element';
 
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-
-/**
- * @typedef {{ricci_n:number} & NodeJSON} RicciNodeJSON
- */
+export type RicciNodeJSON = {
+  ricci_n: number;
+} & NodeJSON;
 
 /**
  *  This class implement a n-ary blend node which use a Ricci Blend.
@@ -19,17 +16,22 @@ import { Material } from "./Material";
  *  @extends Node
  */
 export class RicciNode extends Node {
+    ricci_n: number;
+    tmp_v_arr: Float32Array;
+    tmp_m_arr: Material[];
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
 
-    static type = "RicciNode";
+    static override type = "RicciNode";
 
     /**
-     *  @param {number} ricci_n The value for ricci
-     *  @param {Array<Node>=} children The children to add to this node. Just a convenient parameter, you can do it manually using addChild
+     *  @param ricci_n The value for ricci
+     *  @param children The children to add to this node. Just a convenient parameter, you can do it manually using addChild
      */
-    constructor(ricci_n, children) {
+    constructor(ricci_n: number, children?: Node[]) {
         super();
 
-        /** @type {number} */
         this.ricci_n = ricci_n;
 
         if (children) {
@@ -39,34 +41,27 @@ export class RicciNode extends Node {
             });
         }
 
-        // Tmp vars to speed up computation (no reallocations)
-        /** @type {Float32Array} */
+        // Tmp consts to speed up computation (no reallocations)
         this.tmp_v_arr = new Float32Array(0);
-        /** @type {Array<Material>} */
         this.tmp_m_arr = [];
 
-        // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g: Vector3, m:Material}} */
+        // temp consts to speed up evaluation by avoiding allocations
         this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {Vector3} */
         this.tmp_g = new Vector3();
-        /** @type {Material} */
         this.tmp_m = new Material();
     }
 
     /**
      * @link Node.getType
-     * @returns {string}
      */
-    getType() {
+    override getType(): string {
         return RicciNode.type;
     };
 
     /**
      * @link Node.toJSON
-     * @returns {RicciNodeJSON}
      */
-    toJSON() {
+    override toJSON(): RicciNodeJSON {
         let res = {
             ...super.toJSON(),
             ricci_n: this.ricci_n
@@ -77,10 +72,8 @@ export class RicciNode extends Node {
 
     /**
      * @link Node.fromJSON
-     * @param {Json} json
-     * @returns
      */
-    static fromJSON(json) {
+    override fromJSON(json: RicciNodeJSON): RicciNode {
         let res = new RicciNode(json.ricci_n);
         for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
@@ -115,11 +108,8 @@ export class RicciNode extends Node {
 
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
-    value(p, res) {
+    value(p: Vector3, res: ValueResultType) {
         // TODO : check that all bounding box of all children and subchildrens are valid
         //        This enable not to do it in prim and limit the number of assert call (and string built)
         let l = this.children.length;
@@ -158,12 +148,12 @@ export class RicciNode extends Node {
                         res_vv += tmp.v * v_pow;
 
                         // gradient if needed
-                        if (res.g) {
+                        if (res.g && tmp.g) {
                             tmp.g.multiplyScalar(v_pow);
                             res.g.add(tmp.g);
                         }
                         // material if needed
-                        if (res.m) {
+                        if (res.m && tmp.m) {
                             v_arr[mv_arr_n] = tmp.v * v_pow;
                             m_arr[mv_arr_n].copy(tmp.m);
                             mv_arr_n++;
@@ -171,7 +161,8 @@ export class RicciNode extends Node {
                         // within primitive potential
                         if (res.step || res.stepOrtho) {
                             // we have to compute next step or nextStep z
-                            res.step = Math.min(res.step, this.children[i].heuristicStepWithin());
+                            res.step = Math.min((res.step ? res.step : res.stepOrtho) as number,
+                                this.children[i].heuristicStepWithin());
                         }
 
                     }
@@ -185,7 +176,7 @@ export class RicciNode extends Node {
                     }
                 }
                 else if (res.step || res.stepOrtho) {
-                    res.step = Math.min(res.step,
+                    res.step = Math.min((res.step ? res.step : res.stepOrtho) as number,
                         this.children[i].distanceTo(p));
                 }
             }
@@ -218,20 +209,14 @@ export class RicciNode extends Node {
         }
     };
 
-    /**
-     * @param {number} n
-     */
-    setRicciN(n) {
+    setRicciN(n: number): void {
         if (this.ricci_n != n) {
             this.ricci_n = n;
             this.invalidAABB();
         }
     };
 
-    /**
-     * @returns {number}
-     */
-    getRicciN = function () {
+    getRicciN (): number {
         return this.ricci_n;
     };
 

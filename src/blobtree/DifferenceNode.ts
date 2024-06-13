@@ -1,9 +1,8 @@
-import { Vector3 } from "three";
+import { Vector3, Box3 } from "three";
 import { Types } from "./Types";
-import { Node } from "./Node";
+import { Node, type NodeJSON } from "./Node";
 import { Material } from "./Material";
-import { Element } from './Element';
-import { type NodeJSON } from './Node.js';
+import { Element, type ValueResultType } from './Element';
 
 type DifferenceNodeJSON = {
   alpha: number;
@@ -21,22 +20,18 @@ export class DifferenceNode extends Node {
 
     alpha: number;
     clamped: number;
-    tmp_res0: { v: number, g: Vector3, m: Material };
-    tmp_res1: { v: number, g: Vector3, m: Material };
+    tmp_res0: ValueResultType;
+    tmp_res1: ValueResultType;
     g0: Vector3;
     m0: Material;
     g1: Vector3;
     m1: Material;
     tmp_v_arr: Float32Array;
-    tmp_m_arr: (Material | null)[];
+    tmp_m_arr: [Material | null, Material | null];
 
     static override type = "DifferenceNode";
 
-    /**
-     * @param {DifferenceNodeJSON} json
-     * @returns {DifferenceNode}
-     */
-    static override fromJSON(json: DifferenceNodeJSON) {
+    override fromJSON(json: DifferenceNodeJSON): DifferenceNode {
         return new DifferenceNode(Types.fromJSON(json.children[0]), Types.fromJSON(json.children[1]), json.alpha);
     };
 
@@ -77,27 +72,18 @@ export class DifferenceNode extends Node {
         ];
     }
 
-    /**
-     * @returns {number}
-     */
-    getAlpha() {
+    getAlpha(): number {
         return this.alpha;
     };
 
-    /**
-     * @param {number} alpha
-     */
-    setAlpha(alpha) {
+    setAlpha(alpha: number): void {
         if (this.alpha != alpha) {
             this.alpha = alpha;
             this.invalidAABB();
         }
     };
 
-    /**
-     * @returns {DifferenceNodeJSON}
-     */
-    toJSON() {
+    override toJSON(): DifferenceNodeJSON {
         return {
             ...super.toJSON(),
             alpha: this.alpha
@@ -107,7 +93,7 @@ export class DifferenceNode extends Node {
     /**
      * @link Node.prepareForEval for a complete description
      **/
-    prepareForEval() {
+    prepareForEval(): void {
         if (!this.valid_aabb) {
             this.children[0].prepareForEval();
             this.children[1].prepareForEval();
@@ -123,21 +109,21 @@ export class DifferenceNode extends Node {
      *  Compute the value and/or gradient and/or material
      *  of the element at position p in space. return computations in res (see below)
      *
-     *  @param {Vector3} p Point where we want to evaluate the primitive field
-     *  @param {Object} res Computed values will be stored here. Each values should exist and
+     *  @param p Point where we want to evaluate the primitive field
+     *  @param res Computed values will be stored here. Each values should exist and
      *                       be allocated already.
-     *  @param {number} res.v Value, must be defined
-     *  @param {Material} res.m Material, must be allocated and defined if wanted
-     *  @param {Vector3} res.g Gradient, must be allocated and defined if wanted
-     *  @param {number=} res.step The next step we can safely walk without missing the iso (0). Mostly used for convergence function or ray marching.
-     *  @param {number=} res.stepOrtho
+     *  @param res.v Value, must be defined
+     *  @param res.m Material, must be allocated and defined if wanted
+     *  @param res.g Gradient, must be allocated and defined if wanted
+     *  @param res.step The next step we can safely walk without missing the iso (0). Mostly used for convergence function or ray marching.
+     *  @param res.stepOrtho
      */
-    value(p, res) {
-        var v_arr = this.tmp_v_arr;
-        var m_arr = this.tmp_m_arr;
+    value(p: Vector3, res: ValueResultType) {
+        const v_arr = this.tmp_v_arr;
+        const m_arr = this.tmp_m_arr;
 
-        var tmp0 = this.tmp_res0;
-        var tmp1 = this.tmp_res1;
+        const tmp0 = this.tmp_res0;
+        const tmp1 = this.tmp_res1;
 
         tmp0.g = res.g ? this.g0 : null;
         tmp0.m = res.m ? this.m0 : null;
@@ -148,11 +134,11 @@ export class DifferenceNode extends Node {
         res.v = 0;
         tmp1.v = 0;
         tmp0.v = 0;
-        if (res.m) {
+        if (res.m && tmp0.m && tmp1.m) {
             res.m.copy(Material.defaultMaterial);
             tmp1.m.copy(Material.defaultMaterial);
             tmp0.m.copy(Material.defaultMaterial);
-        } if (res.g) {
+        } if (res.g && tmp0.g && tmp1.g) {
             res.g.set(0, 0, 0);
             tmp1.g.set(0, 0, 0);
             tmp0.g.set(0, 0, 0);
@@ -170,16 +156,16 @@ export class DifferenceNode extends Node {
                 }
                 if (tmp1.v === 0) {
                     res.v = tmp0.v;
-                    if (res.g) {
+                    if (res.g && tmp0.g) {
                         res.g.copy(tmp0.g);
                     }
-                    if (res.m) {
+                    if (res.m && tmp0.m) {
                         res.m.copy(tmp0.m);
                     }
                 } else {
-                    var v_pow = Math.pow(tmp1.v, this.alpha);
+                    const v_pow = Math.pow(tmp1.v, this.alpha);
                     res.v = Math.max(this.clamped, tmp0.v - tmp1.v * Math.pow(tmp1.v, this.alpha - 1.0));
-                    if (res.g) {
+                    if (res.g && tmp1.g && tmp0.g) {
                         if (res.v === this.clamped) {
                             res.g.set(0, 0, 0);
                         } else {
@@ -187,12 +173,14 @@ export class DifferenceNode extends Node {
                             res.g.subVectors(tmp0.g, tmp1.g);
                         }
                     }
-                    if (res.m) {
+                    if (res.m && tmp0.m && tmp1.m) {
                         v_arr[0] = tmp0.v;
                         v_arr[1] = tmp1.v;
                         m_arr[0] = tmp0.m;
                         m_arr[1] = tmp1.m;
-                        res.m.weightedMean(m_arr, v_arr, 2);
+                        if (m_arr[0] === null && m_arr[1] === null) 
+                            throw "[DifferenceNode] value: m_arr[0] and m_arr[1] are both null. This is not possible here.";
+                        res.m.weightedMean(m_arr as Material[], v_arr, 2);
                     }
                 }
             }
@@ -207,14 +195,10 @@ export class DifferenceNode extends Node {
      *  @link Element.trim for a complete description.
      *
      *  Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
-     *
-     *  @param {Box3} aabb
-     *  @param {Array.<Element>} trimmed
-     *  @param {Array.<Node>} parents
      */
-    trim(aabb, trimmed, parents) {
+    override trim(aabb: Box3, trimmed: Element[], parents: Node[]) {
         // Trim remaining nodes
-        for (var i = 0; i < this.children.length; i++) {
+        for (let i = 0; i < this.children.length; i++) {
             this.children[i].trim(aabb, trimmed, parents);
         }
     };

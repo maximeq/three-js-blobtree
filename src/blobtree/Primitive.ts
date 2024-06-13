@@ -25,9 +25,9 @@ export abstract class Primitive extends Element {
     }
 
     override toJSON(): PrimitiveJSON {
-        var res = { ...super.toJSON(), materials: [] as MaterialJSON[] };
+        const res = { ...super.toJSON(), materials: [] as MaterialJSON[] };
         res.materials = [];
-        for (var i = 0; i < this.materials.length; ++i) {
+        for (let i = 0; i < this.materials.length; ++i) {
             res.materials.push(this.materials[i].toJSON());
         }
         return res;
@@ -40,7 +40,7 @@ export abstract class Primitive extends Element {
         if (mats.length !== this.materials.length) {
             throw "Error : trying to set " + mats.length + " materials on a primitive with only " + this.materials.length;
         }
-        for (var i = 0; i < mats.length; ++i) {
+        for (let i = 0; i < mats.length; ++i) {
             if (!mats[i].equals(this.materials[i])) {
                 this.materials[i].copy(mats[i]);
                 this.invalidAABB();
@@ -83,13 +83,13 @@ export abstract class Primitive extends Element {
 
     /**
      * @abstract
-     * Compute variables to help with value computation.
+     * Compute constiables to help with value computation.
      */
     abstract override computeHelpVariables(): void;
 
     /**
      * @abstract
-     * Compute variables to help with value computation.
+     * Compute constiables to help with value computation.
      * @param cls The class to count. Primitives have no children so no complexty here.
      */
     override count(cls: Function) {

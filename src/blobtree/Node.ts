@@ -1,12 +1,13 @@
 import { Element, type ElementJSON } from './Element';
 import { Types } from "./Types";
-import { Box3, Vector3 } from 'three';
+import type { Box3, Vector3 } from 'three';
 import { Primitive } from './Primitive';
 import { Area } from './areas/Area';
 
 export type NodeJSON = {
     children: ElementJSON[];
 } & ElementJSON;
+
 
 /**
  *  This class implements an abstract Node class for implicit blobtree.
@@ -30,11 +31,11 @@ export abstract class Node extends Element {
     }
 
     override toJSON(): NodeJSON {
-        var res: NodeJSON = {
+        const res: NodeJSON = {
             ...super.toJSON(),
             children: []
         };
-        for (var i = 0; i < this.children.length; ++i) {
+        for (let i = 0; i < this.children.length; ++i) {
             res.children.push(this.children[i].toJSON());
         }
         return res;
@@ -58,7 +59,7 @@ export abstract class Node extends Element {
     override invalidAll(): void {
         this.invalidAABB();
         if (this.children) {
-            for (var i = 0; i < this.children.length; i++) {
+            for (let i = 0; i < this.children.length; i++) {
                 this.children[i].invalidAll();
             }
         }
@@ -70,8 +71,8 @@ export abstract class Node extends Element {
      */
     override destroy(): void {
         // need to Copy the array since indices will change.
-        var arr_c = this.children.slice(0, this.children.length);
-        for (var i = 0; i < arr_c.length; i++) {
+        const arr_c = this.children.slice(0, this.children.length);
+        for (let i = 0; i < arr_c.length; i++) {
             arr_c[i].destroy();
         }
         if (this.children.length !== 0) {
@@ -118,8 +119,8 @@ export abstract class Node extends Element {
      *  @param c The child to remove.
      */
     removeChild(c: Element) {
-        var i = 0;
-        var cdn = this.children; // minimize the code
+        let i = 0;
+        const cdn = this.children; // minimize the code
 
         // Note : if this becomes too long, sort this.children using ids
         while (cdn[i] !== c && i < cdn.length) ++i;
@@ -141,7 +142,7 @@ export abstract class Node extends Element {
      */
     computeAABB() {
         this.aabb.makeEmpty();
-        for (var i = 0; i < this.children.length; i++) {
+        for (let i = 0; i < this.children.length; i++) {
             this.children[i].computeAABB();
             this.aabb.union(this.children[i].getAABB());
         }
@@ -155,8 +156,8 @@ export abstract class Node extends Element {
         if (!this.valid_aabb) {
             throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
         }
-        var res: { aabb: Box3, bv: Area, obj: Primitive }[] = [];
-        for (var i = 0; i < this.children.length; i++) {
+        const res: { aabb: Box3, bv: Area, obj: Primitive }[] = [];
+        for (let i = 0; i < this.children.length; i++) {
             res.push.apply(res, this.children[i].getAreas());
         }
         return res;
@@ -166,8 +167,8 @@ export abstract class Node extends Element {
      * @link Element.distanceTo for a complete description
      */
     override distanceTo(p: Vector3): number {
-        var res = 10000000;
-        for (var i = 0; i < this.children.length; i++) {
+        let res = 10000000;
+        for (let i = 0; i < this.children.length; i++) {
             res = Math.min(res, this.children[i].distanceTo(p));
         }
         return res;
@@ -177,8 +178,8 @@ export abstract class Node extends Element {
      * @returns
      */
     override heuristicStepWithin(): number {
-        var res = 10000000;
-        for (var i = 0; i < this.children.length; i++) {
+        let res = 10000000;
+        for (let i = 0; i < this.children.length; i++) {
             res = Math.min(res, this.children[i].heuristicStepWithin());
         }
         return res;
@@ -209,13 +210,13 @@ export abstract class Node extends Element {
      *  @link Element.count for a complete description.
      */
     override count(cls: Function): number {
-        var count = 0;
+        let count = 0;
 
         if (this instanceof cls) {
             count++;
         }
 
-        for (var i = 0; i < this.children.length; i++) {
+        for (let i = 0; i < this.children.length; i++) {
             count += this.children[i].count(cls);
         }
 

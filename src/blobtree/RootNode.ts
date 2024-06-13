@@ -1,26 +1,22 @@
-import { Vector3 } from "three";
+import { Box3, Ray, Vector3 } from "three";
 import { Types } from "./Types"
-import { RicciNode } from "./RicciNode.js";
+import { RicciNode } from "./RicciNode";
 import { Convergence } from "../utils/Convergence"
 
-/** @typedef {import('./Element')} Element */
-/** @typedef {import('./Node')} Node */
-/** @typedef {import('./Material')} Material */
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./RicciNode').RicciNodeJSON} RicciNodeJSON */
+import type { Element, ValueResultType } from './Element';
+import type { Node } from './Node';
+import type { RicciNodeJSON } from './RicciNode';
 
-/**
- * @typedef {{iso:number} & RicciNodeJSON} RootNodeJSON
- */
+type RootNodeJSON = {
+  iso: number;
+} & RicciNodeJSON;
 
 
-/**
- * @typedef {Object} IntersectionResult The result of the intersection
- * @property {number=} distance distance from ray.origin to intersection point,
- * @property {Vector3} point: intersection point,
- * @property {Vector3} g: gradient at intersection, if required.
- */
+interface IntersectionResult {
+    distance?: number; // distance from ray.origin to intersection point
+    point: Vector3; // intersection point
+    g?: Vector3; // gradient at intersection, if required
+  }
 
 /**
  *  The root of any implicit blobtree. Does behave computationaly like a RicciNode with n = 64.
@@ -29,16 +25,15 @@ import { Convergence } from "../utils/Convergence"
  *  @extends RicciNode
  */
 export class RootNode extends RicciNode {
+    iso_value: number;
+    trimmed: Element[];
+    trim_parents: Node[];
 
-    static type = "RootNode";
+    static override type = "RootNode";
 
-    /**
-     * @param {RootNodeJSON} json
-     * @returns {RootNode}
-     */
-    static fromJSON(json) {
-        var res = new RootNode();
-        for (var i = 0; i < json.children.length; ++i) {
+    override fromJSON(json: RootNodeJSON): RootNode {
+        const res = new RootNode();
+        for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
         }
         return res;
@@ -51,71 +46,60 @@ export class RootNode extends RicciNode {
         this.valid_aabb = true;
 
         // Default iso value, value where the surface is present
-        /** @type {number} */
         this.iso_value = 1.0;
 
         // Set some nodes as "trimmed", so they are not evaluated.
-        /** @type {Array<Element>} */
         this.trimmed = [];
-        /** @type {Array<Node>} */
         this.trim_parents = [];
     }
 
     /**
      * @link Node.getType
-     * @returns {string}
      */
-    getType() {
+    override getType(): string {
         return RootNode.type;
     };
 
     /**
      * @link RicciNode.toJSON
-     * @returns {RootNodeJSON}
      */
-    toJSON() {
-        var res = {
+    override toJSON(): RootNodeJSON {
+        const res = {
             ...super.toJSON(),
             iso: this.iso_value
         };
         return res;
     };
 
-    /**
-     * @returns {number}
-     */
-    getIsoValue() {
+    getIsoValue(): number {
         return this.iso_value;
     };
-    /**
-     * @param {number} v
-     */
-    setIsoValue(v) {
+
+    setIsoValue(v: number): void {
         this.iso_value = v;
     };
 
     /**
-     *  @return {number} The neutral value of this tree, ie the value of the field in empty region of space.
+     *  @return The neutral value of this tree, ie the value of the field in empty region of space.
      *                   This is an API for external use and future development. For now it is hard set to 0.
      */
-    getNeutralValue() {
+    getNeutralValue(): number {
         return 0;
     };
 
     /**
      * @link Node.invalidAABB for a complete description
      */
-    invalidAABB() {
+    override invalidAABB(): void {
         this.valid_aabb = false;
     };
 
     /**
      *  Basically perform a trim but keep track of trimmed elements.
      *  This is usefull if you want to trim, then untrim, then trim, etc...
-     *  For example, this is very useful for evaluation optim
-     *  @param {Box3} aabb
+     *  For example, this is very useful for evaluation optimization.
      */
-    internalTrim(aabb) {
+    internalTrim(aabb: Box3) {
         if (!(this.trimmed.length === 0 && this.trim_parents.length === 0)) {
             throw "Error : you should not call internal trim if you have not untrimmed before. Call untrim or use externalTrim";
         }
@@ -125,18 +109,17 @@ export class RootNode extends RicciNode {
     /**
      *  Wrapper for trim, will help programmers to make the difference between
      *  internal and external trim.
-     *  @param {Box3} aabb
-     *  @param {Array.<Element>} trimmed Array of trimmed Elements
-     *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
+     *  @param trimmed Array of trimmed Elements
+     *  @param parents Array of fathers from which each trimmed element has been removed.
      */
-    externalTrim(aabb, trimmed, parents) {
+    externalTrim(aabb: Box3, trimmed: Element[], parents: Node[]) {
         this.trim(aabb, trimmed, parents);
     };
 
     /**
      *  Reset the full blobtree
      */
-    internalUntrim() {
+    internalUntrim(): void {
         this.untrim(this.trimmed, this.trim_parents);
         this.trimmed.length = 0;
         this.trim_parents.length = 0;
@@ -145,14 +128,14 @@ export class RootNode extends RicciNode {
     /**
      *  Reset the full blobtree given previous trimming data.
      *  Note : don't forget to recall prepareForEval if you want to perform evaluation.
-     *  @param {Array.<Element>} trimmed Array of trimmed Elements
-     *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
+     *  @param trimmed Array of trimmed Elements
+     *  @param parents Array of fathers from which each trimmed element has been removed.
      */
-    untrim(trimmed, parents) {
+    untrim(trimmed: Element[], parents: Node[]) {
         if (!(trimmed.length === parents.length)) {
             throw "Error : trimmed and parents arrays should have the same length";
         }
-        for (var i = 0; i < trimmed.length; ++i) {
+        for (let i = 0; i < trimmed.length; ++i) {
             parents[i].addChild(trimmed[i]);
         }
     };
@@ -161,44 +144,42 @@ export class RootNode extends RicciNode {
      *  Tell if the blobtree is empty
      *  @return true if blobtree is empty
      */
-    isEmpty = function () {
+    isEmpty (): boolean {
         return this.children.length == 0;
     };
 
 
     intersectRayBlob = function () {
-        var curPos = new Vector3();
-        var marchingVector = new Vector3();
-        var currentStep = new Vector3();
+        const curPos = new Vector3();
+        const marchingVector = new Vector3();
+        const currentStep = new Vector3();
 
-        /** @type {ValueResultType} */
-        var tmp_res = {
+        const tmp_res: ValueResultType = {
             v: 0,
             g: new Vector3(),
+            m: null,
             step: 0
         };
-        var conv_res = {
+        const conv_res = {
             p: new Vector3(),
             g: new Vector3(),
             p_absc: 0.0
         };
-        var previousStepLength = 0;
-        var previousValue = 0; // used for linear interp for a better guess
-        var dist = 0;
+        let previousStepLength = 0;
+        let previousValue = 0; // used for linear interp for a better guess
+        let dist = 0;
         /**
-         * @this RootNode
-         *  @param {!Ray} ray Ray to cast for which intersection is seeked.
+         *  @param ray Ray to cast for which intersection is seeked.
          *
-         *  @param {IntersectionResult} res
-         *  @param {number} maxDistance If the intersection is not located at a distance
+         *  @param maxDistance If the intersection is not located at a distance
          *                              lower than maxDistance, it will not be considered.
          *                              The smaller this is, the faster the casting will be.
-         *  @param {number} _precision Distance to the intersection under which we will
+         *  @param _precision Distance to the intersection under which we will
          *                            consider to be on the intersection point.
          *
-         *  @return {boolean} True if an intersection has been found.
+         *  @return True if an intersection has been found.
          */
-        return function (ray, res, maxDistance, _precision) {
+        return function (this: RootNode, ray: Ray, res: IntersectionResult, maxDistance: number, _precision: number): boolean {
             curPos.copy(ray.origin);
             marchingVector.copy(ray.direction);
 
@@ -209,6 +190,8 @@ export class RootNode extends RicciNode {
             this.value(curPos, tmp_res);
 
             // march
+            if (tmp_res.step === undefined)
+                throw "[RootNode] intersectRayBlob: step is not defined in the value result. This cannot happen.";
             while ((tmp_res.v < this.iso_value) && (dist < maxDistance)) {
                 curPos.add(
                     currentStep.copy(marchingVector).multiplyScalar(tmp_res.step)
@@ -223,17 +206,6 @@ export class RootNode extends RicciNode {
                     tmp_res);
             }
             if (tmp_res.v >= this.iso_value) {
-                // Convergence.dichotomy1D(
-                // this,
-                // curPos,
-                // marchingVector,
-                // previousStepLength,
-                // iso_value,
-                // previousStepLength/512.0,
-                // 10,
-                // conv_res
-                // );
-                // res.distance = dist + conv_res.absc;
 
                 Convergence.safeNewton1D(
                     this,
@@ -276,31 +248,36 @@ export class RootNode extends RicciNode {
     intersectOrthoRayBlob = function () {
         // curpos and marching vector are only instanciated once,
         // we are using closure method
-        var curPos = new Vector3();
-        var resumePos = new Vector3();
-        /** @type {ValueResultType} */
-        var tmp_res = {
+        const curPos = new Vector3();
+        const resumePos = new Vector3();
+        const tmp_res: ValueResultType = {
             v: 0,
+            m: null,
+            g: null,
             step: 0
         };
-        var g = new Vector3();
-        /** @type {ValueResultType} */
-        var dicho_res = {
-            v: 0
+        const g = new Vector3();
+        const dicho_res: ValueResultType = {
+            v: 0,
+            m: null,
+            g: null
         };
-        var previousStepLength = 0;
-        var previousDist = 0;
+        let previousStepLength = 0;
+        let previousDist = 0;
         // to ensure that we're within the aabb
-        var epsilon = 0.0000001;
-        var within = -1;
-        /**
-         * @this {RootNode}
-         * @param {number} wOffset
-         * @param {number} hOffset
-         * @param {Array<IntersectionResult>} res
-         * @param {Object} dim ???
-         */
-        return function (wOffset, hOffset, res, dim) {
+        const epsilon = 0.0000001;
+        let within = -1;
+        type DimObject = {
+            axis: {
+                x: boolean;
+                y: boolean;
+                z: boolean;
+            };
+            get: (v: Vector3) => number;
+            add: (v: Vector3, s: number) => void;
+            divide: (v: Vector3, s: number) => void;
+        };
+        return function (this: RootNode, wOffset: number, hOffset: number, res: IntersectionResult[], dim: DimObject) {
 
             if (dim.axis.x) {
                 curPos.set(this.aabb.min.x + wOffset,
@@ -384,7 +361,7 @@ export class RootNode extends RicciNode {
                         point: curPos.clone(),
                         g: dicho_res.g.clone()
                     });
-                    // set variable in order to resume to where we were
+                    // set constiable in order to resume to where we were
                     curPos.copy(resumePos);
                 }
             }

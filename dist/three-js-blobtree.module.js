@@ -6,14 +6,11 @@ import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtil
  *  For now just a list of strings registered by the classes.
  */
 const Types = {
-    /**
-     * @type {Object<string,{fromJSON:Function}>}
-     */
     types: {},
     /**
      *  Register a type in the list.
-     *  @param {string} name The name of the type.
-     *  @param {{fromJSON:Function}} cls The class of the registered type.
+     *  @param name The name of the type.
+     *  @param cls The class of the registered type.
      */
     register(name, cls) {
         if (this.types[name]) {
@@ -23,11 +20,10 @@ const Types = {
     },
     /**
      *  Parse a JSON recursively to return a Blobtree or a blobtree element.
-     *  @param {Object} json A javascript Object resulting from a JSON interpretation.
-     *  @return {any}
+     *  @param json A javascript Object resulting from a JSON interpretation.
      */
     fromJSON(json) {
-        var cls = this.types[json.type];
+        const cls = this.types[json.type];
         if (!cls) {
             throw "Error : type found in JSON (" + json.type + " is not registered in the Blobtree library.";
         }
@@ -43,9 +39,6 @@ let elementIds = 0;
  */
 class Element {
     static type = "Element";
-    /**
-     * @param {ElementJSON} _json
-     */
     static fromJSON(_json) {
         throw new Error("Element.fromJSON should never be called as Element is abstract.");
     }
@@ -92,16 +85,7 @@ class Element {
         this.computeAABB();
     }
     /**
-     *  @abstract
-     *  Compute the Axis Aligned Bounding Box (AABB) for the current primitive.
-     *  By default, the AABB returned is the unionns of all vertices AABB (This is
-     *  good for almost all basic primitives).
-     */
-    computeAABB() {
-        throw "Error : computeAABB is abstract, should have been overwritten";
-    }
-    /**
-     *  @return {Box3} The AABB of this Element (primitive or node). WARNING : call
+     *  @return The AABB of this Element (primitive or node). WARNING : call
      *  isValidAABB before to ensure the current AABB does correspond to the primitive
      *  settings.
      */
@@ -132,37 +116,12 @@ class Element {
         this.invalidAABB();
     }
     /**
-     *  @abstract
-     *  Prepare the element for a call to value.
-     *  Important note: For now, a primitive is considered prepared for eval if and only
-     *                  if its bounding box is valid (valid_aabb is true).
-     */
-    prepareForEval() {
-        console.error("Blobtree.Element: prepareForEval is a virtual function, should be re-implemented in all element(error occured in Element.js");
-        // Possible improvement: return the list of deleted objects and new ares,
-        // for example to launch a Marching Cube in the changed area only
-        // @return {{del_obj:Array<Object>, new_areas:Array<Object>}}
-        // return {del_obj:[], new_areas:[]};
-    }
-    /**
-     *  @abstract
-     *  Compute the value and/or gradient and/or material
-     *  of the element at position p in space. return computations in res (see below)
-     *
-     *  @param {Vector3} _p Point where we want to evaluate the primitive field
-     *  @param {ValueResultType} _res
-     */
-    value(_p, _res) {
-        throw new Error("ERROR : value is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");
-    }
-    ;
-    /**
-     * @param {Vector3} p The point where we want the numerical gradient
-     * @param {Vector3} res The resulting gradient
-     * @param {number} epsilon The step value for the numerical evaluation
+     * @param p The point where we want the numerical gradient
+     * @param res The resulting gradient
+     * @param epsilon The step value for the numerical evaluation
      */
     numericalGradient = (function () {
-        let tmp = { v: 0 };
+        let tmp = { v: 0, m: null, g: null };
         let coord = ['x', 'y', 'z'];
         return function (p, res, epsilon) {
             /** @type Element */
@@ -200,15 +159,6 @@ class Element {
         throw new Error("ERROR : distanceTo is a virtual function, should be reimplemented in all classes extending Element. Concerned type: " + this.getType() + ".");
     }
     /**
-     *  @abstract
-     *  This function is called when a point is within the potential influence of a primitive/node.
-     *  @return {number} The next step length to do with respect to this primitive/node.
-     */
-    heuristicStepWithin() {
-        throw new Error("ERROR : heuristicStepWithin is a virtual function, should be reimplemented in all classes extending Element. Concerned type: " + this.getType() + ".");
-    }
-    ;
-    /**
      *  Trim the tree to keep only nodes influencing a given bounding box.
      *  The tree must be prepared for eval for this process to be working.
      *  Default behaviour is doing nothing, leaves cannot be sub-trimmed, only nodes.
@@ -236,261 +186,16 @@ class Element {
 }
 Types.register(Element.type, Element);
 
-// Types
-/**
- * @typedef {import('./Element.js').Json} Json
- * @typedef {import('./Element.js').ElementJSON} ElementJSON
- * @typedef {import('./Primitive.js')} Primitive
- * @typedef {import('./areas/Area')} Area
- */
-/** @typedef {{children:Array<{ElementJSON}>} & ElementJSON} NodeJSON*/
-/**
- *  This class implements an abstract Node class for implicit blobtree.
- *  @constructor
- *  @extends {Element}
- */
-class Node extends Element {
-    static type = "Node";
-    /**
-     * @param {NodeJSON} _json
-     */
-    static fromJSON(_json) {
-        throw new Error("Node.fromJSON should never be called as Node is abstract.");
-    }
-    constructor() {
-        super();
-        /** @type {Array.<!Element>} */
-        this.children = [];
-    }
-    getType() {
-        return Node.type;
-    }
-    /**
-     * @return {NodeJSON}
-     */
-    toJSON() {
-        var res = {
-            ...super.toJSON(),
-            children: []
-        };
-        for (var i = 0; i < this.children.length; ++i) {
-            res.children.push(this.children[i].toJSON());
-        }
-        return res;
-    }
-    /**
-     *  Clone current node and itss hierarchy
-     */
-    clone() {
-        return Types.fromJSON(this.toJSON());
-    }
-    /**
-     *  @link Element.prepareForEval
-     */
-    prepareForEval() {
-        console.error("Blobtree.Node: prepareForEval is a pure abstract function, should be reimplemented in every node class.");
-        return super.prepareForEval();
-    }
-    /**
-     *  Invalid the bounding boxes recursively down for all children
-     */
-    invalidAll() {
-        this.invalidAABB();
-        if (this.children) {
-            for (var i = 0; i < this.children.length; i++) {
-                this.children[i].invalidAll();
-            }
-        }
-    }
-    ;
-    /**
-     *  Destroy the node and its children. The node is removed from the blobtree
-     *  (basically clean up the links between blobtree elements).
-     */
-    destroy() {
-        // need to Copy the array since indices will change.
-        var arr_c = this.children.slice(0, this.children.length);
-        for (var i = 0; i < arr_c.length; i++) {
-            arr_c[i].destroy();
-        }
-        if (this.children.length !== 0) {
-            throw "Error : children length should be 0";
-        }
-        if (this.parentNode !== null) {
-            this.parentNode.removeChild(this);
-        }
-        if (this.parentNode !== null) {
-            throw "Error : parent node should be null at this point";
-        }
-        this.children.length = 0;
-    }
-    ;
-    /**
-     *  Only works with nary nodes, otherwise a set function would be more appropriate.
-     *  -> TODO : check that if we have something else than n-ary nodes one day...
-     *  If c already belongs to the tree, it is removed from its current parent
-     *  children list before anything (ie it is "moved").
-     *
-     *  @param {Element} c The child to add.
-     */
-    addChild(c) {
-        if (c.parentNode !== null) {
-            c.parentNode.removeChild(c);
-        }
-        // TODO should ckeck that the node does not already belong to the children list
-        this.children.push(c);
-        c.parentNode = this;
-        this.invalidAABB();
-        return this;
-    }
-    ;
-    /**
-     *  Only works with n-ary nodes, otherwise order matters and we therefore
-     *  have to set "null" and node cannot be evaluated.
-     *  -> TODO : check that if we have something else than n-ary nodes one day...
-     *  WARNING:
-     *      Should only be called when a Primitive is deleted.
-     *      Otherwise :
-     *          To move a node to another parent : use addChild.
-     *  @param {Element} c The child to remove.
-     */
-    removeChild(c) {
-        var i = 0;
-        var cdn = this.children; // minimize the code
-        // Note : if this becomes too long, sort this.children using ids
-        while (cdn[i] !== c && i < cdn.length)
-            ++i;
-        if (i != cdn.length) {
-            cdn[i] = cdn[cdn.length - 1];
-            cdn.pop();
-        }
-        else {
-            throw "c does not belong to the children of this node";
-        }
-        this.invalidAABB();
-        c.parentNode = null;
-    }
-    /**
-     * @link Element.computeAABB for a complete description
-     */
-    computeAABB() {
-        this.aabb.makeEmpty();
-        for (var i = 0; i < this.children.length; i++) {
-            this.children[i].computeAABB();
-            this.aabb.union(this.children[i].getAABB());
-        }
-    }
-    /**
-     *  @link Element.getAreas for a complete description
-     *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
-     */
-    getAreas() {
-        if (!this.valid_aabb) {
-            throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
-        }
-        var res = [];
-        for (var i = 0; i < this.children.length; i++) {
-            res.push.apply(res, this.children[i].getAreas());
-        }
-        return res;
-    }
-    ;
-    /**
-     * @link Element.distanceTo for a complete description
-     * @param {THREE.Vector3} p
-     * @returns {number}
-     */
-    distanceTo(p) {
-        var res = 10000000;
-        for (var i = 0; i < this.children.length; i++) {
-            res = Math.min(res, this.children[i].distanceTo(p));
-        }
-        return res;
-    }
-    ;
-    /**
-     * @returns
-     */
-    heuristicStepWithin() {
-        var res = 10000000;
-        for (var i = 0; i < this.children.length; i++) {
-            res = Math.min(res, this.children[i].heuristicStepWithin());
-        }
-        return res;
-    }
-    ;
-    /**
-     *  @link Element.trim for a complete description.
-     *
-     *  @param {THREE.Box3} aabb
-     *  @param {Array.<Element>} trimmed
-     *  @param {Array.<Node>} parents
-     */
-    trim(aabb, trimmed, parents) {
-        let idx = trimmed.length;
-        for (let i = 0; i < this.children.length; i++) {
-            if (!this.children[i].getAABB().intersectsBox(aabb)) {
-                // trim the node
-                trimmed.push(this.children[i]);
-                parents.push(this);
-            }
-        }
-        for (let i = idx; i < trimmed.length; ++i) {
-            this.removeChild(trimmed[i]);
-        }
-        // Trim remaining nodes
-        for (let i = 0; i < this.children.length; i++) {
-            this.children[i].trim(aabb, trimmed, parents);
-        }
-    }
-    ;
-    /**
-     *  @link Element.count for a complete description.
-     *
-     *  @param {Function} cls
-     *  @return {number}
-     */
-    count(cls) {
-        var count = 0;
-        if (this instanceof cls) {
-            count++;
-        }
-        for (var i = 0; i < this.children.length; i++) {
-            count += this.children[i].count(cls);
-        }
-        return count;
-    }
-    ;
-}
-Types.register(Node.type, Node);
-
-/**
- * @property {string} color
- * @property {number} roughness
- * @property {number} metalness
- * @property {string} emissive
- */
 /**
  *  Material object for blobtree. It is an internal material, that should especially
  *  be used in implicit elements. It is the internal representation of the material,
  *  not the openGL material that will be used for display.
- *  @constructor
- *
- *  @param {!Object} params Parameters for the material. As a dictionary to be easily extended later.
- *
- *  @param {Color?}   params.color        Base diffuse color for the material.
- *                                              Defaults to #aaaaaa
- *
- *  @param {number?}        params.roughness    Roughness for the material.
- *                                              Defaults to 0.
- *
- *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
- *                                              Defaults to 0.
- *
- *  @param {Color?} params.emissive       Emissive color for the material.
- *                                              Defaults to pitch black. (no light emission)
  */
 class Material {
+    color;
+    roughness;
+    metalness;
+    emissive;
     static defaultMaterial = new Material();
     // Other static functions
     /**
@@ -504,7 +209,7 @@ class Material {
      *  @param {Array.<Material>=} arr4
      *  @param {Array.<Material>=} arr5
      *
-     *  @return {boolean} true if and only if all arguments are arrays of the same length and containing the same material values.
+     *  @return true if and only if all arguments are arrays of the same length and containing the same material values.
      */
     static areEqualsArrays(arr1) {
         console.warn("Material.areEqualsArrays is deprecated, please use your own comparison function using Material.equals.");
@@ -537,21 +242,21 @@ class Material {
             color: new Color(json.color),
             roughness: json.roughness,
             metalness: json.metalness,
-            emissive: json.emissive, // If undefined, will default to pitch black. If not, will load the hex string.
+            emissive: new Color(json.emissive ? json.emissive : 0), // If undefined, will default to pitch black. If not, will load the hex string.
         });
     }
     /**
     *  @constructor
     *
-    *  @param { !Object } params Parameters for the material.As a dictionary to be easily extended later.
+    *  @param params Parameters for the material.As a dictionary to be easily extended later.
     *
-    *  @param { Color ?} params.color Base diffuse color for the material. Defaults to #aaaaaa
+    *  @param params.color Base diffuse color for the material. Defaults to #aaaaaa
     *
-    *  @param { number ?} params.roughness Roughness for the material. Defaults to 0.
+    *  @param params.roughness Roughness for the material. Defaults to 0.
     *
-    *  @param { number ?} params.metalness Metalness aspect of the material, 1 for metalness, 0 for dielectric. Defaults to 0.
+    *  @param params.metalness Metalness aspect of the material, 1 for metalness, 0 for dielectric. Defaults to 0.
     *
-    *  @param { Color ?} params.emissive Emissive color for the material. Defaults to pitch black. (no light emission)
+    *  @param params.emissive Emissive color for the material. Defaults to pitch black. (no light emission)
     */
     constructor(params) {
         params = params || {};
@@ -608,11 +313,11 @@ class Material {
     /**
      *  Set Material parameters (all or just some)
      *
-     *  @param {Object} params Parameters for the material. As a dictionary to be easily extended later.
-     *  @param {Color?}   params.color        Base diffuse color for the material.
-     *  @param {number?}        params.roughness    Roughness for the material.
-     *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
-     *  @param {Color?} params.emissive       Emissive color for the material.
+     *  @param params Parameters for the material. As a dictionary to be easily extended later.
+     *  @param params.color        Base diffuse color for the material.
+     *  @param params.roughness    Roughness for the material.
+     *  @param params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
+     *  @param params.emissive       Emissive color for the material.
      */
     setParams(params) {
         this.color.copy(params.color ? params.color : this.color);
@@ -620,15 +325,11 @@ class Material {
         this.metalness = params.metalness !== undefined ? params.metalness : this.metalness;
         this.emissive.copy(params.emissive !== undefined ? params.emissive : this.emissive);
     }
-    /** @return {Color} */
     getColor() { return this.color; }
     ;
-    /** @return {number} */
     getRoughness() { return this.roughness; }
     ;
-    /** @return {number} */
     getMetalness = function () { return this.metalness; };
-    /** @return {Color} */
     getEmissive() { return this.emissive; }
     equals(m) {
         return this.color.equals(m.color) &&
@@ -639,8 +340,8 @@ class Material {
     /**
      *  Perform a linear interpolation between this material and a given other.
      * (1-s)*this + s*m = this +(m1-this)*s
-     *  @param {!Material} m The material to interpolate with this
-     *  @param {number} s the interpolation coefficient
+     *  @param m The material to interpolate with this
+     *  @param s the interpolation coefficient
      */
     lerp(m, s) {
         this.color.lerp(m.color, s);
@@ -652,14 +353,14 @@ class Material {
     /**
      *  Used in triangles (ok it's specific, still we need it :)
      *  Linear interpolation over a triangle? Store the result in this
-     *  @param {!Material} m1 The material of first corner
-     *  @param {!Material} m2 The material of second corner
-     *  @param {!Material} m3 The material of third corner
-     *  @param {number} a1 the interpolation coefficient 1
-     *  @param {number} a2 the interpolation coefficient 2
-     *  @param {number} a3 the interpolation coefficient 3
-     *  @param {number} denum Normalizing the result (division)
-     *  @return {Material} this
+     *  @param m1 The material of first corner
+     *  @param m2 The material of second corner
+     *  @param m3 The material of third corner
+     *  @param a1 the interpolation coefficient 1
+     *  @param a2 the interpolation coefficient 2
+     *  @param a3 the interpolation coefficient 3
+     *  @param denum Normalizing the result (division)
+     *  @return this
      */
     triMean(m1, m2, m3, a1, a2, a3, denum) {
         this.color.r = (a1 * m1.color.r + a2 * m2.color.r + a3 * m3.color.r) / denum;
@@ -675,9 +376,9 @@ class Material {
     /**
      *  Perform a weighted mean over several materials and set to this.
      *  Note that m_arr.length must equals v_arr.length
-     *  @param {Array.<!Material>} m_arr Array of materials
-     *  @param {Array.<number>|Float32Array} v_arr Array of values being the corresponding weights
-     *  @param {number=} n Can be set if you want to mean only the n first element of the arrays
+     *  @param m_arr Array of materials
+     *  @param v_arr Array of values being the corresponding weights
+     *  @param n Can be set if you want to mean only the n first element of the arrays
      */
     weightedMean(m_arr, v_arr, n) {
         this.color.setRGB(0, 0, 0);
@@ -718,465 +419,6 @@ class Material {
 }
 
 /**
- * @typedef {import('./Element.js')} Element
- * @typedef {import('./Element.js').Json} Json
- * @typedef {import('./Node.js').NodeJSON} NodeJSON
- */
-/**
- * @typedef {{alpha:number} & NodeJSON} DifferenceNodeJSON
- */
-/**
- *  This class implement a difference blending node.
- *  The scalar field of the second child of this node will be substracted to the first node field.
- *  The result is clamped to 0 to always keep a positive field value.
- *  @constructor
- *  @extends Node
- */
-class DifferenceNode extends Node {
-    static type = "DifferenceNode";
-    /**
-     * @param {DifferenceNodeJSON} json
-     * @returns {DifferenceNode}
-     */
-    static fromJSON(json) {
-        return new DifferenceNode(Types.fromJSON(json.children[0]), Types.fromJSON(json.children[1]), json.alpha);
-    }
-    ;
-    /**
-     *
-     *  @param {!Node} node0 The first node
-     *  @param {!Node} node1 The second node, its value will be substracted to the node 0 value.
-     *  @param {number} alpha Power of the second field : the greater alpha the sharper the difference. Default is 1, must be > 1.
-     */
-    constructor(node0, node1, alpha) {
-        super();
-        this.addChild(node0);
-        this.addChild(node1);
-        /** @type {number} */
-        this.alpha = alpha || 1;
-        /**
-         * For now, this field value is clamped to 0
-         * @type {number}
-         */
-        this.clamped = 0.0;
-        // Tmp vars to speed up computation (no reallocations)
-        /** @type {{v:number, g:Vector3, m:Material}} */
-        this.tmp_res0 = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
-        /** @type {{v:number, g:Vector3, m:Material}} */
-        this.tmp_res1 = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
-        /** @type {Vector3} */
-        this.g0 = new Vector3();
-        /** @type {Material} */
-        this.m0 = new Material();
-        /** @type {Vector3} */
-        this.g1 = new Vector3();
-        /** @type {Material} */
-        this.m1 = new Material();
-        /** @type {Float32Array} */
-        this.tmp_v_arr = new Float32Array(2);
-        /** @type {Array<Material|null>} */
-        this.tmp_m_arr = [
-            null,
-            null
-        ];
-    }
-    /**
-     * @returns {number}
-     */
-    getAlpha() {
-        return this.alpha;
-    }
-    ;
-    /**
-     * @param {number} alpha
-     */
-    setAlpha(alpha) {
-        if (this.alpha != alpha) {
-            this.alpha = alpha;
-            this.invalidAABB();
-        }
-    }
-    ;
-    /**
-     * @returns {DifferenceNodeJSON}
-     */
-    toJSON() {
-        return {
-            ...super.toJSON(),
-            alpha: this.alpha
-        };
-    }
-    ;
-    /**
-     * @link Node.prepareForEval for a complete description
-     **/
-    prepareForEval() {
-        if (!this.valid_aabb) {
-            this.children[0].prepareForEval();
-            this.children[1].prepareForEval();
-            // Bounding box of this node is the same as the one of the positive children,
-            // Since negative values will be clamped to 0.
-            this.aabb.copy(this.children[0].getAABB());
-            this.valid_aabb = true;
-        }
-    }
-    ;
-    /**
-     *  Compute the value and/or gradient and/or material
-     *  of the element at position p in space. return computations in res (see below)
-     *
-     *  @param {Vector3} p Point where we want to evaluate the primitive field
-     *  @param {Object} res Computed values will be stored here. Each values should exist and
-     *                       be allocated already.
-     *  @param {number} res.v Value, must be defined
-     *  @param {Material} res.m Material, must be allocated and defined if wanted
-     *  @param {Vector3} res.g Gradient, must be allocated and defined if wanted
-     *  @param {number=} res.step The next step we can safely walk without missing the iso (0). Mostly used for convergence function or ray marching.
-     *  @param {number=} res.stepOrtho
-     */
-    value(p, res) {
-        var v_arr = this.tmp_v_arr;
-        var m_arr = this.tmp_m_arr;
-        var tmp0 = this.tmp_res0;
-        var tmp1 = this.tmp_res1;
-        tmp0.g = res.g ? this.g0 : null;
-        tmp0.m = res.m ? this.m0 : null;
-        tmp1.g = res.g ? this.g1 : null;
-        tmp1.m = res.m ? this.m1 : null;
-        // Init res
-        res.v = 0;
-        tmp1.v = 0;
-        tmp0.v = 0;
-        if (res.m) {
-            res.m.copy(Material.defaultMaterial);
-            tmp1.m.copy(Material.defaultMaterial);
-            tmp0.m.copy(Material.defaultMaterial);
-        }
-        if (res.g) {
-            res.g.set(0, 0, 0);
-            tmp1.g.set(0, 0, 0);
-            tmp0.g.set(0, 0, 0);
-        }
-        else if (res.step !== undefined) {
-            // that, is the max distance
-            // we want a value that loose any 'min'
-            res.step = 1000000000;
-        }
-        if (this.aabb.containsPoint(p)) {
-            if (this.children[0].aabb.containsPoint(p)) {
-                this.children[0].value(p, tmp0);
-                if (this.children[1].aabb.containsPoint(p)) {
-                    this.children[1].value(p, tmp1);
-                }
-                if (tmp1.v === 0) {
-                    res.v = tmp0.v;
-                    if (res.g) {
-                        res.g.copy(tmp0.g);
-                    }
-                    if (res.m) {
-                        res.m.copy(tmp0.m);
-                    }
-                }
-                else {
-                    var v_pow = Math.pow(tmp1.v, this.alpha);
-                    res.v = Math.max(this.clamped, tmp0.v - tmp1.v * Math.pow(tmp1.v, this.alpha - 1.0));
-                    if (res.g) {
-                        if (res.v === this.clamped) {
-                            res.g.set(0, 0, 0);
-                        }
-                        else {
-                            tmp1.g.multiplyScalar(v_pow);
-                            res.g.subVectors(tmp0.g, tmp1.g);
-                        }
-                    }
-                    if (res.m) {
-                        v_arr[0] = tmp0.v;
-                        v_arr[1] = tmp1.v;
-                        m_arr[0] = tmp0.m;
-                        m_arr[1] = tmp1.m;
-                        res.m.weightedMean(m_arr, v_arr, 2);
-                    }
-                }
-            }
-        }
-        else if (res.step !== undefined) {
-            // return distance to aabb such that next time we'll hit from within the aabbb
-            res.step = this.aabb.distanceToPoint(p) + 0.3;
-        }
-    }
-    ;
-    /**
-     *  @link Element.trim for a complete description.
-     *
-     *  Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
-     *
-     *  @param {Box3} aabb
-     *  @param {Array.<Element>} trimmed
-     *  @param {Array.<Node>} parents
-     */
-    trim(aabb, trimmed, parents) {
-        // Trim remaining nodes
-        for (var i = 0; i < this.children.length; i++) {
-            this.children[i].trim(aabb, trimmed, parents);
-        }
-    }
-    ;
-}
-Types.register(DifferenceNode.type, DifferenceNode);
-
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-/**
- * @typedef {NodeJSON} MaxNodeJSON
- */
-/**
- *  This class implement a Max node.
- *  It will return the maximum value of the field of each primitive.
- *  Return 0 in region were no primitive is present.
- *  @class MaxNode
- *  @extends Node
- */
-class MaxNode extends Node {
-    static type = "MaxNode";
-    /**
-     *
-     * @param {Json} json
-     * @returns
-     */
-    static fromJSON(json) {
-        var res = new MaxNode();
-        for (var i = 0; i < json.children.length; ++i) {
-            res.addChild(Types.fromJSON(json.children[i]));
-        }
-        return res;
-    }
-    /**
-     *  @constructor
-     *  @param {Array<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
-     */
-    constructor(children) {
-        super();
-        if (children) {
-            var self = this;
-            children.forEach(function (c) {
-                self.addChild(c);
-            });
-        }
-        // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:Vector3, m:Material}} */
-        this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {Vector3} */
-        this.tmp_g = new Vector3();
-        /** @type {Material} */
-        this.tmp_m = new Material();
-    }
-    /**
-     * @returns {string}
-     */
-    getType = function () {
-        return MaxNode.type;
-    };
-    /**
-     * @link Node.prepareForEval for a complete description
-     **/
-    prepareForEval() {
-        if (!this.valid_aabb) {
-            this.aabb = new Box3(); // Create empty BBox
-            for (var i = 0; i < this.children.length; ++i) {
-                var c = this.children[i];
-                c.prepareForEval();
-                this.aabb.union(c.getAABB()); // new aabb is computed according to remaining children aabb
-            }
-            this.valid_aabb = true;
-        }
-    }
-    /**
-     *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
-     */
-    value(p, res) {
-        // TODO : check that all bounding box of all children and subchildrens are valid
-        //        This enable not to do it in prim and limit the number of assert call (and string built)
-        var l = this.children.length;
-        var tmp = this.tmp_res;
-        tmp.g = res.g ? this.tmp_g : null;
-        tmp.m = res.m ? this.tmp_m : null;
-        // Init res
-        res.v = 0;
-        if (res.m) {
-            res.m.copy(Material.defaultMaterial);
-        }
-        if (res.g) {
-            res.g.set(0, 0, 0);
-        }
-        else if (res.step !== undefined) {
-            // that, is the max distance
-            // we want a value that loose any 'min'
-            res.step = 1000000000;
-        }
-        if (this.aabb.containsPoint(p) && l !== 0) {
-            res.v = Number.MAX_VALUE;
-            for (var i = 0; i < l; ++i) {
-                this.children[i].value(p, tmp);
-                if (tmp.v > res.v) {
-                    res.v = tmp.v;
-                    if (res.g) {
-                        res.g.copy(tmp.g);
-                    }
-                    if (res.m) {
-                        res.m.copy(tmp.m);
-                    }
-                    // within primitive potential
-                    if (res.step || res.stepOrtho) {
-                        throw "Not implemented";
-                    }
-                }
-                res.v = Math.max(res.v, tmp.v);
-            }
-        }
-        else if (res.step || res.stepOrtho) {
-            throw "Not implemented";
-        }
-    }
-}
-Types.register(MaxNode.type, MaxNode);
-
-/** @typedef {import('./Element.js')} Element */
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-/**
- * @typedef {NodeJSON} MinNodeJSON
- */
-/**
- *  This class implement a Min node.
- *  It will return the minimum value of the field of each primitive.
- *  Return 0 in regioin were no primitive is present.
- *  @constructor
- *  @extends Node
- */
-class MinNode extends Node {
-    static type = "MinNode";
-    /**
-     *
-     * @param {MinNodeJSON} json
-     * @returns {MinNode}
-     */
-    static fromJSON(json) {
-        var res = new MinNode();
-        for (var i = 0; i < json.children.length; ++i) {
-            res.addChild(Types.fromJSON(json.children[i]));
-        }
-        return res;
-    }
-    /**
-    *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
-    */
-    constructor(children) {
-        super();
-        if (children) {
-            var self = this;
-            children.forEach(function (c) {
-                self.addChild(c);
-            });
-        }
-        // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:Vector3, m:Material}} */
-        this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {Vector3} */
-        this.tmp_g = new Vector3();
-        /** @type {Material} */
-        this.tmp_m = new Material();
-    }
-    getType() {
-        return MinNode.type;
-    }
-    /**
-     *  @link Element.prepareForEval for a complete description
-     */
-    prepareForEval() {
-        if (!this.valid_aabb) {
-            this.aabb = new Box3(); // Create empty BBox
-            for (var i = 0; i < this.children.length; ++i) {
-                var c = this.children[i];
-                c.prepareForEval();
-                this.aabb.union(c.getAABB()); // new aabb is computed according to remaining children aabb
-            }
-            this.valid_aabb = true;
-        }
-    }
-    ;
-    /**
-     *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
-     */
-    value(p, res) {
-        // TODO : check that all bounding box of all children and subchildrens are valid
-        //        This enable not to do it in prim and limit the number of assert call (and string built)
-        var l = this.children.length;
-        var tmp = this.tmp_res;
-        tmp.g = res.g ? this.tmp_g : null;
-        tmp.m = res.m ? this.tmp_m : null;
-        // Init res
-        res.v = 0;
-        if (res.m) {
-            res.m.copy(Material.defaultMaterial);
-        }
-        if (res.g) {
-            res.g.set(0, 0, 0);
-        }
-        else if (res.step !== undefined) {
-            // that, is the max distance
-            // we want a value that loose any 'min'
-            res.step = 1000000000;
-        }
-        if (this.aabb.containsPoint(p) && l !== 0) {
-            res.v = Number.MAX_VALUE;
-            for (var i = 0; i < l; ++i) {
-                this.children[i].value(p, tmp);
-                if (tmp.v < res.v) {
-                    res.v = tmp.v;
-                    if (res.g) {
-                        res.g.copy(tmp.g);
-                    }
-                    if (res.m) {
-                        res.m.copy(tmp.m);
-                    }
-                    // within primitive potential
-                    if (res.step || res.stepOrtho) {
-                        throw "Not implemented";
-                    }
-                }
-                res.v = Math.min(res.v, tmp.v);
-            }
-        }
-        else if (res.step || res.stepOrtho) {
-            throw "Not implemented";
-        }
-    }
-    /**
-     *  @link Element.trim for a complete description.
-     *
-     *  @param {Box3} aabb
-     *  @param {Array<Element>} trimmed
-     *  @param {Array<Node>} parents
-     */
-    trim(aabb, trimmed, parents) {
-        // Trim remaining nodes
-        for (var i = 0; i < this.children.length; i++) {
-            this.children[i].trim(aabb, trimmed, parents);
-        }
-    }
-    ;
-}
-Types.register(MinNode.type, MinNode);
-
-/**
  *  Represent a blobtree primitive.
  *
  *  @constructor
@@ -1192,9 +434,9 @@ class Primitive extends Element {
         super();
     }
     toJSON() {
-        var res = { ...super.toJSON(), materials: [] };
+        const res = { ...super.toJSON(), materials: [] };
         res.materials = [];
-        for (var i = 0; i < this.materials.length; ++i) {
+        for (let i = 0; i < this.materials.length; ++i) {
             res.materials.push(this.materials[i].toJSON());
         }
         return res;
@@ -1207,7 +449,7 @@ class Primitive extends Element {
         if (mats.length !== this.materials.length) {
             throw "Error : trying to set " + mats.length + " materials on a primitive with only " + this.materials.length;
         }
-        for (var i = 0; i < mats.length; ++i) {
+        for (let i = 0; i < mats.length; ++i) {
             if (!mats[i].equals(this.materials[i])) {
                 this.materials[i].copy(mats[i]);
                 this.invalidAABB();
@@ -1250,15 +492,7 @@ class Primitive extends Element {
     ;
     /**
      * @abstract
-     * Compute variables to help with value computation.
-     */
-    computeHelpVariables() {
-        throw "ERROR : computeHelpVariables is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
-    }
-    ;
-    /**
-     * @abstract
-     * Compute variables to help with value computation.
+     * Compute constiables to help with value computation.
      * @param cls The class to count. Primitives have no children so no complexty here.
      */
     count(cls) {
@@ -1267,1206 +501,6 @@ class Primitive extends Element {
     ;
 }
 Types.register(Primitive.type, Primitive);
-
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-/**
- * @typedef {{ricci_n:number} & NodeJSON} RicciNodeJSON
- */
-/**
- *  This class implement a n-ary blend node which use a Ricci Blend.
- *  Ricci blend is : v = k-root( Sum(c.value^k) ) for all c in node children.
- *  Return 0 in regioin were no primitive is present.
- *  @constructor
- *  @extends Node
- */
-class RicciNode extends Node {
-    static type = "RicciNode";
-    /**
-     *  @param {number} ricci_n The value for ricci
-     *  @param {Array<Node>=} children The children to add to this node. Just a convenient parameter, you can do it manually using addChild
-     */
-    constructor(ricci_n, children) {
-        super();
-        /** @type {number} */
-        this.ricci_n = ricci_n;
-        if (children) {
-            let self = this;
-            children.forEach(function (c) {
-                self.addChild(c);
-            });
-        }
-        // Tmp vars to speed up computation (no reallocations)
-        /** @type {Float32Array} */
-        this.tmp_v_arr = new Float32Array(0);
-        /** @type {Array<Material>} */
-        this.tmp_m_arr = [];
-        // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g: Vector3, m:Material}} */
-        this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {Vector3} */
-        this.tmp_g = new Vector3();
-        /** @type {Material} */
-        this.tmp_m = new Material();
-    }
-    /**
-     * @link Node.getType
-     * @returns {string}
-     */
-    getType() {
-        return RicciNode.type;
-    }
-    ;
-    /**
-     * @link Node.toJSON
-     * @returns {RicciNodeJSON}
-     */
-    toJSON() {
-        let res = {
-            ...super.toJSON(),
-            ricci_n: this.ricci_n
-        };
-        return res;
-    }
-    ;
-    /**
-     * @link Node.fromJSON
-     * @param {Json} json
-     * @returns
-     */
-    static fromJSON(json) {
-        let res = new RicciNode(json.ricci_n);
-        for (let i = 0; i < json.children.length; ++i) {
-            res.addChild(Types.fromJSON(json.children[i]));
-        }
-        return res;
-    }
-    ;
-    /**
-     * @link Node.prepareForEval
-     */
-    prepareForEval() {
-        if (!this.valid_aabb) {
-            this.aabb = new Box3(); // Create empty BBox
-            for (let i = 0; i < this.children.length; ++i) {
-                let c = this.children[i];
-                c.prepareForEval();
-                this.aabb.union(c.getAABB()); // new aabb is computed according to remaining children aabb
-            }
-            this.valid_aabb = true;
-            // Prepare tmp arrays
-            if (this.tmp_v_arr.length < this.children.length) {
-                this.tmp_v_arr = new Float32Array(this.children.length * 2);
-                this.tmp_m_arr.length = this.children.length * 2;
-                for (let i = 0; i < this.tmp_m_arr.length; ++i) {
-                    this.tmp_m_arr[i] = new Material({ roughness: 0, metalness: 0 });
-                }
-            }
-        }
-    }
-    ;
-    /**
-     *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
-     */
-    value(p, res) {
-        // TODO : check that all bounding box of all children and subchildrens are valid
-        //        This enable not to do it in prim and limit the number of assert call (and string built)
-        let l = this.children.length;
-        let tmp = this.tmp_res;
-        tmp.g = res.g ? this.tmp_g : null;
-        tmp.m = res.m ? this.tmp_m : null;
-        // Init res
-        res.v = 0;
-        if (res.m) {
-            res.m.copy(Material.defaultMaterial);
-        }
-        if (res.g) {
-            res.g.set(0, 0, 0);
-        }
-        else if (res.step !== undefined) {
-            // that, is the max distance
-            // we want a value that loose any 'min'
-            res.step = 1000000000;
-        }
-        if (this.aabb.containsPoint(p) && l !== 0) {
-            // arrays used for material mean
-            let v_arr = this.tmp_v_arr;
-            let m_arr = this.tmp_m_arr;
-            let mv_arr_n = 0;
-            // tmp let to compute the powered sum before the n-root
-            // Kept for gradient computation
-            let res_vv = 0;
-            for (let i = 0; i < l; ++i) {
-                if (this.children[i].aabb.containsPoint(p)) {
-                    this.children[i].value(p, tmp);
-                    if (tmp.v > 0) // actually just !=0 should be enough but for stability reason...
-                     {
-                        let v_pow = Math.pow(tmp.v, this.ricci_n - 1.0);
-                        res_vv += tmp.v * v_pow;
-                        // gradient if needed
-                        if (res.g) {
-                            tmp.g.multiplyScalar(v_pow);
-                            res.g.add(tmp.g);
-                        }
-                        // material if needed
-                        if (res.m) {
-                            v_arr[mv_arr_n] = tmp.v * v_pow;
-                            m_arr[mv_arr_n].copy(tmp.m);
-                            mv_arr_n++;
-                        }
-                        // within primitive potential
-                        if (res.step || res.stepOrtho) {
-                            // we have to compute next step or nextStep z
-                            res.step = Math.min(res.step, this.children[i].heuristicStepWithin());
-                        }
-                    }
-                    // outside of the potential for this box, but within the box
-                    else {
-                        if (res.step !== undefined) {
-                            res.step = Math.min(res.step, this.children[i].distanceTo(p));
-                        }
-                    }
-                }
-                else if (res.step || res.stepOrtho) {
-                    res.step = Math.min(res.step, this.children[i].distanceTo(p));
-                }
-            }
-            // compute final result using ricci power function
-            res.v = Math.pow(res_vv, 1 / this.ricci_n);
-            if (res.v !== 0) {
-                if (res.g) {
-                    res.g.multiplyScalar(res.v / res_vv);
-                }
-                if (res.m) {
-                    res.m.weightedMean(m_arr, v_arr, mv_arr_n);
-                }
-            }
-            // else the default values should be OK.
-        }
-        else if (res.step !== undefined) {
-            if (this.children.length !== 0) {
-                let add = this.children[0].heuristicStepWithin();
-                for (let i = 1; i < this.children.length; ++i) {
-                    add = Math.min(add, this.children[i].heuristicStepWithin());
-                }
-                // return distance to aabb such that next time we'll hit from within the aabbb
-                res.step = this.aabb.distanceToPoint(p) + add;
-            }
-        }
-        if (res.stepOrtho !== undefined) {
-            res.stepOrtho = res.step;
-        }
-    }
-    ;
-    /**
-     * @param {number} n
-     */
-    setRicciN(n) {
-        if (this.ricci_n != n) {
-            this.ricci_n = n;
-            this.invalidAABB();
-        }
-    }
-    ;
-    /**
-     * @returns {number}
-     */
-    getRicciN = function () {
-        return this.ricci_n;
-    };
-}
-Types.register(RicciNode.type, RicciNode);
-
-/**
- * @author Maxime Quiblier
- */
-const Convergence = {};
-// Limitations: 3D only, but can easily be rewritten for nD
-// The algorithm stops when :
-// - 2 consecutive steps are smaller than epsilon
-// - OR n_max_step is reached
-// Optimization roads :
-//      - 2 small steps may be too much, only 1 could be enough in most cases isn't it?
-// @todo write documentation to talk about failure cases.
-//
-// Variable used in function. This avoid reallocation.
-Convergence.last_mov_pt = new Vector3();
-Convergence.grad = new Vector3();
-Convergence.eval_res_g = new Vector3(0, 0, 0);
-/** @type {{v:number, m:Material, g:Vector3}} */
-Convergence.eval_res = { v: 0, m: null, g: null };
-Convergence.vec = new Vector3();
-/**
- * @param {BlobtreeElement} pot
- * @param {Vector3} starting_point
- * @param {number} value
- * @param {number} epsilon
- * @param {number} n_max_step
- * @param {number} r_max
- * @param {Vector3} res
- * @returns
- */
-Convergence.safeNewton3D = function (pot, // Scalar Field to eval
-starting_point, // 3D point where we start, must comply to Vector3 API
-value, // iso value we are looking for
-epsilon, // Geometrical limit to stop
-n_max_step, // limit of number of step
-r_max, // max distance where we look for the iso
-//bounding_v,       // Bounding volume inside which we look for the iso, getting out will make the process stop.
-res // the resulting point
-) {
-    res.copy(starting_point);
-    var i = 1;
-    var consecutive_small_steps = 0;
-    var broken = false;
-    while (consecutive_small_steps != 2 && i <= n_max_step && !broken) {
-        this.last_mov_pt.copy(res);
-        this.eval_res.g = this.eval_res_g; // active gradient computation
-        pot.value(res, this.eval_res);
-        this.grad.copy(this.eval_res.g);
-        if (this.grad.x !== 0.0 || this.grad.y !== 0.0 || this.grad.z !== 0.0) {
-            var g_l = this.grad.length();
-            var step = (value - this.eval_res.v) / g_l;
-            if (step < epsilon && step > -epsilon) {
-                if (step > 0.0) {
-                    step = epsilon / g_l;
-                }
-                else {
-                    step = -epsilon / g_l;
-                }
-                consecutive_small_steps++;
-            }
-            else {
-                consecutive_small_steps = 0;
-            }
-            this.grad.normalize().multiplyScalar(step);
-            res.add(this.grad);
-            // If the newton step took us out of the bounding volume, we have to stop
-            //if(!bounding_v.containsPoint(res))
-            if (this.vec.subVectors(res, starting_point).lengthSq() > r_max * r_max) {
-                res.copy(starting_point);
-                return;
-            }
-            /*
-            if( this.vec.subVectors(res,starting_point).lengthSq() > r_max*r_max)
-            {
-                this.eval_res.g = null; // deactive gradient computation
-                var current_val = this.eval_res.v;
-                pot.value(res,this.eval_res);
-                if( (this.eval_res.v-value)*(current_val-value) < 0.0)   // can only use dichotomy if one point is inside and one outside among (res and last_mov_pt)
-                {
-                    res.add(this.last_mov_pt);
-                    res.multiplyScalar(0.5);
-                }
-                else
-                {
-                    // In this case we have no clue what to do, so just break...
-                    broken = true;
-                }
-            }
-            */
-        }
-        else {
-            broken = true;
-        }
-        ++i;
-    }
-    if (broken) {
-        // return strating_point
-        res.copy(starting_point);
-        return;
-    }
-    /*
-    if(broken){
-
-        this.eval_res.g = null; // deactive gradient computation
-
-        // Check the point between last_moving_point and starting_point which is closest to the surface and return it.
-        pot.value(this.last_mov_pt,this.eval_res);
-        var ev_last_mov_pt = this.eval_res.v;
-        pot.value(starting_point,this.eval_res);
-        var ev_st_pt = this.eval_res.v;
-        if( Math.abs(ev_last_mov_pt-value) > Math.abs(starting_point-value) )
-        {
-            res.copy(starting_point);
-            return;
-        }
-        else
-        {
-            res.copy(this.last_mov_pt);
-            return;
-        }
-    }
-    */
-};
-/**
- *
- * @typedef {Object} safeNewton1DResult
- * @property {Vector3} p
- * @property {Vector3} g
- * @property {number} p_absc
- *
- */
-/** This algorithm uses Newton convergence to find a point epsilon close to
-*        a point "p" such that the given potential "pot" evaluated at "p" is "value".
-*        The search is constrained on line defined by (origin, search_dir), and between bounds
-*        defined by min_absc and max_absc which are the abscissae on the line with respect
-*        to origin and search_dir. search_dir should be normalized.
-*        The starting point is given with an abscissa : origin + starting_point_absc*search_dir
-*
-*   @param {BlobtreeElement} pot
-*   @param {Vector3} origin Point choosen as origin in the search line frame.
-*   @param {Vector3} search_dir_unit unit vector that, together with origin, defines the searching line. Should be normalized
-*   @param {number} min_absc_inside Minimum abscissa on the line : the algorithm will not search for a point below this abscissa.
-*   @param {number} max_absc_outside Maximum abscissa on the line : the algorithm will not search for a point above this abscissa.
-*   @param {number} starting_point_absc Abscissa of the starting point, with respect to the search dir.
-*   @param {number} value The potential value we are looking for on the line with respect to pot.Eval(..)
-*   @param {number} epsilon We want the result to be at least epsilon close to the surface with respect to the
-*                   distance Vector.norm(), we suppose this norm to be the one associated with the dot product Vector.operator |
-*   @param {number} n_max_step Maximum of newton step before giving up.
-*
-*   @param {safeNewton1DResult} res
-*
-*
-*   @todo write documentation to talk about failure cases.
-*   @todo Should not normalise search_dir. Change that here and in all part of code where this is used.
-*/
-Convergence.safeNewton1D = function (pot, origin, search_dir_unit, min_absc_inside, max_absc_outside, starting_point_absc, value, epsilon, n_max_step, res // resulting point res.p and gradient res.g (if res.g defined) resulting absc in res.p_absc
-) {
-    this.eval_res.g = this.eval_res_g; // active gradient computation
-    if (!(search_dir_unit.x !== 0.0 || search_dir_unit.y !== 0.0 || search_dir_unit.z !== 0.0)) {
-        throw "Error : search direction is null";
-    }
-    if (epsilon <= 0) {
-        throw "Error: epsilon <= 0, convergence will nuke your face or loop";
-    }
-    if (starting_point_absc < min_absc_inside || starting_point_absc > max_absc_outside) {
-        throw "Error : starting absc is not in boundaries";
-    }
-    var curr_point_absc = starting_point_absc;
-    var eval_pt = new Vector3();
-    // Newton step until we overpass the surface
-    // the minimum step is set to epsilon, that ensure we will cross the surface.
-    var grad = 0;
-    var step = 0;
-    var i = 0;
-    while (max_absc_outside - min_absc_inside > epsilon && i < n_max_step) {
-        // curr_point_absc is guaranteed inside [min_absc_inside,max_absc_outside]
-        pot.value(eval_pt.copy(search_dir_unit).multiplyScalar(curr_point_absc).add(origin), this.eval_res);
-        // update bounding absc
-        if (this.eval_res.v > value) {
-            min_absc_inside = curr_point_absc;
-        }
-        else {
-            max_absc_outside = curr_point_absc;
-        }
-        // Analytical gradient evaluation + dot product should be less than 2 evaluations in cost.
-        grad = this.eval_res.g.dot(search_dir_unit);
-        if (grad !== 0.0) {
-            step = (value - this.eval_res.v) / grad;
-            curr_point_absc += step;
-            // Dichotomy step
-            if (curr_point_absc >= max_absc_outside || curr_point_absc <= min_absc_inside) {
-                curr_point_absc = (max_absc_outside + min_absc_inside) * 0.5;
-            }
-        }
-        else {
-            // Dichotomy step
-            curr_point_absc = (max_absc_outside + min_absc_inside) * 0.5;
-        }
-        ++i;
-    }
-    res.p_absc = (max_absc_outside + min_absc_inside) * 0.5; // approximate
-    res.p.copy(search_dir_unit).multiplyScalar(curr_point_absc).add(origin);
-    if (res.g !== undefined) {
-        if (i === 0) {
-            pot.value(res.p, this.eval_res);
-        }
-        res.g.copy(this.eval_res.g);
-    }
-};
-Convergence.dichotomy1D = function (pot, origin, search_dir_unit, startStepLength, value, epsilon, n_max_step, // TODO : Useless, since dichotomia is absolutely determinist, n step is startStepLength/(2^n) accuracy...
-//        OR epsilon is the one useless...
-res // resulting point res.p and gradient res.g (if res.g defined) resulting absc in res.p_absc
-) {
-    this.eval_res.g = null; // deactive gradient computation
-    var previousPos = new Vector3().copy(origin);
-    var currentStep = new Vector3();
-    // intersection
-    // dichotomia: first step is going back half of the previous distance
-    startStepLength /= 2;
-    var dist = -startStepLength;
-    var previousDist = dist;
-    origin.sub(currentStep.copy(search_dir_unit)
-        .multiplyScalar(startStepLength));
-    var nstep = 0;
-    while ((startStepLength > epsilon) && (nstep < n_max_step)) {
-        nstep++;
-        previousPos.copy(origin);
-        previousDist = dist;
-        startStepLength /= 2;
-        // not asking for the next step, which is always half of previous
-        pot.value(origin, this.eval_res);
-        if (this.eval_res.v < value) {
-            // before the surface: go forward
-            origin.add(currentStep.copy(search_dir_unit)
-                .multiplyScalar(startStepLength));
-            dist += startStepLength;
-        }
-        else {
-            // after the surface: go backward
-            origin.sub(currentStep.copy(search_dir_unit)
-                .multiplyScalar(startStepLength));
-            dist -= startStepLength;
-        }
-    }
-    // linear interpolation with previous pos
-    res.p.copy(origin.add(previousPos).divideScalar(2));
-    res.p_absc = (previousDist + dist) / 2;
-    // linear interpolation with previous pos
-    res.p.copy(origin);
-    res.p_absc = dist;
-    // test wether the caller wanted to compute the gradient
-    // (we assume that if res.g is defined, it's a request)
-    if (res.g) {
-        this.eval_res.g = this.eval_res_g; // active gradient computation
-        pot.value(res.p, this.eval_res);
-        res.g.copy(this.eval_res.g);
-    }
-};
-
-/** @typedef {import('./Element')} Element */
-/** @typedef {import('./Node')} Node */
-/** @typedef {import('./Material')} Material */
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./RicciNode').RicciNodeJSON} RicciNodeJSON */
-/**
- * @typedef {{iso:number} & RicciNodeJSON} RootNodeJSON
- */
-/**
- * @typedef {Object} IntersectionResult The result of the intersection
- * @property {number=} distance distance from ray.origin to intersection point,
- * @property {Vector3} point: intersection point,
- * @property {Vector3} g: gradient at intersection, if required.
- */
-/**
- *  The root of any implicit blobtree. Does behave computationaly like a RicciNode with n = 64.
- *  The RootNode is the only node to be its own parent.
- *  @constructor
- *  @extends RicciNode
- */
-class RootNode extends RicciNode {
-    static type = "RootNode";
-    /**
-     * @param {RootNodeJSON} json
-     * @returns {RootNode}
-     */
-    static fromJSON(json) {
-        var res = new RootNode();
-        for (var i = 0; i < json.children.length; ++i) {
-            res.addChild(Types.fromJSON(json.children[i]));
-        }
-        return res;
-    }
-    ;
-    constructor() {
-        // Default RootNode is a riccinode with ricci_n = 64 (almost a max)
-        super(64);
-        this.valid_aabb = true;
-        // Default iso value, value where the surface is present
-        /** @type {number} */
-        this.iso_value = 1.0;
-        // Set some nodes as "trimmed", so they are not evaluated.
-        /** @type {Array<Element>} */
-        this.trimmed = [];
-        /** @type {Array<Node>} */
-        this.trim_parents = [];
-    }
-    /**
-     * @link Node.getType
-     * @returns {string}
-     */
-    getType() {
-        return RootNode.type;
-    }
-    ;
-    /**
-     * @link RicciNode.toJSON
-     * @returns {RootNodeJSON}
-     */
-    toJSON() {
-        var res = {
-            ...super.toJSON(),
-            iso: this.iso_value
-        };
-        return res;
-    }
-    ;
-    /**
-     * @returns {number}
-     */
-    getIsoValue() {
-        return this.iso_value;
-    }
-    ;
-    /**
-     * @param {number} v
-     */
-    setIsoValue(v) {
-        this.iso_value = v;
-    }
-    ;
-    /**
-     *  @return {number} The neutral value of this tree, ie the value of the field in empty region of space.
-     *                   This is an API for external use and future development. For now it is hard set to 0.
-     */
-    getNeutralValue() {
-        return 0;
-    }
-    ;
-    /**
-     * @link Node.invalidAABB for a complete description
-     */
-    invalidAABB() {
-        this.valid_aabb = false;
-    }
-    ;
-    /**
-     *  Basically perform a trim but keep track of trimmed elements.
-     *  This is usefull if you want to trim, then untrim, then trim, etc...
-     *  For example, this is very useful for evaluation optim
-     *  @param {Box3} aabb
-     */
-    internalTrim(aabb) {
-        if (!(this.trimmed.length === 0 && this.trim_parents.length === 0)) {
-            throw "Error : you should not call internal trim if you have not untrimmed before. Call untrim or use externalTrim";
-        }
-        this.trim(aabb, this.trimmed, this.trim_parents);
-    }
-    ;
-    /**
-     *  Wrapper for trim, will help programmers to make the difference between
-     *  internal and external trim.
-     *  @param {Box3} aabb
-     *  @param {Array.<Element>} trimmed Array of trimmed Elements
-     *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
-     */
-    externalTrim(aabb, trimmed, parents) {
-        this.trim(aabb, trimmed, parents);
-    }
-    ;
-    /**
-     *  Reset the full blobtree
-     */
-    internalUntrim() {
-        this.untrim(this.trimmed, this.trim_parents);
-        this.trimmed.length = 0;
-        this.trim_parents.length = 0;
-    }
-    ;
-    /**
-     *  Reset the full blobtree given previous trimming data.
-     *  Note : don't forget to recall prepareForEval if you want to perform evaluation.
-     *  @param {Array.<Element>} trimmed Array of trimmed Elements
-     *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
-     */
-    untrim(trimmed, parents) {
-        if (!(trimmed.length === parents.length)) {
-            throw "Error : trimmed and parents arrays should have the same length";
-        }
-        for (var i = 0; i < trimmed.length; ++i) {
-            parents[i].addChild(trimmed[i]);
-        }
-    }
-    ;
-    /**
-     *  Tell if the blobtree is empty
-     *  @return true if blobtree is empty
-     */
-    isEmpty = function () {
-        return this.children.length == 0;
-    };
-    intersectRayBlob = function () {
-        var curPos = new Vector3();
-        var marchingVector = new Vector3();
-        var currentStep = new Vector3();
-        /** @type {ValueResultType} */
-        var tmp_res = {
-            v: 0,
-            g: new Vector3(),
-            step: 0
-        };
-        var conv_res = {
-            p: new Vector3(),
-            g: new Vector3(),
-            p_absc: 0.0
-        };
-        var previousStepLength = 0;
-        var previousValue = 0; // used for linear interp for a better guess
-        var dist = 0;
-        /**
-         * @this RootNode
-         *  @param {!Ray} ray Ray to cast for which intersection is seeked.
-         *
-         *  @param {IntersectionResult} res
-         *  @param {number} maxDistance If the intersection is not located at a distance
-         *                              lower than maxDistance, it will not be considered.
-         *                              The smaller this is, the faster the casting will be.
-         *  @param {number} _precision Distance to the intersection under which we will
-         *                            consider to be on the intersection point.
-         *
-         *  @return {boolean} True if an intersection has been found.
-         */
-        return function (ray, res, maxDistance, _precision) {
-            curPos.copy(ray.origin);
-            marchingVector.copy(ray.direction);
-            marchingVector.normalize();
-            dist = 0;
-            // compute first value to have next step length
-            tmp_res.g = null;
-            this.value(curPos, tmp_res);
-            // march
-            while ((tmp_res.v < this.iso_value) && (dist < maxDistance)) {
-                curPos.add(currentStep.copy(marchingVector).multiplyScalar(tmp_res.step));
-                dist += tmp_res.step;
-                previousStepLength = tmp_res.step;
-                previousValue = tmp_res.v;
-                this.value(curPos, tmp_res);
-            }
-            if (tmp_res.v >= this.iso_value) {
-                // Convergence.dichotomy1D(
-                // this,
-                // curPos,
-                // marchingVector,
-                // previousStepLength,
-                // iso_value,
-                // previousStepLength/512.0,
-                // 10,
-                // conv_res
-                // );
-                // res.distance = dist + conv_res.absc;
-                Convergence.safeNewton1D(this, curPos, marchingVector.multiplyScalar(-1.0), 0.0, previousStepLength, previousStepLength * (this.iso_value - tmp_res.v) / (previousValue - tmp_res.v), // linear approx of the first position
-                this.iso_value, previousStepLength / 512.0, //deltaPix*(dist-previousStepLength), // should be the size of a pixel at the previous curPos BROKEN?
-                10, conv_res);
-                res.distance = dist - conv_res.p_absc;
-                res.point = conv_res.p.clone();
-                // test wether the caller wanted to compute the gradient
-                // (we assume that if res.g is defined, it's a request)
-                if (res.g) {
-                    res.g.copy(conv_res.g);
-                }
-                return true;
-            }
-            else {
-                // no intersection
-                return false;
-            }
-        };
-    }();
-    /**
-     *  Kaiser function for some intersection and raycasting...
-     *  Undocumented.
-     *  TODO : check, it is probably an optimized intersection for blob intersection
-     *         in X, Y or Z directions.
-     */
-    intersectOrthoRayBlob = function () {
-        // curpos and marching vector are only instanciated once,
-        // we are using closure method
-        var curPos = new Vector3();
-        var resumePos = new Vector3();
-        /** @type {ValueResultType} */
-        var tmp_res = {
-            v: 0,
-            step: 0
-        };
-        var g = new Vector3();
-        /** @type {ValueResultType} */
-        var dicho_res = {
-            v: 0
-        };
-        var previousStepLength = 0;
-        var previousDist = 0;
-        // to ensure that we're within the aabb
-        var epsilon = 0.0000001;
-        var within = -1;
-        /**
-         * @this {RootNode}
-         * @param {number} wOffset
-         * @param {number} hOffset
-         * @param {Array<IntersectionResult>} res
-         * @param {Object} dim ???
-         */
-        return function (wOffset, hOffset, res, dim) {
-            if (dim.axis.x) {
-                curPos.set(this.aabb.min.x + wOffset, this.aabb.min.y + hOffset, this.aabb.min.z + epsilon);
-            }
-            else if (dim.axis.y) {
-                curPos.set(this.aabb.min.x + wOffset, this.aabb.min.y + epsilon, this.aabb.min.z + hOffset);
-            }
-            else if (dim.axis.z) {
-                curPos.set(this.aabb.min.x + epsilon, this.aabb.min.y + wOffset, this.aabb.min.z + hOffset);
-            }
-            // max depth step we can do (has to be set)
-            tmp_res.step = dim.get(this.aabb.max) - dim.get(this.aabb.min);
-            this.value(curPos, tmp_res);
-            previousStepLength = epsilon;
-            within = -1;
-            // we're looking for all intersection, we won't stop before that
-            while (dim.get(curPos) < dim.get(this.aabb.max)) {
-                // march
-                // the '=0' case is important, otherwise there's an infinite loop
-                while (((tmp_res.v - 1) * within >= 0) && (dim.get(curPos) < dim.get(this.aabb.max))) {
-                    // orthographic march
-                    // our tmp_res.step is valid as we know it's within the aabb
-                    dim.add(curPos, tmp_res.step);
-                    previousStepLength = tmp_res.step;
-                    // max depth step we can do (has to be set)
-                    tmp_res.step = dim.get(this.aabb.max) - dim.get(curPos);
-                    this.value(curPos, tmp_res);
-                }
-                // either a sign difference or we're out
-                if (dim.get(curPos) < dim.get(this.aabb.max)) {
-                    // we ain't out, so it was a sign difference
-                    within *= -1;
-                    // keep track of our current position in order to resume marching later
-                    resumePos.copy(curPos);
-                    previousDist = dim.get(curPos);
-                    // compute intersection
-                    // dichotomia: first step is going back half of the previous distance
-                    previousStepLength /= 2;
-                    dim.add(curPos, -previousStepLength);
-                    // we use dicho_res instead of tmp_res because we need
-                    // to keep track of previous results in order to resume later
-                    // dynamic number of dichotomia step
-                    dicho_res.g = null;
-                    while (previousStepLength > 0.1) {
-                        previousDist = dim.get(curPos);
-                        previousStepLength /= 2;
-                        // not asking for the next step, which is always half of previous
-                        this.value(curPos, dicho_res);
-                        if ((dicho_res.v - 1) * within < 0)
-                            // forward
-                            dim.add(curPos, previousStepLength);
-                        else
-                            // backward
-                            dim.add(curPos, -previousStepLength);
-                    }
-                    // linear interpolation with previous dist
-                    dim.add(curPos, previousDist);
-                    dim.divide(curPos, 2);
-                    // get the gradient
-                    dicho_res.g = g;
-                    this.value(curPos, dicho_res);
-                    res.push({
-                        point: curPos.clone(),
-                        g: dicho_res.g.clone()
-                    });
-                    // set variable in order to resume to where we were
-                    curPos.copy(resumePos);
-                }
-            }
-        };
-    }();
-}
-Types.register(RootNode.type, RootNode);
-
-/** @typedef {import('./Element.js')} Element */
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-/**
- * @typedef { {scale_x:number} & {scale_y:number} & {scale_z:number} & NodeJSON} ScaleNodeJSON
- */
-/**
- *  This class implement a ScaleNode node.
- *  It will return the minimum value of the field of each primitive.
- *  Return 0 in regioin were no primitive is present.
- *  @constructor
- *  @extends Node
- */
-class ScaleNode extends Node {
-    static type = "ScaleNode";
-    /**
-    *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
-    */
-    constructor(children) {
-        super();
-        if (children) {
-            var self = this;
-            children.forEach(function (c) {
-                self.addChild(c);
-            });
-        }
-        // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:Vector3, m:Material}} */
-        this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {Vector3} */
-        this.tmp_g = new Vector3();
-        /** @type {Material} */
-        this.tmp_m = new Material();
-        this._scale = new Vector3(1, 1, 1);
-    }
-    /**
-    * @link Node.toJSON
-    * @returns {ScaleNodeJSON}
-    */
-    toJSON() {
-        let res = {
-            ...super.toJSON(),
-            scale_x: this._scale.x,
-            scale_y: this._scale.y,
-            scale_z: this._scale.z,
-        };
-        return res;
-    }
-    ;
-    /**
-     * @link Node.fromJSON
-     *
-     * @param {ScaleNodeJSON} json
-     * @returns {ScaleNode}
-     */
-    static fromJSON(json) {
-        var res = new ScaleNode();
-        res.setScale(new Vector3(json.scale_x, json.scale_y, json.scale_z));
-        for (var i = 0; i < json.children.length; ++i) {
-            res.addChild(Types.fromJSON(json.children[i]));
-        }
-        return res;
-    }
-    /**
-     * @link ScaleNode.setScale
-     * @param {Vector3} scale
-     */
-    setScale(scale) {
-        this._scale.copy(scale);
-        this.invalidAABB();
-    }
-    /**
-     * @link Node.getType
-     */
-    getType() {
-        return ScaleNode.type;
-    }
-    /**
-     *  @link Element.prepareForEval for a complete description
-     */
-    prepareForEval() {
-        if (!this.valid_aabb) {
-            this.aabb = new Box3(); // Create empty BBox
-            for (var i = 0; i < this.children.length; ++i) {
-                var c = this.children[i];
-                c.prepareForEval();
-                this.aabb.union(c.getAABB()); // new aabb is computed according to remaining children aabb
-            }
-            let bb_size = new Vector3();
-            this.aabb.clone().getSize(bb_size);
-            let x_scale = bb_size.x * (this._scale.x - 1.0);
-            let y_scale = bb_size.y * (this._scale.y - 1.0);
-            let z_scale = bb_size.z * (this._scale.z - 1.0);
-            this.aabb.expandByVector(new Vector3(x_scale, y_scale, z_scale));
-            this.valid_aabb = true;
-        }
-    }
-    ;
-    /**
-    * @link Element.computeAABB for a complete description
-    */
-    computeAABB() {
-        this.aabb.makeEmpty();
-        for (var i = 0; i < this.children.length; i++) {
-            this.children[i].computeAABB();
-            this.aabb.union(this.children[i].getAABB());
-        }
-        let bb_size = new Vector3();
-        this.aabb.clone().getSize(bb_size);
-        let x_scale = bb_size.x * (this._scale.x - 1.0);
-        let y_scale = bb_size.y * (this._scale.y - 1.0);
-        let z_scale = bb_size.z * (this._scale.z - 1.0);
-        this.aabb.expandByVector(new Vector3(x_scale, y_scale, z_scale));
-    }
-    /**
-     *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
-     */
-    value(p, res) {
-        // TODO : check that all bounding box of all children and subchildrens are valid
-        //        This enable not to do it in prim and limit the number of assert call (and string built)
-        var l = this.children.length;
-        var tmp = this.tmp_res;
-        tmp.g = res.g ? this.tmp_g : null;
-        tmp.m = res.m ? this.tmp_m : null;
-        // Init res
-        res.v = 0;
-        if (res.m) {
-            res.m.copy(Material.defaultMaterial);
-        }
-        if (res.g) {
-            res.g.set(0, 0, 0);
-        }
-        else if (res.step !== undefined) {
-            // that, is the max distance
-            // we want a value that loose any 'min'
-            res.step = 1000000000;
-        }
-        if (this.aabb.containsPoint(p) && l !== 0) {
-            let center = new Vector3();
-            this.aabb.getCenter(center);
-            let st_p = new Vector3((p.x - center.x) / this._scale.x + center.x, (p.y - center.y) / this._scale.y + center.y, (p.z - center.z) / this._scale.z + center.z);
-            res.v = Number.MAX_VALUE;
-            for (var i = 0; i < l; ++i) {
-                this.children[i].value(st_p, tmp);
-                res.v = tmp.v;
-                if (res.g) {
-                    res.g.copy(tmp.g);
-                }
-                if (res.m) {
-                    res.m.copy(tmp.m);
-                }
-                // within primitive potential
-                if (res.step || res.stepOrtho) {
-                    throw "Not implemented";
-                }
-            }
-        }
-        else if (res.step || res.stepOrtho) {
-            throw "Not implemented";
-        }
-    }
-    /**
-     *  @link Element.trim for a complete description.
-     *
-     *  @param {Box3} aabb
-     *  @param {Array<Element>} trimmed
-     *  @param {Array<Node>} parents
-     */
-    trim(aabb, trimmed, parents) {
-        // Trim remaining nodes
-        for (var i = 0; i < this.children.length; i++) {
-            this.children[i].trim(aabb, trimmed, parents);
-        }
-    }
-    ;
-}
-Types.register(ScaleNode.type, ScaleNode);
-
-/** @typedef {import('./Element.js')} Element */
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-/**
- * @typedef { {twist_amout:number} & {axis_x:number} & {axis_y:number} & {axis_z:number} & NodeJSON} TwistNodeJSON
- */
-/**
- *  This class implement a TwistNode node.
- *  It will return the minimum value of the field of each primitive.
- *  Return 0 in regioin were no primitive is present.
- *  @constructor
- *  @extends Node
- */
-class TwistNode extends Node {
-    static type = "TwistNode";
-    /**
-    *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
-    */
-    constructor(children) {
-        super();
-        if (children) {
-            var self = this;
-            children.forEach(function (c) {
-                self.addChild(c);
-            });
-        }
-        // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:Vector3, m:Material}} */
-        this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {Vector3} */
-        this.tmp_g = new Vector3();
-        /** @type {Material} */
-        this.tmp_m = new Material();
-        this._twist_amout = 1.0;
-        this._twist_axis = new Vector3(0.0, 1.0, 0.0);
-        this._twist_axis_mat = new Matrix4();
-        this._twist_axis_mat_inv = new Matrix4();
-    }
-    /**
-    * @link Node.toJSON
-    * @returns {TwistNodeJSON}
-    */
-    toJSON() {
-        let res = {
-            ...super.toJSON(),
-            twist_amout: this._twist_amout,
-            axis_x: this._twist_axis.x,
-            axis_y: this._twist_axis.y,
-            axis_z: this._twist_axis.z,
-        };
-        return res;
-    }
-    ;
-    /**
-     *@link Node.fromJSON
-     *
-     * @param {TwistNodeJSON} json
-     * @returns {TwistNode}
-     */
-    static fromJSON(json) {
-        var res = new TwistNode();
-        res.setTwistAmount(json.twist_amout);
-        res.setTwistAxis(new Vector3(json.axis_x, json.axis_y, json.axis_z));
-        for (var i = 0; i < json.children.length; ++i) {
-            res.addChild(Types.fromJSON(json.children[i]));
-        }
-        return res;
-    }
-    setTwistAmount(amount) {
-        this._twist_amout = amount;
-    }
-    setTwistAxis(axis) {
-        this._twist_axis = axis;
-        this._computeTransforms();
-    }
-    _computeTransforms() {
-        let r_angle = Math.acos(this._twist_axis.dot(new Vector3(0, 1, 0)));
-        if (Math.abs(r_angle) > 0.0001) {
-            let t_axis = this._twist_axis.clone();
-            let rot_axis = t_axis.cross(new Vector3(0, 1, 0));
-            rot_axis.normalize();
-            this._twist_axis_mat.makeRotationAxis(rot_axis, r_angle);
-        }
-        else {
-            this._twist_axis_mat.identity();
-        }
-        this._twist_axis_mat_inv = this._twist_axis_mat.clone();
-        this._twist_axis_mat_inv.invert();
-    }
-    getType() {
-        return TwistNode.type;
-    }
-    /**
-     *  @link Element.prepareForEval for a complete description
-     */
-    prepareForEval() {
-        if (!this.valid_aabb) {
-            this.aabb = new Box3(); // Create empty BBox
-            for (var i = 0; i < this.children.length; ++i) {
-                var c = this.children[i];
-                c.prepareForEval();
-                this.aabb.union(c.getAABB()); // new aabb is computed according to remaining children aabb
-            }
-            this.valid_aabb = true;
-        }
-    }
-    ;
-    /**
-     *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
-     */
-    value(p, res) {
-        // TODO : check that all bounding box of all children and subchildrens are valid
-        //        This enable not to do it in prim and limit the number of assert call (and string built)
-        var l = this.children.length;
-        var tmp = this.tmp_res;
-        tmp.g = res.g ? this.tmp_g : null;
-        tmp.m = res.m ? this.tmp_m : null;
-        // Init res
-        res.v = 0;
-        if (res.m) {
-            res.m.copy(Material.defaultMaterial);
-        }
-        if (res.g) {
-            res.g.set(0, 0, 0);
-        }
-        else if (res.step !== undefined) {
-            // that, is the max distance
-            // we want a value that loose any 'min'
-            res.step = 1000000000;
-        }
-        if (this.aabb.containsPoint(p) && l !== 0) {
-            let center = new Vector3();
-            this.aabb.getCenter(center);
-            //Center the input point
-            let t_p = new Vector3(p.x - center.x, p.y - center.y, p.z - center.z);
-            //Rotate towards twist axis space
-            t_p.applyMatrix4(this._twist_axis_mat);
-            //Twist          
-            let c_twist = Math.cos(this._twist_amout * t_p.y);
-            let s_twist = Math.sin(this._twist_amout * t_p.y);
-            //Revert to world space
-            let q = new Vector3(c_twist * t_p.x - s_twist * t_p.z, t_p.y, s_twist * t_p.x + c_twist * t_p.z);
-            q.applyMatrix4(this._twist_axis_mat_inv);
-            let t_q = new Vector3(q.x + center.x, q.y + center.y, q.z + center.z);
-            res.v = Number.MAX_VALUE;
-            for (var i = 0; i < l; ++i) {
-                this.children[i].value(t_q, tmp);
-                res.v = tmp.v;
-                if (res.g) {
-                    res.g.copy(tmp.g);
-                }
-                if (res.m) {
-                    res.m.copy(tmp.m);
-                }
-                // within primitive potential
-                if (res.step || res.stepOrtho) {
-                    throw "Not implemented";
-                }
-            }
-        }
-        else if (res.step || res.stepOrtho) {
-            throw "Not implemented";
-        }
-    }
-    /**
-     *  @link Element.trim for a complete description.
-     *
-     *  @param {Box3} aabb
-     *  @param {Array<Element>} trimmed
-     *  @param {Array<Node>} parents
-     */
-    trim(aabb, trimmed, parents) {
-        // Trim remaining nodes
-        for (var i = 0; i < this.children.length; i++) {
-            this.children[i].trim(aabb, trimmed, parents);
-        }
-    }
-    ;
-}
-Types.register(TwistNode.type, TwistNode);
-
-/**
- * Accuracies Contains the accuracies needed in Areas. Can be changed when importing blobtree.js.
- * For classic segments and sphere, we setteled for a raw accuracy being proportional to
- * the radii. 1/3 of the radius is considered nice, 1 radius is considered raw.
- * For new primitives, feel free to create your own accuracies factors depending on the features.
- */
-const Accuracies = {
-    /**
-     * Factor for the nice accuracy needed to represent the features nicely
-     * @type {number}
-     */
-    nice: 0.3,
-    /**
-     * Factor for the raw accuracy needed to represent the features roughly
-     * @type {number}
-     */
-    raw: 1.0,
-    /**
-     * Current accuracy factor, should be between Accuracies.nice and Accuracies.raw.
-     * It will be the one used by rendering algorithms to decide to stop even if nice accuracy has not been reached.
-     * @type {number}
-     *
-     */
-    curr: 0.3
-};
 
 /**
  * @typedef {Object} AreaSphereParam
@@ -2576,6 +610,1657 @@ class Area {
         return 1;
     }
 }
+
+/**
+ *  This class implements an abstract Node class for implicit blobtree.
+ *  @constructor
+ *  @extends {Element}
+ */
+class Node extends Element {
+    children;
+    static type = "Node";
+    constructor() {
+        super();
+        this.children = [];
+    }
+    getType() {
+        return Node.type;
+    }
+    toJSON() {
+        const res = {
+            ...super.toJSON(),
+            children: []
+        };
+        for (let i = 0; i < this.children.length; ++i) {
+            res.children.push(this.children[i].toJSON());
+        }
+        return res;
+    }
+    /**
+     *  Clone current node and itss hierarchy
+     */
+    clone() {
+        return Types.fromJSON(this.toJSON());
+    }
+    /**
+     *  Invalid the bounding boxes recursively down for all children
+     */
+    invalidAll() {
+        this.invalidAABB();
+        if (this.children) {
+            for (let i = 0; i < this.children.length; i++) {
+                this.children[i].invalidAll();
+            }
+        }
+    }
+    ;
+    /**
+     *  Destroy the node and its children. The node is removed from the blobtree
+     *  (basically clean up the links between blobtree elements).
+     */
+    destroy() {
+        // need to Copy the array since indices will change.
+        const arr_c = this.children.slice(0, this.children.length);
+        for (let i = 0; i < arr_c.length; i++) {
+            arr_c[i].destroy();
+        }
+        if (this.children.length !== 0) {
+            throw "Error : children length should be 0";
+        }
+        if (this.parentNode !== null) {
+            this.parentNode.removeChild(this);
+        }
+        if (this.parentNode !== null) {
+            throw "Error : parent node should be null at this point";
+        }
+        this.children.length = 0;
+    }
+    ;
+    /**
+     *  Only works with nary nodes, otherwise a set function would be more appropriate.
+     *  -> TODO : check that if we have something else than n-ary nodes one day...
+     *  If c already belongs to the tree, it is removed from its current parent
+     *  children list before anything (ie it is "moved").
+     *
+     *  @param c The child to add.
+     */
+    addChild(c) {
+        if (c.parentNode !== null) {
+            c.parentNode.removeChild(c);
+        }
+        // TODO should ckeck that the node does not already belong to the children list
+        this.children.push(c);
+        c.parentNode = this;
+        this.invalidAABB();
+        return this;
+    }
+    ;
+    /**
+     *  Only works with n-ary nodes, otherwise order matters and we therefore
+     *  have to set "null" and node cannot be evaluated.
+     *  -> TODO : check that if we have something else than n-ary nodes one day...
+     *  WARNING:
+     *      Should only be called when a Primitive is deleted.
+     *      Otherwise :
+     *          To move a node to another parent : use addChild.
+     *  @param c The child to remove.
+     */
+    removeChild(c) {
+        let i = 0;
+        const cdn = this.children; // minimize the code
+        // Note : if this becomes too long, sort this.children using ids
+        while (cdn[i] !== c && i < cdn.length)
+            ++i;
+        if (i != cdn.length) {
+            cdn[i] = cdn[cdn.length - 1];
+            cdn.pop();
+        }
+        else {
+            throw "c does not belong to the children of this node";
+        }
+        this.invalidAABB();
+        c.parentNode = null;
+    }
+    /**
+     * @link Element.computeAABB for a complete description
+     */
+    computeAABB() {
+        this.aabb.makeEmpty();
+        for (let i = 0; i < this.children.length; i++) {
+            this.children[i].computeAABB();
+            this.aabb.union(this.children[i].getAABB());
+        }
+    }
+    /**
+     *  @link Element.getAreas for a complete description
+     *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
+     */
+    getAreas() {
+        if (!this.valid_aabb) {
+            throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
+        }
+        const res = [];
+        for (let i = 0; i < this.children.length; i++) {
+            res.push.apply(res, this.children[i].getAreas());
+        }
+        return res;
+    }
+    ;
+    /**
+     * @link Element.distanceTo for a complete description
+     */
+    distanceTo(p) {
+        let res = 10000000;
+        for (let i = 0; i < this.children.length; i++) {
+            res = Math.min(res, this.children[i].distanceTo(p));
+        }
+        return res;
+    }
+    ;
+    /**
+     * @returns
+     */
+    heuristicStepWithin() {
+        let res = 10000000;
+        for (let i = 0; i < this.children.length; i++) {
+            res = Math.min(res, this.children[i].heuristicStepWithin());
+        }
+        return res;
+    }
+    ;
+    /**
+     *  @link Element.trim for a complete description.
+     */
+    trim(aabb, trimmed, parents) {
+        let idx = trimmed.length;
+        for (let i = 0; i < this.children.length; i++) {
+            if (!this.children[i].getAABB().intersectsBox(aabb)) {
+                // trim the node
+                trimmed.push(this.children[i]);
+                parents.push(this);
+            }
+        }
+        for (let i = idx; i < trimmed.length; ++i) {
+            this.removeChild(trimmed[i]);
+        }
+        // Trim remaining nodes
+        for (let i = 0; i < this.children.length; i++) {
+            this.children[i].trim(aabb, trimmed, parents);
+        }
+    }
+    ;
+    /**
+     *  @link Element.count for a complete description.
+     */
+    count(cls) {
+        let count = 0;
+        if (this instanceof cls) {
+            count++;
+        }
+        for (let i = 0; i < this.children.length; i++) {
+            count += this.children[i].count(cls);
+        }
+        return count;
+    }
+    ;
+}
+Types.register(Node.type, Node);
+
+/**
+ *  This class implement a difference blending node.
+ *  The scalar field of the second child of this node will be substracted to the first node field.
+ *  The result is clamped to 0 to always keep a positive field value.
+ *  @constructor
+ *  @extends Node
+ */
+class DifferenceNode extends Node {
+    alpha;
+    clamped;
+    tmp_res0;
+    tmp_res1;
+    g0;
+    m0;
+    g1;
+    m1;
+    tmp_v_arr;
+    tmp_m_arr;
+    static type = "DifferenceNode";
+    fromJSON(json) {
+        return new DifferenceNode(Types.fromJSON(json.children[0]), Types.fromJSON(json.children[1]), json.alpha);
+    }
+    ;
+    /**
+     *
+     *  @param node0 The first node
+     *  @param node1 The second node, its value will be substracted to the node 0 value.
+     *  @param alpha Power of the second field : the greater alpha the sharper the difference. Default is 1, must be > 1.
+     */
+    constructor(node0, node1, alpha) {
+        super();
+        this.addChild(node0);
+        this.addChild(node1);
+        this.alpha = alpha || 1;
+        /**
+         * For now, this field value is clamped to 0
+         */
+        this.clamped = 0.0;
+        // Tmp vars to speed up computation (no reallocations)
+        this.tmp_res0 = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
+        this.tmp_res1 = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
+        this.g0 = new Vector3();
+        this.m0 = new Material();
+        this.g1 = new Vector3();
+        this.m1 = new Material();
+        /** @type {Float32Array} */
+        this.tmp_v_arr = new Float32Array(2);
+        /** @type {Array<Material|null>} */
+        this.tmp_m_arr = [
+            null,
+            null
+        ];
+    }
+    getAlpha() {
+        return this.alpha;
+    }
+    ;
+    setAlpha(alpha) {
+        if (this.alpha != alpha) {
+            this.alpha = alpha;
+            this.invalidAABB();
+        }
+    }
+    ;
+    toJSON() {
+        return {
+            ...super.toJSON(),
+            alpha: this.alpha
+        };
+    }
+    ;
+    /**
+     * @link Node.prepareForEval for a complete description
+     **/
+    prepareForEval() {
+        if (!this.valid_aabb) {
+            this.children[0].prepareForEval();
+            this.children[1].prepareForEval();
+            // Bounding box of this node is the same as the one of the positive children,
+            // Since negative values will be clamped to 0.
+            this.aabb.copy(this.children[0].getAABB());
+            this.valid_aabb = true;
+        }
+    }
+    ;
+    /**
+     *  Compute the value and/or gradient and/or material
+     *  of the element at position p in space. return computations in res (see below)
+     *
+     *  @param p Point where we want to evaluate the primitive field
+     *  @param res Computed values will be stored here. Each values should exist and
+     *                       be allocated already.
+     *  @param res.v Value, must be defined
+     *  @param res.m Material, must be allocated and defined if wanted
+     *  @param res.g Gradient, must be allocated and defined if wanted
+     *  @param res.step The next step we can safely walk without missing the iso (0). Mostly used for convergence function or ray marching.
+     *  @param res.stepOrtho
+     */
+    value(p, res) {
+        const v_arr = this.tmp_v_arr;
+        const m_arr = this.tmp_m_arr;
+        const tmp0 = this.tmp_res0;
+        const tmp1 = this.tmp_res1;
+        tmp0.g = res.g ? this.g0 : null;
+        tmp0.m = res.m ? this.m0 : null;
+        tmp1.g = res.g ? this.g1 : null;
+        tmp1.m = res.m ? this.m1 : null;
+        // Init res
+        res.v = 0;
+        tmp1.v = 0;
+        tmp0.v = 0;
+        if (res.m && tmp0.m && tmp1.m) {
+            res.m.copy(Material.defaultMaterial);
+            tmp1.m.copy(Material.defaultMaterial);
+            tmp0.m.copy(Material.defaultMaterial);
+        }
+        if (res.g && tmp0.g && tmp1.g) {
+            res.g.set(0, 0, 0);
+            tmp1.g.set(0, 0, 0);
+            tmp0.g.set(0, 0, 0);
+        }
+        else if (res.step !== undefined) {
+            // that, is the max distance
+            // we want a value that loose any 'min'
+            res.step = 1000000000;
+        }
+        if (this.aabb.containsPoint(p)) {
+            if (this.children[0].aabb.containsPoint(p)) {
+                this.children[0].value(p, tmp0);
+                if (this.children[1].aabb.containsPoint(p)) {
+                    this.children[1].value(p, tmp1);
+                }
+                if (tmp1.v === 0) {
+                    res.v = tmp0.v;
+                    if (res.g && tmp0.g) {
+                        res.g.copy(tmp0.g);
+                    }
+                    if (res.m && tmp0.m) {
+                        res.m.copy(tmp0.m);
+                    }
+                }
+                else {
+                    const v_pow = Math.pow(tmp1.v, this.alpha);
+                    res.v = Math.max(this.clamped, tmp0.v - tmp1.v * Math.pow(tmp1.v, this.alpha - 1.0));
+                    if (res.g && tmp1.g && tmp0.g) {
+                        if (res.v === this.clamped) {
+                            res.g.set(0, 0, 0);
+                        }
+                        else {
+                            tmp1.g.multiplyScalar(v_pow);
+                            res.g.subVectors(tmp0.g, tmp1.g);
+                        }
+                    }
+                    if (res.m && tmp0.m && tmp1.m) {
+                        v_arr[0] = tmp0.v;
+                        v_arr[1] = tmp1.v;
+                        m_arr[0] = tmp0.m;
+                        m_arr[1] = tmp1.m;
+                        if (m_arr[0] === null && m_arr[1] === null)
+                            throw "[DifferenceNode] value: m_arr[0] and m_arr[1] are both null. This is not possible here.";
+                        res.m.weightedMean(m_arr, v_arr, 2);
+                    }
+                }
+            }
+        }
+        else if (res.step !== undefined) {
+            // return distance to aabb such that next time we'll hit from within the aabbb
+            res.step = this.aabb.distanceToPoint(p) + 0.3;
+        }
+    }
+    ;
+    /**
+     *  @link Element.trim for a complete description.
+     *
+     *  Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
+     */
+    trim(aabb, trimmed, parents) {
+        // Trim remaining nodes
+        for (let i = 0; i < this.children.length; i++) {
+            this.children[i].trim(aabb, trimmed, parents);
+        }
+    }
+    ;
+}
+Types.register(DifferenceNode.type, DifferenceNode);
+
+/**
+ *  This class implement a Max node.
+ *  It will return the maximum value of the field of each primitive.
+ *  Return 0 in region were no primitive is present.
+ *  @class MaxNode
+ *  @extends Node
+ */
+class MaxNode extends Node {
+    tmp_res;
+    tmp_g;
+    tmp_m;
+    static type = "MaxNode";
+    fromJSON(json) {
+        const res = new MaxNode();
+        for (let i = 0; i < json.children.length; ++i) {
+            res.addChild(Types.fromJSON(json.children[i]));
+        }
+        return res;
+    }
+    /**
+     *  @constructor
+     *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+     */
+    constructor(children) {
+        super();
+        if (children) {
+            const self = this;
+            children.forEach(function (c) {
+                self.addChild(c);
+            });
+        }
+        // temp consts to speed up evaluation by avoiding allocations
+        this.tmp_res = { v: 0, g: null, m: null };
+        this.tmp_g = new Vector3();
+        this.tmp_m = new Material();
+    }
+    getType() {
+        return MaxNode.type;
+    }
+    /**
+     * @link Node.prepareForEval for a complete description
+     **/
+    prepareForEval() {
+        if (!this.valid_aabb) {
+            this.aabb = new Box3(); // Create empty BBox
+            for (let i = 0; i < this.children.length; ++i) {
+                const c = this.children[i];
+                c.prepareForEval();
+                this.aabb.union(c.getAABB()); // new aabb is computed according to remaining children aabb
+            }
+            this.valid_aabb = true;
+        }
+    }
+    /**
+     *  @link Element.value for a complete description
+     */
+    value(p, res) {
+        // TODO : check that all bounding box of all children and subchildrens are valid
+        //        This enable not to do it in prim and limit the number of assert call (and string built)
+        const l = this.children.length;
+        const tmp = this.tmp_res;
+        tmp.g = res.g ? this.tmp_g : null;
+        tmp.m = res.m ? this.tmp_m : null;
+        // Init res
+        res.v = 0;
+        if (res.m) {
+            res.m.copy(Material.defaultMaterial);
+        }
+        if (res.g) {
+            res.g.set(0, 0, 0);
+        }
+        else if (res.step !== undefined) {
+            // that, is the max distance
+            // we want a value that loose any 'min'
+            res.step = 1000000000;
+        }
+        if (this.aabb.containsPoint(p) && l !== 0) {
+            res.v = Number.MAX_VALUE;
+            for (let i = 0; i < l; ++i) {
+                this.children[i].value(p, tmp);
+                if (tmp.v > res.v) {
+                    res.v = tmp.v;
+                    if (res.g && tmp.g) {
+                        res.g.copy(tmp.g);
+                    }
+                    if (res.m && tmp.m) {
+                        res.m.copy(tmp.m);
+                    }
+                    // within primitive potential
+                    if (res.step || res.stepOrtho) {
+                        throw "Not implemented";
+                    }
+                }
+                res.v = Math.max(res.v, tmp.v);
+            }
+        }
+        else if (res.step || res.stepOrtho) {
+            throw "Not implemented";
+        }
+    }
+}
+Types.register(MaxNode.type, MaxNode);
+
+/**
+ *  This class implement a Min node.
+ *  It will return the minimum value of the field of each primitive.
+ *  Return 0 in regioin were no primitive is present.
+ *  @constructor
+ *  @extends Node
+ */
+class MinNode extends Node {
+    tmp_res;
+    tmp_g;
+    tmp_m;
+    static type = "MinNode";
+    fromJSON(json) {
+        const res = new MinNode();
+        for (let i = 0; i < json.children.length; ++i) {
+            res.addChild(Types.fromJSON(json.children[i]));
+        }
+        return res;
+    }
+    /**
+    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+    */
+    constructor(children) {
+        super();
+        if (children) {
+            const self = this;
+            children.forEach(function (c) {
+                self.addChild(c);
+            });
+        }
+        // temp consts to speed up evaluation by avoiding allocations
+        this.tmp_res = { v: 0, g: null, m: null };
+        this.tmp_g = new Vector3();
+        this.tmp_m = new Material();
+    }
+    getType() {
+        return MinNode.type;
+    }
+    /**
+     *  @link Element.prepareForEval for a complete description
+     */
+    prepareForEval() {
+        if (!this.valid_aabb) {
+            this.aabb = new Box3(); // Create empty BBox
+            for (let i = 0; i < this.children.length; ++i) {
+                const c = this.children[i];
+                c.prepareForEval();
+                this.aabb.union(c.getAABB()); // new aabb is computed according to remaining children aabb
+            }
+            this.valid_aabb = true;
+        }
+    }
+    ;
+    /**
+     *  @link Element.value for a complete description
+     */
+    value(p, res) {
+        // TODO : check that all bounding box of all children and subchildrens are valid
+        //        This enable not to do it in prim and limit the number of assert call (and string built)
+        const l = this.children.length;
+        const tmp = this.tmp_res;
+        tmp.g = res.g ? this.tmp_g : null;
+        tmp.m = res.m ? this.tmp_m : null;
+        // Init res
+        res.v = 0;
+        if (res.m) {
+            res.m.copy(Material.defaultMaterial);
+        }
+        if (res.g) {
+            res.g.set(0, 0, 0);
+        }
+        else if (res.step !== undefined) {
+            // that, is the max distance
+            // we want a value that loose any 'min'
+            res.step = 1000000000;
+        }
+        if (this.aabb.containsPoint(p) && l !== 0) {
+            res.v = Number.MAX_VALUE;
+            for (let i = 0; i < l; ++i) {
+                this.children[i].value(p, tmp);
+                if (tmp.v < res.v) {
+                    res.v = tmp.v;
+                    if (res.g && tmp.g) {
+                        res.g.copy(tmp.g);
+                    }
+                    if (res.m && tmp.m) {
+                        res.m.copy(tmp.m);
+                    }
+                    // within primitive potential
+                    if (res.step || res.stepOrtho) {
+                        throw "Not implemented";
+                    }
+                }
+                res.v = Math.min(res.v, tmp.v);
+            }
+        }
+        else if (res.step || res.stepOrtho) {
+            throw "Not implemented";
+        }
+    }
+    /**
+     *  @link Element.trim for a complete description.
+     */
+    trim(aabb, trimmed, parents) {
+        // Trim remaining nodes
+        for (let i = 0; i < this.children.length; i++) {
+            this.children[i].trim(aabb, trimmed, parents);
+        }
+    }
+    ;
+}
+Types.register(MinNode.type, MinNode);
+
+/**
+ *  This class implement a n-ary blend node which use a Ricci Blend.
+ *  Ricci blend is : v = k-root( Sum(c.value^k) ) for all c in node children.
+ *  Return 0 in regioin were no primitive is present.
+ *  @constructor
+ *  @extends Node
+ */
+class RicciNode extends Node {
+    ricci_n;
+    tmp_v_arr;
+    tmp_m_arr;
+    tmp_res;
+    tmp_g;
+    tmp_m;
+    static type = "RicciNode";
+    /**
+     *  @param ricci_n The value for ricci
+     *  @param children The children to add to this node. Just a convenient parameter, you can do it manually using addChild
+     */
+    constructor(ricci_n, children) {
+        super();
+        this.ricci_n = ricci_n;
+        if (children) {
+            let self = this;
+            children.forEach(function (c) {
+                self.addChild(c);
+            });
+        }
+        // Tmp consts to speed up computation (no reallocations)
+        this.tmp_v_arr = new Float32Array(0);
+        this.tmp_m_arr = [];
+        // temp consts to speed up evaluation by avoiding allocations
+        this.tmp_res = { v: 0, g: null, m: null };
+        this.tmp_g = new Vector3();
+        this.tmp_m = new Material();
+    }
+    /**
+     * @link Node.getType
+     */
+    getType() {
+        return RicciNode.type;
+    }
+    ;
+    /**
+     * @link Node.toJSON
+     */
+    toJSON() {
+        let res = {
+            ...super.toJSON(),
+            ricci_n: this.ricci_n
+        };
+        return res;
+    }
+    ;
+    /**
+     * @link Node.fromJSON
+     */
+    fromJSON(json) {
+        let res = new RicciNode(json.ricci_n);
+        for (let i = 0; i < json.children.length; ++i) {
+            res.addChild(Types.fromJSON(json.children[i]));
+        }
+        return res;
+    }
+    ;
+    /**
+     * @link Node.prepareForEval
+     */
+    prepareForEval() {
+        if (!this.valid_aabb) {
+            this.aabb = new Box3(); // Create empty BBox
+            for (let i = 0; i < this.children.length; ++i) {
+                let c = this.children[i];
+                c.prepareForEval();
+                this.aabb.union(c.getAABB()); // new aabb is computed according to remaining children aabb
+            }
+            this.valid_aabb = true;
+            // Prepare tmp arrays
+            if (this.tmp_v_arr.length < this.children.length) {
+                this.tmp_v_arr = new Float32Array(this.children.length * 2);
+                this.tmp_m_arr.length = this.children.length * 2;
+                for (let i = 0; i < this.tmp_m_arr.length; ++i) {
+                    this.tmp_m_arr[i] = new Material({ roughness: 0, metalness: 0 });
+                }
+            }
+        }
+    }
+    ;
+    /**
+     *  @link Element.value for a complete description
+     */
+    value(p, res) {
+        // TODO : check that all bounding box of all children and subchildrens are valid
+        //        This enable not to do it in prim and limit the number of assert call (and string built)
+        let l = this.children.length;
+        let tmp = this.tmp_res;
+        tmp.g = res.g ? this.tmp_g : null;
+        tmp.m = res.m ? this.tmp_m : null;
+        // Init res
+        res.v = 0;
+        if (res.m) {
+            res.m.copy(Material.defaultMaterial);
+        }
+        if (res.g) {
+            res.g.set(0, 0, 0);
+        }
+        else if (res.step !== undefined) {
+            // that, is the max distance
+            // we want a value that loose any 'min'
+            res.step = 1000000000;
+        }
+        if (this.aabb.containsPoint(p) && l !== 0) {
+            // arrays used for material mean
+            let v_arr = this.tmp_v_arr;
+            let m_arr = this.tmp_m_arr;
+            let mv_arr_n = 0;
+            // tmp let to compute the powered sum before the n-root
+            // Kept for gradient computation
+            let res_vv = 0;
+            for (let i = 0; i < l; ++i) {
+                if (this.children[i].aabb.containsPoint(p)) {
+                    this.children[i].value(p, tmp);
+                    if (tmp.v > 0) // actually just !=0 should be enough but for stability reason...
+                     {
+                        let v_pow = Math.pow(tmp.v, this.ricci_n - 1.0);
+                        res_vv += tmp.v * v_pow;
+                        // gradient if needed
+                        if (res.g && tmp.g) {
+                            tmp.g.multiplyScalar(v_pow);
+                            res.g.add(tmp.g);
+                        }
+                        // material if needed
+                        if (res.m && tmp.m) {
+                            v_arr[mv_arr_n] = tmp.v * v_pow;
+                            m_arr[mv_arr_n].copy(tmp.m);
+                            mv_arr_n++;
+                        }
+                        // within primitive potential
+                        if (res.step || res.stepOrtho) {
+                            // we have to compute next step or nextStep z
+                            res.step = Math.min((res.step ? res.step : res.stepOrtho), this.children[i].heuristicStepWithin());
+                        }
+                    }
+                    // outside of the potential for this box, but within the box
+                    else {
+                        if (res.step !== undefined) {
+                            res.step = Math.min(res.step, this.children[i].distanceTo(p));
+                        }
+                    }
+                }
+                else if (res.step || res.stepOrtho) {
+                    res.step = Math.min((res.step ? res.step : res.stepOrtho), this.children[i].distanceTo(p));
+                }
+            }
+            // compute final result using ricci power function
+            res.v = Math.pow(res_vv, 1 / this.ricci_n);
+            if (res.v !== 0) {
+                if (res.g) {
+                    res.g.multiplyScalar(res.v / res_vv);
+                }
+                if (res.m) {
+                    res.m.weightedMean(m_arr, v_arr, mv_arr_n);
+                }
+            }
+            // else the default values should be OK.
+        }
+        else if (res.step !== undefined) {
+            if (this.children.length !== 0) {
+                let add = this.children[0].heuristicStepWithin();
+                for (let i = 1; i < this.children.length; ++i) {
+                    add = Math.min(add, this.children[i].heuristicStepWithin());
+                }
+                // return distance to aabb such that next time we'll hit from within the aabbb
+                res.step = this.aabb.distanceToPoint(p) + add;
+            }
+        }
+        if (res.stepOrtho !== undefined) {
+            res.stepOrtho = res.step;
+        }
+    }
+    ;
+    setRicciN(n) {
+        if (this.ricci_n != n) {
+            this.ricci_n = n;
+            this.invalidAABB();
+        }
+    }
+    ;
+    getRicciN() {
+        return this.ricci_n;
+    }
+    ;
+}
+Types.register(RicciNode.type, RicciNode);
+
+/**
+ * @author Maxime Quiblier
+ */
+const Convergence = {
+    // Limitations: 3D only, but can easily be rewritten for nD
+    // The algorithm stops when :
+    // - 2 consecutive steps are smaller than epsilon
+    // - OR n_max_step is reached
+    // Optimization roads :
+    //      - 2 small steps may be too much, only 1 could be enough in most cases isn't it?
+    // @todo write documentation to talk about failure cases.
+    //
+    // Variable used in function. This avoid reallocation.
+    last_mov_pt: new Vector3(),
+    grad: new Vector3(),
+    eval_res_g: new Vector3(0, 0, 0),
+    eval_res: { v: 0, m: null, g: null },
+    vec: new Vector3(),
+    safeNewton3D(pot, // Scalar Field to eval
+    starting_point, // 3D point where we start, must comply to Vector3 API
+    value, // iso value we are looking for
+    epsilon, // Geometrical limit to stop
+    n_max_step, // limit of number of step
+    r_max, // max distance where we look for the iso
+    //bounding_v,       // Bounding volume inside which we look for the iso, getting out will make the process stop.
+    res // the resulting point
+    ) {
+        res.copy(starting_point);
+        let i = 1;
+        let consecutive_small_steps = 0;
+        let broken = false;
+        while (consecutive_small_steps != 2 && i <= n_max_step && !broken) {
+            this.last_mov_pt.copy(res);
+            this.eval_res.g = this.eval_res_g; // active gradient computation
+            pot.value(res, this.eval_res);
+            this.grad.copy(this.eval_res.g);
+            if (this.grad.x !== 0.0 || this.grad.y !== 0.0 || this.grad.z !== 0.0) {
+                const g_l = this.grad.length();
+                let step = (value - this.eval_res.v) / g_l;
+                if (step < epsilon && step > -epsilon) {
+                    if (step > 0.0) {
+                        step = epsilon / g_l;
+                    }
+                    else {
+                        step = -epsilon / g_l;
+                    }
+                    consecutive_small_steps++;
+                }
+                else {
+                    consecutive_small_steps = 0;
+                }
+                this.grad.normalize().multiplyScalar(step);
+                res.add(this.grad);
+                // If the newton step took us out of the bounding volume, we have to stop
+                //if(!bounding_v.containsPoint(res))
+                if (this.vec.subVectors(res, starting_point).lengthSq() > r_max * r_max) {
+                    res.copy(starting_point);
+                    return;
+                }
+            }
+            else {
+                broken = true;
+            }
+            ++i;
+        }
+        if (broken) {
+            // return strating_point
+            res.copy(starting_point);
+            return;
+        }
+    },
+    /** This algorithm uses Newton convergence to find a point epsilon close to
+    *        a point "p" such that the given potential "pot" evaluated at "p" is "value".
+    *        The search is constrained on line defined by (origin, search_dir), and between bounds
+    *        defined by min_absc and max_absc which are the abscissae on the line with respect
+    *        to origin and search_dir. search_dir should be normalized.
+    *        The starting point is given with an abscissa : origin + starting_point_absc*search_dir
+    *
+    *   @param origin Point choosen as origin in the search line frame.
+    *   @param search_dir_unit unit vector that, together with origin, defines the searching line. Should be normalized
+    *   @param min_absc_inside Minimum abscissa on the line : the algorithm will not search for a point below this abscissa.
+    *   @param max_absc_outside Maximum abscissa on the line : the algorithm will not search for a point above this abscissa.
+    *   @param starting_point_absc Abscissa of the starting point, with respect to the search dir.
+    *   @param value The potential value we are looking for on the line with respect to pot.Eval(..)
+    *   @param epsilon We want the result to be at least epsilon close to the surface with respect to the
+    *          distance Vector.norm(), we suppose this norm to be the one associated with the dot product Vector.operator |
+    *   @param n_max_step Maximum of newton step before giving up.
+    *
+    *   @todo write documentation to talk about failure cases.
+    *   @todo Should not normalise search_dir. Change that here and in all part of code where this is used.
+    */
+    safeNewton1D(pot, origin, search_dir_unit, min_absc_inside, max_absc_outside, starting_point_absc, value, epsilon, n_max_step, res // resulting point res.p and gradient res.g (if res.g defined) resulting absc in res.p_absc
+    ) {
+        this.eval_res.g = this.eval_res_g; // active gradient computation
+        if (!(search_dir_unit.x !== 0.0 || search_dir_unit.y !== 0.0 || search_dir_unit.z !== 0.0)) {
+            throw "Error : search direction is null";
+        }
+        if (epsilon <= 0) {
+            throw "Error: epsilon <= 0, convergence will nuke your face or loop";
+        }
+        if (starting_point_absc < min_absc_inside || starting_point_absc > max_absc_outside) {
+            throw "Error : starting absc is not in boundaries";
+        }
+        let curr_point_absc = starting_point_absc;
+        const eval_pt = new Vector3();
+        // Newton step until we overpass the surface
+        // the minimum step is set to epsilon, that ensure we will cross the surface.
+        let grad = 0;
+        let step = 0;
+        let i = 0;
+        while (max_absc_outside - min_absc_inside > epsilon && i < n_max_step) {
+            // curr_point_absc is guaranteed inside [min_absc_inside,max_absc_outside]
+            pot.value(eval_pt.copy(search_dir_unit).multiplyScalar(curr_point_absc).add(origin), this.eval_res);
+            // update bounding absc
+            if (this.eval_res.v > value) {
+                min_absc_inside = curr_point_absc;
+            }
+            else {
+                max_absc_outside = curr_point_absc;
+            }
+            // Analytical gradient evaluation + dot product should be less than 2 evaluations in cost.
+            grad = this.eval_res.g.dot(search_dir_unit);
+            if (grad !== 0.0) {
+                step = (value - this.eval_res.v) / grad;
+                curr_point_absc += step;
+                // Dichotomy step
+                if (curr_point_absc >= max_absc_outside || curr_point_absc <= min_absc_inside) {
+                    curr_point_absc = (max_absc_outside + min_absc_inside) * 0.5;
+                }
+            }
+            else {
+                // Dichotomy step
+                curr_point_absc = (max_absc_outside + min_absc_inside) * 0.5;
+            }
+            ++i;
+        }
+        res.p_absc = (max_absc_outside + min_absc_inside) * 0.5; // approximate
+        res.p.copy(search_dir_unit).multiplyScalar(curr_point_absc).add(origin);
+        if (res.g !== undefined) {
+            if (i === 0) {
+                pot.value(res.p, this.eval_res);
+            }
+            res.g.copy(this.eval_res.g);
+        }
+    },
+    dichotomy1D(pot, origin, search_dir_unit, startStepLength, value, epsilon, n_max_step, // TODO : Useless, since dichotomia is absolutely deterministic, n step is startStepLength/(2^n) accuracy...
+    //        OR epsilon is the uselss one...
+    res // resulting point res.p and gradient res.g (if res.g defined) resulting absc in res.p_absc
+    ) {
+        this.eval_res.g = null; // deactive gradient computation
+        let previousPos = new Vector3().copy(origin);
+        let currentStep = new Vector3();
+        // intersection
+        // dichotomia: first step is going back half of the previous distance
+        startStepLength /= 2;
+        let dist = -startStepLength;
+        let previousDist = dist;
+        origin.sub(currentStep.copy(search_dir_unit)
+            .multiplyScalar(startStepLength));
+        let nstep = 0;
+        while ((startStepLength > epsilon) && (nstep < n_max_step)) {
+            nstep++;
+            previousPos.copy(origin);
+            previousDist = dist;
+            startStepLength /= 2;
+            // not asking for the next step, which is always half of previous
+            pot.value(origin, this.eval_res);
+            if (this.eval_res.v < value) {
+                // before the surface: go forward
+                origin.add(currentStep.copy(search_dir_unit)
+                    .multiplyScalar(startStepLength));
+                dist += startStepLength;
+            }
+            else {
+                // after the surface: go backward
+                origin.sub(currentStep.copy(search_dir_unit)
+                    .multiplyScalar(startStepLength));
+                dist -= startStepLength;
+            }
+        }
+        // linear interpolation with previous pos
+        res.p.copy(origin.add(previousPos).divideScalar(2));
+        res.p_absc = (previousDist + dist) / 2;
+        // linear interpolation with previous pos
+        res.p.copy(origin);
+        res.p_absc = dist;
+        // test wether the caller wanted to compute the gradient
+        // (we assume that if res.g is defined, it's a request)
+        if (res.g) {
+            this.eval_res.g = this.eval_res_g; // active gradient computation
+            pot.value(res.p, this.eval_res);
+            res.g.copy(this.eval_res.g);
+        }
+    }
+};
+
+/**
+ *  The root of any implicit blobtree. Does behave computationaly like a RicciNode with n = 64.
+ *  The RootNode is the only node to be its own parent.
+ *  @constructor
+ *  @extends RicciNode
+ */
+class RootNode extends RicciNode {
+    iso_value;
+    trimmed;
+    trim_parents;
+    static type = "RootNode";
+    fromJSON(json) {
+        const res = new RootNode();
+        for (let i = 0; i < json.children.length; ++i) {
+            res.addChild(Types.fromJSON(json.children[i]));
+        }
+        return res;
+    }
+    ;
+    constructor() {
+        // Default RootNode is a riccinode with ricci_n = 64 (almost a max)
+        super(64);
+        this.valid_aabb = true;
+        // Default iso value, value where the surface is present
+        this.iso_value = 1.0;
+        // Set some nodes as "trimmed", so they are not evaluated.
+        this.trimmed = [];
+        this.trim_parents = [];
+    }
+    /**
+     * @link Node.getType
+     */
+    getType() {
+        return RootNode.type;
+    }
+    ;
+    /**
+     * @link RicciNode.toJSON
+     */
+    toJSON() {
+        const res = {
+            ...super.toJSON(),
+            iso: this.iso_value
+        };
+        return res;
+    }
+    ;
+    getIsoValue() {
+        return this.iso_value;
+    }
+    ;
+    setIsoValue(v) {
+        this.iso_value = v;
+    }
+    ;
+    /**
+     *  @return The neutral value of this tree, ie the value of the field in empty region of space.
+     *                   This is an API for external use and future development. For now it is hard set to 0.
+     */
+    getNeutralValue() {
+        return 0;
+    }
+    ;
+    /**
+     * @link Node.invalidAABB for a complete description
+     */
+    invalidAABB() {
+        this.valid_aabb = false;
+    }
+    ;
+    /**
+     *  Basically perform a trim but keep track of trimmed elements.
+     *  This is usefull if you want to trim, then untrim, then trim, etc...
+     *  For example, this is very useful for evaluation optimization.
+     */
+    internalTrim(aabb) {
+        if (!(this.trimmed.length === 0 && this.trim_parents.length === 0)) {
+            throw "Error : you should not call internal trim if you have not untrimmed before. Call untrim or use externalTrim";
+        }
+        this.trim(aabb, this.trimmed, this.trim_parents);
+    }
+    ;
+    /**
+     *  Wrapper for trim, will help programmers to make the difference between
+     *  internal and external trim.
+     *  @param trimmed Array of trimmed Elements
+     *  @param parents Array of fathers from which each trimmed element has been removed.
+     */
+    externalTrim(aabb, trimmed, parents) {
+        this.trim(aabb, trimmed, parents);
+    }
+    ;
+    /**
+     *  Reset the full blobtree
+     */
+    internalUntrim() {
+        this.untrim(this.trimmed, this.trim_parents);
+        this.trimmed.length = 0;
+        this.trim_parents.length = 0;
+    }
+    ;
+    /**
+     *  Reset the full blobtree given previous trimming data.
+     *  Note : don't forget to recall prepareForEval if you want to perform evaluation.
+     *  @param trimmed Array of trimmed Elements
+     *  @param parents Array of fathers from which each trimmed element has been removed.
+     */
+    untrim(trimmed, parents) {
+        if (!(trimmed.length === parents.length)) {
+            throw "Error : trimmed and parents arrays should have the same length";
+        }
+        for (let i = 0; i < trimmed.length; ++i) {
+            parents[i].addChild(trimmed[i]);
+        }
+    }
+    ;
+    /**
+     *  Tell if the blobtree is empty
+     *  @return true if blobtree is empty
+     */
+    isEmpty() {
+        return this.children.length == 0;
+    }
+    ;
+    intersectRayBlob = function () {
+        const curPos = new Vector3();
+        const marchingVector = new Vector3();
+        const currentStep = new Vector3();
+        const tmp_res = {
+            v: 0,
+            g: new Vector3(),
+            m: null,
+            step: 0
+        };
+        const conv_res = {
+            p: new Vector3(),
+            g: new Vector3(),
+            p_absc: 0.0
+        };
+        let previousStepLength = 0;
+        let previousValue = 0; // used for linear interp for a better guess
+        let dist = 0;
+        /**
+         *  @param ray Ray to cast for which intersection is seeked.
+         *
+         *  @param maxDistance If the intersection is not located at a distance
+         *                              lower than maxDistance, it will not be considered.
+         *                              The smaller this is, the faster the casting will be.
+         *  @param _precision Distance to the intersection under which we will
+         *                            consider to be on the intersection point.
+         *
+         *  @return True if an intersection has been found.
+         */
+        return function (ray, res, maxDistance, _precision) {
+            curPos.copy(ray.origin);
+            marchingVector.copy(ray.direction);
+            marchingVector.normalize();
+            dist = 0;
+            // compute first value to have next step length
+            tmp_res.g = null;
+            this.value(curPos, tmp_res);
+            // march
+            if (tmp_res.step === undefined)
+                throw "[RootNode] intersectRayBlob: step is not defined in the value result. This cannot happen.";
+            while ((tmp_res.v < this.iso_value) && (dist < maxDistance)) {
+                curPos.add(currentStep.copy(marchingVector).multiplyScalar(tmp_res.step));
+                dist += tmp_res.step;
+                previousStepLength = tmp_res.step;
+                previousValue = tmp_res.v;
+                this.value(curPos, tmp_res);
+            }
+            if (tmp_res.v >= this.iso_value) {
+                Convergence.safeNewton1D(this, curPos, marchingVector.multiplyScalar(-1.0), 0.0, previousStepLength, previousStepLength * (this.iso_value - tmp_res.v) / (previousValue - tmp_res.v), // linear approx of the first position
+                this.iso_value, previousStepLength / 512.0, //deltaPix*(dist-previousStepLength), // should be the size of a pixel at the previous curPos BROKEN?
+                10, conv_res);
+                res.distance = dist - conv_res.p_absc;
+                res.point = conv_res.p.clone();
+                // test wether the caller wanted to compute the gradient
+                // (we assume that if res.g is defined, it's a request)
+                if (res.g) {
+                    res.g.copy(conv_res.g);
+                }
+                return true;
+            }
+            else {
+                // no intersection
+                return false;
+            }
+        };
+    }();
+    /**
+     *  Kaiser function for some intersection and raycasting...
+     *  Undocumented.
+     *  TODO : check, it is probably an optimized intersection for blob intersection
+     *         in X, Y or Z directions.
+     */
+    intersectOrthoRayBlob = function () {
+        // curpos and marching vector are only instanciated once,
+        // we are using closure method
+        const curPos = new Vector3();
+        const resumePos = new Vector3();
+        const tmp_res = {
+            v: 0,
+            m: null,
+            g: null,
+            step: 0
+        };
+        const g = new Vector3();
+        const dicho_res = {
+            v: 0,
+            m: null,
+            g: null
+        };
+        let previousStepLength = 0;
+        let previousDist = 0;
+        // to ensure that we're within the aabb
+        const epsilon = 0.0000001;
+        let within = -1;
+        return function (wOffset, hOffset, res, dim) {
+            if (dim.axis.x) {
+                curPos.set(this.aabb.min.x + wOffset, this.aabb.min.y + hOffset, this.aabb.min.z + epsilon);
+            }
+            else if (dim.axis.y) {
+                curPos.set(this.aabb.min.x + wOffset, this.aabb.min.y + epsilon, this.aabb.min.z + hOffset);
+            }
+            else if (dim.axis.z) {
+                curPos.set(this.aabb.min.x + epsilon, this.aabb.min.y + wOffset, this.aabb.min.z + hOffset);
+            }
+            // max depth step we can do (has to be set)
+            tmp_res.step = dim.get(this.aabb.max) - dim.get(this.aabb.min);
+            this.value(curPos, tmp_res);
+            previousStepLength = epsilon;
+            within = -1;
+            // we're looking for all intersection, we won't stop before that
+            while (dim.get(curPos) < dim.get(this.aabb.max)) {
+                // march
+                // the '=0' case is important, otherwise there's an infinite loop
+                while (((tmp_res.v - 1) * within >= 0) && (dim.get(curPos) < dim.get(this.aabb.max))) {
+                    // orthographic march
+                    // our tmp_res.step is valid as we know it's within the aabb
+                    dim.add(curPos, tmp_res.step);
+                    previousStepLength = tmp_res.step;
+                    // max depth step we can do (has to be set)
+                    tmp_res.step = dim.get(this.aabb.max) - dim.get(curPos);
+                    this.value(curPos, tmp_res);
+                }
+                // either a sign difference or we're out
+                if (dim.get(curPos) < dim.get(this.aabb.max)) {
+                    // we ain't out, so it was a sign difference
+                    within *= -1;
+                    // keep track of our current position in order to resume marching later
+                    resumePos.copy(curPos);
+                    previousDist = dim.get(curPos);
+                    // compute intersection
+                    // dichotomia: first step is going back half of the previous distance
+                    previousStepLength /= 2;
+                    dim.add(curPos, -previousStepLength);
+                    // we use dicho_res instead of tmp_res because we need
+                    // to keep track of previous results in order to resume later
+                    // dynamic number of dichotomia step
+                    dicho_res.g = null;
+                    while (previousStepLength > 0.1) {
+                        previousDist = dim.get(curPos);
+                        previousStepLength /= 2;
+                        // not asking for the next step, which is always half of previous
+                        this.value(curPos, dicho_res);
+                        if ((dicho_res.v - 1) * within < 0)
+                            // forward
+                            dim.add(curPos, previousStepLength);
+                        else
+                            // backward
+                            dim.add(curPos, -previousStepLength);
+                    }
+                    // linear interpolation with previous dist
+                    dim.add(curPos, previousDist);
+                    dim.divide(curPos, 2);
+                    // get the gradient
+                    dicho_res.g = g;
+                    this.value(curPos, dicho_res);
+                    res.push({
+                        point: curPos.clone(),
+                        g: dicho_res.g.clone()
+                    });
+                    // set constiable in order to resume to where we were
+                    curPos.copy(resumePos);
+                }
+            }
+        };
+    }();
+}
+Types.register(RootNode.type, RootNode);
+
+/**
+ *  This class implement a ScaleNode node.
+ *  It will return the minimum value of the field of each primitive.
+ *  Return 0 in regioin were no primitive is present.
+ *  @constructor
+ *  @extends Node
+ */
+class ScaleNode extends Node {
+    _scale;
+    tmp_res;
+    tmp_g;
+    tmp_m;
+    static type = "ScaleNode";
+    /**
+    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+    */
+    constructor(children) {
+        super();
+        if (children) {
+            const self = this;
+            children.forEach(function (c) {
+                self.addChild(c);
+            });
+        }
+        // temp consts to speed up evaluation by avoiding allocations
+        /** @type {{v:number, g:Vector3, m:Material}} */
+        this.tmp_res = { v: 0, g: null, m: null };
+        /** @type {Vector3} */
+        this.tmp_g = new Vector3();
+        /** @type {Material} */
+        this.tmp_m = new Material();
+        this._scale = new Vector3(1, 1, 1);
+    }
+    /**
+    * @link Node.toJSON
+    */
+    toJSON() {
+        let res = {
+            ...super.toJSON(),
+            scale_x: this._scale.x,
+            scale_y: this._scale.y,
+            scale_z: this._scale.z,
+        };
+        return res;
+    }
+    ;
+    /**
+     * @link Node.fromJSON
+     */
+    fromJSON(json) {
+        const res = new ScaleNode();
+        res.setScale(new Vector3(json.scale_x, json.scale_y, json.scale_z));
+        for (let i = 0; i < json.children.length; ++i) {
+            res.addChild(Types.fromJSON(json.children[i]));
+        }
+        return res;
+    }
+    /**
+     * @link ScaleNode.setScale
+     */
+    setScale(scale) {
+        this._scale.copy(scale);
+        this.invalidAABB();
+    }
+    /**
+     * @link Node.getType
+     */
+    getType() {
+        return ScaleNode.type;
+    }
+    /**
+     *  @link Element.prepareForEval for a complete description
+     */
+    prepareForEval() {
+        if (!this.valid_aabb) {
+            this.aabb = new Box3(); // Create empty BBox
+            for (let i = 0; i < this.children.length; ++i) {
+                const c = this.children[i];
+                c.prepareForEval();
+                this.aabb.union(c.getAABB()); // new aabb is computed according to remaining children aabb
+            }
+            let bb_size = new Vector3();
+            this.aabb.clone().getSize(bb_size);
+            let x_scale = bb_size.x * (this._scale.x - 1.0);
+            let y_scale = bb_size.y * (this._scale.y - 1.0);
+            let z_scale = bb_size.z * (this._scale.z - 1.0);
+            this.aabb.expandByVector(new Vector3(x_scale, y_scale, z_scale));
+            this.valid_aabb = true;
+        }
+    }
+    ;
+    /**
+    * @link Element.computeAABB for a complete description
+    */
+    computeAABB() {
+        this.aabb.makeEmpty();
+        for (let i = 0; i < this.children.length; i++) {
+            this.children[i].computeAABB();
+            this.aabb.union(this.children[i].getAABB());
+        }
+        let bb_size = new Vector3();
+        this.aabb.clone().getSize(bb_size);
+        let x_scale = bb_size.x * (this._scale.x - 1.0);
+        let y_scale = bb_size.y * (this._scale.y - 1.0);
+        let z_scale = bb_size.z * (this._scale.z - 1.0);
+        this.aabb.expandByVector(new Vector3(x_scale, y_scale, z_scale));
+    }
+    /**
+     *  @link Element.value for a complete description
+     */
+    value(p, res) {
+        // TODO : check that all bounding box of all children and subchildrens are valid
+        //        This enable not to do it in prim and limit the number of assert call (and string built)
+        const l = this.children.length;
+        const tmp = this.tmp_res;
+        tmp.g = res.g ? this.tmp_g : null;
+        tmp.m = res.m ? this.tmp_m : null;
+        // Init res
+        res.v = 0;
+        if (res.m) {
+            res.m.copy(Material.defaultMaterial);
+        }
+        if (res.g) {
+            res.g.set(0, 0, 0);
+        }
+        else if (res.step !== undefined) {
+            // that, is the max distance
+            // we want a value that loose any 'min'
+            res.step = 1000000000;
+        }
+        if (this.aabb.containsPoint(p) && l !== 0) {
+            let center = new Vector3();
+            this.aabb.getCenter(center);
+            let st_p = new Vector3((p.x - center.x) / this._scale.x + center.x, (p.y - center.y) / this._scale.y + center.y, (p.z - center.z) / this._scale.z + center.z);
+            res.v = Number.MAX_VALUE;
+            for (let i = 0; i < l; ++i) {
+                this.children[i].value(st_p, tmp);
+                res.v = tmp.v;
+                if (res.g && tmp.g) {
+                    res.g.copy(tmp.g);
+                }
+                if (res.m && tmp.m) {
+                    res.m.copy(tmp.m);
+                }
+                // within primitive potential
+                if (res.step || res.stepOrtho) {
+                    throw "Not implemented";
+                }
+            }
+        }
+        else if (res.step || res.stepOrtho) {
+            throw "Not implemented";
+        }
+    }
+    /**
+     *  @link Element.trim for a complete description.
+     */
+    trim(aabb, trimmed, parents) {
+        // Trim remaining nodes
+        for (let i = 0; i < this.children.length; i++) {
+            this.children[i].trim(aabb, trimmed, parents);
+        }
+    }
+    ;
+}
+Types.register(ScaleNode.type, ScaleNode);
+
+/**
+ *  This class implement a TwistNode node.
+ *  It will return the minimum value of the field of each primitive.
+ *  Return 0 in regioin were no primitive is present.
+ *  @constructor
+ *  @extends Node
+ */
+class TwistNode extends Node {
+    _twist_amount;
+    _twist_axis;
+    _twist_axis_mat;
+    _twist_axis_mat_inv;
+    tmp_res;
+    tmp_g;
+    tmp_m;
+    static type = "TwistNode";
+    /**
+    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+    */
+    constructor(children) {
+        super();
+        if (children) {
+            const self = this;
+            children.forEach(function (c) {
+                self.addChild(c);
+            });
+        }
+        // temp consts to speed up evaluation by avoiding allocations
+        /** @type {{v:number, g:Vector3, m:Material}} */
+        this.tmp_res = { v: 0, g: null, m: null };
+        /** @type {Vector3} */
+        this.tmp_g = new Vector3();
+        /** @type {Material} */
+        this.tmp_m = new Material();
+        this._twist_amount = 1.0;
+        this._twist_axis = new Vector3(0.0, 1.0, 0.0);
+        this._twist_axis_mat = new Matrix4();
+        this._twist_axis_mat_inv = new Matrix4();
+    }
+    /**
+    * @link Node.toJSON
+    * @returns {TwistNodeJSON}
+    */
+    toJSON() {
+        let res = {
+            ...super.toJSON(),
+            twist_amount: this._twist_amount,
+            axis_x: this._twist_axis.x,
+            axis_y: this._twist_axis.y,
+            axis_z: this._twist_axis.z,
+        };
+        return res;
+    }
+    ;
+    /**
+     *@link Node.fromJSON
+     *
+     * @param {TwistNodeJSON} json
+     * @returns {TwistNode}
+     */
+    fromJSON(json) {
+        const res = new TwistNode();
+        res.setTwistAmount(json.twist_amount);
+        res.setTwistAxis(new Vector3(json.axis_x, json.axis_y, json.axis_z));
+        for (let i = 0; i < json.children.length; ++i) {
+            res.addChild(Types.fromJSON(json.children[i]));
+        }
+        return res;
+    }
+    setTwistAmount(amount) {
+        this._twist_amount = amount;
+    }
+    setTwistAxis(axis) {
+        this._twist_axis = axis;
+        this._computeTransforms();
+    }
+    _computeTransforms() {
+        let r_angle = Math.acos(this._twist_axis.dot(new Vector3(0, 1, 0)));
+        if (Math.abs(r_angle) > 0.0001) {
+            let t_axis = this._twist_axis.clone();
+            let rot_axis = t_axis.cross(new Vector3(0, 1, 0));
+            rot_axis.normalize();
+            this._twist_axis_mat.makeRotationAxis(rot_axis, r_angle);
+        }
+        else {
+            this._twist_axis_mat.identity();
+        }
+        this._twist_axis_mat_inv = this._twist_axis_mat.clone();
+        this._twist_axis_mat_inv.invert();
+    }
+    getType() {
+        return TwistNode.type;
+    }
+    /**
+     *  @link Element.prepareForEval for a complete description
+     */
+    prepareForEval() {
+        if (!this.valid_aabb) {
+            this.aabb = new Box3(); // Create empty BBox
+            for (let i = 0; i < this.children.length; ++i) {
+                const c = this.children[i];
+                c.prepareForEval();
+                this.aabb.union(c.getAABB()); // new aabb is computed according to remaining children aabb
+            }
+            this.valid_aabb = true;
+        }
+    }
+    ;
+    /**
+     *  @link Element.value for a complete description
+     */
+    value(p, res) {
+        // TODO : check that all bounding box of all children and subchildrens are valid
+        //        This enable not to do it in prim and limit the number of assert call (and string built)
+        const l = this.children.length;
+        const tmp = this.tmp_res;
+        tmp.g = res.g ? this.tmp_g : null;
+        tmp.m = res.m ? this.tmp_m : null;
+        // Init res
+        res.v = 0;
+        if (res.m) {
+            res.m.copy(Material.defaultMaterial);
+        }
+        if (res.g) {
+            res.g.set(0, 0, 0);
+        }
+        else if (res.step !== undefined) {
+            // that, is the max distance
+            // we want a value that loose any 'min'
+            res.step = 1000000000;
+        }
+        if (this.aabb.containsPoint(p) && l !== 0) {
+            let center = new Vector3();
+            this.aabb.getCenter(center);
+            //Center the input point
+            let t_p = new Vector3(p.x - center.x, p.y - center.y, p.z - center.z);
+            //Rotate towards twist axis space
+            t_p.applyMatrix4(this._twist_axis_mat);
+            //Twist          
+            let c_twist = Math.cos(this._twist_amount * t_p.y);
+            let s_twist = Math.sin(this._twist_amount * t_p.y);
+            //Revert to world space
+            let q = new Vector3(c_twist * t_p.x - s_twist * t_p.z, t_p.y, s_twist * t_p.x + c_twist * t_p.z);
+            q.applyMatrix4(this._twist_axis_mat_inv);
+            let t_q = new Vector3(q.x + center.x, q.y + center.y, q.z + center.z);
+            res.v = Number.MAX_VALUE;
+            for (let i = 0; i < l; ++i) {
+                this.children[i].value(t_q, tmp);
+                res.v = tmp.v;
+                if (res.g && tmp.g) {
+                    res.g.copy(tmp.g);
+                }
+                if (res.m && tmp.m) {
+                    res.m.copy(tmp.m);
+                }
+                // within primitive potential
+                if (res.step || res.stepOrtho) {
+                    throw "Not implemented";
+                }
+            }
+        }
+        else if (res.step || res.stepOrtho) {
+            throw "Not implemented";
+        }
+    }
+    /**
+     *  @link Element.trim for a complete description.
+     */
+    trim(aabb, trimmed, parents) {
+        // Trim remaining nodes
+        for (let i = 0; i < this.children.length; i++) {
+            this.children[i].trim(aabb, trimmed, parents);
+        }
+    }
+    ;
+}
+Types.register(TwistNode.type, TwistNode);
+
+/**
+ * Accuracies Contains the accuracies needed in Areas. Can be changed when importing blobtree.js.
+ * For classic segments and sphere, we setteled for a raw accuracy being proportional to
+ * the radii. 1/3 of the radius is considered nice, 1 radius is considered raw.
+ * For new primitives, feel free to create your own accuracies factors depending on the features.
+ */
+const Accuracies = {
+    /**
+     * Factor for the nice accuracy needed to represent the features nicely
+     * @type {number}
+     */
+    nice: 0.3,
+    /**
+     * Factor for the raw accuracy needed to represent the features roughly
+     * @type {number}
+     */
+    raw: 1.0,
+    /**
+     * Current accuracy factor, should be between Accuracies.nice and Accuracies.raw.
+     * It will be the one used by rendering algorithms to decide to stop even if nice accuracy has not been reached.
+     * @type {number}
+     *
+     */
+    curr: 0.3
+};
 
 /** @typedef {import('./Area.js').AreaSphereParam} AreaSphereParam */
 /**
@@ -3298,9 +2983,6 @@ const TriangleUtils = {};
 */
 /**
  * intermediary functions used in computeVectorsDirs
- * @param {number} ind
- * @param {number} lengthArray
- * @return {number}
  */
 let cleanIndex = function (ind, lengthArray) {
     let res = ind;
@@ -3320,49 +3002,8 @@ let cleanIndex = function (ind, lengthArray) {
     return res;
 };
 /**
- * A number, or a string containing a number.
- * @typedef {Object} VertexLike
- * @property {() => Vector3} getPos
- * @property {() => number} getThickness
- */
-/**
- * A number, or a string containing a number.
- * @typedef {Object} TriangleLike
- * @property {Array<VertexLike>} v
- * @property {Vector3} p0p1
- * @property {Vector3} p1p2
- * @property {Vector3} p2p0
- * @property {Vector3} unit_p0p1
- * @property {Vector3} unit_p1p2
- * @property {Vector3} unit_p2p0
- * @property {Vector3} unit_normal
- * @property {number} length_p0p1
- * @property {number} length_p1p2
- * @property {number} length_p2p0
- * @property {Vector3} unit_p0p1
- * @property {number} diffThick_p0p1
- * @property {number} diffThick_p1p2
- * @property {number} diffThick_p2p0
- * @property {Vector3} ortho_dir
- * @property {Vector3} point_min
- * @property {number} weight_min
- * @property {Vector3} main_dir
- * @property {Vector3} point_iso_zero
- * @property {Vector3} proj_dir
- * @property {boolean} equal_weights
- * @property {Vector3} half_dir_1
- * @property {Vector3} point_half
- * @property {Vector3} half_dir_2
- * @property {number} coord_max
- * @property {number} coord_middle
- * @property {number} unit_delta_weight
- * @property {Vector3} longest_dir_special
- * @property {number} max_seg_length = tmp.length();
- * @property {Vector3} unsigned_ortho_dir = triangle.ortho_dir.clone();
- */
-/**
- *  Compute some internal vars for triangle
- *  @param {TriangleLike} triangle The triangle to compute vars for (blobtree or skel)
+ *  Compute some internal consts for triangle
+ *  @param triangle The triangle to compute consts for (blobtree or skel)
  */
 TriangleUtils.computeVectorsDirs = function (triangle) {
     let v0_p = triangle.v[0].getPos();
@@ -3387,7 +3028,7 @@ TriangleUtils.computeVectorsDirs = function (triangle) {
     triangle.unit_p2p0.divideScalar(triangle.length_p2p0);
     triangle.diffThick_p2p0 = triangle.v[2].getThickness() - triangle.v[0].getThickness();
     // Precomputation Used in mech computation
-    // So we first find the direction of maximum weight variation.
+    // So we first find the direction of maximum weight constiation.
     /** @type Array<{vert: Vector3, thick: number, idx: number}> */
     let sortingArr = [];
     sortingArr.push({ vert: triangle.v[0].getPos(), thick: triangle.v[0].getThickness(), idx: 0 });
@@ -3414,7 +3055,7 @@ TriangleUtils.computeVectorsDirs = function (triangle) {
         if (delta_1 < delta_2) { //delta_1 is closer to 0
             triangle.ortho_dir = dir_1.clone();
             triangle.ortho_dir.normalize();
-            // direction of fastest variation of weight
+            // direction of fastest constiation of weight
             triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
             triangle.main_dir.normalize();
             if ((triangle.main_dir.dot(dir_2)) < 0.0) {
@@ -3426,7 +3067,7 @@ TriangleUtils.computeVectorsDirs = function (triangle) {
         else { //delta_2 is closer to 0
             triangle.ortho_dir = dir_2.clone();
             triangle.ortho_dir.normalize();
-            // direction of fastest variation of weight
+            // direction of fastest constiation of weight
             triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
             triangle.main_dir.normalize();
             if ((triangle.main_dir.dot(dir_1)) < 0.0) {
@@ -3450,7 +3091,7 @@ TriangleUtils.computeVectorsDirs = function (triangle) {
         // along ortho_dir the weight are const
         triangle.ortho_dir.subVectors(point_iso_zero2, point_iso_zero1);
         triangle.ortho_dir.normalize();
-        // direction of fastest variation of weight
+        // direction of fastest constiation of weight
         triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
         triangle.main_dir.normalize();
         if ((triangle.main_dir.dot(dir_1)) < 0.0 || (triangle.main_dir.dot(dir_2)) < 0.0) {
@@ -3492,10 +3133,10 @@ TriangleUtils.computeVectorsDirs = function (triangle) {
     }
 };
 /**
- *  @param {!Object} triangle
+ *  @param triangle
  *     u parametrisation of the point to compute along the axis V0->V1
  *     v parametrisation of the point to compute along the axis V0->V2
- *  @return {{pos:!Vector3, thick:number}} An object with the computed pos and thickness
+ *  @return An object with the computed pos and thickness
  */
 TriangleUtils.getParametrisedVertexAttr = function (triangle, u, v) {
     let meanThick = TriangleUtils.getMeanThick(triangle, u, v);
@@ -3508,10 +3149,9 @@ TriangleUtils.getParametrisedVertexAttr = function (triangle, u, v) {
     return { "pos": pos, "thick": meanThick };
 };
 /**
- *  @param {!Object} triangle The concerned triangle
- *  @param {number} u u coordinate
- *  @param {number} v v coordinate
- *  @return {number}
+ *  @param triangle The concerned triangle
+ *  @param u u coordinate
+ *  @param v v coordinate
  */
 TriangleUtils.getMeanThick = function (triangle, u, v) {
     return triangle.v[0].getThickness() * (1 - u - v) + triangle.v[1].getThickness() * u + triangle.v[2].getThickness() * v;
@@ -3553,10 +3193,10 @@ TriangleUtils.getMeanMat = function (triangle, u, v) {
 /**
  *  Get the triangle barycenter coordinates. The projection is non orthogonal.
  *  WTF is that? Barycentirc coordinates are 3 components, not 2 !
- *  @param {!Vector3} p0p1 Vector from p0 to p1
- *  @param {!Vector3} p2p0 Vector from p2 to p0
- *  @param {!Vector3} p0 Point 0 in triangle
- *  @param {!Vector3} p Point in space
+ *  @param p0p1 Vector from p0 to p1
+ *  @param p2p0 Vector from p2 to p0
+ *  @param p0 Point 0 in triangle
+ *  @param p Point in space
  *
  *  @return {{u:number,v:number}} Coordinate of barycenter
  */

@@ -1,14 +1,6 @@
 import { Element, type ElementJSON } from './Element';
 import { Material, type MaterialJSON } from './Material';
 import type { Area } from './areas';
-/**
- * @typedef {import('./Material.js')} Material
- * @typedef {import('./Material.js').MaterialJSON} MaterialJSON
- * @typedef {import('./Element.js').ElementJSON} ElementJSON
- * @typedef {import('./Element.js').Json} Json
- *
- * @typedef {import('./areas/Area.js')} Area
- */
 export type PrimitiveJSON = {
     materials: Array<MaterialJSON>;
 } & ElementJSON;
@@ -18,7 +10,7 @@ export type PrimitiveJSON = {
  *  @constructor
  *  @extends {Element}
  */
-export declare class Primitive extends Element {
+export declare abstract class Primitive extends Element {
     static type: string;
     static fromJSON(_json: PrimitiveJSON): void;
     materials: Material[];
@@ -52,12 +44,12 @@ export declare class Primitive extends Element {
     }[];
     /**
      * @abstract
-     * Compute variables to help with value computation.
+     * Compute constiables to help with value computation.
      */
-    computeHelpVariables(): void;
+    abstract computeHelpVariables(): void;
     /**
      * @abstract
-     * Compute variables to help with value computation.
+     * Compute constiables to help with value computation.
      * @param cls The class to count. Primitives have no children so no complexty here.
      */
     count(cls: Function): 1 | 0;

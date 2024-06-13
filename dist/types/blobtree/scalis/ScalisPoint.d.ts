@@ -33,7 +33,7 @@ export declare class ScalisPoint extends ScalisPrimitive {
         density: number;
         v: import("./ScalisVertex.js").ScalisVertexJSON[];
         volType: ScalisPrimitiveVolType;
-        materials: Object[];
+        materials: import("../Material.js").MaterialJSON[];
         type: string;
     };
     /**

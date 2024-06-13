@@ -5,18 +5,18 @@ import type { Primitive } from "./Primitive";
 import type { Material } from "./Material";
 /**
  * Computed values will be stored here. Each values should exist and be allocated already.
- * @property {number} v Value, must be defined
- * @property {Material=} m Material, must be allocated and defined if wanted
- * @property {Vector3=} g Gradient, must be allocated and defined if wanted
- * @property {number=} step ??? Not sure, probably a "safe" step for raymarching
- * @property {number=} stepOrtho ??? Same as step but in orthogonal direction ?
+ * @property v Value, must be defined
+ * @property m Material, must be allocated and defined if wanted
+ * @property g Gradient, must be allocated and defined if wanted
+ * @property step ??? Not sure, probably a "safe" step for raymarching
+ * @property stepOrtho ??? Same as step but in orthogonal direction ?
  */
 export type ValueResultType = {
     v: number;
-    m: Material;
-    g: Vector3;
-    step: number;
-    stepOrtho: number;
+    m: Material | null;
+    g: Vector3 | null;
+    step?: number;
+    stepOrtho?: number;
 };
 export type ElementJSON = {
     type: string;
@@ -26,12 +26,9 @@ export type ElementJSON = {
  *  @class
  *  @constructor
  */
-export declare class Element {
+export declare abstract class Element {
     static type: string;
-    /**
-     * @param {ElementJSON} _json
-     */
-    static fromJSON(_json: any): void;
+    static fromJSON(_json: ElementJSON): void;
     id: number;
     aabb: Box3;
     valid_aabb: boolean;
@@ -66,9 +63,9 @@ export declare class Element {
      *  By default, the AABB returned is the unionns of all vertices AABB (This is
      *  good for almost all basic primitives).
      */
-    computeAABB(): void;
+    abstract computeAABB(): void;
     /**
-     *  @return {Box3} The AABB of this Element (primitive or node). WARNING : call
+     *  @return The AABB of this Element (primitive or node). WARNING : call
      *  isValidAABB before to ensure the current AABB does correspond to the primitive
      *  settings.
      */
@@ -93,20 +90,19 @@ export declare class Element {
      *  Important note: For now, a primitive is considered prepared for eval if and only
      *                  if its bounding box is valid (valid_aabb is true).
      */
-    prepareForEval(): void;
+    abstract prepareForEval(): void;
     /**
      *  @abstract
      *  Compute the value and/or gradient and/or material
      *  of the element at position p in space. return computations in res (see below)
      *
-     *  @param {Vector3} _p Point where we want to evaluate the primitive field
-     *  @param {ValueResultType} _res
+     *  @param p Point where we want to evaluate the primitive field
      */
-    value(_p: Vector3, _res: ValueResultType): void;
+    abstract value(p: Vector3, res: ValueResultType): void;
     /**
-     * @param {Vector3} p The point where we want the numerical gradient
-     * @param {Vector3} res The resulting gradient
-     * @param {number} epsilon The step value for the numerical evaluation
+     * @param p The point where we want the numerical gradient
+     * @param res The resulting gradient
+     * @param epsilon The step value for the numerical evaluation
      */
     numericalGradient: (this: Element, p: Vector3, res: Vector3, epsilon: number) => void;
     /**
@@ -132,9 +128,9 @@ export declare class Element {
     /**
      *  @abstract
      *  This function is called when a point is within the potential influence of a primitive/node.
-     *  @return {number} The next step length to do with respect to this primitive/node.
+     *  @return The next step length to do with respect to this primitive/node.
      */
-    heuristicStepWithin(): void;
+    abstract heuristicStepWithin(): number;
     /**
      *  Trim the tree to keep only nodes influencing a given bounding box.
      *  The tree must be prepared for eval for this process to be working.

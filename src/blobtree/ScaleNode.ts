@@ -3,14 +3,14 @@ import { Types } from "./Types";
 import { Node } from "./Node";
 import { Material } from "./Material";
 
-/** @typedef {import('./Element.js')} Element */
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
+import type { ValueResultType, Element } from './Element.js';
+import type { NodeJSON } from './Node.js';
 
-/**
- * @typedef { {scale_x:number} & {scale_y:number} & {scale_z:number} & NodeJSON} ScaleNodeJSON
- */
+type ScaleNodeJSON = {
+  scale_x: number;
+  scale_y: number;
+  scale_z: number;
+} & NodeJSON;
 
 /**
  *  This class implement a ScaleNode node.
@@ -20,24 +20,28 @@ import { Material } from "./Material";
  *  @extends Node
  */
 export class ScaleNode extends Node {
+    _scale: Vector3;
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
 
-    static type = "ScaleNode";
+    static override type = "ScaleNode";
 
     /**
-    *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
-    constructor(children) {
+    constructor(children?: Node[]) {
 
         super();
 
         if (children) {
-            var self = this;
+            const self = this;
             children.forEach(function (c) {
                 self.addChild(c);
             });
         }
 
-        // temp vars to speed up evaluation by avoiding allocations
+        // temp consts to speed up evaluation by avoiding allocations
         /** @type {{v:number, g:Vector3, m:Material}} */
         this.tmp_res = { v: 0, g: null, m: null };
         /** @type {Vector3} */
@@ -53,9 +57,8 @@ export class ScaleNode extends Node {
 
     /**
     * @link Node.toJSON
-    * @returns {ScaleNodeJSON}
     */
-    toJSON() {
+    override toJSON(): ScaleNodeJSON {
         let res = {
             ...super.toJSON(),
             scale_x: this._scale.x,
@@ -68,12 +71,9 @@ export class ScaleNode extends Node {
 
     /**
      * @link Node.fromJSON
-     *
-     * @param {ScaleNodeJSON} json
-     * @returns {ScaleNode}
      */
-    static fromJSON(json) {
-        var res = new ScaleNode();
+    override fromJSON(json: ScaleNodeJSON): ScaleNode {
+        const res = new ScaleNode();
         res.setScale(
             new Vector3(
                 json.scale_x,
@@ -81,7 +81,7 @@ export class ScaleNode extends Node {
                 json.scale_z
             )
         );
-        for (var i = 0; i < json.children.length; ++i) {
+        for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
         }
         return res;
@@ -89,9 +89,8 @@ export class ScaleNode extends Node {
 
     /**
      * @link ScaleNode.setScale
-     * @param {Vector3} scale
      */
-    setScale(scale) {
+    setScale(scale: Vector3): void {
         this._scale.copy(scale);
         this.invalidAABB();
     }
@@ -99,7 +98,7 @@ export class ScaleNode extends Node {
     /**
      * @link Node.getType
      */
-    getType() {
+    override getType(): string {
         return ScaleNode.type;
     }
 
@@ -109,8 +108,8 @@ export class ScaleNode extends Node {
     prepareForEval() {
         if (!this.valid_aabb) {
             this.aabb = new Box3();  // Create empty BBox
-            for (var i = 0; i < this.children.length; ++i) {
-                var c = this.children[i];
+            for (let i = 0; i < this.children.length; ++i) {
+                const c = this.children[i];
                 c.prepareForEval();
                 this.aabb.union(c.getAABB());    // new aabb is computed according to remaining children aabb
             }
@@ -129,9 +128,9 @@ export class ScaleNode extends Node {
     /**
     * @link Element.computeAABB for a complete description
     */
-    computeAABB() {
+    override computeAABB() {
         this.aabb.makeEmpty();
-        for (var i = 0; i < this.children.length; i++) {
+        for (let i = 0; i < this.children.length; i++) {
             this.children[i].computeAABB();
             this.aabb.union(this.children[i].getAABB());
         }
@@ -147,16 +146,13 @@ export class ScaleNode extends Node {
 
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
-    value(p, res) {
+    value(p: Vector3, res: ValueResultType) {
         // TODO : check that all bounding box of all children and subchildrens are valid
         //        This enable not to do it in prim and limit the number of assert call (and string built)
 
-        var l = this.children.length;
-        var tmp = this.tmp_res;
+        const l = this.children.length;
+        const tmp = this.tmp_res;
         tmp.g = res.g ? this.tmp_g : null;
         tmp.m = res.m ? this.tmp_m : null;
 
@@ -184,13 +180,13 @@ export class ScaleNode extends Node {
                 , (p.z - center.z) / this._scale.z + center.z);
 
             res.v = Number.MAX_VALUE;
-            for (var i = 0; i < l; ++i) {
+            for (let i = 0; i < l; ++i) {
                 this.children[i].value(st_p, tmp);
                 res.v = tmp.v;
-                if (res.g) {
+                if (res.g && tmp.g) {
                     res.g.copy(tmp.g);
                 }
-                if (res.m) {
+                if (res.m && tmp.m) {
                     res.m.copy(tmp.m);
                 }
                 // within primitive potential
@@ -206,14 +202,10 @@ export class ScaleNode extends Node {
 
     /**
      *  @link Element.trim for a complete description.
-     *
-     *  @param {Box3} aabb
-     *  @param {Array<Element>} trimmed
-     *  @param {Array<Node>} parents
      */
-    trim(aabb, trimmed, parents) {
+    override trim(aabb: Box3, trimmed: Element[], parents: Node[]) {
         // Trim remaining nodes
-        for (var i = 0; i < this.children.length; i++) {
+        for (let i = 0; i < this.children.length; i++) {
             this.children[i].trim(aabb, trimmed, parents);
         }
     };
