@@ -181,7 +181,7 @@ class Element {
         return 0;
     }
 }
-Types.register(Element.type, Element);
+Types.register(Element.type, { fromJSON: Element.fromJSON });
 
 /**
  *  Material object for blobtree. It is an internal material, that should especially
@@ -424,7 +424,8 @@ class Material {
 class Primitive extends Element {
     static type = "Primitive";
     static fromJSON(_json) {
-        throw new Error("Primitibe.fromJSON should never be called as Primitibe is abstract.");
+        console.log(_json);
+        throw new Error("Primitive.fromJSON should never be called as Primitive is abstract.");
     }
     materials = [];
     constructor() {
@@ -497,7 +498,7 @@ class Primitive extends Element {
     }
     ;
 }
-Types.register(Primitive.type, Primitive);
+Types.register(Primitive.type, { fromJSON: Primitive.fromJSON });
 
 /**
  *  Bounding area for a primitive
@@ -708,7 +709,7 @@ class Node extends Element {
     }
     ;
 }
-Types.register(Node.type, { fromJSON: () => null });
+Types.register(Node.type, { fromJSON: Node.fromJSON });
 
 /**
  *  This class implement a difference blending node.
@@ -894,7 +895,7 @@ class DifferenceNode extends Node {
     }
     ;
 }
-Types.register(DifferenceNode.type, DifferenceNode);
+Types.register(DifferenceNode.type, { fromJSON: DifferenceNode.fromJSON });
 
 /**
  *  This class implement a Max node.
@@ -997,7 +998,7 @@ class MaxNode extends Node {
         }
     }
 }
-Types.register(MaxNode.type, MaxNode);
+Types.register(MaxNode.type, { fromJSON: MaxNode.fromJSON });
 
 /**
  *  This class implement a Min node.
@@ -1011,7 +1012,7 @@ class MinNode extends Node {
     tmp_g;
     tmp_m;
     static type = "MinNode";
-    fromJSON(json) {
+    static fromJSON(json) {
         const res = new MinNode();
         for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
@@ -1110,7 +1111,7 @@ class MinNode extends Node {
     }
     ;
 }
-Types.register(MinNode.type, { fromJSON: (new MinNode()).fromJSON });
+Types.register(MinNode.type, { fromJSON: MinNode.fromJSON });
 
 /**
  *  This class implement a n-ary blend node which use a Ricci Blend.
@@ -1169,7 +1170,7 @@ class RicciNode extends Node {
     /**
      * @link Node.fromJSON
      */
-    fromJSON(json) {
+    static fromJSON(json) {
         let res = new RicciNode(json.ricci_n);
         for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
@@ -1305,7 +1306,7 @@ class RicciNode extends Node {
     }
     ;
 }
-Types.register(RicciNode.type, { fromJSON: (new RicciNode(0)).fromJSON });
+Types.register(RicciNode.type, { fromJSON: RicciNode.fromJSON });
 
 /**
  * @author Maxime Quiblier
@@ -1793,7 +1794,7 @@ class RootNode extends RicciNode {
         };
     }();
 }
-Types.register(RootNode.type, RootNode);
+Types.register(RootNode.type, { fromJSON: RootNode.fromJSON });
 
 /**
  *  This class implement a ScaleNode node.
@@ -1957,7 +1958,7 @@ class ScaleNode extends Node {
     }
     ;
 }
-Types.register(ScaleNode.type, ScaleNode);
+Types.register(ScaleNode.type, { fromJSON: ScaleNode.fromJSON });
 
 /**
  *  This class implement a TwistNode node.
@@ -2135,7 +2136,7 @@ class TwistNode extends Node {
     }
     ;
 }
-Types.register(TwistNode.type, TwistNode);
+Types.register(TwistNode.type, { fromJSON: TwistNode.fromJSON });
 
 /**
  * Accuracies Contains the accuracies needed in Areas. Can be changed when importing blobtree.js.
@@ -3927,7 +3928,7 @@ Types.register(ScalisPrimitive.type, ScalisPrimitive);
 
 class ScalisPoint extends ScalisPrimitive {
     static type = "ScalisPoint";
-    fromJSON(json) {
+    static fromJSON(json) {
         const v = ScalisVertex.fromJSON(json.v[0]);
         const m = Material.fromJSON(json.materials[0]);
         return new ScalisPoint(v, json.volType, json.density, m);
@@ -4065,7 +4066,7 @@ class ScalisPoint extends ScalisPrimitive {
         // return p.distanceTo(this.v[0].getPos()) - this.v[0].getThickness();
     }
 }
-Types.register(ScalisPoint.type, ScalisPoint);
+Types.register(ScalisPoint.type, { fromJSON: ScalisPoint.fromJSON });
 
 /**
  *  Implicit segment class in the blobtree.
@@ -4075,7 +4076,7 @@ Types.register(ScalisPoint.type, ScalisPoint);
  */
 class ScalisSegment extends ScalisPrimitive {
     static type = "ScalisSegment";
-    fromJSON(json) {
+    static fromJSON(json) {
         const v0 = ScalisVertex.fromJSON(json.v[0]);
         const v1 = ScalisVertex.fromJSON(json.v[1]);
         const m = [
@@ -4633,7 +4634,7 @@ class ScalisSegment extends ScalisPrimitive {
     }
     ;
 }
-Types.register(ScalisSegment.type, ScalisSegment);
+Types.register(ScalisSegment.type, { fromJSON: ScalisSegment.fromJSON });
 
 // Number of sample in the Simpsons integration.
 const sampleNumber = 10;
@@ -4646,7 +4647,7 @@ const sampleNumber = 10;
  */
 class ScalisTriangle extends ScalisPrimitive {
     static type = "ScalisTriangle";
-    fromJSON(json) {
+    static fromJSON(json) {
         const v = [
             ScalisVertex.fromJSON(json.v[0]),
             ScalisVertex.fromJSON(json.v[1]),
@@ -5405,7 +5406,7 @@ class ScalisTriangle extends ScalisPrimitive {
         res.z = (t7087 * t7093 + t7080 / 0.6e1 - t7085 / 0.6e1) * t7084;
     }
 }
-Types.register(ScalisTriangle.type, ScalisTriangle);
+Types.register(ScalisTriangle.type, { fromJSON: ScalisTriangle.fromJSON });
 
 /**
  *  A superclass for Node and Primitive in the blobtree.

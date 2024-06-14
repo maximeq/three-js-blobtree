@@ -33,7 +33,7 @@ export class ScalisTriangle extends ScalisPrimitive {
 
     static override type = "ScalisTriangle" as const;
 
-    override fromJSON(json: ScalisTriangleJSON) {
+    static override fromJSON(json: ScalisTriangleJSON) {
         const v: [ScalisVertex, ScalisVertex, ScalisVertex] = [
             ScalisVertex.fromJSON(json.v[0]),
             ScalisVertex.fromJSON(json.v[1]),
@@ -945,4 +945,4 @@ export class ScalisTriangle extends ScalisPrimitive {
     }
 };
 
-Types.register(ScalisTriangle.type, ScalisTriangle);
+Types.register(ScalisTriangle.type,  {fromJSON: ScalisTriangle.fromJSON});

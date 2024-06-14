@@ -16,7 +16,7 @@ export type ScalisPointJSON = { density: number } & ScalisPrimitiveJSON;
 export class ScalisPoint extends ScalisPrimitive {
     static override type = "ScalisPoint";
 
-    override fromJSON(json: ScalisPointJSON): ScalisPoint {
+    static override fromJSON(json: ScalisPointJSON): ScalisPoint {
         const v = ScalisVertex.fromJSON(json.v[0]);
         const m = Material.fromJSON(json.materials[0]);
         return new ScalisPoint(v, json.volType, json.density, m);
@@ -165,4 +165,4 @@ export class ScalisPoint extends ScalisPrimitive {
     }
 }
 
-Types.register(ScalisPoint.type, ScalisPoint);
+Types.register(ScalisPoint.type,  {fromJSON: ScalisPoint.fromJSON});

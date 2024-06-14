@@ -83,8 +83,6 @@ export abstract class ScalisPrimitive extends Primitive {
             this.aabb.union(this.v[i].getAABB());
         }
     }
-
-    abstract fromJSON(json: ScalisPrimitiveJSON): void;
 }
 
 Types.register(ScalisPrimitive.type, ScalisPrimitive);

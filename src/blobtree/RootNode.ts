@@ -370,4 +370,4 @@ export class RootNode extends RicciNode {
 
 };
 
-Types.register(RootNode.type, RootNode);
+Types.register(RootNode.type, {fromJSON: RootNode.fromJSON});

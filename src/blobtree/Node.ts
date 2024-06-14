@@ -227,5 +227,5 @@ export abstract class Node extends Element {
 
 };
 
-Types.register(Node.type, {fromJSON: () => null});
+Types.register(Node.type, {fromJSON: Node.fromJSON});
 

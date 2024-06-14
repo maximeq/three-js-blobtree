@@ -198,6 +198,7 @@ export class SplitMaxPolygonizer {
                         this.subtrees[i],
                         this.subPolygonizer.smcParams
                     );
+                    break;
                 default:
                     break;
             };

@@ -9,7 +9,7 @@ export type ScalisPointJSON = {
 } & ScalisPrimitiveJSON;
 export declare class ScalisPoint extends ScalisPrimitive {
     static type: string;
-    fromJSON(json: ScalisPointJSON): ScalisPoint;
+    static fromJSON(json: ScalisPointJSON): ScalisPoint;
     density: number;
     v_to_p: Vector3;
     /**

@@ -21,7 +21,7 @@ export type ScalisTriangleJSON = ScalisPrimitiveJSON;
  */
 export declare class ScalisTriangle extends ScalisPrimitive {
     static type: "ScalisTriangle";
-    fromJSON(json: ScalisTriangleJSON): ScalisTriangle;
+    static fromJSON(json: ScalisTriangleJSON): ScalisTriangle;
     v: [ScalisVertex, ScalisVertex, ScalisVertex];
     min_thick: number;
     max_thick: number;

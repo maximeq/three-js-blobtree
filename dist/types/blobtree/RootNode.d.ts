@@ -19,7 +19,7 @@ interface IntersectionResult {
  */
 export declare class RootNode extends RicciNode {
     iso_value: number;
-    trimmed: Element[];
+    trimmed: Node[];
     trim_parents: Node[];
     static type: string;
     static fromJSON(json: RootNodeJSON): RootNode;
@@ -66,7 +66,7 @@ export declare class RootNode extends RicciNode {
      *  @param trimmed Array of trimmed Elements
      *  @param parents Array of fathers from which each trimmed element has been removed.
      */
-    untrim(trimmed: Element[], parents: Node[]): void;
+    untrim(trimmed: Node[], parents: Node[]): void;
     /**
      *  Tell if the blobtree is empty
      *  @return true if blobtree is empty

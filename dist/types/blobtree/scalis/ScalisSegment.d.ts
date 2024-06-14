@@ -15,7 +15,7 @@ export type ScalisSegmentJSON = {
  */
 export declare class ScalisSegment extends ScalisPrimitive {
     static type: "ScalisSegment";
-    fromJSON(json: ScalisSegmentJSON): ScalisSegment;
+    static fromJSON(json: ScalisSegmentJSON): ScalisSegment;
     density: number;
     clipped_l1: number;
     clipped_l2: number;

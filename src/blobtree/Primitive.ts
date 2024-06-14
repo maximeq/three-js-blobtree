@@ -3,7 +3,7 @@ import { Material, type MaterialJSON } from './Material';
 import { Types } from "./Types";
 import type { Area } from './areas';
 
-export type PrimitiveJSON = { materials: Array<MaterialJSON> } & ElementJSON
+export type PrimitiveJSON = { materials: MaterialJSON[] } & ElementJSON
 
 /**
  *  Represent a blobtree primitive.
@@ -98,5 +98,5 @@ export abstract class Primitive extends Element {
 
 };
 
-Types.register(Primitive.type, Primitive);
+Types.register(Primitive.type, {fromJSON: Primitive.fromJSON});
 

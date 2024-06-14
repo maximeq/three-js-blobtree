@@ -224,4 +224,4 @@ export class TwistNode extends Node {
     };
 }
 
-Types.register(TwistNode.type, TwistNode);
+Types.register(TwistNode.type, {fromJSON: TwistNode.fromJSON});

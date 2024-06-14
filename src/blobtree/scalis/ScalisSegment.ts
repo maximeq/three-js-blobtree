@@ -19,7 +19,7 @@ export class ScalisSegment extends ScalisPrimitive {
 
     static override type = "ScalisSegment" as const;
 
-    override fromJSON(json: ScalisSegmentJSON): ScalisSegment {
+    static override fromJSON(json: ScalisSegmentJSON): ScalisSegment {
         const v0 = ScalisVertex.fromJSON(json.v[0]);
         const v1 = ScalisVertex.fromJSON(json.v[1]);
         const m = [
@@ -660,4 +660,4 @@ export class ScalisSegment extends ScalisPrimitive {
     ////////////////////////////////////////////////////////////////////////////
 }
 
-Types.register(ScalisSegment.type, ScalisSegment);
+Types.register(ScalisSegment.type,  {fromJSON: ScalisSegment.fromJSON});

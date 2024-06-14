@@ -208,4 +208,4 @@ export class ScaleNode extends Node {
     };
 }
 
-Types.register(ScaleNode.type, ScaleNode);
+Types.register(ScaleNode.type, {fromJSON: ScaleNode.fromJSON});

@@ -37,7 +37,7 @@ export class SDFRootNode extends Primitive {
      * @param material The material for this node.
      * @param sdfRoot The child containing the complete SDF. SDFRootNode can have only one child.
      */
-    constructor(f: DistanceFunctor, material: Material, sdfRoot?: SDFNode | SDFPrimitive) {
+    constructor(f: DistanceFunctor, material?: Material, sdfRoot?: SDFNode | SDFPrimitive) {
         super();
 
         this.f = f;
@@ -118,6 +118,14 @@ export class SDFRootNode extends Primitive {
         } else if (res.step !== undefined) {
             res.step = this.aabb.distanceToPoint(p) + 0.3;
         }
+    }
+
+    computeHelpVariables(): void {
+        throw "computeHelpVariables is not implemented for SDFRootNode.";
+    }
+
+    heuristicStepWithin(): number {
+        throw "heuristicStepWithin is not implemented for SDFRootNode.";
     }
 }
 

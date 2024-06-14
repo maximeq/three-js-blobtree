@@ -237,5 +237,5 @@ export abstract class Element {
 
 };
 
-Types.register(Element.type, Element);
+Types.register(Element.type,  {fromJSON: Element.fromJSON});
 

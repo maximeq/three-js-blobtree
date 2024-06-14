@@ -118,4 +118,4 @@ export class MaxNode extends Node {
 
 };
 
-Types.register(MaxNode.type, MaxNode);
+Types.register(MaxNode.type,  {fromJSON: MaxNode.fromJSON});

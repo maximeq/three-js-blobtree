@@ -523,7 +523,6 @@ declare abstract class ScalisPrimitive extends Primitive {
      * @link Element.computeAABB for a complete description
      */
     computeAABB(): void;
-    abstract fromJSON(json: ScalisPrimitiveJSON): void;
 }
 
 type ScalisVertexJSON = {
@@ -977,7 +976,7 @@ type NodeJSON = {
  *  @extends {Element}
  */
 declare abstract class Node extends Element {
-    children: Element[];
+    children: Node[];
     static type: string;
     static fromJSON(_json: NodeJSON): Node;
     constructor();
@@ -1008,7 +1007,7 @@ declare abstract class Node extends Element {
      *
      *  @param c The child to add.
      */
-    addChild(c: Element): this;
+    addChild(c: Node): this;
     /**
      *  Only works with n-ary nodes, otherwise order matters and we therefore
      *  have to set "null" and node cannot be evaluated.
@@ -1153,7 +1152,7 @@ declare class MinNode extends Node {
     tmp_g: Vector3;
     tmp_m: Material;
     static type: string;
-    fromJSON(json: MinNodeJSON): MinNode;
+    static fromJSON(json: MinNodeJSON): MinNode;
     /**
     *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
@@ -1207,7 +1206,7 @@ declare class RicciNode extends Node {
     /**
      * @link Node.fromJSON
      */
-    fromJSON(json: RicciNodeJSON): RicciNode;
+    static fromJSON(json: RicciNodeJSON): RicciNode;
     /**
      * @link Node.prepareForEval
      */
@@ -1236,7 +1235,7 @@ interface IntersectionResult {
  */
 declare class RootNode extends RicciNode {
     iso_value: number;
-    trimmed: Element[];
+    trimmed: Node[];
     trim_parents: Node[];
     static type: string;
     static fromJSON(json: RootNodeJSON): RootNode;
@@ -1283,7 +1282,7 @@ declare class RootNode extends RicciNode {
      *  @param trimmed Array of trimmed Elements
      *  @param parents Array of fathers from which each trimmed element has been removed.
      */
-    untrim(trimmed: Element[], parents: Node[]): void;
+    untrim(trimmed: Node[], parents: Node[]): void;
     /**
      *  Tell if the blobtree is empty
      *  @return true if blobtree is empty
@@ -1549,7 +1548,7 @@ type ScalisPointJSON = {
 } & ScalisPrimitiveJSON;
 declare class ScalisPoint extends ScalisPrimitive {
     static type: string;
-    fromJSON(json: ScalisPointJSON): ScalisPoint;
+    static fromJSON(json: ScalisPointJSON): ScalisPoint;
     density: number;
     v_to_p: Vector3;
     /**
@@ -1618,7 +1617,7 @@ type ScalisSegmentJSON = {
  */
 declare class ScalisSegment extends ScalisPrimitive {
     static type: "ScalisSegment";
-    fromJSON(json: ScalisSegmentJSON): ScalisSegment;
+    static fromJSON(json: ScalisSegmentJSON): ScalisSegment;
     density: number;
     clipped_l1: number;
     clipped_l2: number;
@@ -1770,7 +1769,7 @@ type ScalisTriangleJSON = ScalisPrimitiveJSON;
  */
 declare class ScalisTriangle extends ScalisPrimitive {
     static type: "ScalisTriangle";
-    fromJSON(json: ScalisTriangleJSON): ScalisTriangle;
+    static fromJSON(json: ScalisTriangleJSON): ScalisTriangle;
     v: [ScalisVertex, ScalisVertex, ScalisVertex];
     min_thick: number;
     max_thick: number;

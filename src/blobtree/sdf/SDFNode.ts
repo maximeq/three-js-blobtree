@@ -4,6 +4,7 @@ import { Node, type NodeJSON } from '../Node';
 import type { Area } from '../areas/Area';
 import type { SDFPrimitive } from './SDFPrimitive';
 import type { Primitive } from '../Primitive';
+import type { ValueResultType } from '../Element';
 
 export type SDFNodeJSON = NodeJSON;
 
@@ -93,6 +94,14 @@ export class SDFNode extends Node {
     override heuristicStepWithin(): number {
         throw "heuristicStepWithin may not make sens for all SDFNode, except for the SDFRootNode.";
     };
+
+    prepareForEval(): void {
+        throw "prepareForEval is not implemented for SDFNode.";
+    }
+
+    value(_p: Vector3, _res: ValueResultType): void {
+        throw "value is not implemented for SDFNode.";
+    }
 };
 
 Types.register(SDFNode.type, SDFNode);

@@ -36,7 +36,7 @@ export declare class RicciNode extends Node {
     /**
      * @link Node.fromJSON
      */
-    fromJSON(json: RicciNodeJSON): RicciNode;
+    static fromJSON(json: RicciNodeJSON): RicciNode;
     /**
      * @link Node.prepareForEval
      */

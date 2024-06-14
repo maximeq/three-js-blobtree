@@ -43,6 +43,5 @@ export declare abstract class ScalisPrimitive extends Primitive {
      * @link Element.computeAABB for a complete description
      */
     computeAABB(): void;
-    abstract fromJSON(json: ScalisPrimitiveJSON): void;
 }
 //# sourceMappingURL=ScalisPrimitive.d.ts.map

@@ -15,7 +15,7 @@ export declare class MinNode extends Node {
     tmp_g: Vector3;
     tmp_m: Material;
     static type: string;
-    fromJSON(json: MinNodeJSON): MinNode;
+    static fromJSON(json: MinNodeJSON): MinNode;
     /**
     *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */

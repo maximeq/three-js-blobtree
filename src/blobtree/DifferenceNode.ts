@@ -204,4 +204,4 @@ export class DifferenceNode extends Node {
     };
 };
 
-Types.register(DifferenceNode.type, DifferenceNode);
+Types.register(DifferenceNode.type,  {fromJSON: DifferenceNode.fromJSON});
