@@ -8,9 +8,9 @@ export type SDFSegmentJSON = { p1: { x: number, y: number, z: number }, p2: { x:
 
 export class SDFSegment extends SDFPrimitive {
 
-    static type = "SDFSegment";
+    static override type = "SDFSegment";
 
-    static fromJSON(json: SDFSegmentJSON): SDFSegment {
+    static override fromJSON(json: SDFSegmentJSON): SDFSegment {
         return new SDFSegment(
             new Vector3(json.p1.x, json.p1.y, json.p1.z),
             new Vector3(json.p2.x, json.p2.y, json.p2.z),
@@ -39,11 +39,11 @@ export class SDFSegment extends SDFPrimitive {
         this.l = new Line3(this.p1, this.p2);
     }
 
-    getType() {
+    override getType(): string {
         return SDFSegment.type;
     };
 
-    toJSON(): SDFSegmentJSON {
+    override toJSON(): SDFSegmentJSON {
         return {
             ...super.toJSON(),
             p1: {
@@ -63,7 +63,7 @@ export class SDFSegment extends SDFPrimitive {
     /**
      *  @param acc The new accuracy factor
      */
-    setAccuracy(acc: number) {
+    setAccuracy(acc: number): void {
         this.acc = acc;
         this.invalidAABB();
     };
@@ -78,33 +78,33 @@ export class SDFSegment extends SDFPrimitive {
     /**
      *  @param  p1 The new position of the first segment point.
      */
-    setPosition1(p1: Vector3) {
+    setPosition1(p1: Vector3): void {
         this.p1.copy(p1);
         this.invalidAABB();
     };
     /**
      *  @param p2 The new position of the second segment point
      */
-    setPosition2(p2: Vector3) {
+    setPosition2(p2: Vector3): void {
         this.p2.copy(p2);
         this.invalidAABB();
     };
 
     /**
-     *  @return {Vector3} Current position of the first segment point
+     *  @return Current position of the first segment point
      */
-    getPosition1() {
+    getPosition1(): Vector3 {
         return this.p1;
     };
     /**
-     *  @return {Vector3} Current position of the second segment point
+     *  @return Current position of the second segment point
      */
-    getPosition2() {
+    getPosition2(): Vector3 {
         return this.p2;
     };
 
     // [Abstract]
-    computeDistanceAABB(d: number) {
+    computeDistanceAABB(d: number): Box3 {
         var b1 = new Box3(
             this.p1.clone().add(new Vector3(-d, -d, -d)),
             this.p1.clone().add(new Vector3(d, d, d))
@@ -124,8 +124,7 @@ export class SDFSegment extends SDFPrimitive {
     };
 
     /**
-     * @param {number} d
-     * @return {Object} The Areas object corresponding to the node/primitive, in an array
+     * @return The Areas object corresponding to the node/primitive, in an array
      */
     getDistanceAreas(d: number): {
         aabb: Box3,
@@ -160,7 +159,7 @@ export class SDFSegment extends SDFPrimitive {
          *  @param {Vector3} p
          *  @param {ValueResultType} res
          */
-        return function (p: Vector3, res: ValueResultType) {
+        return function (this: SDFSegment, p: Vector3, res: ValueResultType): void {
             this.l.closestPointToPoint(p, true, v);
             res.v = lc.subVectors(p, v).length();
             if (res.g) {

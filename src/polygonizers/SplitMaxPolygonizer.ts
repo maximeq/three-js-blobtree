@@ -10,41 +10,18 @@ import { ScalisPoint } from "../blobtree/scalis/ScalisPoint";
 import { ScalisSegment } from "../blobtree/scalis/ScalisSegment";
 import { ScalisTriangle } from "../blobtree/scalis/ScalisTriangle";
 
-import { SlidingMarchingCubes } from "./SlidingMarchingCubes";
+import { SlidingMarchingCubes, type SMCParams } from "./SlidingMarchingCubes";
 
-// Copied from SlidingMarchingCubes.js
-// @todo migrate SlidingMarchingCubes to ts and import parameters type properly
-type ConvergenceParams = {
-    ratio?: number,
-    step?: number
-};
-// Copied from SlidingMarchingCubes.js see that file for detailed doc
-// @todo migrate SlidingMarchingCubes to ts and import parameters type properly
-type SMCParams = {
-    zResolution?: "adaptive" | "uniform",
-    detailRatio?: number,
-    progress?: (percent: number) => void;
-    convergence?: ConvergenceParams,
-    dichotomy?: number
-};
 /**
  * Parameters for the subpolygonizer to use.
  * Contain a className which will be mapped to a constructor, and parameters related to that polygonizer
  */
 type SubPolygonizerParams = {
     className: "SlidingMarchingCubes", // | "MarchingCubes" // We only have 1 polygonizer class available for now
-    smcParams?: SMCParams,
+    smcParams: SMCParams,
     // mcParams: MCParams // We only have 1 polygonizer class available for now
 };
-
-
-/**
- * @typedef {Object} SplitMaxPolygonizerParams
- * @property {SubPolygonizerParams=} subPolygonizer P
- * @property {Boolean=} smpParams.uniformRes
- * @property {Function=} smpParams.progress
- * @property {Number=} smpParams.ricciThreshold
- */
+  
 
 export type SplitMaxPolygonizerParams = {
     subPolygonizer?: SubPolygonizerParams,
@@ -127,11 +104,11 @@ export class SplitMaxPolygonizer {
         this.blobtree = blobtree;
         this.blobtree.prepareForEval();
 
-        const getBlobtreeMinAcc = function (btree: RootNode) {
-            var areas = btree.getAreas();
-            var min_acc = areas.length !== 0 ? areas[0].bv.getMinAcc() : null;
-            for (var i = 0; i < areas.length; ++i) {
-                if (areas[i].bv.getMinAcc() < min_acc) {
+        const getBlobtreeMinAcc = function (btree: RootNode): number | null {
+            const areas = btree.getAreas();
+            let min_acc = areas.length !== 0 ? areas[0].bv.getMinAcc() : null;
+            for (let i = 0; i < areas.length; ++i) {
+                if (areas[i].bv.getMinAcc() < (min_acc === null ? 0 : min_acc)) {
                     min_acc = areas[i].bv.getMinAcc();
                 }
             }
@@ -143,9 +120,9 @@ export class SplitMaxPolygonizer {
         this.progCoeff = [];
         this.totalCoeff = 0;
 
-        var self = this;
-        var addToSubtrees = function (n) {
-            var subtree = null;
+        const self = this;
+        const addToSubtrees = function (n: Element) {
+            let subtree: RootNode;
             if (n instanceof RootNode) {
                 subtree = n.clone();
             } else {
@@ -154,14 +131,17 @@ export class SplitMaxPolygonizer {
             }
             self.subtrees.push(subtree);
             subtree.prepareForEval();
-            self.minAccs.push(getBlobtreeMinAcc(subtree));
+            const subtreeMinAcc = getBlobtreeMinAcc(subtree);
+            if (subtreeMinAcc === null)
+                throw "[SplitMaxPolygonizer] setBlobTreee: subtree's minAcc is null when it shouldn't be.";
+            self.minAccs.push(subtreeMinAcc);
             self.progCoeff.push(
                 subtree.count(ScalisPoint) + subtree.count(ScalisSegment) + subtree.count(ScalisTriangle)
             );
             self.totalCoeff += self.progCoeff[self.progCoeff.length - 1];
         };
 
-        var recurse = function (n) {
+        const recurse = function (n: Element) {
             if (n instanceof RicciNode) {
                 if (n.getRicciN() < self.ricciThreshold) {
                     // This node must be copied and generated using SMC
@@ -169,7 +149,7 @@ export class SplitMaxPolygonizer {
                         addToSubtrees(n);
                     }
                 } else {
-                    for (var i = 0; i < n.children.length; ++i) {
+                    for (let i = 0; i < n.children.length; ++i) {
                         recurse(n.children[i]);
                     }
                 }
@@ -197,13 +177,13 @@ export class SplitMaxPolygonizer {
             this.setBlobtree(this.blobtree);
         }
 
-        var self = this;
+        const self = this;
         this.progress(0);
-        var prog = 0;
-        var geometries = [];
-        for (var i = 0; i < this.subtrees.length; ++i) {
+        let prog = 0;
+        const geometries = [];
+        for (let i = 0; i < this.subtrees.length; ++i) {
 
-            var prev_detailRatio = this.subPolygonizer.smcParams.detailRatio || 1.0;
+            const prev_detailRatio = this.subPolygonizer.smcParams.detailRatio || 1.0;
             if (this.uniformRes && this.min_acc) {
                 this.subPolygonizer.smcParams.detailRatio = prev_detailRatio * this.min_acc / this.minAccs[i];
             }
@@ -211,7 +191,7 @@ export class SplitMaxPolygonizer {
             this.subPolygonizer.smcParams.progress = function (percent) {
                 self.progress(100 * (prog + (percent / 100) * self.progCoeff[i]) / self.totalCoeff)
             };
-            let polygonizer = null;
+            let polygonizer: SlidingMarchingCubes | null = null;
             switch (this.subPolygonizer.className) {
                 case "SlidingMarchingCubes":
                     polygonizer = new SlidingMarchingCubes(
@@ -221,6 +201,9 @@ export class SplitMaxPolygonizer {
                 default:
                     break;
             };
+            if (polygonizer === null) {
+                throw "[SplitMaxPolygonizer] compute: Unknown polygonizer class" + this.subPolygonizer.className;
+            }
             geometries.push(polygonizer.compute());
 
             this.subPolygonizer.smcParams.detailRatio = prev_detailRatio;
@@ -228,7 +211,7 @@ export class SplitMaxPolygonizer {
             prog += this.progCoeff[i];
         }
 
-        var res = BufferGeometryUtils.mergeBufferGeometries(geometries);
+        const res = BufferGeometryUtils.mergeBufferGeometries(geometries);
 
         this.progress(100);
 

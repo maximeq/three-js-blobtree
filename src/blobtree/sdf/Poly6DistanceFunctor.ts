@@ -1,9 +1,7 @@
-import { Types } from "../Types"
-import { DistanceFunctor } from "./DistanceFunctor";
+import { Types } from "../Types";
+import { DistanceFunctor, type DistanceFunctorJSON } from "./DistanceFunctor";
 
-/** @typedef {import('./DistanceFunctor').DistanceFunctorJSON} DistanceFunctorJSON */
-
-/** @typedef {{scale:number} & DistanceFunctorJSON} Poly6DistanceFunctorJSON */
+export type Poly6DistanceFunctorJSON = { scale: number } & DistanceFunctorJSON;
 
 /**
  *  Specialised Distance Functor using a 6 degree polynomial function.
@@ -11,13 +9,10 @@ import { DistanceFunctor } from "./DistanceFunctor";
  *  @constructor
  */
 export class Poly6DistanceFunctor extends DistanceFunctor {
+    static override type = "Poly6DistanceFunctor";
+    scale: number;
 
-    static type = "Poly6DistanceFunctor";
-
-    /**
-     * @param {Poly6DistanceFunctorJSON} json
-     */
-    static fromJSON(json) {
+    fromJSON(json: Poly6DistanceFunctorJSON): Poly6DistanceFunctor {
         return new Poly6DistanceFunctor(json.scale);
     }
 
@@ -25,13 +20,12 @@ export class Poly6DistanceFunctor extends DistanceFunctor {
      * This is the standard 6 degree polynomial function used for implicit modeling.
      * At 0, its value is 1 with a zero derivative.
      * At 1, its value is 0 with a zero derivative.
-     * @param {number} d
      */
-    static evalStandard(d) {
+    evalStandard(d: number): number {
         if (d < 0.0) {
             return 1.0;
         }
-        var aux = 1.0 - d * d;
+        const aux = 1.0 - d * d;
 
         if (aux > 0.0) {
             return aux * aux * aux;
@@ -40,25 +34,22 @@ export class Poly6DistanceFunctor extends DistanceFunctor {
         }
     }
 
-    /**
-     * @param {number} scale
-     */
-    constructor(scale) {
+    constructor(scale: number) {
         super();
         this.scale = scale || 1.0;
     }
 
     /**
-     *  @return {string} Type of the element
+     *  @return Type of the element
      */
-    getType() {
+    override getType(): string {
         return Poly6DistanceFunctor.type;
     }
 
     /**
-     *  @return {Object} Json description of this functor.
+     *  @return Json description of this functor.
      */
-    toJSON() {
+    override toJSON(): Poly6DistanceFunctorJSON {
         return {
             ...super.toJSON(),
             scale: this.scale
@@ -67,34 +58,31 @@ export class Poly6DistanceFunctor extends DistanceFunctor {
 
     /**
      * @link DistanceFunctor.value for a complete description.
-     * @param {number} d The distance to be considered.
-     * @returns {number} Scalar field value according to given distance d.
+     * @param d The distance to be considered.
+     * @returns Scalar field value according to given distance d.
      */
-    value(d) {
-        var dp = d / (2 * this.scale); // ensure the support fits the scale.
+    value(d: number): number {
+        let dp = d / (2 * this.scale); // ensure the support fits the scale.
         dp = dp + 0.5;
-        return Poly6DistanceFunctor.evalStandard(dp) / Poly6DistanceFunctor.evalStandard(0.5);
+        return this.evalStandard(dp) / this.evalStandard(0.5);
     }
 
     /**
-     * @param {number} d
-     * @returns {number} dimensional gradient at d.
+     * @returns dimensional gradient at d.
      */
-    gradient(d) {
-        var ds = d / (2 * this.scale) + 0.5;
-        var res = (1 - ds * ds);
-        res = -(6 / (2 * this.scale)) * ds * res * res / Poly6DistanceFunctor.evalStandard(0.5);
+    override gradient(d: number): number {
+        const ds = d / (2 * this.scale) + 0.5;
+        let res = 1 - ds * ds;
+        res = -(6 / (2 * this.scale)) * ds * res * res / this.evalStandard(0.5);
         return res;
     }
 
     /**
      * @link DistanceFunctor.getSupport for a complete description.
-     * @returns
      */
-    getSupport() {
+    override getSupport(): number {
         return this.scale;
     }
-};
+}
 
 Types.register(Poly6DistanceFunctor.type, Poly6DistanceFunctor);
-

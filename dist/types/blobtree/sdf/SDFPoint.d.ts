@@ -38,12 +38,14 @@ export declare class SDFPoint extends SDFPrimitive {
      *  @return Current position (ie center)
      */
     getPosition(): Vector3;
+    /**
+     *  @param d Distance
+     */
     computeDistanceAABB(d: number): Box3;
     prepareForEval(): void;
     /**
      * @link SDFPrimitive.getDistanceAreas
      * @param d Distance to consider for the area computation.
-     * @returns {Array.<>}
      */
     getDistanceAreas(d: number): {
         aabb: Box3;
@@ -53,6 +55,6 @@ export declare class SDFPoint extends SDFPrimitive {
     /**
      *  @link Element.value for a complete description
      */
-    value: (p: Vector3, res: ValueResultType) => void;
+    value: (this: SDFPoint, p: Vector3, res: ValueResultType) => void;
 }
 //# sourceMappingURL=SDFPoint.d.ts.map

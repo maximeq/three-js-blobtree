@@ -1,17 +1,17 @@
-import { Primitive, type PrimitiveJSON } from "../Primitive.js";
-import type { ScalisVertex, ScalisVertexJSON } from "./ScalisVertex.js";
+import { Primitive, type PrimitiveJSON } from "../Primitive";
+import type { ScalisVertex, ScalisVertexJSON } from "./ScalisVertex";
 export type ScalisPrimitiveVolType = "dist" | "convol";
 export type ScalisPrimitiveJSON = {
     v: Array<ScalisVertexJSON>;
     volType: ScalisPrimitiveVolType;
 } & PrimitiveJSON;
 /**
- *  Represent an implicit primitive respecting the SCALIS model developped by Cedrric Zanni
+ *  Represent an implicit primitive respecting the SCALIS model developed by Cedric Zanni
  *
  *  @constructor
  *  @extends {Primitive}
  */
-export declare class ScalisPrimitive extends Primitive {
+export declare abstract class ScalisPrimitive extends Primitive {
     static type: string;
     static DIST: "dist";
     static CONVOL: "convol";
@@ -38,10 +38,11 @@ export declare class ScalisPrimitive extends Primitive {
     /**
      *  @return  Current volType
      */
-    getVolType(): string;
+    getVolType(): ScalisPrimitiveVolType;
     /**
      * @link Element.computeAABB for a complete description
      */
     computeAABB(): void;
+    abstract fromJSON(json: ScalisPrimitiveJSON): void;
 }
 //# sourceMappingURL=ScalisPrimitive.d.ts.map

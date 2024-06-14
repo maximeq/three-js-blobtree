@@ -1,9 +1,9 @@
 import { Box3, Vector3 } from "three";
-import { Material } from "../Material.js";
-import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType } from "./ScalisPrimitive.js";
-import { ScalisVertex } from "./ScalisVertex.js";
-import { AreaScalisSeg } from "../areas/AreaScalisSeg.js";
-import type { ValueResultType } from "../Element.js";
+import { Material } from "../Material";
+import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType } from "./ScalisPrimitive";
+import { ScalisVertex } from "./ScalisVertex";
+import { AreaScalisSeg } from "../areas/AreaScalisSeg";
+import type { ValueResultType } from "../Element";
 export type ScalisSegmentJSON = {
     density: number;
 } & ScalisPrimitiveJSON;
@@ -15,7 +15,7 @@ export type ScalisSegmentJSON = {
  */
 export declare class ScalisSegment extends ScalisPrimitive {
     static type: "ScalisSegment";
-    static fromJSON(json: ScalisSegmentJSON): ScalisSegment;
+    fromJSON(json: ScalisSegmentJSON): ScalisSegment;
     density: number;
     clipped_l1: number;
     clipped_l2: number;
@@ -55,7 +55,7 @@ export declare class ScalisSegment extends ScalisPrimitive {
      *              Use [Material.defaultMaterial.clone(), Material.defaultMaterial.clone()] by default.
      */
     constructor(v0: ScalisVertex, v1: ScalisVertex, volType: ScalisPrimitiveVolType, density: number, mats: Material[]);
-    getType(): "ScalisSegment";
+    getType(): string;
     toJSON(): ScalisSegmentJSON;
     mutableVolType(): boolean;
     /**
@@ -66,6 +66,10 @@ export declare class ScalisSegment extends ScalisPrimitive {
      *  @return The current density
      */
     getDensity(): number;
+    /**
+     *  [Abstract] See Primitive.setVolType for more details.
+     *  @param vt New VolType to set (Only for SCALIS primitives)
+     */
     setVolType(vt: ScalisPrimitiveVolType): void;
     getVolType(): ScalisPrimitiveVolType;
     prepareForEval(): void;
@@ -79,12 +83,12 @@ export declare class ScalisSegment extends ScalisPrimitive {
     /**
      *  value function for Distance volume type (distance field).
      */
-    evalDist: (p: Vector3, res: ValueResultType) => void;
+    evalDist: (this: ScalisSegment, p: Vector3, res: ValueResultType) => void;
     /**
      *
      * @param p Evaluation point
      * @param res Resulting material will be in res.m
-     */
+    */
     evalMat(p: Vector3, res: ValueResultType): void;
     /**
      *  @param w special_coeff
@@ -103,7 +107,7 @@ export declare class ScalisSegment extends ScalisPrimitive {
      *  http://www.softhis.com
      */
     clamp(a: number, b: number, c: number): number;
-    distanceTo: (p: Vector3) => number;
+    distanceTo: (this: ScalisSegment, p: Vector3) => number;
     /**
      *  Sub-function for optimized convolution value computation (Homothetic Compact Polynomial).*
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.

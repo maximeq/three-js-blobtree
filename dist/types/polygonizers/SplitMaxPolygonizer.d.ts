@@ -1,30 +1,13 @@
 import { RootNode } from "../blobtree/RootNode";
-type ConvergenceParams = {
-    ratio?: number;
-    step?: number;
-};
-type SMCParams = {
-    zResolution?: "adaptive" | "uniform";
-    detailRatio?: number;
-    progress?: (percent: number) => void;
-    convergence?: ConvergenceParams;
-    dichotomy?: number;
-};
+import { type SMCParams } from "./SlidingMarchingCubes";
 /**
  * Parameters for the subpolygonizer to use.
  * Contain a className which will be mapped to a constructor, and parameters related to that polygonizer
  */
 type SubPolygonizerParams = {
     className: "SlidingMarchingCubes";
-    smcParams?: SMCParams;
+    smcParams: SMCParams;
 };
-/**
- * @typedef {Object} SplitMaxPolygonizerParams
- * @property {SubPolygonizerParams=} subPolygonizer P
- * @property {Boolean=} smpParams.uniformRes
- * @property {Function=} smpParams.progress
- * @property {Number=} smpParams.ricciThreshold
- */
 export type SplitMaxPolygonizerParams = {
     subPolygonizer?: SubPolygonizerParams;
     uniformRes?: boolean;

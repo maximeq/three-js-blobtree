@@ -17,16 +17,15 @@ export type SDFCapsuleJSON = {
     r2: number;
 } & SDFPrimitiveJSON;
 /**
- *  This primitive implements a distance field to an extanded "capsule geometry", which is actually a weighted segment.
+ *  This primitive implements a distance field to an extended "capsule geometry", which is actually a weighted segment.
  *  You can find more on Capsule geometry here https://github.com/maximeq/three-js-capsule-geometry
  *
  *  @constructor
  *  @extends SDFPrimitive
- *
  */
 export declare class SDFCapsule extends SDFPrimitive {
-    static type: "SDFCapsule";
-    static fromJSON(json: SDFCapsuleJSON): SDFCapsule;
+    static type: string;
+    fromJSON(json: SDFCapsuleJSON): SDFCapsule;
     p1: Vector3;
     p2: Vector3;
     r1: number;
@@ -36,17 +35,16 @@ export declare class SDFCapsule extends SDFPrimitive {
     lengthSq: number;
     length: number;
     /**
-     *
-     *  @param {Vector3} p1 Position of the first segment extremity
-     *  @param {Vector3} p2 Position of the second segment extremity
-     *  @param {number} r1 Radius of the sphere centered in p1
-     *  @param {number} r2 Radius of the sphere centered in p2
+     *  @param p1 Position of the first segment extremity
+     *  @param p2 Position of the second segment extremity
+     *  @param r1 Radius of the sphere centered in p1
+     *  @param r2 Radius of the sphere centered in p2
      */
     constructor(p1: Vector3, p2: Vector3, r1: number, r2: number);
     /**
-     *  @return  Type of the element
+     *  @return Type of the element
      */
-    getType(): "SDFCapsule";
+    getType(): string;
     toJSON(): SDFCapsuleJSON;
     /**
      *  @param r1 The new radius at p1
@@ -86,7 +84,6 @@ export declare class SDFCapsule extends SDFPrimitive {
      */
     prepareForEval(): void;
     /**
-     * @param  d
      * @return The Areas object corresponding to the node/primitive, in an array
      */
     getDistanceAreas(d: number): {
@@ -97,6 +94,6 @@ export declare class SDFCapsule extends SDFPrimitive {
     /**
      *  @link Element.value for a complete description
      */
-    value: (p: Vector3, res: ValueResultType) => void;
+    value: (this: SDFCapsule, p: Vector3, res: ValueResultType) => void;
 }
 //# sourceMappingURL=SDFCapsule.d.ts.map

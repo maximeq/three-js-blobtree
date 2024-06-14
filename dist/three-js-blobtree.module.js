@@ -180,9 +180,6 @@ class Element {
     count(_cls) {
         return 0;
     }
-    destroy() {
-        console.error("Blobtree.Element: destroy is a virtual function, should be reimplemented in all classes extending Element.");
-    }
 }
 Types.register(Element.type, Element);
 
@@ -503,11 +500,6 @@ class Primitive extends Element {
 Types.register(Primitive.type, Primitive);
 
 /**
- * @typedef {Object} AreaSphereParam
- * @property {number} radius
- * @property {Vector3} center
- */
-/**
  *  Bounding area for a primitive
  *  It is the same for DIST and CONVOL primitives since the support of the convolution
  *  kernel is the same as the support for the distance field.
@@ -518,97 +510,6 @@ Types.register(Primitive.type, Primitive);
  *
  */
 class Area {
-    /**
-     *  @abstract
-     *  Test intersection of the shape with a sphere
-     *  @param {AreaSphereParam} _sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {boolean} true if the sphere and the area intersect
-     */
-    sphereIntersect(_sphere) {
-        throw "Error : sphereIntersect is abstract, should have been overwritten";
-    }
-    /**
-     * @abstract
-     * Test if p is in the area.
-     * @param {!Vector3} _p A point in space
-     * @return {boolean} true if p is in the area, false otherwise.
-     */
-    contains(_p) {
-        throw "Error : contains is abstract, should have been overwritten";
-    }
-    /**
-     *  @abstract
-     *  Return the minimum accuracy needed in the intersection of the sphere and the area.
-     *  This function is a generic function used in both getNiceAcc and getRawAcc.
-     *
-     *  @param {AreaSphereParam}  _sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param {number}  _factor  the ratio to determine the wanted accuracy.
-     *                   Example : for an AreaScalisSeg, if thick0 is 1 and thick1 is 2, a sphere
-     *                      centered at (p0+p1)/2 and of radius 0.2
-     *                      will show its minimum accuracy at p0+0.3*unit_dir.
-     *                      The linear interpolation of weights at this position
-     *                      will give a wanted radius of 1.3
-     *                      This function will return factor*1.3
-     *  @return {number} the accuracy needed in the intersection zone, as a ratio of the linear variation
-     *         of the radius along (this.p0,this.p1)
-     */
-    getAcc(_sphere, _factor) {
-        throw "Error : getAcc is abstract, should have been overwritten";
-    }
-    /**
-     *  @abstract
-     *  Convenience function, just call getAcc with Nice Accuracy parameters.
-     *  @param {AreaSphereParam} _sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Nice accuracy needed in the intersection zone
-     */
-    getNiceAcc(_sphere) {
-        throw "Error : getNiceAcc is abstract, should have been overwritten";
-    }
-    /**
-     *  @abstract
-     *  Convenience function, just call getAcc with Current Accuracy parameters.
-     *  @param {AreaSphereParam} _sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Current accuracy needed in the intersection zone
-     */
-    getCurrAcc(_sphere) {
-        throw "Error : getCurrAcc is abstract, should have been overwritten";
-    }
-    /**
-     *  @abstract
-     *  Convenience function, just call getAcc with Raw Accuracy parameters.
-     *  @param {AreaSphereParam} _sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The raw accuracy needed in the intersection zone
-     */
-    getRawAcc(_sphere) {
-        throw "Error : getRawAcc is abstract, should have been overwritten";
-    }
-    /**
-     *  @abstract
-     *  @return {number} the minimum accuracy needed in the whole area
-     */
-    getMinAcc() {
-        throw "Error : getRawAcc is abstract, should have been overwritten";
-    }
-    /**
-     *  @abstract
-     *  @return {number} the minimum raw accuracy needed in the whole area
-     */
-    getMinRawAcc() {
-        throw "Error : getRawAcc is abstract, should have been overwritten";
-    }
-    /**
-     *  @abstract
-     *  Return the minimum accuracy required at some point on the given axis, according to Accuracies.curr
-     *  The returned accuracy is the one you would need when stepping in the axis
-     *  direction when you are on the axis at coordinate t.
-     *  @param {string} _axis x, y or z
-     *  @param {number} _t Coordinate on the axis
-     *  @return {number} The step you can safely do in axis direction
-     */
-    getAxisProjectionMinStep(_axis, _t) {
-        console.error("Area.getAxisProjectionMinStep is a pure virtual function, please reimplement");
-        return 1;
-    }
 }
 
 /**
@@ -619,6 +520,9 @@ class Area {
 class Node extends Element {
     children;
     static type = "Node";
+    static fromJSON(_json) {
+        throw new Error("Node.fromJSON should never be called as Node is abstract.");
+    }
     constructor() {
         super();
         this.children = [];
@@ -804,7 +708,7 @@ class Node extends Element {
     }
     ;
 }
-Types.register(Node.type, Node);
+Types.register(Node.type, { fromJSON: () => null });
 
 /**
  *  This class implement a difference blending node.
@@ -825,7 +729,7 @@ class DifferenceNode extends Node {
     tmp_v_arr;
     tmp_m_arr;
     static type = "DifferenceNode";
-    fromJSON(json) {
+    static fromJSON(json) {
         return new DifferenceNode(Types.fromJSON(json.children[0]), Types.fromJSON(json.children[1]), json.alpha);
     }
     ;
@@ -1004,7 +908,7 @@ class MaxNode extends Node {
     tmp_g;
     tmp_m;
     static type = "MaxNode";
-    fromJSON(json) {
+    static fromJSON(json) {
         const res = new MaxNode();
         for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
@@ -1206,7 +1110,7 @@ class MinNode extends Node {
     }
     ;
 }
-Types.register(MinNode.type, MinNode);
+Types.register(MinNode.type, { fromJSON: (new MinNode()).fromJSON });
 
 /**
  *  This class implement a n-ary blend node which use a Ricci Blend.
@@ -1401,7 +1305,7 @@ class RicciNode extends Node {
     }
     ;
 }
-Types.register(RicciNode.type, RicciNode);
+Types.register(RicciNode.type, { fromJSON: (new RicciNode(0)).fromJSON });
 
 /**
  * @author Maxime Quiblier
@@ -1610,7 +1514,7 @@ class RootNode extends RicciNode {
     trimmed;
     trim_parents;
     static type = "RootNode";
-    fromJSON(json) {
+    static fromJSON(json) {
         const res = new RootNode();
         for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
@@ -1916,11 +1820,8 @@ class ScaleNode extends Node {
             });
         }
         // temp consts to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:Vector3, m:Material}} */
         this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {Vector3} */
         this.tmp_g = new Vector3();
-        /** @type {Material} */
         this.tmp_m = new Material();
         this._scale = new Vector3(1, 1, 1);
     }
@@ -1940,7 +1841,7 @@ class ScaleNode extends Node {
     /**
      * @link Node.fromJSON
      */
-    fromJSON(json) {
+    static fromJSON(json) {
         const res = new ScaleNode();
         res.setScale(new Vector3(json.scale_x, json.scale_y, json.scale_z));
         for (let i = 0; i < json.children.length; ++i) {
@@ -2118,7 +2019,7 @@ class TwistNode extends Node {
      * @param {TwistNodeJSON} json
      * @returns {TwistNode}
      */
-    fromJSON(json) {
+    static fromJSON(json) {
         const res = new TwistNode();
         res.setTwistAmount(json.twist_amount);
         res.setTwistAxis(new Vector3(json.axis_x, json.axis_y, json.axis_z));
@@ -2262,7 +2163,6 @@ const Accuracies = {
     curr: 0.3
 };
 
-/** @typedef {import('./Area.js').AreaSphereParam} AreaSphereParam */
 /**
  *  General representation of a "Capsule" area, ie, 2 sphere connected by a cone.
  *  You can find more on Capsule geometry here https://github.com/maximeq/three-js-capsule-geometry
@@ -2272,24 +2172,41 @@ const Accuracies = {
  * @constructor
  */
 class AreaCapsule extends Area {
+    p1;
+    p2;
+    r1;
+    r2;
+    accFactor1;
+    accFactor2;
+    unit_dir;
+    length;
+    vector;
+    p1_to_p;
+    p1_to_p_sqrnorm;
+    x_p_2D;
+    y_p_2D;
+    y_p_2DSq;
+    ortho_vec_x;
+    ortho_vec_y;
+    p_proj_x;
+    p_proj_y;
+    abs_diff_thick;
     /**
-     *
-     *  @param {!Vector3} p1     First point of the shape
-     *  @param {!Vector3} p2     Second point of the shape
-     *  @param {number}  r1 radius at p1
-     *  @param {number}  r2 radius at p2
-     *  @param {number}  accFactor1 Apply an accuracy factor to the standard one, around p1. Default to 1.
-     *  @param {number}  accFactor2 Apply an accuracy factor to the standard one, around p2. Default to 1.
-     *
+     *  @param p1 First point of the shape
+     *  @param p2 Second point of the shape
+     *  @param r1 radius at p1
+     *  @param r2 radius at p2
+     *  @param accFactor1 Apply an accuracy factor to the standard one, around p1. Default to 1.
+     *  @param accFactor2 Apply an accuracy factor to the standard one, around p2. Default to 1.
      */
-    constructor(p1, p2, r1, r2, accFactor1, accFactor2) {
+    constructor(p1, p2, r1, r2, accFactor1 = 1, accFactor2 = 1) {
         super();
         this.p1 = p1.clone();
         this.p2 = p2.clone();
         this.r1 = r1;
         this.r2 = r2;
-        this.accFactor1 = accFactor1 || 1.0;
-        this.accFactor2 = accFactor2 || 1.0;
+        this.accFactor1 = accFactor1;
+        this.accFactor2 = accFactor2;
         this.unit_dir = new Vector3().subVectors(p2, p1);
         this.length = this.unit_dir.length();
         this.unit_dir.normalize();
@@ -2307,9 +2224,8 @@ class AreaCapsule extends Area {
         this.abs_diff_thick = Math.abs(this.ortho_vec_x);
     }
     /**
-     * Compute some of the tmp variables.Used to factorized other functions code.
-     * @param { !Vector3 } p A point as a Vector3
-     *
+     * Compute some of the tmp variables. Used to factorized other functions code.
+     * @param p A point as a Vector3
      * @protected
      */
     proj_computation(p) {
@@ -2320,7 +2236,7 @@ class AreaCapsule extends Area {
         // pythagore inc.
         this.y_p_2DSq = this.p1_to_p_sqrnorm - this.x_p_2D * this.x_p_2D;
         this.y_p_2D = this.y_p_2DSq > 0 ? Math.sqrt(this.y_p_2DSq) : 0; // because of rounded errors tmp can be <0 and this causes the next sqrt to return NaN...
-        var t = -this.y_p_2D / this.ortho_vec_y;
+        const t = -this.y_p_2D / this.ortho_vec_y;
         // P proj is the point at the intersection of:
         //              - the local X axis (computation in the unit_dir basis)
         //                  and
@@ -2332,8 +2248,8 @@ class AreaCapsule extends Area {
     /**
      * @link Area.sphereIntersect for a complete description
      * @todo Check the Maths (Ask Cedric Zanni?)
-     * @param {AreaSphereParam} sphere
-     * @return {boolean} true if the sphere and the area intersect
+     * @param sphere
+     * @return true if the sphere and the area intersect
      */
     sphereIntersect(sphere) {
         this.proj_computation(sphere.center);
@@ -2346,21 +2262,18 @@ class AreaCapsule extends Area {
                 return (Math.sqrt(this.vector.lengthSq()) - sphere.radius < this.r2);
             }
             else {
-                var sub1 = this.x_p_2D - this.p_proj_x;
-                //var sub2 = this.y_p_2D-this.p_proj_y; //this.p_proj_y is set at 0 by definition
-                //var dist = Math.sqrt(sub1*sub1 +this.y_p_2DSq);//sub2*sub2);
-                var dist = sub1 * sub1 + this.y_p_2DSq; //sub2*sub2);
-                var tt = this.p_proj_x / this.length;
-                var inter_w = this.r1 * (1.0 - tt) + tt * this.r2;
-                var tmp = sphere.radius + inter_w;
-                //return (dist-sphere.radius < inter_w);
+                const sub1 = this.x_p_2D - this.p_proj_x;
+                const dist = sub1 * sub1 + this.y_p_2DSq;
+                const tt = this.p_proj_x / this.length;
+                const inter_w = this.r1 * (1.0 - tt) + tt * this.r2;
+                const tmp = sphere.radius + inter_w;
                 return (dist < tmp * tmp);
             }
         }
     }
     /**
      * @link Area.contains for a complete description
-     * @param {Vector3} p
+     * @param p
      */
     contains(p) {
         this.proj_computation(p);
@@ -2380,37 +2293,29 @@ class AreaCapsule extends Area {
             }
             else {
                 // Proj is in between the line segment P1-P0: Linear kind of containment
-                var sub1 = this.x_p_2D - this.p_proj_x;
-                var sub2 = this.y_p_2D - this.p_proj_y;
-                var dist2 = sub1 * sub1 + sub2 * sub2;
-                var tt = this.p_proj_x / this.length;
-                var inter_w = this.r1 * (1.0 - tt) + tt * this.r2;
+                const sub1 = this.x_p_2D - this.p_proj_x;
+                const sub2 = this.y_p_2D - this.p_proj_y;
+                const dist2 = sub1 * sub1 + sub2 * sub2;
+                const tt = this.p_proj_x / this.length;
+                const inter_w = this.r1 * (1.0 - tt) + tt * this.r2;
                 return dist2 < inter_w * inter_w;
             }
         }
     }
     /**
      *  @link Area.getAcc for a complete description
-     *
-     *  @return {number} the accuracy needed in the intersection zone
-     *
-     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param {number}  factor  the ratio to determine the wanted accuracy.
-     *
+     *  @return the accuracy needed in the intersection zone
+     *  @param sphere  A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param factor  the ratio to determine the wanted accuracy.
      *  @todo Check the Maths
      */
     getAcc(sphere, factor) {
         this.proj_computation(sphere.center);
-        // Thales between two triangles that have the same angles gives us the dist of:
-        // side A = sphere.radius*this.abs_diff_thick/this.length;
-        // Then pythagore this shit up as A² + sphere.radius² = delta²
-        // i.e delta² = (sphere.radius*this.abs_diff_thick/this.length)² + sphere.radius²
-        // <=> delta = sphere.radius*Math.sqrt(1+(this.abs_diff_thick/this.length)²);
-        var tmp = this.abs_diff_thick / this.length;
-        var half_delta = sphere.radius * Math.sqrt(1 + tmp * tmp) * 0.5;
+        const tmp = this.abs_diff_thick / this.length;
+        const half_delta = sphere.radius * Math.sqrt(1 + tmp * tmp) * 0.5;
         // we check only the direction where the weight is minimum since
         // we will return minimum accuracy needed in the area.
-        var absc = this.p_proj_x;
+        let absc = this.p_proj_x;
         absc += this.r1 > this.r2 ? half_delta : -half_delta;
         if (absc < 0.0) {
             return this.r1 * this.accFactor1 * factor;
@@ -2419,45 +2324,45 @@ class AreaCapsule extends Area {
             return this.r2 * this.accFactor2 * factor;
         }
         else {
-            var tt = absc / this.length;
-            var inter_w = this.r1 * this.accFactor1 * (1.0 - tt) + tt * this.r2 * this.accFactor2;
+            const tt = absc / this.length;
+            const inter_w = this.r1 * this.accFactor1 * (1.0 - tt) + tt * this.r2 * this.accFactor2;
             return inter_w * factor;
         }
     }
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Nice accuracy needed in the intersection zone
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Nice accuracy needed in the intersection zone
      */
     getNiceAcc(sphere) {
         return this.getAcc(sphere, Accuracies.nice);
     }
     /**
-     *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Curr accuracy needed in the intersection zone
+     *  @link Area.getCurrAcc for a complete description
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Curr accuracy needed in the intersection zone
      */
     getCurrAcc(sphere) {
         return this.getAcc(sphere, Accuracies.curr);
     }
     /**
      *  @link Area.getRawAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The raw accuracy needed in the intersection zone
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The raw accuracy needed in the intersection zone
      */
     getRawAcc(sphere) {
         return this.getAcc(sphere, Accuracies.raw);
     }
     /**
      * @link Area.getMinAcc
-     * @return {number}
+     * @return
      */
     getMinAcc() {
         return Accuracies.curr * Math.min(this.r1 * this.accFactor1, this.r2 * this.accFactor2);
     }
     /**
      * @link Area.getMinRawAcc
-     * @return {number}
+     * @return
      */
     getMinRawAcc() {
         return Accuracies.raw * Math.min(this.r1 * this.accFactor1, this.r2 * this.accFactor2);
@@ -2466,14 +2371,14 @@ class AreaCapsule extends Area {
      *  Return the minimum accuracy required at some point on the given axis, according to Accuracies.curr
      *  The returned accuracy is the one you would need when stepping in the axis
      *  direction when you are on the axis at coordinate t.
-     *  @param {string} axis x, y or z
-     *  @param {number} t Coordinate on the axis
-     *  @return {number} The step you can safely do in axis direction
+     *  @param axis x, y or z
+     *  @param t Coordinate on the axis
+     *  @return The step you can safely do in axis direction
      */
     getAxisProjectionMinStep(axis, t) {
-        var step = Number.MAX_VALUE;
-        var p1 = this.p1[axis] < this.p2[axis] ? this.p1 : this.p2;
-        var p2, r1, r2;
+        let step = Number.MAX_VALUE;
+        const p1 = this.p1[axis] < this.p2[axis] ? this.p1 : this.p2;
+        let p2, r1, r2;
         if (p1 === this.p1) {
             p2 = this.p2;
             r1 = this.r1 * this.accFactor1;
@@ -2484,24 +2389,23 @@ class AreaCapsule extends Area {
             r1 = this.r2;
             r2 = this.r1 * this.accFactor1;
         }
-        var diff = t - p1[axis];
+        let diff = t - p1[axis];
         if (diff < -2 * r1) {
             step = Math.min(step, Math.max(Math.abs(diff + 2 * r1), Accuracies.curr * r1));
         }
         else if (diff < 2 * r1) {
             step = Math.min(step, Accuracies.curr * r1);
-        } // else the sphere is behind us
+        }
         diff = t - p2[axis];
         if (diff < -2 * r2) {
             step = Math.min(step, Math.max(Math.abs(diff + 2 * r2), Accuracies.curr * r2));
         }
         else if (diff < 2 * r2) {
             step = Math.min(step, Accuracies.curr * r2);
-        } // else the sphere is behind us
-        var tbis = t - p1[axis];
-        var axis_l = p2[axis] - p1[axis];
+        }
+        const tbis = t - p1[axis];
+        const axis_l = p2[axis] - p1[axis];
         if (tbis > 0 && tbis < axis_l && axis_l !== 0) {
-            // t is in p1p2
             step = Math.min(step, Accuracies.curr * (r1 + (tbis / axis_l) * (r2 - r1)));
         }
         return step;
@@ -2516,10 +2420,10 @@ let KIS2 = 1 / (KS * KS);
  *  Compute the iso value at a given distance for a given polynomial degree
  *  and scale in 0 dimension (point)
  *
- *  @param {number} degree  Polynomial degree of the kernel
- *  @param {number} scale   Kernel scale
- *  @param {number} dist    Distance
- *  @return {number} The iso value at a given distance for a given polynomial degree and scale
+ *  @param degree  Polynomial degree of the kernel
+ *  @param scale   Kernel scale
+ *  @param dist    Distance
+ *  @return The iso value at a given distance for a given polynomial degree and scale
  */
 let GetIsoValueAtDistanceGeom0D = function (degree, scale, dist) {
     if (degree % 2 !== 0) {
@@ -2537,10 +2441,10 @@ let GetIsoValueAtDistanceGeom0D = function (degree, scale, dist) {
  *  Compute the iso value at a given distance for a given polynomial degree
  *  and scale in 1 dimension
  *
- *  @param {number} degree  Polynomial degree of the kernel
- *  @param {number} scale   Kernel scale
- *  @param {number} dist    Distance
- *  @return {number} The iso value at a given distance for a given polynomial degree and scale
+ *  @param degree  Polynomial degree of the kernel
+ *  @param scale   Kernel scale
+ *  @param dist    Distance
+ *  @return The iso value at a given distance for a given polynomial degree and scale
  */
 let GetIsoValueAtDistanceGeom1D = function (degree, scale, dist) {
     if (degree % 2 !== 0) {
@@ -2564,10 +2468,10 @@ let GetIsoValueAtDistanceGeom1D = function (degree, scale, dist) {
  *  Compute the iso value at a given distance for a given polynomial degree
  *  and scale in 2 dimensions
  *
- *  @param {number} degree  Polynomial degree of the kernel
- *  @param {number} scale   Kernel scale
- *  @param {number} dist    Distance
- *  @return {number} The iso value at a given distance for a given polynomial degree and scale
+ *  @param degree  Polynomial degree of the kernel
+ *  @param scale   Kernel scale
+ *  @param dist    Distance
+ *  @return The iso value at a given distance for a given polynomial degree and scale
  */
 let GetIsoValueAtDistanceGeom2D = function (degree, scale, dist) {
     if (dist < scale) {
@@ -2586,7 +2490,7 @@ const ScalisMath = {
     KIS2: KIS2,
     /**
      *  Compact Polynomial of degree 6 evaluation function
-     *  @param {number} r Radius (ie distance)
+     *  @param r Radius (ie distance)
      */
     Poly6Eval: function (r) {
         var aux = 1.0 - KIS2 * r * r;
@@ -2600,7 +2504,7 @@ const ScalisMath = {
     /**
      *  Compact Polynomial of degree 6 evaluation function from a squared radius.
      *  (avoid square roots in some cases)
-     *  @param {number} r2 Radius squared (ie distance squared)
+     *  @param r2 Radius squared (ie distance squared)
      */
     Poly6EvalSq: function (r2) {
         var aux = 1.0 - KIS2 * r2;
@@ -2615,19 +2519,19 @@ const ScalisMath = {
      *  Compute the iso value at a given distance for a given polynomial degree
      *  and scale in 0 dimension (point)
      *
-     *  @param {number} degree  Polynomial degree of the kernel
-     *  @param {number} scale   Kernel scale
-     *  @param {number} dist    Distance
-     *  @return {number} The iso value at a given distance for a given polynomial degree and scale
+     *  @param degree  Polynomial degree of the kernel
+     *  @param scale   Kernel scale
+     *  @param dist    Distance
+     *  @return The iso value at a given distance for a given polynomial degree and scale
      */
     GetIsoValueAtDistanceGeom0D: GetIsoValueAtDistanceGeom0D,
     /**
-     * @type {number} Normalization Factor for polynomial 4 in 0 dimension
+     * Normalization Factor for polynomial 4 in 0 dimension
      * @const
      */
     Poly4NF0D: 1.0 / GetIsoValueAtDistanceGeom0D(4, KS, 1.0),
     /**
-     * @type {number} Normalization Factor for polynomial 6 in 0 dimension
+     * Normalization Factor for polynomial 6 in 0 dimension
      * @const
      */
     Poly6NF0D: 1.0 / GetIsoValueAtDistanceGeom0D(6, KS, 1.0),
@@ -2635,19 +2539,19 @@ const ScalisMath = {
      *  Compute the iso value at a given distance for a given polynomial degree
      *  and scale in 1 dimension
      *
-     *  @param {number} degree  Polynomial degree of the kernel
-     *  @param {number} scale   Kernel scale
-     *  @param {number} dist    Distance
-     *  @return {number} The iso value at a given distance for a given polynomial degree and scale
+     *  @param degree  Polynomial degree of the kernel
+     *  @param scale   Kernel scale
+     *  @param dist    Distance
+     *  @return The iso value at a given distance for a given polynomial degree and scale
      */
     GetIsoValueAtDistanceGeom1D: GetIsoValueAtDistanceGeom1D,
     /**
-     * @type {number} Normalization Factor for polynomial 4 in 1 dimension
+     * Normalization Factor for polynomial 4 in 1 dimension
      * @const
      */
     Poly4NF1D: 1.0 / GetIsoValueAtDistanceGeom1D(4, KS, 1.0),
     /**
-     * @type {number} Normalization Factor for polynomial 6 in 1 dimension
+     * Normalization Factor for polynomial 6 in 1 dimension
      * @const
      */
     Poly6NF1D: 1.0 / GetIsoValueAtDistanceGeom1D(6, KS, 1.0),
@@ -2655,33 +2559,32 @@ const ScalisMath = {
      *  Compute the iso value at a given distance for a given polynomial degree
      *  and scale in 2 dimensions
      *
-     *  @param {number} degree  Polynomial degree of the kernel
-     *  @param {number} scale   Kernel scale
-     *  @param {number} dist    Distance
-     *  @return {number} The iso value at a given distance for a given polynomial degree and scale
+     *  @param degree  Polynomial degree of the kernel
+     *  @param scale   Kernel scale
+     *  @param dist    Distance
+     *  @return The iso value at a given distance for a given polynomial degree and scale
      */
     GetIsoValueAtDistanceGeom2D: GetIsoValueAtDistanceGeom2D,
     /**
-     * @type {number} Normalization Factor for polynomial 4 in 2 dimension
+     * Normalization Factor for polynomial 4 in 2 dimension
      * @const
      */
     Poly4NF2D: 1.0 / GetIsoValueAtDistanceGeom2D(4, KS, 1.0),
     /**
-     * @type {number} Normalization Factor for polynomial 6 in 2 dimension
+     * Normalization Factor for polynomial 6 in 2 dimension
      * @const
      */
     Poly6NF2D: 1.0 / GetIsoValueAtDistanceGeom2D(6, KS, 1.0)
 };
 
-/** @typedef {import('./Area.js').AreaSphereParam} AreaSphereParam */
 /**
  *  Bounding area for the segment.
  *  It is the same for DIST and CONVOL primitives since the support of the convolution
  *  kernel is the same as the support for the distance field.
- *  The resulting volume is a clipped cone with spherical extremities, wich is
+ *  The resulting volume is a clipped cone with spherical extremities, which is
  *  actually the support of the primitive.
  *
- *  The Area must be able to return accuracy needed in a given zone (Sphere fr now,
+ *  The Area must be able to return accuracy needed in a given zone (Sphere for now,
  *  since box intersections with such a complex shape are not trivial), and also
  *  propose an intersection test.
  *
@@ -2690,11 +2593,28 @@ const ScalisMath = {
  *
  */
 class AreaScalisSeg extends Area {
+    p0;
+    p1;
+    thick0;
+    thick1;
+    unit_dir;
+    length;
+    vector;
+    p0_to_p;
+    p0_to_p_sqrnorm;
+    x_p_2D;
+    y_p_2D;
+    y_p_2DSq;
+    ortho_vec_x;
+    ortho_vec_y;
+    p_proj_x;
+    p_proj_y;
+    abs_diff_thick;
     /**
-     * @param {!Vector3} p0 first point of the shape
-     * @param {!Vector3} p1 second point of the shape
-     * @param {number} thick0 radius at p0
-     * @param {number} thick1 radius at p1
+     * @param p0 first point of the shape
+     * @param p1 second point of the shape
+     * @param thick0 radius at p0
+     * @param thick1 radius at p1
      */
     constructor(p0, p1, thick0, thick1) {
         super();
@@ -2720,7 +2640,7 @@ class AreaScalisSeg extends Area {
     }
     /**
     * Compute some of the tmp variables.Used to factorized other functions code.
-    * @param { !Vector3 } p A point as a Vector3
+    * @param p A point as a Vector3
     *
     * @protected
     */
@@ -2732,7 +2652,7 @@ class AreaScalisSeg extends Area {
         // pythagore inc.
         this.y_p_2DSq = this.p0_to_p_sqrnorm - this.x_p_2D * this.x_p_2D;
         this.y_p_2D = this.y_p_2DSq > 0 ? Math.sqrt(this.y_p_2DSq) : 0; // because of rounded errors tmp can be <0 and this causes the next sqrt to return NaN...
-        var t = -this.y_p_2D / this.ortho_vec_y;
+        const t = -this.y_p_2D / this.ortho_vec_y;
         // P proj is the point at the intersection of:
         //              - the local X axis (computation in the unit_dir basis)
         //                  and
@@ -2743,8 +2663,7 @@ class AreaScalisSeg extends Area {
     /**
      * @link Area.sphereIntersect for a complete description
      * @todo Check the Maths (Ask Cedric Zanni?)
-     * @param {AreaSphereParam} sphere
-     * @return {boolean} true if the sphere and the area intersect
+     * @return true if the sphere and the area intersect
      */
     sphereIntersect(sphere) {
         this.proj_computation(sphere.center);
@@ -2757,21 +2676,17 @@ class AreaScalisSeg extends Area {
                 return (Math.sqrt(this.vector.lengthSq()) - sphere.radius < this.thick1 * ScalisMath.KS);
             }
             else {
-                var sub1 = this.x_p_2D - this.p_proj_x;
-                //var sub2 = this.y_p_2D-this.p_proj_y; //this.p_proj_y is set at 0 by definition
-                //var dist = Math.sqrt(sub1*sub1 +this.y_p_2DSq);//sub2*sub2);
-                var dist = sub1 * sub1 + this.y_p_2DSq; //sub2*sub2);
-                var tt = this.p_proj_x / this.length;
-                var inter_w = this.thick0 * (1.0 - tt) + tt * this.thick1;
-                var tmp = sphere.radius + inter_w * ScalisMath.KS;
-                //return (dist-sphere.radius < inter_w*ScalisMath.KS);
+                const sub1 = this.x_p_2D - this.p_proj_x;
+                const dist = sub1 * sub1 + this.y_p_2DSq;
+                const tt = this.p_proj_x / this.length;
+                const inter_w = this.thick0 * (1.0 - tt) + tt * this.thick1;
+                const tmp = sphere.radius + inter_w * ScalisMath.KS;
                 return (dist < tmp * tmp);
             }
         }
     }
     /**
      * @link Area.contains for a complete description
-     * @param {Vector3} p
      */
     contains(p) {
         this.proj_computation(p);
@@ -2791,62 +2706,31 @@ class AreaScalisSeg extends Area {
             }
             else {
                 // Proj is in between the line segment P1-P0: Linear kind of containment
-                var sub1 = this.x_p_2D - this.p_proj_x;
-                var sub2 = this.y_p_2D - this.p_proj_y;
-                var dist2 = sub1 * sub1 + sub2 * sub2;
-                var tt = this.p_proj_x / this.length;
-                var inter_w = this.thick0 * (1.0 - tt) + tt * this.thick1;
+                const sub1 = this.x_p_2D - this.p_proj_x;
+                const sub2 = this.y_p_2D - this.p_proj_y;
+                const dist2 = sub1 * sub1 + sub2 * sub2;
+                const tt = this.p_proj_x / this.length;
+                const inter_w = this.thick0 * (1.0 - tt) + tt * this.thick1;
                 return dist2 < inter_w * inter_w * ScalisMath.KS2;
             }
         }
     }
-    ;
     /**
      *  @link Area.getAcc for a complete description
      *
-     *  @return {number} the accuracy needed in the intersection zone
+     *  @param sphere  A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param factor  the ratio to determine the wanted accuracy.
      *
-     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param {number}  factor  the ratio to determine the wanted accuracy.
-     *
+     *  @return the accuracy needed in the intersection zone
      *  @todo Check the Maths
      */
     getAcc(sphere, factor) {
         this.proj_computation(sphere.center);
-        /*
-            // Following is a modified bit that improves acc computation outside of segments.
-            // However, it appears that we are losing some quality in the models
-            // (as the other computation gives a lower min acc bound by design)
-            // TODO: decide if we uncomment or delete this
-
-            // Get the point at the intersection of the line defined by the center of the sphere and of vector dir orthovec
-            // and the weight line going through (0,thick0)  and orthogonal to orthovec
-            var t = (thick0*this.ortho_vec_y - this.p_proj_x*this.ortho_vec_x)/(this.ortho_vec_x*this.ortho_vec_x+this.ortho_vec_y*this.ortho_vec_y);
-            var inter_proj_x = this.p_proj_x +t*this.ortho_vec_x;
-            var inter_proj_y = t*this.ortho_vec_y;
-            // If inside the min acc is found according to the sphere normal radius
-            var newR = sphere.radius;
-            if (this.y_p_2D > inter_proj_y){
-                // If we are outside the segment, the sphere intersection with the weight line is computed
-                var sub1 = this.x_p_2D-inter_proj_x;
-                var sub2 = this.y_p_2D-inter_proj_y;
-                var dist = Math.sqrt(sub1*sub1 +sub2*sub2);
-                // Pythagore this
-                newR = Math.sqrt(sphere.radius*sphere.radius-dist*dist);
-            }
-            var tmp = this.abs_diff_thick/this.length;
-            var half_delta = newR*Math.sqrt(1+tmp*tmp)*0.5;
-        */
-        // Thales between two triangles that have the same angles gives us the dist of:
-        // side A = sphere.radius*this.abs_diff_thick/this.length;
-        // Then pythagore this shit up as A² + sphere.radius² = delta²
-        // i.e delta² = (sphere.radius*this.abs_diff_thick/this.length)² + sphere.radius²
-        // <=> delta = sphere.radius*Math.sqrt(1+(this.abs_diff_thick/this.length)²);
-        var tmp = this.abs_diff_thick / this.length;
-        var half_delta = sphere.radius * Math.sqrt(1 + tmp * tmp) * 0.5;
+        const tmp = this.abs_diff_thick / this.length;
+        const half_delta = sphere.radius * Math.sqrt(1 + tmp * tmp) * 0.5;
         // we check only the direction where the weight is minimum since
         // we will return minimum accuracy needed in the area.
-        var absc = this.p_proj_x;
+        let absc = this.p_proj_x;
         absc += this.thick0 > this.thick1 ? half_delta : -half_delta;
         if (absc < 0.0) {
             return this.thick0 * factor;
@@ -2855,45 +2739,43 @@ class AreaScalisSeg extends Area {
             return this.thick1 * factor;
         }
         else {
-            var tt = absc / this.length;
-            var inter_w = this.thick0 * (1.0 - tt) + tt * this.thick1;
+            const tt = absc / this.length;
+            const inter_w = this.thick0 * (1.0 - tt) + tt * this.thick1;
             return inter_w * factor;
         }
     }
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Nice accuracy needed in the intersection zone
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Nice accuracy needed in the intersection zone
      */
     getNiceAcc(sphere) {
         return this.getAcc(sphere, Accuracies.nice);
     }
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Curr accuracy needed in the intersection zone
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Curr accuracy needed in the intersection zone
      */
-    getCurrAcc = function (sphere) {
+    getCurrAcc(sphere) {
         return this.getAcc(sphere, Accuracies.curr);
-    };
+    }
     /**
      *  @link Area.getRawAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The raw accuracy needed in the intersection zone
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The raw accuracy needed in the intersection zone
      */
     getRawAcc(sphere) {
         return this.getAcc(sphere, Accuracies.raw);
     }
     /**
      * @link Area.getMinAcc
-     * @return {number}
      */
     getMinAcc() {
         return Accuracies.curr * Math.min(this.thick0, this.thick1);
     }
     /**
      * @link Area.getMinRawAcc
-     * @return {number}
      */
     getMinRawAcc() {
         return Accuracies.raw * Math.min(this.thick0, this.thick1);
@@ -2902,14 +2784,14 @@ class AreaScalisSeg extends Area {
      *  Return the minimum accuracy required at some point on the given axis, according to Accuracies.curr
      *  The returned accuracy is the one you would need when stepping in the axis
      *  direction when you are on the axis at coordinate t.
-     *  @param {string} axis x, y or z
-     *  @param {number} t Coordinate on the axis
-     *  @return {number} The step you can safely do in axis direction
+     *  @param axis x, y or z
+     *  @param t Coordinate on the axis
+     *  @return The step you can safely do in axis direction
      */
     getAxisProjectionMinStep(axis, t) {
-        var step = Number.MAX_VALUE;
-        var p0 = this.p0[axis] < this.p1[axis] ? this.p0 : this.p1;
-        var p1, thick0, thick1;
+        let step = Number.MAX_VALUE;
+        const p0 = this.p0[axis] < this.p1[axis] ? this.p0 : this.p1;
+        let p1, thick0, thick1;
         if (p0 === this.p0) {
             p1 = this.p1;
             thick0 = this.thick0;
@@ -2920,24 +2802,23 @@ class AreaScalisSeg extends Area {
             thick0 = this.thick1;
             thick1 = this.thick0;
         }
-        var diff = t - p0[axis];
+        let diff = t - p0[axis];
         if (diff < -2 * thick0) {
             step = Math.min(step, Math.max(Math.abs(diff + 2 * thick0), Accuracies.curr * thick0));
         }
         else if (diff < 2 * thick0) {
             step = Math.min(step, Accuracies.curr * thick0);
-        } // else the vertex is behind us
+        }
         diff = t - p1[axis];
         if (diff < -2 * thick1) {
             step = Math.min(step, Math.max(Math.abs(diff + 2 * thick1), Accuracies.curr * thick1));
         }
         else if (diff < 2 * thick1) {
             step = Math.min(step, Accuracies.curr * thick1);
-        } // else the vertex is behind us
-        var tbis = t - p0[axis];
-        var axis_l = p1[axis] - p0[axis];
+        }
+        const tbis = t - p0[axis];
+        const axis_l = p1[axis] - p0[axis];
         if (tbis > 0 && tbis < axis_l && axis_l !== 0) {
-            // t is in p0p1
             step = Math.min(step, Accuracies.curr * (thick0 + (tbis / axis_l) * (thick1 - thick0)));
         }
         return step;
@@ -2945,857 +2826,425 @@ class AreaScalisSeg extends Area {
 }
 
 const EPSILON = 0.000001;
-const TriangleUtils = {};
-/*
-  ! Triangle extends Primitive and must have the following properties in constructor: !
-
-    this.p0p1  = new Vector3();
-    this.p1p2 = new Vector3();
-    this.p2p0 = new Vector3();
-    this.unit_normal = new Vector3();
-    this.unit_p0p1 = new Vector3();
-    this.unit_p1p2 = new Vector3();
-    this.unit_p2p0 = new Vector3();
-    this.length_p0p1 = 0;
-    this.length_p1p2 = 0;
-    this.length_p2p0 = 0;
-    this.diffThick_p0p1 = 0;
-    this.diffThick_p0p1 = 0;
-    this.diffThick_p0p1 = 0;
-    this.main_dir = new Vector3();
-    this.point_iso_zero = new Vector3();
-    this.ortho_dir      = new Vector3();
-    this.unsigned_ortho_dir = new Vector3();
-    this.proj_dir       = new Vector3();
-    this.equal_weights = false; // Use to skip computations for a specific case
-
-    this.coord_max           = 0;
-    this.coord_middle        = 0;
-    this.unit_delta_weight   = 0;
-    this.longest_dir_special = 0;
-    this.max_seg_length      = 0;
-    this.half_dir_1 = new Vector3();
-    this.point_half = new Vector3();
-    this.half_dir_2 = new Vector3();
-    this.point_min = new Vector3();
-    this.weight_min = 0;
-
-*/
-/**
- * intermediary functions used in computeVectorsDirs
- */
-let cleanIndex = function (ind, lengthArray) {
-    let res = ind;
-    if (lengthArray === 0) {
-        throw new Error("Lenght of the array should not be 0");
-    }
-    if (lengthArray === 1) {
-        return 0;
-    }
-    // negative index are looped back at the end of the array
-    if (ind < 0)
-        res = (lengthArray + ind) % lengthArray;
-    // index greater than the array length are looped back at the beginning
-    if (ind >= lengthArray) {
-        res = ind % lengthArray;
-    }
-    return res;
-};
-/**
- *  Compute some internal consts for triangle
- *  @param triangle The triangle to compute consts for (blobtree or skel)
- */
-TriangleUtils.computeVectorsDirs = function (triangle) {
-    let v0_p = triangle.v[0].getPos();
-    let v1_p = triangle.v[1].getPos();
-    let v2_p = triangle.v[2].getPos();
-    triangle.p0p1.subVectors(v1_p, v0_p);
-    triangle.p1p2.subVectors(v2_p, v1_p);
-    triangle.p2p0.subVectors(v0_p, v2_p);
-    //triangle.unit_normal.crossVectors(triangle.p0p1,triangle.p1p2);
-    triangle.unit_normal.crossVectors(triangle.p0p1, triangle.p2p0);
-    triangle.unit_normal.normalize();
-    triangle.length_p0p1 = triangle.p0p1.length();
-    triangle.unit_p0p1.copy(triangle.p0p1);
-    triangle.unit_p0p1.divideScalar(triangle.length_p0p1);
-    triangle.diffThick_p0p1 = triangle.v[0].getThickness() - triangle.v[1].getThickness();
-    triangle.length_p1p2 = triangle.p1p2.length();
-    triangle.unit_p1p2.copy(triangle.p1p2);
-    triangle.unit_p1p2.divideScalar(triangle.length_p1p2);
-    triangle.diffThick_p1p2 = triangle.v[1].getThickness() - triangle.v[2].getThickness();
-    triangle.length_p2p0 = triangle.p2p0.length();
-    triangle.unit_p2p0.copy(triangle.p2p0);
-    triangle.unit_p2p0.divideScalar(triangle.length_p2p0);
-    triangle.diffThick_p2p0 = triangle.v[2].getThickness() - triangle.v[0].getThickness();
-    // Precomputation Used in mech computation
-    // So we first find the direction of maximum weight constiation.
-    /** @type Array<{vert: Vector3, thick: number, idx: number}> */
-    let sortingArr = [];
-    sortingArr.push({ vert: triangle.v[0].getPos(), thick: triangle.v[0].getThickness(), idx: 0 });
-    sortingArr.push({ vert: triangle.v[1].getPos(), thick: triangle.v[1].getThickness(), idx: 1 });
-    sortingArr.push({ vert: triangle.v[2].getPos(), thick: triangle.v[2].getThickness(), idx: 2 });
-    // sort by the min thickness
-    sortingArr.sort(function (a, b) { return a.thick - b.thick; });
-    triangle.point_min = sortingArr[0].vert;
-    triangle.weight_min = sortingArr[0].thick;
-    // Cycle throught the other points
-    let idx = cleanIndex(sortingArr[0].idx + 1, 3);
-    let point_1 = triangle.v[idx].getPos();
-    let weight_1 = triangle.v[idx].getThickness();
-    idx = cleanIndex(sortingArr[0].idx + 2, 3);
-    let point_2 = triangle.v[idx].getPos();
-    let weight_2 = triangle.v[idx].getThickness();
-    let dir_1 = new Vector3();
-    dir_1 = dir_1.subVectors(point_1, triangle.point_min);
-    let dir_2 = new Vector3();
-    dir_2 = dir_2.subVectors(point_2, triangle.point_min);
-    let delta_1 = weight_1 - triangle.weight_min;
-    let delta_2 = weight_2 - triangle.weight_min;
-    if (delta_1 < EPSILON || delta_2 < EPSILON) {
-        if (delta_1 < delta_2) { //delta_1 is closer to 0
-            triangle.ortho_dir = dir_1.clone();
-            triangle.ortho_dir.normalize();
-            // direction of fastest constiation of weight
-            triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
-            triangle.main_dir.normalize();
-            if ((triangle.main_dir.dot(dir_2)) < 0.0) {
-                triangle.main_dir.multiplyScalar(-1.0);
-            }
-            let coord_iso_zero_dir = -triangle.weight_min / delta_2;
-            triangle.point_iso_zero = new Vector3(triangle.point_min.x + coord_iso_zero_dir * dir_2.x, triangle.point_min.y + coord_iso_zero_dir * dir_2.y, triangle.point_min.z + coord_iso_zero_dir * dir_2.z);
+const TriangleUtils = {
+    /*
+      ! Triangle extends Primitive and must have the following properties in constructor: !
+    
+        this.p0p1  = new Vector3();
+        this.p1p2 = new Vector3();
+        this.p2p0 = new Vector3();
+        this.unit_normal = new Vector3();
+        this.unit_p0p1 = new Vector3();
+        this.unit_p1p2 = new Vector3();
+        this.unit_p2p0 = new Vector3();
+        this.length_p0p1 = 0;
+        this.length_p1p2 = 0;
+        this.length_p2p0 = 0;
+        this.diffThick_p0p1 = 0;
+        this.diffThick_p0p1 = 0;
+        this.diffThick_p0p1 = 0;
+        this.main_dir = new Vector3();
+        this.point_iso_zero = new Vector3();
+        this.ortho_dir      = new Vector3();
+        this.unsigned_ortho_dir = new Vector3();
+        this.proj_dir       = new Vector3();
+        this.equal_weights = false; // Use to skip computations for a specific case
+    
+        this.coord_max           = 0;
+        this.coord_middle        = 0;
+        this.unit_delta_weight   = 0;
+        this.longest_dir_special = 0;
+        this.max_seg_length      = 0;
+        this.half_dir_1 = new Vector3();
+        this.point_half = new Vector3();
+        this.half_dir_2 = new Vector3();
+        this.point_min = new Vector3();
+        this.weight_min = 0;
+    
+    */
+    /**
+     * intermediary functions used in computeVectorsDirs
+     */
+    cleanIndex(ind, lengthArray) {
+        let res = ind;
+        if (lengthArray === 0) {
+            throw new Error("Lenght of the array should not be 0");
         }
-        else { //delta_2 is closer to 0
-            triangle.ortho_dir = dir_2.clone();
-            triangle.ortho_dir.normalize();
-            // direction of fastest constiation of weight
-            triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
-            triangle.main_dir.normalize();
-            if ((triangle.main_dir.dot(dir_1)) < 0.0) {
-                triangle.main_dir.multiplyScalar(-1.0);
-            }
-            let coord_iso_zero_dir = -triangle.weight_min / delta_1;
-            triangle.point_iso_zero = new Vector3(triangle.point_min.x + coord_iso_zero_dir * dir_1.x, triangle.point_min.y + coord_iso_zero_dir * dir_1.y, triangle.point_min.z + coord_iso_zero_dir * dir_1.z);
+        if (lengthArray === 1) {
+            return 0;
         }
-        if (Math.abs(delta_1 - delta_2) < EPSILON) {
-            triangle.proj_dir = triangle.unit_normal.clone().multiplyScalar(-1);
-            triangle.equal_weights = true;
-        }
-    }
-    else { // WARNING : numerically instable if delta_ close to zero !
-        // find the point were weight equal zero along the two edges that leave from point_min
-        let coord_iso_zero_dir1 = -triangle.weight_min / delta_1;
-        let point_iso_zero1 = new Vector3(triangle.point_min.x + coord_iso_zero_dir1 * dir_1.x, triangle.point_min.y + coord_iso_zero_dir1 * dir_1.y, triangle.point_min.z + coord_iso_zero_dir1 * dir_1.z);
-        triangle.point_iso_zero = point_iso_zero1;
-        let coord_iso_zero_dir2 = -triangle.weight_min / delta_2;
-        let point_iso_zero2 = new Vector3(triangle.point_min.x + coord_iso_zero_dir2 * dir_2.x, triangle.point_min.y + coord_iso_zero_dir2 * dir_2.y, triangle.point_min.z + coord_iso_zero_dir2 * dir_2.z);
-        // along ortho_dir the weight are const
-        triangle.ortho_dir.subVectors(point_iso_zero2, point_iso_zero1);
-        triangle.ortho_dir.normalize();
-        // direction of fastest constiation of weight
-        triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
-        triangle.main_dir.normalize();
-        if ((triangle.main_dir.dot(dir_1)) < 0.0 || (triangle.main_dir.dot(dir_2)) < 0.0) {
-            triangle.main_dir.multiplyScalar(-1.0);
-        }
-    }
-    let coord_1 = dir_1.dot(triangle.main_dir); // not normalized !
-    let coord_2 = dir_2.dot(triangle.main_dir); // not normalized !
-    // due to previous approximation for stability
-    coord_1 = (coord_1 < 0.0) ? 0.0 : coord_1;
-    coord_2 = (coord_2 < 0.0) ? 0.0 : coord_2;
-    let longest_dir = null;
-    if (coord_1 > coord_2) {
-        longest_dir = dir_1;
-        triangle.half_dir_1 = dir_2;
-        triangle.point_half = point_2;
-        triangle.half_dir_2 = point_1.clone().subVectors(point_1, point_2);
-        triangle.coord_max = coord_1;
-        triangle.coord_middle = (coord_2 / coord_1) * triangle.coord_max;
-        triangle.unit_delta_weight = delta_1 / triangle.coord_max;
-    }
-    else {
-        longest_dir = dir_2;
-        triangle.half_dir_1 = dir_1;
-        triangle.point_half = point_1;
-        triangle.half_dir_2 = point_2.clone().subVectors(point_2, point_1);
-        triangle.coord_max = coord_2;
-        triangle.coord_middle = (coord_1 / coord_2) * triangle.coord_max;
-        triangle.unit_delta_weight = delta_2 / triangle.coord_max;
-    }
-    triangle.longest_dir_special = longest_dir.divideScalar(triangle.coord_max);
-    // Length of the longest segment during numerical integration
-    let tmp = new Vector3();
-    tmp.subVectors(triangle.half_dir_1, triangle.longest_dir_special.clone().multiplyScalar(triangle.coord_middle));
-    triangle.max_seg_length = tmp.length();
-    triangle.unsigned_ortho_dir = triangle.ortho_dir.clone();
-    if ((triangle.ortho_dir.dot(tmp)) < 0.0) {
-        triangle.ortho_dir.multiplyScalar(-1.0);
-    }
-};
-/**
- *  @param triangle
- *     u parametrisation of the point to compute along the axis V0->V1
- *     v parametrisation of the point to compute along the axis V0->V2
- *  @return An object with the computed pos and thickness
- */
-TriangleUtils.getParametrisedVertexAttr = function (triangle, u, v) {
-    let meanThick = TriangleUtils.getMeanThick(triangle, u, v);
-    // create new point
-    let pos = new Vector3();
-    let uAdd = pos.subVectors(triangle.v[1].getPos(), triangle.v[0].getPos()).multiplyScalar(u);
-    let vAdd = pos.clone().subVectors(triangle.v[2].getPos(), triangle.v[0].getPos()).multiplyScalar(v);
-    pos.addVectors(triangle.v[0].getPos(), uAdd);
-    pos.addVectors(pos, vAdd);
-    return { "pos": pos, "thick": meanThick };
-};
-/**
- *  @param triangle The concerned triangle
- *  @param u u coordinate
- *  @param v v coordinate
- */
-TriangleUtils.getMeanThick = function (triangle, u, v) {
-    return triangle.v[0].getThickness() * (1 - u - v) + triangle.v[1].getThickness() * u + triangle.v[2].getThickness() * v;
-};
-/**
- *  @param {!Object} triangle The concerned triangle
- *  @param {number} u u coordinate
- *  @param {number} v v coordinate
- *  @return {!Material} Interpolated material
- */
-TriangleUtils.getMeanMat = function (triangle, u, v) {
-    let res = new Material();
-    let m_arr = triangle.materials === null ?
-        [triangle.v[0].getMaterial(), triangle.v[0].getMaterial(), triangle.v[0].getMaterial()] :
-        [triangle.materials[0], triangle.materials[1], triangle.materials[2]];
-    res.weightedMean(m_arr, [1 - u - v, u, v]);
-    return res;
-};
-/*  Cf. http://math.stackexchange.com/questions/148199/equation-for-non-orthogonal-projection-of-a-point-onto-two-vectors-representing
-    eq1: W=uU+vV with u and v the parametrisation and V and U the basis vectors
-     -> eq 1.dot(U) gives us eq A/   and eq 1.dot(V) gives us eq B/
-
-    A/ u(U⋅U)+v(U⋅V)=W⋅U
-    B/ u(V⋅U)+v(V⋅V)=W⋅V
-    <=>
-    u*a + v*b = c;
-    u*d + v*e = f;
-    <=>
-    v = (f-d*(c/a))*(1/(e-d*b/a));
-    u = (c-v*b)/a;
-    with:
-    a = U.lengthSq();
-    b = U.dot(V);
-    c = p.dot(U);
-    d = V.dot(U);
-    e = V.lengthSq();
-    f = W.dot(V);
-*/
-/**
- *  Get the triangle barycenter coordinates. The projection is non orthogonal.
- *  WTF is that? Barycentirc coordinates are 3 components, not 2 !
- *  @param p0p1 Vector from p0 to p1
- *  @param p2p0 Vector from p2 to p0
- *  @param p0 Point 0 in triangle
- *  @param p Point in space
- *
- *  @return {{u:number,v:number}} Coordinate of barycenter
- */
-TriangleUtils.getTriBaryCoord = function (p0p1, p2p0, p0, p) {
-    let U = p0p1;
-    let V = p2p0.clone().multiplyScalar(-1);
-    let W = new Vector3().subVectors(p, p0);
-    // b == d
-    let a = U.lengthSq();
-    let b = U.dot(V);
-    let c = W.dot(U);
-    let d = V.lengthSq();
-    let e = W.dot(V);
-    let v = (a * e - b * c) / (a * d - b * b);
-    let u = (c - v * b) / a;
-    return { "u": u, "v": v };
-};
-TriangleUtils.getUVCoord = function (U, V, p0, p) {
-    let W = new Vector3();
-    W.crossVectors(U, V);
-    let mat = new Matrix4();
-    mat.set(U.x, V.x, W.x, 0, U.y, V.y, W.y, 0, U.z, V.z, W.z, 0, 0, 0, 0, 1);
-    let mat1 = new Matrix4();
-    mat1.copy(mat).invert();
-    let vec = new Vector3().subVectors(p, p0);
-    vec.applyMatrix4(mat1);
-    return { u: vec.x, v: vec.y };
-};
-
-/** @typedef {import('./Area.js').AreaSphereParam} AreaSphereParam */
-/** @typedef {import('../scalis/ScalisVertex')} ScalisVertex */
-/**
- *  Bounding area for the triangle.
- *  It is the same for DIST and CONVOL primitives since the support of the convolution
- *  kernel is the same as the support for the distance field.
- *
- *  The Area must be able to return accuracy needed in a given zone (Sphere fr now,
- *  since box intersections with such a complex shape are not trivial), and also
- *  propose an intersection test.
- *
- *  @extends {Area}
- */
-class AreaScalisTri extends Area {
-    /**
-     *  @param { Array.< !ScalisVertex >} v Array or vertices
-     *  @param {!Vector3} unit_normal Normal to the plane made by the 3 vertices, as a Vector3
-     *  @param {!Vector3} main_dir Main direction dependeing on thicknesses
-     * @param {!Object}  segParams
-     *  @param {number}  min_thick Minimum thickness in the Triangle
-     *  @param {number} max_thick Maximum thickness in the triangle
-     */
-    constructor(v, unit_normal, main_dir, segParams, min_thick, max_thick) {
-        super();
-        this.tmpVect = new Vector3();
-        this.min_thick = min_thick;
-        this.max_thick = max_thick;
-        this.v = v;
-        this.p0p1 = this.tmpVect.clone().subVectors(this.v[1].getPos(), this.v[0].getPos());
-        this.p2p0 = this.tmpVect.clone().subVectors(this.v[0].getPos(), this.v[2].getPos());
-        this.unit_normal = unit_normal; // Normal computed from crossVectors of p0p1 and P2p1
-        this.main_dir = main_dir;
-        var delta_1 = Math.abs(this.v[0].getThickness() - this.v[1].getThickness());
-        var delta_2 = Math.abs(this.v[1].getThickness() - this.v[2].getThickness());
-        this.equal_weights = (delta_1 / Math.abs(this.v[0].getThickness() + this.v[1].getThickness()) < 0.001
-            && delta_2 / Math.abs(this.v[1].getThickness() + this.v[2].getThickness()) < 0.001);
-        /* segParams is defined as: (e.g for segment p0p1)
-        segParams.push({"norm":         this.length_p0p1,
-                        "diffThick":    this.diffThick_p0p1,
-                        "dir":          this.unit_p0p1,
-                        "v":            [this.v[0], this.v[1]],
-                        "ortho_vec_x":  this.v[0].getThickness() - this.v[1].getThickness(),
-                        "ortho_vec_y":  this.length_p0p1});
-        */
-        this.segParams = segParams;
-        // Store tmp computation parameters when doing computation on one segment of the triangle
-        this.segAttr = {
-            p0_to_p: new Vector3(),
-            p0_to_p_sqrnorm: 0,
-            x_p_2D: 0,
-            y_p_2D: 0,
-            y_p_2DSq: 0,
-            p_proj_x: 0
-        };
-        // Construct the triangular prism going through each vertices
-        var n1 = this.tmpVect.clone().crossVectors(this.segParams[0].dir, this.unit_normal).normalize();
-        var n2 = this.tmpVect.clone().crossVectors(this.segParams[1].dir, this.unit_normal).normalize();
-        var n3 = this.tmpVect.clone().crossVectors(this.segParams[2].dir, this.unit_normal).normalize();
-        // Compute the prism vertices
-        this.tmpVect.copy(this.unit_normal);
-        var pri = [];
-        pri.push(this.tmpVect.clone().addVectors(this.v[0].getPos(), this.tmpVect.multiplyScalar(this.v[0].getThickness() * ScalisMath.KS)));
-        this.tmpVect.copy(this.unit_normal);
-        pri.push(this.tmpVect.clone().addVectors(this.v[1].getPos(), this.tmpVect.multiplyScalar(this.v[1].getThickness() * ScalisMath.KS)));
-        this.tmpVect.copy(this.unit_normal);
-        pri.push(this.tmpVect.clone().addVectors(this.v[2].getPos(), this.tmpVect.multiplyScalar(this.v[2].getThickness() * ScalisMath.KS)));
-        this.tmpVect.copy(this.unit_normal);
-        pri.push(this.tmpVect.clone().addVectors(this.v[0].getPos(), this.tmpVect.multiplyScalar(-this.v[0].getThickness() * ScalisMath.KS)));
-        this.tmpVect.copy(this.unit_normal);
-        pri.push(this.tmpVect.clone().addVectors(this.v[1].getPos(), this.tmpVect.multiplyScalar(-this.v[1].getThickness() * ScalisMath.KS)));
-        this.tmpVect.copy(this.unit_normal);
-        pri.push(this.tmpVect.clone().addVectors(this.v[2].getPos(), this.tmpVect.multiplyScalar(-this.v[2].getThickness() * ScalisMath.KS)));
-        // Compute the normals of top and bottom faces of the prism
-        var tmp2 = new Vector3();
-        this.tmpVect.subVectors(pri[1], pri[0]);
-        tmp2.subVectors(pri[2], pri[0]);
-        var n4 = this.tmpVect.clone().crossVectors(this.tmpVect, tmp2).normalize();
-        this.tmpVect.subVectors(pri[5], pri[3]);
-        tmp2.subVectors(pri[4], pri[3]);
-        var n5 = this.tmpVect.clone().crossVectors(this.tmpVect, tmp2).normalize();
-        // planeParams contains the definition of the prism 5 faces {normal, orig}
-        this.planeParams = [];
-        this.planeParams.push({ "orig": this.v[0].getPos(), "n": n1 });
-        this.planeParams.push({ "orig": this.v[1].getPos(), "n": n2 });
-        this.planeParams.push({ "orig": this.v[2].getPos(), "n": n3 });
-        this.planeParams.push({ "orig": pri[0], "n": n4 });
-        this.planeParams.push({ "orig": pri[3], "n": n5 });
-        // use segments areas to factoirize some code.
-        this.segAreas = [];
-        for (var i = 0; i < 3; ++i) {
-            this.segAreas.push(new AreaScalisSeg(this.segParams[i].v[0].getPos(), this.segParams[i].v[1].getPos(), this.segParams[i].v[0].getThickness(), this.segParams[i].v[1].getThickness()));
-        }
-    }
-    ;
-    /**
-     *  Compute projection (used in other functions)
-     *  @param {!Vector3} p Point to proj
-     *  @param {!Object} segParams A seg param object @todo clarify this parameter
-     *
-     *  @protected
-     */
-    proj_computation(p, segParams) {
-        this.segAttr.p0_to_p.subVectors(p, segParams.v[0].getPos());
-        this.segAttr.p0_to_p_sqrnorm = this.segAttr.p0_to_p.lengthSq();
-        this.segAttr.x_p_2D = this.segAttr.p0_to_p.dot(segParams.dir);
-        // pythagore inc.
-        this.segAttr.y_p_2DSq = this.segAttr.p0_to_p_sqrnorm - this.segAttr.x_p_2D * this.segAttr.x_p_2D;
-        this.segAttr.y_p_2D = this.segAttr.y_p_2DSq > 0 ? Math.sqrt(this.segAttr.y_p_2DSq) : 0; // because of rounded errors tmp can be <0 and this causes the next sqrt to return NaN...
-        var t = -this.segAttr.y_p_2D / segParams.ortho_vec_y;
-        // P proj is the point at the intersection of:
-        //              - the local X axis (computation in the unit_dir basis)
-        //                  and
-        //              - the line defined by P and the vector orthogonal to the weight line
-        this.segAttr.p_proj_x = this.segAttr.x_p_2D + t * segParams.ortho_vec_x;
-        //this.segAttr.p_proj_y = 0.0;
-    }
-    /**
-     * @link Area.sphereIntersect for a complete description
-     * @todo Check the Maths (Ask Cedric Zanni?)
-     * @param {AreaSphereParam} sphere
-     * @return {boolean} true if the sphere and the area intersect
-     */
-    sphereIntersect(sphere) {
-        // First: Test the intersection of the sphere to all three segments as they are included in the triangle bv
-        for (let i = 0; i < 3; i++) {
-            let intersectSeg = this.sphereIntersectSegment(sphere, this.segParams[i], ScalisMath.KS);
-            // The sphere intersecting ones the angle means the sphere intersect the Bounding Volume
-            if (intersectSeg) {
-                return true;
-            }
-        }
-        // Second: Test the intersection of the sphere with the triangular prism defined by
-        // the 2D triangle constructed from the vertices and of half heights Ti*KS along the unit_normal for each vertices Vi
-        let inside = true;
-        for (let i = 0, inside = true; i < 5; i++) {
-            this.tmpVect.subVectors(sphere.center, this.planeParams[i].orig);
-            // Get the signed dist to the plane
-            let dist = this.tmpVect.dot(this.planeParams[i].n);
-            // if the dist to the plane is positive, we are in the part where the normal is
-            inside = inside && (dist + sphere.radius > 0); // Modulation by the sphere radius
-        }
-        // If the sphere is outside one of the plane-> BLAM OUTSIDE SON
-        return inside;
-    }
-    /**
-     *  Adapted from the segment sphere intersection. Could be factorised!
-     *  @return {boolean} true if the sphere and the area intersect
-     *
-     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param {!Object} segParams A segParams object containing data for a segment
-     *  @param {number} KS Kernel Scale, ie ScalisMath.KS (Why is it a parameter, its global!?)
-     *
-     */
-    sphereIntersectSegment(sphere, segParams, KS) {
-        this.proj_computation(sphere.center, segParams);
-        var thick0 = segParams.v[0].getThickness();
-        var thick1 = segParams.v[1].getThickness();
-        if (this.segAttr.p_proj_x < 0.0) {
-            return (Math.sqrt(this.segAttr.p0_to_p_sqrnorm) - sphere.radius < thick0 * KS);
-        }
-        else {
-            if (this.segAttr.p_proj_x > segParams.norm) {
-                this.segAttr.p0_to_p.subVectors(sphere.center, segParams.v[1].getPos());
-                return this.segAttr.p0_to_p.length() - sphere.radius < thick1 * KS;
-            }
-            else {
-                var sub1 = this.segAttr.x_p_2D - this.segAttr.p_proj_x;
-                var dist = sub1 * sub1 + this.segAttr.y_p_2DSq;
-                var tt = this.segAttr.p_proj_x / segParams.norm;
-                var inter_w = thick0 * (1.0 - tt) + tt * thick1;
-                var tmp = sphere.radius + inter_w * KS;
-                return (dist < tmp * tmp);
-            }
-        }
-    }
-    /**
-     * @link Area.contains for a complete description
-     * @param {Vector3} p
-     */
-    contains = (function () {
-        let sphere = { radius: 0, center: new Vector3() };
-        /**
-         * @param {Vector3} p
-         */
-        return (p) => {
-            /** @type {AreaScalisTri} */
-            let self = this;
-            sphere.center.copy(p);
-            return self.sphereIntersect(sphere);
-        };
-    })();
-    /**
-     *  Copied from AreaSeg.getAcc
-     *
-     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param {!Object} segParams A segParams object containing data for a segment area
-     *
-     *  @return {!Object} Object containing intersect (boolean) and currAcc (number) attributes
-     */
-    getAccSegment(sphere, segParams) {
-        var allReturn = { intersect: false, currAcc: Accuracies.nice * this.min_thick };
-        if (this.sphereIntersectSegment(sphere, segParams, 1)) {
-            // Thales between two triangles that have the same angles gives us the dist of:
-            // side A = sphere.r*this.abs_diff_thick/this.length;
-            // Then pythagore this shit up as A² + sphere.r² = delta²
-            // i.e delta² = (sphere.r*this.abs_diff_thick/this.length)² + sphere.r²
-            // <=> delta = sphere.r*Math.sqrt(1+(this.abs_diff_thick/this.length)²);
-            var tmp = Math.abs(segParams.diffThick) / segParams.norm;
-            var half_delta = sphere.radius * Math.sqrt(1 + tmp * tmp) * 0.5;
-            var thick0 = segParams.v[0].getThickness();
-            var thick1 = segParams.v[1].getThickness();
-            // we check only the direction where the weight is minimum since
-            // we will return minimum accuracy needed in the area.
-            var absc = this.segAttr.p_proj_x;
-            absc += thick0 > thick1 ? half_delta : -half_delta;
-            if (absc <= 0.0) {
-                allReturn.currAcc = thick0;
-            }
-            else if (absc >= segParams.norm) {
-                allReturn.currAcc = thick1;
-            }
-            else {
-                var tt = absc / segParams.norm;
-                allReturn.currAcc = thick0 * (1.0 - tt) + tt * thick1;
-            }
-            allReturn.intersect = true;
-        }
-        return allReturn;
-    }
-    ;
-    /**
-     *  Get accuracy for the inner triangle (do not consider segment edges)
-     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     */
-    getAccTri(sphere) {
-        // Inequal thickness triangle case:
-        if (!this.equal_weights) {
-            var v0 = this.v[0].getPos(); // Should be the min thickness point on the triangle
-            // Get the main dir furthest point
-            var main_dir_point = this.tmpVect.addVectors(sphere.center, this.main_dir.clone().multiplyScalar(sphere.radius));
-            // Get the proj of this point
-            // 1/ get the ortho coord 2D wise
-            this.tmpVect.subVectors(main_dir_point, v0);
-            var distLineSq = this.tmpVect.lengthSq();
-            // Get the dist to the plane (signed)
-            var y_p_2D = this.tmpVect.dot(this.unit_normal); // Should do some test here to know if we are above or below the plane
-            var x_p_2D = Math.sqrt(distLineSq - y_p_2D * y_p_2D);
-            // Get the ortho proj point in the triangle plane
-            // Cf. http://geomalgorithms.com/a04-_planes.html
-            var proj_ortho_point = this.tmpVect.clone().addVectors(sphere.center, this.unit_normal.clone().multiplyScalar(-y_p_2D));
-            // Get the thickness at this point
-            var params = TriangleUtils.getTriBaryCoord(this.p0p1, this.p2p0, this.v[0].getPos(), proj_ortho_point);
-            var thick_ortho_point = TriangleUtils.getMeanThick(this, params.u, params.v);
-            // Ortho vector to the weight varies along where the sphere is relative to the plane
-            thick_ortho_point = y_p_2D >= 0 ? thick_ortho_point : -thick_ortho_point;
-            var ortho_vec_x = this.v[0].getThickness() - thick_ortho_point;
-            var ortho_vec_y = x_p_2D;
-            var t = -y_p_2D / ortho_vec_y;
-            // P proj is the point at the intersection of:
-            //              - the local X axis (computation in the unit_dir basis)
-            //                  and
-            //              - the line defined by P and the vector orthogonal to the weight line
-            var p_proj_x = x_p_2D + t * ortho_vec_x;
-            var dirVect = this.tmpVect.subVectors(v0, proj_ortho_point).normalize();
-            var p_proj = this.tmpVect.addVectors(proj_ortho_point, dirVect.multiplyScalar(x_p_2D - p_proj_x));
-            // Get the barycentric parameters of the non orthogonal point
-            params = TriangleUtils.getTriBaryCoord(this.p0p1, this.p2p0, this.v[0].getPos(), p_proj);
-            if (params.u <= 1 && params.v <= 1 && params.u + params.v <= 1 && params.u >= 0 && params.v >= 0) {
-                // Return the barycentered thickness (yes barycentered is a proper english terminology)
-                return TriangleUtils.getMeanThick(this, params.u, params.v);
-            }
-            else {
-                return this.max_thick * 10000;
-            }
-        }
-        else {
-            // Case of equal weights
-            return this.min_thick;
-        }
-    }
-    ;
-    /**
-     *  @link Area.getAcc for a complete description
-     *
-     *  @return {number} the accuracy needed in the intersection zone
-     *
-     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param {number}  factor  the ratio to determine the wanted accuracy.
-     *
-     *  @todo Check the Maths
-     */
-    getAcc(sphere, factor) {
-        // First: Test the intersection of the sphere to all three segments to get the min Acc for segments
-        for (var i = 0, minForSeg = this.max_thick * 100000; i < 3; i++) {
-            var intersectSeg = this.getAccSegment(sphere, this.segParams[i]);
-            // The sphere intersecting ones the angle means the sphere intersect the Bounding Volume
-            if (intersectSeg.intersect) {
-                minForSeg = minForSeg > intersectSeg.currAcc ? intersectSeg.currAcc : minForSeg;
-            }
-        }
-        // Second: Test the inner triangle
-        var minForTri = this.max_thick * 100000;
-        if (minForSeg !== this.min_thick) {
-            minForTri = this.getAccTri(sphere);
-        }
-        var minThick = Math.min(minForSeg, minForTri);
-        if (minThick !== this.max_thick * 100000) {
-            //minThick = Math.min(Math.max(minThick, this.min_thick), this.max_thick);
-            return minThick * factor;
-        }
-        else {
-            // Sphere does not intersect with the segments, or the inner triangle
-            return this.max_thick * factor;
-        }
-        //return this.min_thick*factor;
-    }
-    /**
-     *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Nice accuracy needed in the intersection zone
-     */
-    getNiceAcc(sphere) {
-        return this.getAcc(sphere, Accuracies.nice);
-    }
-    /**
-     *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Curr accuracy needed in the intersection zone
-     */
-    getCurrAcc(sphere) {
-        return this.getAcc(sphere, Accuracies.curr);
-    }
-    /**
-     *  @link Area.getRawAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The raw accuracy needed in the intersection zone
-     */
-    getRawAcc(sphere) {
-        return this.getAcc(sphere, Accuracies.raw);
-    }
-    /**
-     * @link Area.getMinAcc
-     * @return {number}
-     */
-    getMinAcc() {
-        return Accuracies.curr * this.min_thick;
-    }
-    /**
-     * @link Area.getMinRawAcc
-     * @return {number}
-     */
-    getMinRawAcc = function () {
-        return Accuracies.raw * this.min_thick;
-    };
-    /**
-     *  Return the minimum accuracy required at some point on the given axis.
-     *  The returned accuracy is the one you would need when stepping in the axis
-     *  direction when you are on the axis at coordinate t.
-     *  @param {string} axis x, y or z
-     *  @param {number} t Coordinate on the axis
-     *  @return {number} The step you can safely do in axis direction
-     */
-    getAxisProjectionMinStep(axis, t) {
-        var step = Number.MAX_VALUE;
-        for (var i = 0; i < 3; ++i) {
-            step = Math.min(step, this.segAreas[i].getAxisProjectionMinStep(axis, t));
-        }
-        return step;
-    }
-}
-
-/** @typedef {import('./Area.js').AreaSphereParam} AreaSphereParam */
-/**
- *  AreaSphere is a general representation of a spherical area.
- *  See Primitive.getArea for more details.
- *
- *  @extends {Area}
- */
-class AreaSphere extends Area {
-    /**
-     *  @param {!Vector3} p Point to locate the area
-     *  @param {number} r Radius of the area
-     *  @param {number=} accFactor Accuracy factor. By default SphereArea will use global Accuracies parameters. However, you can setup a accFactor.
-     *                            to change that. You will usually want to have accFactor between 0 (excluded) and 1. Default to 1.0.
-     *                            Be careful not to set it too small as it can increase the complexity of some algorithms up to the crashing point.
-     */
-    constructor(p, r, accFactor) {
-        super();
-        this.p = new Vector3(p.x, p.y, p.z);
-        this.r = r;
-        this.accFactor = accFactor || 1.0;
-    }
-    /**
-     *  Test intersection of the shape with a sphere
-     *  @return {boolean} true if the sphere and the area intersect
-     *
-     *  @param {!{r:number,c:!Vector3}} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     */
-    sphereIntersect = (function () {
-        var v = new Vector3();
-        return (sphere) => {
-            /** @type {AreaSphere} */
-            let self = this;
-            v.subVectors(sphere.center, self.p);
-            var tmp = sphere.radius + self.r;
-            return v.lengthSq() < tmp * tmp;
-        };
-    })();
-    /**
-     * @link Area.contains for a complete description
-     * @param {Vector3} p
-     * @return {boolean}
-     */
-    contains = (function () {
-        var v = new Vector3();
-        /**
-         *  @param {!Vector3} p A point in space, must comply to Vector3 API.
-         *
-         */
-        return (p) => {
-            /** @type {AreaSphere} */
-            let self = this;
-            v.subVectors(p, self.p);
-            return v.lengthSq() < self.r * self.r;
-        };
-    })();
-    /**
-     *  @link Area.getAcc for a complete description
-     *
-     *  @return {number} the accuracy needed in the intersection zone
-     *
-     *  @param {AreaSphereParam} _sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param {number}  factor  the ratio to determine the wanted accuracy.
-     *
-     */
-    getAcc(_sphere, factor) {
-        return this.r * factor;
-    }
-    /**
-     *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Nice accuracy needed in the intersection zone
-     */
-    getNiceAcc(sphere) {
-        return this.getAcc(sphere, Accuracies.nice * this.accFactor);
-    }
-    /**
-     *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Curr accuracy needed in the intersection zone
-     */
-    getCurrAcc(sphere) {
-        return this.getAcc(sphere, Accuracies.curr * this.accFactor);
-    }
-    /**
-     *  @link Area.getRawAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The raw accuracy needed in the intersection zone
-     */
-    getRawAcc(sphere) {
-        return this.getAcc(sphere, Accuracies.raw * this.accFactor);
-    }
-    /**
-     * @link Area.getMinAcc
-     * @return {number}
-     */
-    getMinAcc() {
-        return Accuracies.curr * this.r * this.accFactor;
-    }
-    /**
-     * @link Area.getMinRawAcc
-     * @return {number}
-     */
-    getMinRawAcc() {
-        return Accuracies.raw * this.r * this.accFactor;
-    }
-    /**
-     *  Return the minimum accuracy required at some point on the given axis, according to Accuracies.curr
-     *  The returned accuracy is the one you would need when stepping in the axis
-     *  direction when you are on the axis at coordinate t.
-     *  @param {string} axis x, y or z
-     *  @param {number} t Coordinate on the axis
-     *  @return {number} The step you can safely do in axis direction
-     */
-    getAxisProjectionMinStep(axis, t) {
-        var step = 100000000;
-        var diff = t - this.p[axis];
-        if (diff < -2 * this.r) {
-            step = Math.min(step, Math.max(Math.abs(diff + this.r), Accuracies.curr * this.r * this.accFactor));
-        }
-        else if (diff < 2 * this.r) {
-            step = Math.min(step, Accuracies.curr * this.r * this.accFactor);
-        } // else the area is behind us
-        return step;
-    }
-    ;
-}
-
-/**
- *  Represent an implicit primitive respecting the SCALIS model developped by Cedrric Zanni
- *
- *  @constructor
- *  @extends {Primitive}
- */
-class ScalisPrimitive extends Primitive {
-    static type = "ScalisPrimitive";
-    static DIST = "dist";
-    static CONVOL = "convol";
-    volType;
-    v = [];
-    constructor() {
-        super();
-        // Type of volume (convolution or distance funtion)
-        this.volType = ScalisPrimitive.DIST;
-    }
-    /**
-     *  @return Type of the element
-     */
-    getType() {
-        return ScalisPrimitive.type;
-    }
-    /**
-     *  @return {ScalisPrimitiveJSON}
-     */
-    toJSON() {
-        var res = {
-            ...super.toJSON(),
-            v: [],
-            volType: this.volType
-        };
-        res.v = [];
-        res.volType = this.volType;
-        for (var i = 0; i < this.v.length; ++i) {
-            res.v.push(this.v[i].toJSON());
+        // negative index are looped back at the end of the array
+        if (ind < 0)
+            res = (lengthArray + ind) % lengthArray;
+        // index greater than the array length are looped back at the beginning
+        if (ind >= lengthArray) {
+            res = ind % lengthArray;
         }
         return res;
-    }
+    },
     /**
-     *  @abstract Specify if the voltype can be changed
-     *  @return True if and only if the VolType can be changed.
+     * Updates the cached values of the triangle
+     * @param triangle The triangles who's internal values need to be updated
      */
-    mutableVolType() {
-        return false;
-    }
-    /**
-     *  @param vt New VolType to set (Only for SCALIS primitives)
-     */
-    setVolType(vt) {
-        if (vt !== this.volType) {
-            this.volType = vt;
-            this.invalidAABB();
+    updateComputedAttributes(triangle) {
+        let v0_p = triangle.v[0].getPos();
+        let v1_p = triangle.v[1].getPos();
+        let v2_p = triangle.v[2].getPos();
+        triangle.p0p1 ? triangle.p0p1.subVectors(v1_p, v0_p) : null;
+        triangle.p1p2 ? triangle.p1p2.subVectors(v2_p, v1_p) : null;
+        triangle.p2p0 ? triangle.p2p0.subVectors(v0_p, v2_p) : null;
+        if (triangle.unit_normal && triangle.p0p1 && triangle.p2p0) {
+            // triangle.unit_normal.crossVectors(triangle.p0p1,triangle.p1p2);
+            triangle.unit_normal.crossVectors(triangle.p0p1, triangle.p2p0);
+            triangle.unit_normal.normalize();
         }
-    }
-    /**
-     *  @return  Current volType
-     */
-    getVolType() {
-        return this.volType;
-    }
-    /**
-     * @link Element.computeAABB for a complete description
-     */
-    computeAABB() {
-        this.aabb.makeEmpty();
-        for (var i = 0; i < this.v.length; i++) {
-            this.aabb.union(this.v[i].getAABB());
+        if (triangle.p0p1 && triangle.unit_p0p1) {
+            triangle.length_p0p1 = triangle.p0p1.length();
+            triangle.unit_p0p1.copy(triangle.p0p1);
+            triangle.unit_p0p1.divideScalar(triangle.length_p0p1);
+            triangle.diffThick_p0p1 = triangle.v[0].getThickness() - triangle.v[1].getThickness();
         }
+        if (triangle.p1p2 && triangle.unit_p1p2) {
+            triangle.length_p1p2 = triangle.p1p2.length();
+            triangle.unit_p1p2.copy(triangle.p1p2);
+            triangle.unit_p1p2.divideScalar(triangle.length_p1p2);
+            triangle.diffThick_p1p2 = triangle.v[1].getThickness() - triangle.v[2].getThickness();
+        }
+        if (triangle.p2p0 && triangle.unit_p2p0) {
+            triangle.length_p2p0 = triangle.p2p0.length();
+            triangle.unit_p2p0.copy(triangle.p2p0);
+            triangle.unit_p2p0.divideScalar(triangle.length_p2p0);
+            triangle.diffThick_p2p0 = triangle.v[2].getThickness() - triangle.v[0].getThickness();
+        }
+        // Precomputation Used in mech computation
+        // So we first find the direction of maximum weight constiation.
+        let sortingArr = [];
+        sortingArr.push({ vert: triangle.v[0].getPos(), thick: triangle.v[0].getThickness(), idx: 0 });
+        sortingArr.push({ vert: triangle.v[1].getPos(), thick: triangle.v[1].getThickness(), idx: 1 });
+        sortingArr.push({ vert: triangle.v[2].getPos(), thick: triangle.v[2].getThickness(), idx: 2 });
+        // sort by the min thickness
+        sortingArr.sort(function (a, b) { return a.thick - b.thick; });
+        triangle.point_min = sortingArr[0].vert;
+        triangle.weight_min = sortingArr[0].thick;
+        // Cycle throught the other points
+        let idx = TriangleUtils.cleanIndex(sortingArr[0].idx + 1, 3);
+        let point_1 = triangle.v[idx].getPos();
+        let weight_1 = triangle.v[idx].getThickness();
+        idx = TriangleUtils.cleanIndex(sortingArr[0].idx + 2, 3);
+        let point_2 = triangle.v[idx].getPos();
+        let weight_2 = triangle.v[idx].getThickness();
+        let dir_1 = new Vector3();
+        dir_1 = dir_1.subVectors(point_1, triangle.point_min);
+        let dir_2 = new Vector3();
+        dir_2 = dir_2.subVectors(point_2, triangle.point_min);
+        let delta_1 = weight_1 - triangle.weight_min;
+        let delta_2 = weight_2 - triangle.weight_min;
+        if (delta_1 < EPSILON || delta_2 < EPSILON) {
+            if (delta_1 < delta_2) { //delta_1 is closer to 0
+                triangle.ortho_dir = dir_1.clone();
+                triangle.ortho_dir.normalize();
+                // direction of fastest constiation of weight
+                if (triangle.main_dir && triangle.unit_normal) {
+                    triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
+                    triangle.main_dir.normalize();
+                    if ((triangle.main_dir.dot(dir_2)) < 0.0) {
+                        triangle.main_dir.multiplyScalar(-1.0);
+                    }
+                }
+                let coord_iso_zero_dir = -triangle.weight_min / delta_2;
+                triangle.point_iso_zero = new Vector3(triangle.point_min.x + coord_iso_zero_dir * dir_2.x, triangle.point_min.y + coord_iso_zero_dir * dir_2.y, triangle.point_min.z + coord_iso_zero_dir * dir_2.z);
+            }
+            else { //delta_2 is closer to 0
+                triangle.ortho_dir = dir_2.clone();
+                triangle.ortho_dir.normalize();
+                if (triangle.main_dir && triangle.unit_normal) {
+                    // direction of fastest constiation of weight
+                    triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
+                    triangle.main_dir.normalize();
+                    if ((triangle.main_dir.dot(dir_1)) < 0.0) {
+                        triangle.main_dir.multiplyScalar(-1.0);
+                    }
+                }
+                let coord_iso_zero_dir = -triangle.weight_min / delta_1;
+                triangle.point_iso_zero = new Vector3(triangle.point_min.x + coord_iso_zero_dir * dir_1.x, triangle.point_min.y + coord_iso_zero_dir * dir_1.y, triangle.point_min.z + coord_iso_zero_dir * dir_1.z);
+            }
+            if (Math.abs(delta_1 - delta_2) < EPSILON) {
+                if (triangle.unit_normal)
+                    triangle.proj_dir = triangle.unit_normal.clone().multiplyScalar(-1);
+                triangle.equal_weights = true;
+            }
+        }
+        else { // WARNING : numerically instable if delta_ close to zero !
+            // find the point were weight equal zero along the two edges that leave from point_min
+            let coord_iso_zero_dir1 = -triangle.weight_min / delta_1;
+            let point_iso_zero1 = new Vector3(triangle.point_min.x + coord_iso_zero_dir1 * dir_1.x, triangle.point_min.y + coord_iso_zero_dir1 * dir_1.y, triangle.point_min.z + coord_iso_zero_dir1 * dir_1.z);
+            triangle.point_iso_zero = point_iso_zero1;
+            let coord_iso_zero_dir2 = -triangle.weight_min / delta_2;
+            let point_iso_zero2 = new Vector3(triangle.point_min.x + coord_iso_zero_dir2 * dir_2.x, triangle.point_min.y + coord_iso_zero_dir2 * dir_2.y, triangle.point_min.z + coord_iso_zero_dir2 * dir_2.z);
+            // along ortho_dir the weight are const
+            if (triangle.ortho_dir) {
+                triangle.ortho_dir.subVectors(point_iso_zero2, point_iso_zero1);
+                triangle.ortho_dir.normalize();
+            }
+            // direction of fastest constiation of weight
+            if (triangle.main_dir && triangle.ortho_dir && triangle.unit_normal) {
+                triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
+                triangle.main_dir.normalize();
+                if ((triangle.main_dir.dot(dir_1)) < 0.0 || (triangle.main_dir.dot(dir_2)) < 0.0) {
+                    triangle.main_dir.multiplyScalar(-1.0);
+                }
+            }
+        }
+        if (triangle.main_dir) {
+            let coord_1 = dir_1.dot(triangle.main_dir); // not normalized !
+            let coord_2 = dir_2.dot(triangle.main_dir); // not normalized !
+            // due to previous approximation for stability
+            coord_1 = (coord_1 < 0.0) ? 0.0 : coord_1;
+            coord_2 = (coord_2 < 0.0) ? 0.0 : coord_2;
+            let longest_dir = null;
+            if (coord_1 > coord_2) {
+                longest_dir = dir_1;
+                triangle.half_dir_1 = dir_2;
+                triangle.point_half = point_2;
+                triangle.half_dir_2 = point_1.clone().subVectors(point_1, point_2);
+                triangle.coord_max = coord_1;
+                triangle.coord_middle = (coord_2 / coord_1) * triangle.coord_max;
+                triangle.unit_delta_weight = delta_1 / triangle.coord_max;
+            }
+            else {
+                longest_dir = dir_2;
+                triangle.half_dir_1 = dir_1;
+                triangle.point_half = point_1;
+                triangle.half_dir_2 = point_2.clone().subVectors(point_2, point_1);
+                triangle.coord_max = coord_2;
+                triangle.coord_middle = (coord_1 / coord_2) * triangle.coord_max;
+                triangle.unit_delta_weight = delta_2 / triangle.coord_max;
+            }
+            triangle.longest_dir_special = longest_dir.divideScalar(triangle.coord_max);
+        }
+        // Length of the longest segment during numerical integration
+        let tmp = new Vector3();
+        if (triangle.half_dir_1 && triangle.longest_dir_special && triangle.coord_middle && triangle.ortho_dir) {
+            tmp.subVectors(triangle.half_dir_1, triangle.longest_dir_special.clone().multiplyScalar(triangle.coord_middle));
+            triangle.max_seg_length = tmp.length();
+            triangle.unsigned_ortho_dir = triangle.ortho_dir.clone();
+            if ((triangle.ortho_dir.dot(tmp)) < 0.0) {
+                triangle.ortho_dir.multiplyScalar(-1.0);
+            }
+        }
+    },
+    /**
+     *  Compute some internal consts for triangle
+     *  @param triangle The triangle to compute consts for (blobtree or skel)
+     *  @deprecated Please use updateComputedAtrributes instead
+     */
+    computeVectorsDirs(triangle) {
+        let v0_p = triangle.v[0].getPos();
+        let v1_p = triangle.v[1].getPos();
+        let v2_p = triangle.v[2].getPos();
+        triangle.p0p1.subVectors(v1_p, v0_p);
+        triangle.p1p2.subVectors(v2_p, v1_p);
+        triangle.p2p0.subVectors(v0_p, v2_p);
+        //triangle.unit_normal.crossVectors(triangle.p0p1,triangle.p1p2);
+        triangle.unit_normal.crossVectors(triangle.p0p1, triangle.p2p0);
+        triangle.unit_normal.normalize();
+        triangle.length_p0p1 = triangle.p0p1.length();
+        triangle.unit_p0p1.copy(triangle.p0p1);
+        triangle.unit_p0p1.divideScalar(triangle.length_p0p1);
+        triangle.diffThick_p0p1 = triangle.v[0].getThickness() - triangle.v[1].getThickness();
+        triangle.length_p1p2 = triangle.p1p2.length();
+        triangle.unit_p1p2.copy(triangle.p1p2);
+        triangle.unit_p1p2.divideScalar(triangle.length_p1p2);
+        triangle.diffThick_p1p2 = triangle.v[1].getThickness() - triangle.v[2].getThickness();
+        triangle.length_p2p0 = triangle.p2p0.length();
+        triangle.unit_p2p0.copy(triangle.p2p0);
+        triangle.unit_p2p0.divideScalar(triangle.length_p2p0);
+        triangle.diffThick_p2p0 = triangle.v[2].getThickness() - triangle.v[0].getThickness();
+        // Precomputation Used in mech computation
+        // So we first find the direction of maximum weight constiation.
+        /** @type Array<{vert: Vector3, thick: number, idx: number}> */
+        let sortingArr = [];
+        sortingArr.push({ vert: triangle.v[0].getPos(), thick: triangle.v[0].getThickness(), idx: 0 });
+        sortingArr.push({ vert: triangle.v[1].getPos(), thick: triangle.v[1].getThickness(), idx: 1 });
+        sortingArr.push({ vert: triangle.v[2].getPos(), thick: triangle.v[2].getThickness(), idx: 2 });
+        // sort by the min thickness
+        sortingArr.sort(function (a, b) { return a.thick - b.thick; });
+        triangle.point_min = sortingArr[0].vert;
+        triangle.weight_min = sortingArr[0].thick;
+        // Cycle throught the other points
+        let idx = TriangleUtils.cleanIndex(sortingArr[0].idx + 1, 3);
+        let point_1 = triangle.v[idx].getPos();
+        let weight_1 = triangle.v[idx].getThickness();
+        idx = TriangleUtils.cleanIndex(sortingArr[0].idx + 2, 3);
+        let point_2 = triangle.v[idx].getPos();
+        let weight_2 = triangle.v[idx].getThickness();
+        let dir_1 = new Vector3();
+        dir_1 = dir_1.subVectors(point_1, triangle.point_min);
+        let dir_2 = new Vector3();
+        dir_2 = dir_2.subVectors(point_2, triangle.point_min);
+        let delta_1 = weight_1 - triangle.weight_min;
+        let delta_2 = weight_2 - triangle.weight_min;
+        if (delta_1 < EPSILON || delta_2 < EPSILON) {
+            if (delta_1 < delta_2) { //delta_1 is closer to 0
+                triangle.ortho_dir = dir_1.clone();
+                triangle.ortho_dir.normalize();
+                // direction of fastest constiation of weight
+                triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
+                triangle.main_dir.normalize();
+                if ((triangle.main_dir.dot(dir_2)) < 0.0) {
+                    triangle.main_dir.multiplyScalar(-1.0);
+                }
+                let coord_iso_zero_dir = -triangle.weight_min / delta_2;
+                triangle.point_iso_zero = new Vector3(triangle.point_min.x + coord_iso_zero_dir * dir_2.x, triangle.point_min.y + coord_iso_zero_dir * dir_2.y, triangle.point_min.z + coord_iso_zero_dir * dir_2.z);
+            }
+            else { //delta_2 is closer to 0
+                triangle.ortho_dir = dir_2.clone();
+                triangle.ortho_dir.normalize();
+                // direction of fastest constiation of weight
+                triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
+                triangle.main_dir.normalize();
+                if ((triangle.main_dir.dot(dir_1)) < 0.0) {
+                    triangle.main_dir.multiplyScalar(-1.0);
+                }
+                let coord_iso_zero_dir = -triangle.weight_min / delta_1;
+                triangle.point_iso_zero = new Vector3(triangle.point_min.x + coord_iso_zero_dir * dir_1.x, triangle.point_min.y + coord_iso_zero_dir * dir_1.y, triangle.point_min.z + coord_iso_zero_dir * dir_1.z);
+            }
+            if (Math.abs(delta_1 - delta_2) < EPSILON) {
+                triangle.proj_dir = triangle.unit_normal.clone().multiplyScalar(-1);
+                triangle.equal_weights = true;
+            }
+        }
+        else { // WARNING : numerically instable if delta_ close to zero !
+            // find the point were weight equal zero along the two edges that leave from point_min
+            let coord_iso_zero_dir1 = -triangle.weight_min / delta_1;
+            let point_iso_zero1 = new Vector3(triangle.point_min.x + coord_iso_zero_dir1 * dir_1.x, triangle.point_min.y + coord_iso_zero_dir1 * dir_1.y, triangle.point_min.z + coord_iso_zero_dir1 * dir_1.z);
+            triangle.point_iso_zero = point_iso_zero1;
+            let coord_iso_zero_dir2 = -triangle.weight_min / delta_2;
+            let point_iso_zero2 = new Vector3(triangle.point_min.x + coord_iso_zero_dir2 * dir_2.x, triangle.point_min.y + coord_iso_zero_dir2 * dir_2.y, triangle.point_min.z + coord_iso_zero_dir2 * dir_2.z);
+            // along ortho_dir the weight are const
+            triangle.ortho_dir.subVectors(point_iso_zero2, point_iso_zero1);
+            triangle.ortho_dir.normalize();
+            // direction of fastest constiation of weight
+            triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
+            triangle.main_dir.normalize();
+            if ((triangle.main_dir.dot(dir_1)) < 0.0 || (triangle.main_dir.dot(dir_2)) < 0.0) {
+                triangle.main_dir.multiplyScalar(-1.0);
+            }
+        }
+        let coord_1 = dir_1.dot(triangle.main_dir); // not normalized !
+        let coord_2 = dir_2.dot(triangle.main_dir); // not normalized !
+        // due to previous approximation for stability
+        coord_1 = (coord_1 < 0.0) ? 0.0 : coord_1;
+        coord_2 = (coord_2 < 0.0) ? 0.0 : coord_2;
+        let longest_dir = null;
+        if (coord_1 > coord_2) {
+            longest_dir = dir_1;
+            triangle.half_dir_1 = dir_2;
+            triangle.point_half = point_2;
+            triangle.half_dir_2 = point_1.clone().subVectors(point_1, point_2);
+            triangle.coord_max = coord_1;
+            triangle.coord_middle = (coord_2 / coord_1) * triangle.coord_max;
+            triangle.unit_delta_weight = delta_1 / triangle.coord_max;
+        }
+        else {
+            longest_dir = dir_2;
+            triangle.half_dir_1 = dir_1;
+            triangle.point_half = point_1;
+            triangle.half_dir_2 = point_2.clone().subVectors(point_2, point_1);
+            triangle.coord_max = coord_2;
+            triangle.coord_middle = (coord_1 / coord_2) * triangle.coord_max;
+            triangle.unit_delta_weight = delta_2 / triangle.coord_max;
+        }
+        triangle.longest_dir_special = longest_dir.divideScalar(triangle.coord_max);
+        // Length of the longest segment during numerical integration
+        let tmp = new Vector3();
+        tmp.subVectors(triangle.half_dir_1, triangle.longest_dir_special.clone().multiplyScalar(triangle.coord_middle));
+        triangle.max_seg_length = tmp.length();
+        triangle.unsigned_ortho_dir = triangle.ortho_dir.clone();
+        if ((triangle.ortho_dir.dot(tmp)) < 0.0) {
+            triangle.ortho_dir.multiplyScalar(-1.0);
+        }
+    },
+    /**
+     *  @param triangle
+     *     u parametrisation of the point to compute along the axis V0->V1
+     *     v parametrisation of the point to compute along the axis V0->V2
+     *  @return An object with the computed pos and thickness
+     */
+    getParametrisedVertexAttr(triangle, u, v) {
+        let meanThick = TriangleUtils.getMeanThick(triangle, u, v);
+        // create new point
+        let pos = new Vector3();
+        let uAdd = pos.subVectors(triangle.v[1].getPos(), triangle.v[0].getPos()).multiplyScalar(u);
+        let vAdd = pos.clone().subVectors(triangle.v[2].getPos(), triangle.v[0].getPos()).multiplyScalar(v);
+        pos.addVectors(triangle.v[0].getPos(), uAdd);
+        pos.addVectors(pos, vAdd);
+        return { "pos": pos, "thick": meanThick };
+    },
+    /**
+     *  @param triangle The concerned triangle
+     *  @param u u coordinate
+     *  @param v v coordinate
+     */
+    getMeanThick(triangle, u, v) {
+        return triangle.v[0].getThickness() * (1 - u - v) + triangle.v[1].getThickness() * u + triangle.v[2].getThickness() * v;
+    },
+    /*  Cf. http://math.stackexchange.com/questions/148199/equation-for-non-orthogonal-projection-of-a-point-onto-two-vectors-representing
+        eq1: W=uU+vV with u and v the parametrisation and V and U the basis vectors
+         -> eq 1.dot(U) gives us eq A/   and eq 1.dot(V) gives us eq B/
+    
+        A/ u(U⋅U)+v(U⋅V)=W⋅U
+        B/ u(V⋅U)+v(V⋅V)=W⋅V
+        <=>
+        u*a + v*b = c;
+        u*d + v*e = f;
+        <=>
+        v = (f-d*(c/a))*(1/(e-d*b/a));
+        u = (c-v*b)/a;
+        with:
+        a = U.lengthSq();
+        b = U.dot(V);
+        c = p.dot(U);
+        d = V.dot(U);
+        e = V.lengthSq();
+        f = W.dot(V);
+    */
+    /**
+     *  Get the triangle barycenter coordinates. The projection is non orthogonal.
+     *  WTF is that? Barycentirc coordinates are 3 components, not 2 !
+     *  @param p0p1 Vector from p0 to p1
+     *  @param p2p0 Vector from p2 to p0
+     *  @param p0 Point 0 in triangle
+     *  @param p Point in space
+     *
+     *  @return {{u:number,v:number}} Coordinate of barycenter
+     */
+    getTriBaryCoord(p0p1, p2p0, p0, p) {
+        let U = p0p1;
+        let V = p2p0.clone().multiplyScalar(-1);
+        let W = new Vector3().subVectors(p, p0);
+        // b == d
+        let a = U.lengthSq();
+        let b = U.dot(V);
+        let c = W.dot(U);
+        let d = V.lengthSq();
+        let e = W.dot(V);
+        let v = (a * e - b * c) / (a * d - b * b);
+        let u = (c - v * b) / a;
+        return { "u": u, "v": v };
+    },
+    getUVCoord(U, V, p0, p) {
+        let W = new Vector3();
+        W.crossVectors(U, V);
+        let mat = new Matrix4();
+        mat.set(U.x, V.x, W.x, 0, U.y, V.y, W.y, 0, U.z, V.z, W.z, 0, 0, 0, 0, 1);
+        let mat1 = new Matrix4();
+        mat1.copy(mat).invert();
+        let vec = new Vector3().subVectors(p, p0);
+        vec.applyMatrix4(mat1);
+        return { u: vec.x, v: vec.y };
     }
-}
-Types.register(ScalisPrimitive.type, ScalisPrimitive);
+};
 
 var verticesIds = 0;
 /**
@@ -3915,32 +3364,586 @@ class ScalisVertex {
     }
 }
 
+/**
+ *  Bounding area for the triangle.
+ *  It is the same for DIST and CONVOL primitives since the support of the convolution
+ *  kernel is the same as the support for the distance field.
+ *
+ *  The Area must be able to return accuracy needed in a given zone (Sphere for now,
+ *  since box intersections with such a complex shape are not trivial), and also
+ *  propose an intersection test.
+ *
+ *  @extends {Area}
+ */
+class AreaScalisTri extends Area {
+    tmpVect;
+    min_thick;
+    max_thick;
+    v;
+    p0p1;
+    p2p0;
+    unit_normal;
+    main_dir;
+    equal_weights;
+    segParams; // Define type for segParams as per your actual structure
+    segAttr;
+    planeParams;
+    segAreas;
+    /**
+     *  @param v Array or vertices
+     *  @param unit_normal Normal to the plane made by the 3 vertices, as a Vector3
+     *  @param main_dir Main direction depending on thicknesses
+     *  @param min_thick Minimum thickness in the Triangle
+     *  @param max_thick Maximum thickness in the triangle
+     */
+    constructor(v, unit_normal, main_dir, segParams, min_thick, max_thick) {
+        super();
+        this.tmpVect = new Vector3();
+        this.min_thick = min_thick;
+        this.max_thick = max_thick;
+        this.v = v;
+        this.p0p1 = this.tmpVect.clone().subVectors(this.v[1].getPos(), this.v[0].getPos());
+        this.p2p0 = this.tmpVect.clone().subVectors(this.v[0].getPos(), this.v[2].getPos());
+        this.unit_normal = unit_normal; // Normal computed from crossVectors of p0p1 and P2p1
+        this.main_dir = main_dir;
+        const delta_1 = Math.abs(this.v[0].getThickness() - this.v[1].getThickness());
+        const delta_2 = Math.abs(this.v[1].getThickness() - this.v[2].getThickness());
+        this.equal_weights =
+            delta_1 / Math.abs(this.v[0].getThickness() + this.v[1].getThickness()) < 0.001 &&
+                delta_2 / Math.abs(this.v[1].getThickness() + this.v[2].getThickness()) < 0.001;
+        /* segParams is defined as: (e.g for segment p0p1)
+        segParams.push({"norm":         this.length_p0p1,
+                        "diffThick":    this.diffThick_p0p1,
+                        "dir":          this.unit_p0p1,
+                        "v":            [this.v[0], this.v[1]],
+                        "ortho_vec_x":  this.v[0].getThickness() - this.v[1].getThickness(),
+                        "ortho_vec_y":  this.length_p0p1});
+        */
+        this.segParams = segParams;
+        this.segAttr = {
+            p0_to_p: new Vector3(),
+            p0_to_p_sqrnorm: 0,
+            x_p_2D: 0,
+            y_p_2D: 0,
+            y_p_2DSq: 0,
+            p_proj_x: 0,
+        };
+        // Construct the triangular prism going through each vertices
+        const n1 = this.tmpVect.clone().crossVectors(this.segParams[0].dir, this.unit_normal).normalize();
+        const n2 = this.tmpVect.clone().crossVectors(this.segParams[1].dir, this.unit_normal).normalize();
+        const n3 = this.tmpVect.clone().crossVectors(this.segParams[2].dir, this.unit_normal).normalize();
+        // Compute the prism vertices
+        this.tmpVect.copy(this.unit_normal);
+        const pri = [];
+        pri.push(this.tmpVect.clone().addVectors(this.v[0].getPos(), this.tmpVect.multiplyScalar(this.v[0].getThickness() * ScalisMath.KS)));
+        this.tmpVect.copy(this.unit_normal);
+        pri.push(this.tmpVect.clone().addVectors(this.v[1].getPos(), this.tmpVect.multiplyScalar(this.v[1].getThickness() * ScalisMath.KS)));
+        this.tmpVect.copy(this.unit_normal);
+        pri.push(this.tmpVect.clone().addVectors(this.v[2].getPos(), this.tmpVect.multiplyScalar(this.v[2].getThickness() * ScalisMath.KS)));
+        this.tmpVect.copy(this.unit_normal);
+        pri.push(this.tmpVect.clone().addVectors(this.v[0].getPos(), this.tmpVect.multiplyScalar(-this.v[0].getThickness() * ScalisMath.KS)));
+        this.tmpVect.copy(this.unit_normal);
+        pri.push(this.tmpVect.clone().addVectors(this.v[1].getPos(), this.tmpVect.multiplyScalar(-this.v[1].getThickness() * ScalisMath.KS)));
+        this.tmpVect.copy(this.unit_normal);
+        pri.push(this.tmpVect.clone().addVectors(this.v[2].getPos(), this.tmpVect.multiplyScalar(-this.v[2].getThickness() * ScalisMath.KS)));
+        // Compute the normals of top and bottom faces of the prism
+        const tmp2 = new Vector3();
+        this.tmpVect.subVectors(pri[1], pri[0]);
+        tmp2.subVectors(pri[2], pri[0]);
+        const n4 = this.tmpVect.clone().crossVectors(this.tmpVect, tmp2).normalize();
+        this.tmpVect.subVectors(pri[5], pri[3]);
+        tmp2.subVectors(pri[4], pri[3]);
+        const n5 = this.tmpVect.clone().crossVectors(this.tmpVect, tmp2).normalize();
+        // planeParams contains the definition of the prism 5 faces {normal, orig}
+        this.planeParams = [];
+        this.planeParams.push({ orig: this.v[0].getPos(), n: n1 });
+        this.planeParams.push({ orig: this.v[1].getPos(), n: n2 });
+        this.planeParams.push({ orig: this.v[2].getPos(), n: n3 });
+        this.planeParams.push({ orig: pri[0], n: n4 });
+        this.planeParams.push({ orig: pri[3], n: n5 });
+        // use segments areas to factorize some code.
+        this.segAreas = [];
+        for (let i = 0; i < 3; ++i) {
+            this.segAreas.push(new AreaScalisSeg(this.segParams[i].v[0].getPos(), this.segParams[i].v[1].getPos(), this.segParams[i].v[0].getThickness(), this.segParams[i].v[1].getThickness()));
+        }
+    }
+    /**
+     *  Compute projection (used in other functions)
+     *  @param p Point to proj
+     *  @param segParams A seg param object
+     *
+     *  @protected
+     */
+    proj_computation(p, segParams) {
+        this.segAttr.p0_to_p.subVectors(p, segParams.v[0].getPos());
+        this.segAttr.p0_to_p_sqrnorm = this.segAttr.p0_to_p.lengthSq();
+        this.segAttr.x_p_2D = this.segAttr.p0_to_p.dot(segParams.dir);
+        // pythagore inc.
+        this.segAttr.y_p_2DSq = this.segAttr.p0_to_p_sqrnorm - this.segAttr.x_p_2D * this.segAttr.x_p_2D;
+        this.segAttr.y_p_2D = this.segAttr.y_p_2DSq > 0 ? Math.sqrt(this.segAttr.y_p_2DSq) : 0; // because of rounded errors tmp can be <0 and this causes the next sqrt to return NaN...
+        const t = -this.segAttr.y_p_2D / segParams.ortho_vec_y;
+        // P proj is the point at the intersection of:
+        //              - the local X axis (computation in the unit_dir basis)
+        //                  and
+        //              - the line defined by P and the vector orthogonal to the weight line
+        this.segAttr.p_proj_x = this.segAttr.x_p_2D + t * segParams.ortho_vec_x;
+        //this.segAttr.p_proj_y = 0.0;
+    }
+    /**
+     * @link Area.sphereIntersect for a complete description
+     * @todo Check the Maths (Ask Cedric Zanni?)
+     * @param sphere
+     * @
+
+return true if the sphere and the area intersect
+     */
+    sphereIntersect(sphere) {
+        // First: Test the intersection of the sphere to all three segments as they are included in the triangle bv
+        for (let i = 0; i < 3; i++) {
+            const intersectSeg = this.sphereIntersectSegment(sphere, this.segParams[i], ScalisMath.KS);
+            // The sphere intersecting ones the angle means the sphere intersect the Bounding Volume
+            if (intersectSeg) {
+                return true;
+            }
+        }
+        // Second: Test the intersection of the sphere with the triangular prism defined by
+        // the 2D triangle constructed from the vertices and of half heights Ti*KS along the unit_normal for each vertices Vi
+        let inside = true;
+        for (let i = 0; i < 5; i++) {
+            this.tmpVect.subVectors(sphere.center, this.planeParams[i].orig);
+            // Get the signed dist to the plane
+            const dist = this.tmpVect.dot(this.planeParams[i].n);
+            // if the dist to the plane is positive, we are in the part where the normal is
+            inside = inside && (dist + sphere.radius > 0); // Modulation by the sphere radius
+        }
+        // If the sphere is outside one of the plane-> BLAM OUTSIDE SON
+        return inside;
+    }
+    /**
+     *  Adapted from the segment sphere intersection. Could be factorised!
+     *  @return true if the sphere and the area intersect
+     *
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param segParams A segParams object containing data for a segment
+     *  @param KS Kernel Scale, ie ScalisMath.KS (Why is it a parameter, its global!?)
+     *
+     */
+    sphereIntersectSegment(sphere, segParams, KS) {
+        this.proj_computation(sphere.center, segParams);
+        const thick0 = segParams.v[0].getThickness();
+        const thick1 = segParams.v[1].getThickness();
+        if (this.segAttr.p_proj_x < 0.0) {
+            return (Math.sqrt(this.segAttr.p0_to_p_sqrnorm) - sphere.radius < thick0 * KS);
+        }
+        else {
+            if (this.segAttr.p_proj_x > segParams.norm) {
+                this.segAttr.p0_to_p.subVectors(sphere.center, segParams.v[1].getPos());
+                return this.segAttr.p0_to_p.length() - sphere.radius < thick1 * KS;
+            }
+            else {
+                const sub1 = this.segAttr.x_p_2D - this.segAttr.p_proj_x;
+                const dist = sub1 * sub1 + this.segAttr.y_p_2DSq;
+                const tt = this.segAttr.p_proj_x / segParams.norm;
+                const inter_w = thick0 * (1.0 - tt) + tt * thick1;
+                const tmp = sphere.radius + inter_w * KS;
+                return (dist < tmp * tmp);
+            }
+        }
+    }
+    /**
+     * @link Area.contains for a complete description
+     * @param p
+     */
+    contains = (function () {
+        const sphere = { radius: 0, center: new Vector3() };
+        /**
+         * @param p
+         */
+        return function (p) {
+            sphere.center.copy(p);
+            return this.sphereIntersect(sphere);
+        };
+    })();
+    /**
+     *  Copied from AreaSeg.getAcc
+     *
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param segParams A segParams object containing data for a segment area
+     *
+     *  @return Object containing intersect (boolean) and currAcc (number) attributes
+     */
+    getAccSegment(sphere, segParams) {
+        const allReturn = { intersect: false, currAcc: Accuracies.nice * this.min_thick };
+        if (this.sphereIntersectSegment(sphere, segParams, 1)) {
+            const tmp = Math.abs(segParams.diffThick) / segParams.norm;
+            const half_delta = sphere.radius * Math.sqrt(1 + tmp * tmp) * 0.5;
+            const thick0 = segParams.v[0].getThickness();
+            const thick1 = segParams.v[1].getThickness();
+            // we check only the direction where the weight is minimum since
+            // we will return minimum accuracy needed in the area.
+            let absc = this.segAttr.p_proj_x;
+            absc += thick0 > thick1 ? half_delta : -half_delta;
+            if (absc <= 0.0) {
+                allReturn.currAcc = thick0;
+            }
+            else if (absc >= segParams.norm) {
+                allReturn.currAcc = thick1;
+            }
+            else {
+                const tt = absc / segParams.norm;
+                allReturn.currAcc = thick0 * (1.0 - tt) + tt * thick1;
+            }
+            allReturn.intersect = true;
+        }
+        return allReturn;
+    }
+    /**
+     *  Get accuracy for the inner triangle (do not consider segment edges)
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     */
+    getAccTri(sphere) {
+        // Inequal thickness triangle case:
+        if (!this.equal_weights) {
+            const v0 = this.v[0].getPos(); // Should be the min thickness point on the triangle
+            // Get the main dir furthest point
+            const main_dir_point = this.tmpVect.addVectors(sphere.center, this.main_dir.clone().multiplyScalar(sphere.radius));
+            // Get the proj of this point
+            // 1/ get the ortho coord 2D wise
+            this.tmpVect.subVectors(main_dir_point, v0);
+            const distLineSq = this.tmpVect.lengthSq();
+            // Get the dist to the plane (signed)
+            const y_p_2D = this.tmpVect.dot(this.unit_normal); // Should do some test here to know if we are above or below the plane
+            const x_p_2D = Math.sqrt(distLineSq - y_p_2D * y_p_2D);
+            // Get the ortho proj point in the triangle plane
+            // Cf. http://geomalgorithms.com/a04-_planes.html
+            const proj_ortho_point = this.tmpVect.clone().addVectors(sphere.center, this.unit_normal.clone().multiplyScalar(-y_p_2D));
+            // Get the thickness at this point
+            let params = TriangleUtils.getTriBaryCoord(this.p0p1, this.p2p0, this.v[0].getPos(), proj_ortho_point);
+            let thick_ortho_point = TriangleUtils.getMeanThick(this, params.u, params.v);
+            // Ortho vector to the weight varies along where the sphere is relative to the plane
+            thick_ortho_point = y_p_2D >= 0 ? thick_ortho_point : -thick_ortho_point;
+            const ortho_vec_x = this.v[0].getThickness() - thick_ortho_point;
+            const ortho_vec_y = x_p_2D;
+            const t = -y_p_2D / ortho_vec_y;
+            // P proj is the point at the intersection of:
+            //              - the local X axis (computation in the unit_dir basis)
+            //                  and
+            //              - the line defined by P and the vector orthogonal to the weight line
+            const p_proj_x = x_p_2D + t * ortho_vec_x;
+            const dirVect = this.tmpVect.subVectors(v0, proj_ortho_point).normalize();
+            const p_proj = this.tmpVect.addVectors(proj_ortho_point, dirVect.multiplyScalar(x_p_2D - p_proj_x));
+            // Get the barycentric parameters of the non orthogonal point
+            params = TriangleUtils.getTriBaryCoord(this.p0p1, this.p2p0, this.v[0].getPos(), p_proj);
+            if (params.u <= 1 && params.v <= 1 && params.u + params.v <= 1 && params.u >= 0 && params.v >= 0) {
+                // Return the barycentered thickness (yes barycentered is a proper english terminology)
+                return TriangleUtils.getMeanThick(this, params.u, params.v);
+            }
+            else {
+                return this.max_thick * 10000;
+            }
+        }
+        else {
+            // Case of equal weights
+            return this.min_thick;
+        }
+    }
+    /**
+     *  @link Area.getAcc for a complete description
+     *
+     *  @return the accuracy needed in the intersection zone
+     *
+     *  @param sphere  A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param factor  the ratio to determine the wanted accuracy.
+     *
+     *  @todo Check the Maths
+     */
+    getAcc(sphere, factor) {
+        // First: Test the intersection of the sphere to all three segments to get the min Acc for segments
+        let minForSeg = this.max_thick * 100000;
+        for (let i = 0; i < 3; i++) {
+            const intersectSeg = this.getAccSegment(sphere, this.segParams[i]);
+            // The sphere intersecting ones the angle means the sphere intersect the Bounding Volume
+            if (intersectSeg.intersect) {
+                minForSeg = Math.min(minForSeg, intersectSeg.currAcc);
+            }
+        }
+        // Second: Test the inner triangle
+        let minForTri = this.max_thick * 100000;
+        if (minForSeg !== this.min_thick) {
+            minForTri = this.getAccTri(sphere);
+        }
+        const minThick = Math.min(minForSeg, minForTri);
+        if (minThick !== this.max_thick * 100000) {
+            return minThick * factor;
+        }
+        else {
+            // Sphere does not intersect with the segments, or the inner triangle
+            return this.max_thick * factor;
+        }
+    }
+    /**
+     *  @link Area.getNiceAcc for a complete description
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Nice accuracy needed in the intersection zone
+     */
+    getNiceAcc(sphere) {
+        return this.getAcc(sphere, Accuracies.nice);
+    }
+    /**
+     *  @link Area.getNiceAcc for a complete description
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Curr accuracy needed in the intersection zone
+     */
+    getCurrAcc(sphere) {
+        return this.getAcc(sphere, Accuracies.curr);
+    }
+    /**
+     *  @link Area.getRawAcc for a complete description
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The raw accuracy needed in the intersection zone
+     */
+    getRawAcc(sphere) {
+        return this.getAcc(sphere, Accuracies.raw);
+    }
+    /**
+     * @link Area.getMinAcc
+     * @return number
+     */
+    getMinAcc() {
+        return Accuracies.curr * this.min_thick;
+    }
+    /**
+     * @link Area.getMinRawAcc
+     * @return number
+     */
+    getMinRawAcc = () => {
+        return Accuracies.raw * this.min_thick;
+    };
+    /**
+     *  Return the minimum accuracy required at some point on the given axis.
+     *  The returned accuracy is the one you would need when stepping in the axis
+     *  direction when you are on the axis at coordinate t.
+     *  @param axis x, y or z
+     *  @param t Coordinate on the axis
+     *  @return The step you can safely do in axis direction
+     */
+    getAxisProjectionMinStep(axis, t) {
+        let step = Number.MAX_VALUE;
+        for (let i = 0; i < 3; ++i) {
+            step = Math.min(step, this.segAreas[i].getAxisProjectionMinStep(axis, t));
+        }
+        return step;
+    }
+}
+
+/**
+ *  AreaSphere is a general representation of a spherical area.
+ *  See Primitive.getArea for more details.
+ *
+ *  @extends {Area}
+ */
+class AreaSphere extends Area {
+    p;
+    r;
+    accFactor;
+    /**
+     *  @param p Point to locate the area
+     *  @param r Radius of the area
+     *  @param accFactor Accuracy factor. By default SphereArea will use global Accuracies parameters. However, you can setup a accFactor.
+     *                            to change that. You will usually want to have accFactor between 0 (excluded) and 1. Default to 1.0.
+     *                            Be careful not to set it too small as it can increase the complexity of some algorithms up to the crashing point.
+     */
+    constructor(p, r, accFactor) {
+        super();
+        this.p = new Vector3(p.x, p.y, p.z);
+        this.r = r;
+        this.accFactor = accFactor || 1.0;
+    }
+    /**
+     *  Test intersection of the shape with a sphere
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return true if the sphere and the area intersect
+     */
+    sphereIntersect = (function () {
+        const v = new Vector3();
+        return function (sphere) {
+            let self = this;
+            v.subVectors(sphere.center, self.p);
+            const tmp = sphere.radius + self.r;
+            return v.lengthSq() < tmp * tmp;
+        };
+    })();
+    /**
+     * @link Area.contains for a complete description
+     * @param p A point in space, must comply to Vector3 API.
+     * @return true if the point is within the area
+     */
+    contains = (function () {
+        const v = new Vector3();
+        return function (p) {
+            let self = this;
+            v.subVectors(p, self.p);
+            return v.lengthSq() < self.r * self.r;
+        };
+    })();
+    /**
+     *  @link Area.getAcc for a complete description
+     *  @param _sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param factor The ratio to determine the wanted accuracy.
+     *  @return the accuracy needed in the intersection zone
+     */
+    getAcc(_sphere, factor) {
+        return this.r * factor;
+    }
+    /**
+     *  @link Area.getNiceAcc for a complete description
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Nice accuracy needed in the intersection zone
+     */
+    getNiceAcc(sphere) {
+        return this.getAcc(sphere, Accuracies.nice * this.accFactor);
+    }
+    /**
+     *  @link Area.getNiceAcc for a complete description
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Curr accuracy needed in the intersection zone
+     */
+    getCurrAcc(sphere) {
+        return this.getAcc(sphere, Accuracies.curr * this.accFactor);
+    }
+    /**
+     *  @link Area.getRawAcc for a complete description
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The raw accuracy needed in the intersection zone
+     */
+    getRawAcc(sphere) {
+        return this.getAcc(sphere, Accuracies.raw * this.accFactor);
+    }
+    /**
+     * @link Area.getMinAcc
+     * @return the minimum accuracy needed in the area
+     */
+    getMinAcc() {
+        return Accuracies.curr * this.r * this.accFactor;
+    }
+    /**
+     * @link Area.getMinRawAcc
+     * @return the minimum raw accuracy needed in the area
+     */
+    getMinRawAcc() {
+        return Accuracies.raw * this.r * this.accFactor;
+    }
+    /**
+     *  Return the minimum accuracy required at some point on the given axis, according to Accuracies.curr
+     *  The returned accuracy is the one you would need when stepping in the axis
+     *  direction when you are on the axis at coordinate t.
+     *  @param axis x, y or z
+     *  @param t Coordinate on the axis
+     *  @return The step you can safely do in axis direction
+     */
+    getAxisProjectionMinStep(axis, t) {
+        let step = 100000000;
+        const diff = t - this.p[axis];
+        if (diff < -2 * this.r) {
+            step = Math.min(step, Math.max(Math.abs(diff + this.r), Accuracies.curr * this.r * this.accFactor));
+        }
+        else if (diff < 2 * this.r) {
+            step = Math.min(step, Accuracies.curr * this.r * this.accFactor);
+        }
+        return step;
+    }
+}
+
+/**
+ *  Represent an implicit primitive respecting the SCALIS model developed by Cedric Zanni
+ *
+ *  @constructor
+ *  @extends {Primitive}
+ */
+class ScalisPrimitive extends Primitive {
+    static type = "ScalisPrimitive";
+    static DIST = "dist";
+    static CONVOL = "convol";
+    volType;
+    v = [];
+    constructor() {
+        super();
+        // Type of volume (convolution or distance function)
+        this.volType = ScalisPrimitive.DIST;
+    }
+    /**
+     *  @return Type of the element
+     */
+    getType() {
+        return ScalisPrimitive.type;
+    }
+    /**
+     *  @return {ScalisPrimitiveJSON}
+     */
+    toJSON() {
+        const res = {
+            ...super.toJSON(),
+            v: [],
+            volType: this.volType
+        };
+        for (let i = 0; i < this.v.length; ++i) {
+            res.v.push(this.v[i].toJSON());
+        }
+        return res;
+    }
+    /**
+     *  @abstract Specify if the voltype can be changed
+     *  @return True if and only if the VolType can be changed.
+     */
+    mutableVolType() {
+        return false;
+    }
+    /**
+     *  @param vt New VolType to set (Only for SCALIS primitives)
+     */
+    setVolType(vt) {
+        if (vt !== this.volType) {
+            this.volType = vt;
+            this.invalidAABB();
+        }
+    }
+    /**
+     *  @return  Current volType
+     */
+    getVolType() {
+        return this.volType;
+    }
+    /**
+     * @link Element.computeAABB for a complete description
+     */
+    computeAABB() {
+        this.aabb.makeEmpty();
+        for (let i = 0; i < this.v.length; i++) {
+            this.aabb.union(this.v[i].getAABB());
+        }
+    }
+}
+Types.register(ScalisPrimitive.type, ScalisPrimitive);
+
 class ScalisPoint extends ScalisPrimitive {
     static type = "ScalisPoint";
-    /**
-     * @param {ScalisPointJSON} json
-     * @returns
-     */
-    static fromJSON(json) {
-        var v = ScalisVertex.fromJSON(json.v[0]);
-        var m = Material.fromJSON(json.materials[0]);
+    fromJSON(json) {
+        const v = ScalisVertex.fromJSON(json.v[0]);
+        const m = Material.fromJSON(json.materials[0]);
         return new ScalisPoint(v, json.volType, json.density, m);
     }
-    ;
     density;
-    // Temporary for eval
-    // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
     v_to_p = new Vector3();
     /**
-     *  @param vertex The vertex with point parameters.
-     *  @param volType The volume type wanted for this primitive.
-     *                          Note : "convolution" does not make sens for a point, so technically,
-     *                                 ScalisPrimitive.DIST or ScalisPrimitive.CONVOL will give the same results.
-     *                                 However, since this may be a simple way of sorting for later blending,
-     *                                 you can still choose between the 2 options.
-     *  @param density Implicit field density.
-     *                          Gives afiner control of the created implicit field.
-     *  @param mat Material for the point
+     * @param vertex The vertex with point parameters.
+     * @param volType The volume type wanted for this primitive.
+     *                 Note: "convolution" does not make sense for a point, so technically,
+     *                 ScalisPrimitive.DIST or ScalisPrimitive.CONVOL will give the same results.
+     *                 However, since this may be a simple way of sorting for later blending,
+     *                 you can still choose between the 2 options.
+     * @param density Implicit field density.
+     *                 Gives a finer control of the created implicit field.
+     * @param mat Material for the point
      */
     constructor(vertex, volType, density, mat) {
         super();
@@ -3953,30 +3956,28 @@ class ScalisPoint extends ScalisPrimitive {
     getType() {
         return ScalisPoint.type;
     }
-    ;
     toJSON() {
         return {
             ...super.toJSON(),
             density: this.density
         };
     }
-    ;
     /**
-     *  @param d New density to set
+     * @param d New density to set
      */
     setDensity(d) {
         this.density = d;
         this.invalidAABB();
     }
     /**
-     *  @return  Current density
+     * @return Current density
      */
     getDensity() {
         return this.density;
     }
     /**
-     *  Set material for this point
-     *  @param  m
+     * Set material for this point
+     * @param m Material
      */
     setMaterial(m) {
         this.materials[0].copy(m);
@@ -3997,10 +3998,9 @@ class ScalisPoint extends ScalisPrimitive {
             this.valid_aabb = true;
         }
     }
-    ;
     getAreas() {
         if (!this.valid_aabb) {
-            console.error("ERROR : Cannot get area of invalid primitive");
+            console.error("ERROR: Cannot get area of invalid primitive");
             return [];
         }
         else {
@@ -4008,41 +4008,40 @@ class ScalisPoint extends ScalisPrimitive {
                     aabb: this.aabb,
                     bv: new AreaSphere(this.v[0].getPos(), ScalisMath.KS * this.v[0].getThickness(), ScalisMath.KIS),
                     // AreaScalisPoint is deprecated and AreaSphere should be used instead. Uncomment if you notice accuracy issues.
-                    // bv: new AreaScalisPoint(this.v[0].getPos(),this.v[0].getThickness()),
+                    // bv: new AreaScalisPoint(this.v[0].getPos(), this.v[0].getThickness()),
                     obj: this
                 }];
         }
     }
-    ;
     /**
      * @link Element.heuristicStepWithin
-     * @return {number} The next step length to do with respect to this primitive/node.
+     * @return The next step length to do with respect to this primitive/node.
      */
     heuristicStepWithin() {
         return this.v[0].getThickness() / 3;
     }
     /**
-     *  @link Element.value
+     * @link Element.value
      *
-     *  @param p Point where we want to evaluate the primitive field
-     *  @param res
+     * @param p Point where we want to evaluate the primitive field
+     * @param res ValueResultType
      */
     value(p, res) {
         if (!this.valid_aabb) {
-            throw "Error : PrepareForEval should have been called";
+            throw "Error: PrepareForEval should have been called";
         }
-        var thickness = this.v[0].getThickness();
+        const thickness = this.v[0].getThickness();
         // Eval itself
         this.v_to_p.subVectors(p, this.v[0].getPos());
-        var r2 = this.v_to_p.lengthSq() / (thickness * thickness);
-        var tmp = 1.0 - ScalisMath.KIS2 * r2;
+        const r2 = this.v_to_p.lengthSq() / (thickness * thickness);
+        const tmp = 1.0 - ScalisMath.KIS2 * r2;
         if (tmp > 0.0) {
             res.v = this.density * tmp * tmp * tmp * ScalisMath.Poly6NF0D;
             if (res.g) {
                 // Gradient computation is easy since the
-                // gradient is radial. We use the analitical solution
-                // to directionnal gradient (differential in this.v_to_p length)
-                var tmp2 = -this.density * ScalisMath.KIS2 * 6.0 * this.v_to_p.length() * tmp * tmp * ScalisMath.Poly6NF0D / (thickness * thickness);
+                // gradient is radial. We use the analytical solution
+                // to directional gradient (differential in this.v_to_p length)
+                const tmp2 = -this.density * ScalisMath.KIS2 * 6.0 * this.v_to_p.length() * tmp * tmp * ScalisMath.Poly6NF0D / (thickness * thickness);
                 res.g.copy(this.v_to_p).normalize().multiplyScalar(tmp2);
             }
             if (res.m) {
@@ -4059,10 +4058,6 @@ class ScalisPoint extends ScalisPrimitive {
             }
         }
     }
-    /**
-     *  @param p
-     *  @return
-     */
     distanceTo(p) {
         // return distance point/segment
         // don't take thickness into account
@@ -4080,19 +4075,18 @@ Types.register(ScalisPoint.type, ScalisPoint);
  */
 class ScalisSegment extends ScalisPrimitive {
     static type = "ScalisSegment";
-    static fromJSON(json) {
-        var v0 = ScalisVertex.fromJSON(json.v[0]);
-        var v1 = ScalisVertex.fromJSON(json.v[1]);
-        var m = [
+    fromJSON(json) {
+        const v0 = ScalisVertex.fromJSON(json.v[0]);
+        const v1 = ScalisVertex.fromJSON(json.v[1]);
+        const m = [
             Material.fromJSON(json.materials[0]),
             Material.fromJSON(json.materials[1])
         ];
         return new ScalisSegment(v0, v1, json.volType, json.density, m);
     }
-    ;
     density;
     // Temporary for eval
-    // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
+    // TODO: should be wrapped in the eval function scope if possible (ie not precomputed)
     // CONVOL
     clipped_l1 = 1.0;
     clipped_l2 = 0.0;
@@ -4152,18 +4146,15 @@ class ScalisSegment extends ScalisPrimitive {
     getType() {
         return ScalisSegment.type;
     }
-    ;
     toJSON() {
         return {
             ...super.toJSON(),
             density: this.density
         };
     }
-    ;
     mutableVolType() {
         return true;
     }
-    ;
     /**
      *  @param d The new density
      */
@@ -4171,30 +4162,29 @@ class ScalisSegment extends ScalisPrimitive {
         this.density = d;
         this.invalidAABB();
     }
-    ;
     /**
      *  @return The current density
      */
     getDensity() {
         return this.density;
     }
-    ;
-    // [Abstract] See Primitive.setVolType for more details
+    /**
+     *  [Abstract] See Primitive.setVolType for more details.
+     *  @param vt New VolType to set (Only for SCALIS primitives)
+     */
     setVolType(vt) {
         if (!(vt == ScalisPrimitive.CONVOL || vt == ScalisPrimitive.DIST)) {
-            throw "ERROR : volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST";
+            throw new Error("volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST");
         }
         if (this.volType != vt) {
             this.volType = vt;
             this.invalidAABB();
         }
     }
-    ;
     // [Abstract] See Primitive.getVolType for more details
     getVolType() {
         return this.volType;
     }
-    ;
     // [Abstract] See Primitive.prepareForEval for more details
     prepareForEval() {
         if (!this.valid_aabb) {
@@ -4202,25 +4192,20 @@ class ScalisSegment extends ScalisPrimitive {
             this.valid_aabb = true;
         }
     }
-    ;
     // [Abstract] See Primtive.getArea for more details
     getAreas() {
         if (!this.valid_aabb) {
-            console.error("ERROR : Cannot get area of invalid primitive");
+            console.error("ERROR: Cannot get area of invalid primitive");
             return [];
         }
         else {
             return [{
                     aabb: this.aabb,
-                    //new Box3(-256, -256, -256, 256,256,256),
-                    //new Box3(this.aabb.min_x-min_thick,this.aabb.min_y-min_thick,this.aabb.min_z-min_thick,
-                    //this.aabb.max_x+min_thick,this.aabb.max_y+min_thick,this.aabb.max_z+min_thick),
                     bv: new AreaScalisSeg(this.v[0].getPos(), this.v[1].getPos(), this.v[0].getThickness(), this.v[1].getThickness()),
                     obj: this
                 }];
         }
     }
-    ;
     // [Abstract] See Primitive.computeHelpVariables for more details
     computeHelpVariables() {
         this.v0_p = this.v[0].getPos();
@@ -4234,16 +4219,16 @@ class ScalisSegment extends ScalisPrimitive {
         this.c1 = this.v[1].getThickness() - this.v[0].getThickness();
         // Bounding property
         // bounding box is axis aligned so the bounding is not very tight.
-        var bound_supp0 = this.v[0].getThickness() * ScalisMath.KS;
-        var bound_supp1 = this.v[1].getThickness() * ScalisMath.KS;
+        const bound_supp0 = this.v[0].getThickness() * ScalisMath.KS;
+        const bound_supp1 = this.v[1].getThickness() * ScalisMath.KS;
         this.maxbound = Math.max(bound_supp0, bound_supp1);
         this.maxboundSq = this.maxbound * this.maxbound;
-        // Speed up var for cylinder bounding
+        // Speed up const for cylinder bounding
         // Used only in evalConvol
         this.cyl_bd0 = Math.min(-bound_supp0, this.length - bound_supp1);
         this.cyl_bd1 = Math.max(this.length + bound_supp1, bound_supp0);
         this.increase_unit_dir.copy(this.unit_dir);
-        // weight help variables
+        // weight help constiables
         if (this.c1 < 0) {
             this.p_min.copy(this.v1_p);
             this.weight_min = this.weight_p1;
@@ -4260,7 +4245,6 @@ class ScalisSegment extends ScalisPrimitive {
         }
         this.computeAABB();
     }
-    ;
     // [Abstract] See Primitive.value for more details
     value(p, res) {
         switch (this.volType) {
@@ -4271,10 +4255,9 @@ class ScalisSegment extends ScalisPrimitive {
                 this.evalConvol(p, res);
                 break;
             default:
-                throw "Unknown volType, cannot evaluate.";
+                throw new Error("Unknown volType, cannot evaluate.");
         }
     }
-    ;
     ///////////////////////////////////////////////////////////////////////////
     // Distance Evaluation functions and auxiliaary functions
     // Note : for the mech primitive we use a CompactPolynomial6 kernel.
@@ -4283,30 +4266,30 @@ class ScalisSegment extends ScalisPrimitive {
      *  value function for Distance volume type (distance field).
      */
     evalDist = (function () {
-        var ev_eps = { v: 0 };
-        var p_eps = new Vector3();
+        const ev_eps = { v: 0 };
+        const p_eps = new Vector3();
         return function (p, res) {
-            var p0_to_p = this.vector;
+            const p0_to_p = this.vector;
             p0_to_p.subVectors(p, this.v[0].getPos());
             // Documentation : see DistanceHomothetic.pdf in convol/Documentation/Convol-Core/
-            var orig_p_scal_dir = p0_to_p.dot(this.dir);
-            var orig_p_sqr = p0_to_p.lengthSq();
-            var denum = this.lengthSq * this.c0 + orig_p_scal_dir * this.c1;
-            var t = (this.c1 < 0) ? 0 : 1;
+            const orig_p_scal_dir = p0_to_p.dot(this.dir);
+            const orig_p_sqr = p0_to_p.lengthSq();
+            const denum = this.lengthSq * this.c0 + orig_p_scal_dir * this.c1;
+            let t = (this.c1 < 0) ? 0 : 1;
             if (denum > 0.0) {
                 t = orig_p_scal_dir * this.c0 + orig_p_sqr * this.c1;
                 t = (t < 0.0) ? 0.0 : ((t > denum) ? 1.0 : t / denum); // clipping (nearest point on segment not line)
             }
             // Optim the below code... But keep the old code it's more understandable
-            var proj_p_l = Math.sqrt(t * (t * this.lengthSq - 2 * orig_p_scal_dir) + orig_p_sqr);
-            //var proj_to_point = this.proj;
+            const proj_p_l = Math.sqrt(t * (t * this.lengthSq - 2 * orig_p_scal_dir) + orig_p_sqr);
+            //const proj_to_point = this.proj;
             //proj_to_point.set(
             //    t*this.dir.x - p0_to_p.x,
             //    t*this.dir.y - p0_to_p.y,
             //    t*this.dir.z - p0_to_p.z
             //);
-            //var proj_p_l = proj_to_point.length();
-            var weight_proj = this.c0 + t * this.c1;
+            //const proj_p_l = proj_to_point.length();
+            const weight_proj = this.c0 + t * this.c1;
             res.v = this.density * ScalisMath.Poly6Eval(proj_p_l / weight_proj) * ScalisMath.Poly6NF0D;
             ///////////////////////////////////////////////////////////////////////
             // Material computation : by orthogonal projection
@@ -4317,8 +4300,8 @@ class ScalisSegment extends ScalisPrimitive {
             // We should use an analytical gradient here. It should be possible to
             // compute.
             if (res.g) {
-                var epsilon = 0.00001;
-                var d_over_eps = this.density / epsilon;
+                const epsilon = 0.00001;
+                const d_over_eps = this.density / epsilon;
                 p_eps.copy(p);
                 p_eps.x += epsilon;
                 this.evalDist(p_eps, ev_eps);
@@ -4338,15 +4321,19 @@ class ScalisSegment extends ScalisPrimitive {
      *
      * @param p Evaluation point
      * @param res Resulting material will be in res.m
-     */
+    */
     evalMat(p, res) {
-        var p0_to_p = this.vector;
+        const p0_to_p = this.vector;
         p0_to_p.subVectors(p, this.v[0].getPos());
-        var udir_dot = this.unit_dir.dot(p0_to_p);
-        var s = (udir_dot / this.length);
-        // Material interpolation
+        const udir_dot = this.unit_dir.dot(p0_to_p);
+        const s = (udir_dot / this.length);
+        if (!res.m)
+            throw "[ScalisSegment] evalMat: res.m should be defined here.";
         if (s > 1.0) {
             res.m.copy(this.materials[1]);
+        }
+        else if (s <= 0.0) {
+            res.m.copy(this.materials[0]);
         }
         else {
             if (s <= 0.0) {
@@ -4364,32 +4351,30 @@ class ScalisSegment extends ScalisPrimitive {
      *  @param w special_coeff
      */
     HomotheticClippingSpecial(w) {
-        // we search solution t \in [0,1] such that at^2-2bt+c<=0
-        var a = -w.z;
-        var b = -w.y;
-        var c = -w.x;
-        var delta = b * b - a * c;
+        // we search solution t \in [0,1] such that at^2-2bt+c<=0 
+        const a = -w.z;
+        const b = -w.y;
+        const c = -w.x;
+        const delta = b * b - a * c;
         if (delta >= 0.0) {
-            var b_p_sqrt_delta = b + Math.sqrt(delta);
+            const b_p_sqrt_delta = b + Math.sqrt(delta);
             if ((b_p_sqrt_delta < 0.0) || (this.length * b_p_sqrt_delta < c)) {
                 return false;
             }
             else {
-                var main_root = c / b_p_sqrt_delta;
+                const main_root = c / b_p_sqrt_delta;
                 this.clipped_l1 = (main_root < 0.0) ? 0.0 : main_root;
-                var a_r = a * main_root;
+                const a_r = a * main_root;
                 this.clipped_l2 = (2.0 * b < a_r + a * this.length) ? c / (a_r) : this.length;
                 return true;
             }
         }
         return false;
     }
-    ;
     // [Abstract] see ScalisPrimitive.heuristicStepWithin
     heuristicStepWithin() {
         return this.weight_min / 3;
     }
-    ;
     ///////////////////////////////////////////////////////////////////////////
     // Convolution Evaluation functions and auxiliaary functions
     /**
@@ -4397,21 +4382,20 @@ class ScalisSegment extends ScalisPrimitive {
      */
     evalConvol(p, res) {
         if (!this.valid_aabb) {
-            throw "Error : prepareForEval should have been called";
+            throw new Error("prepareForEval should have been called");
         }
-        // init
         if (res.g)
             res.g.set(0, 0, 0);
         res.v = 0;
-        var p_min_to_point = this.tmpVec1;
+        const p_min_to_point = this.tmpVec1;
         p_min_to_point.subVectors(p, this.p_min);
-        var uv = this.increase_unit_dir.dot(p_min_to_point);
-        var d2 = p_min_to_point.lengthSq();
-        var special_coeff = this.tmpVec2;
+        const uv = this.increase_unit_dir.dot(p_min_to_point);
+        const d2 = p_min_to_point.lengthSq();
+        const special_coeff = this.tmpVec2;
         special_coeff.set(this.weight_min * this.weight_min - ScalisMath.KIS2 * d2, -this.unit_delta_weight * this.weight_min - ScalisMath.KIS2 * uv, this.unit_delta_weight * this.unit_delta_weight - ScalisMath.KIS2);
         // clipped_l1, clipped_l2 are members of segment
         if (this.HomotheticClippingSpecial(special_coeff)) {
-            var inv_local_min_weight = 1.0 / (this.weight_min + this.clipped_l1 * this.unit_delta_weight);
+            const inv_local_min_weight = 1.0 / (this.weight_min + this.clipped_l1 * this.unit_delta_weight);
             special_coeff.x = 1.0 - ScalisMath.KIS2 * (this.clipped_l1 * (this.clipped_l1 - 2.0 * uv) + d2) * inv_local_min_weight * inv_local_min_weight;
             special_coeff.y = -this.unit_delta_weight - ScalisMath.KIS2 * (uv - this.clipped_l1) * inv_local_min_weight;
             if (res.g) //both grad and value
@@ -4421,8 +4405,7 @@ class ScalisSegment extends ScalisPrimitive {
                         inv_local_min_weight, this.unit_delta_weight, special_coeff);
                 }
                 else {
-                    this.HomotheticCompactPolynomial_approx_segment_FGradF_i6((this.clipped_l2 - this.clipped_l1) *
-                        inv_local_min_weight, this.unit_delta_weight, this.inv_weight_min, special_coeff);
+                    this.HomotheticCompactPolynomial_approx_segment_FGradF_i6((this.clipped_l2 - this.clipped_l1) * inv_local_min_weight, this.unit_delta_weight, this.inv_weight_min, special_coeff);
                 }
                 res.v = ScalisMath.Poly6NF1D * this.f0f1f2.x;
                 this.f0f1f2.y *= inv_local_min_weight;
@@ -4436,13 +4419,11 @@ class ScalisSegment extends ScalisPrimitive {
              {
                 if (this.unit_delta_weight >= 0.06) { // ensure a maximum relative error of ??? (for degree i up to 8)
                     res.v = ScalisMath.Poly6NF1D *
-                        this.HomotheticCompactPolynomial_segment_F_i6((this.clipped_l2 - this.clipped_l1) *
-                            inv_local_min_weight, this.unit_delta_weight, special_coeff);
+                        this.HomotheticCompactPolynomial_segment_F_i6((this.clipped_l2 - this.clipped_l1) * inv_local_min_weight, this.unit_delta_weight, special_coeff);
                 }
                 else {
                     res.v = ScalisMath.Poly6NF1D *
-                        this.HomotheticCompactPolynomial_approx_segment_F_i6((this.clipped_l2 - this.clipped_l1) *
-                            inv_local_min_weight, this.unit_delta_weight, inv_local_min_weight, special_coeff);
+                        this.HomotheticCompactPolynomial_approx_segment_F_i6((this.clipped_l2 - this.clipped_l1) * inv_local_min_weight, this.unit_delta_weight, inv_local_min_weight, special_coeff);
                 }
             }
             if (res.m) {
@@ -4460,17 +4441,14 @@ class ScalisSegment extends ScalisPrimitive {
      */
     clamp(a, b, c) { return Math.max(b, Math.min(c, a)); }
     ;
-    // [Abstract] see ScalisPrimitive.distanceTo
     distanceTo = (function () {
-        var tmpVector = new Vector3();
-        var tmpVectorProj = new Vector3();
+        const tmpVector = new Vector3();
+        const tmpVectorProj = new Vector3();
         return function (p) {
-            /** @type {ScalisSegment} */
-            let self = this;
-            // var thickness = Math.min(this.c0,this.c0+this.c1);
+            const self = this;
             // return distance point/segment
             // don't take thickness into account
-            var t = tmpVector.subVectors(p, self.v[0].getPos())
+            let t = tmpVector.subVectors(p, self.v[0].getPos())
                 .dot(self.dir) / self.lengthSq;
             // clamp is our own function declared there
             t = self.clamp(t, 0, 1);
@@ -4486,171 +4464,168 @@ class ScalisSegment extends ScalisPrimitive {
      *  @return the value
      */
     HomotheticCompactPolynomial_segment_F_i6(l, d, w) {
-        var t6247 = d * l + 0.1e1;
-        var t6241 = 0.1e1 / t6247;
-        var t6263 = t6247 * t6247;
-        var t2 = t6263 * t6263;
-        var t6244 = 0.1e1 / t2;
-        var t6252 = w.y;
-        var t6249 = t6252 * t6252;
-        var t6273 = 0.12e2 * t6249;
-        var t6258 = 0.1e1 / d;
-        var t6271 = t6252 * t6258;
-        var t6264 = t6247 * t6263;
-        var t6257 = l * l;
-        var t6260 = t6257 * t6257;
-        var t6259 = l * t6257;
-        var t6254 = l * t6260;
-        var t6253 = w.x;
-        var t6251 = w.z;
-        var t6250 = t6253 * t6253;
-        var t6248 = t6251 * t6251;
-        var t3 = t6264 * t6264;
-        var t6246 = 0.1e1 / t3;
-        var t6245 = t6241 * t6244;
-        var t6243 = 0.1e1 / t6264;
-        var t6242 = 0.1e1 / t6263;
-        var t71 = Math.log(t6247);
-        var t93 = t6259 * t6259;
+        const t6247 = d * l + 0.1e1;
+        const t6241 = 0.1e1 / t6247;
+        const t6263 = t6247 * t6247;
+        const t2 = t6263 * t6263;
+        const t6244 = 0.1e1 / t2;
+        const t6252 = w.y;
+        const t6249 = t6252 * t6252;
+        const t6273 = 0.12e2 * t6249;
+        const t6258 = 0.1e1 / d;
+        const t6271 = t6252 * t6258;
+        const t6264 = t6247 * t6263;
+        const t6257 = l * l;
+        const t6260 = t6257 * t6257;
+        const t6259 = l * t6257;
+        const t6254 = l * t6260;
+        const t6253 = w.x;
+        const t6251 = w.z;
+        const t6250 = t6253 * t6253;
+        const t6248 = t6251 * t6251;
+        const t3 = t6264 * t6264;
+        const t6246 = 0.1e1 / t3;
+        const t6245 = t6241 * t6244;
+        const t6243 = 0.1e1 / t6264;
+        const t6242 = 0.1e1 / t6263;
+        const t71 = Math.log(t6247);
+        const t93 = t6259 * t6259;
         return -t6248 * (((((-(t6241 - 0.1e1) * t6258 - l * t6242) * t6258 - t6257 * t6243) * t6258 - t6259 * t6244) * t6258 - t6260 * t6245) * t6258 - t6254 * t6246) * t6271 + (-t6253 * (t6246 - 0.1e1) * t6258 / 0.6e1 - (-(t6245 - 0.1e1) * t6258 / 0.5e1 - l * t6246) * t6271) * t6250 + ((t6253 * t6273 + 0.3e1 * t6251 * t6250) * (0.2e1 / 0.5e1 * (-(t6244 - 0.1e1) * t6258 / 0.4e1 - l * t6245) * t6258 - t6257 * t6246) + (0.3e1 * t6248 * t6253 + t6251 * t6273) * (0.4e1 / 0.5e1 * (0.3e1 / 0.4e1 * (0.2e1 / 0.3e1 * (-(t6242 - 0.1e1) * t6258 / 0.2e1 - l * t6243) * t6258 - t6257 * t6244) * t6258 - t6259 * t6245) * t6258 - t6260 * t6246) + t6251 * t6248 * (0.6e1 / 0.5e1 * (0.5e1 / 0.4e1 * (0.4e1 / 0.3e1 * (0.3e1 / 0.2e1 * (0.2e1 * (t71 * t6258 - l * t6241) * t6258 - t6257 * t6242) * t6258 - t6259 * t6243) * t6258 - t6260 * t6244) * t6258 - t6254 * t6245) * t6258 - t93 * t6246) + (-0.12e2 * t6251 * t6253 - 0.8e1 * t6249) * (0.3e1 / 0.5e1 * ((-(t6243 - 0.1e1) * t6258 / 0.3e1 - l * t6244) * t6258 / 0.2e1 - t6257 * t6245) * t6258 - t6259 * t6246) * t6252) * t6258 / 0.6e1;
     }
-    ;
     /**
      *  Sub-function for optimized convolution value computation (Homothetic Compact Polynomial).
      *  (Approximation? Faster?).
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
      */
     HomotheticCompactPolynomial_approx_segment_F_i6(l, d, q, w) {
-        var t6386 = q * d;
-        var t6361 = t6386 + 0.1e1;
-        var t6387 = 0.1e1 / t6361;
-        var t1 = t6361 * t6361;
-        var t2 = t1 * t1;
-        var t6359 = t6387 / t2 / t1;
-        var t6363 = w.z;
-        var t6364 = w.y;
-        var t6365 = w.x;
-        var t6366 = l * l;
-        var t6356 = t6363 * t6366 - 0.2e1 * t6364 * l + t6365;
-        var t9 = t6364 * t6364;
-        var t6357 = t6363 * t6365 - t9;
-        var t6358 = t6363 * l - t6364;
-        var t6377 = t6365 * t6365;
-        var t6381 = t6364 * t6377;
-        var t6369 = t6356 * t6356;
-        var t6383 = t6358 * t6369;
-        var t6362 = 0.1e1 / t6363;
-        var t6384 = t6357 * t6362;
-        var t6385 = 0.6e1 / 0.35e2 * (0.4e1 / 0.3e1 * (0.2e1 * t6357 * l + t6358 * t6356 + t6364 * t6365) * t6384 + t6383 + t6381) * t6384 + t6356 * t6383 / 0.7e1 + t6365 * t6381 / 0.7e1;
-        var t6380 = t6362 * t6385;
-        var t6360 = t6387 * t6359;
-        var t6355 = t6369 * t6369;
-        var t27 = t6377 * t6377;
-        var t6353 = t6364 * t6380 + t6355 / 0.8e1 - t27 / 0.8e1;
+        const t6386 = q * d;
+        const t6361 = t6386 + 0.1e1;
+        const t6387 = 0.1e1 / t6361;
+        const t1 = t6361 * t6361;
+        const t2 = t1 * t1;
+        const t6359 = t6387 / t2 / t1;
+        const t6363 = w.z;
+        const t6364 = w.y;
+        const t6365 = w.x;
+        const t6366 = l * l;
+        const t6356 = t6363 * t6366 - 0.2e1 * t6364 * l + t6365;
+        const t9 = t6364 * t6364;
+        const t6357 = t6363 * t6365 - t9;
+        const t6358 = t6363 * l - t6364;
+        const t6377 = t6365 * t6365;
+        const t6381 = t6364 * t6377;
+        const t6369 = t6356 * t6356;
+        const t6383 = t6358 * t6369;
+        const t6362 = 0.1e1 / t6363;
+        const t6384 = t6357 * t6362;
+        const t6385 = 0.6e1 / 0.35e2 * (0.4e1 / 0.3e1 * (0.2e1 * t6357 * l + t6358 * t6356 + t6364 * t6365) * t6384 + t6383 + t6381) * t6384 + t6356 * t6383 / 0.7e1 + t6365 * t6381 / 0.7e1;
+        const t6380 = t6362 * t6385;
+        const t6360 = t6387 * t6359;
+        const t6355 = t6369 * t6369;
+        const t27 = t6377 * t6377;
+        const t6353 = t6364 * t6380 + t6355 / 0.8e1 - t27 / 0.8e1;
         // eslint-disable-next-line no-loss-of-precision
-        var t6352 = -l * t6355 + (-0.10e2 * t6364 * t6353 + t6365 * t6385) * t6362;
-        var t65 = q * q;
+        const t6352 = -l * t6355 + (-0.10e2 * t6364 * t6353 + t6365 * t6385) * t6362;
+        const t65 = q * q;
         return t6380 - 0.7e1 * d * t6353 * t6362 + (-0.1111111111e0 * (0.3e1 * t6359 - 0.300e1 + 0.7e1 * (0.2e1 + t6360) * t6386) * t6352 - 0.1000000000e0 * (0.2e1 - 0.200e1 * t6359 - 0.7e1 * (0.1e1 + t6360) * t6386) / q * (-0.1e1 * t6366 * t6355 + (0.1333333333e1 * t6364 * t6352 + 0.2e1 * t6365 * t6353) * t6362)) * t6362 / t65;
     }
-    ;
     /**
      *  Sub-function for optimized convolution value and gradient computation (Homothetic Compact Polynomial).
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
      *  Result is stored in this.f0f1f2
      */
     HomotheticCompactPolynomial_segment_FGradF_i6(l, d, w) {
-        var t6320 = d * l + 0.1e1;
-        var t6314 = 0.1e1 / t6320;
-        var t6336 = t6320 * t6320;
-        var t2 = t6336 * t6336;
-        var t6317 = 0.1e1 / t2;
-        var t6325 = w.y;
-        var t6322 = t6325 * t6325;
-        var t6351 = 0.2e1 * t6322;
-        var t6324 = w.z;
-        var t6326 = w.x;
-        var t6350 = t6324 * t6326 / 0.3e1 + 0.2e1 / 0.3e1 * t6322;
-        var t6321 = t6324 * t6324;
-        var t6349 = t6321 / 0.6e1;
-        var t6348 = -0.2e1 / 0.3e1 * t6324;
-        var t6337 = t6320 * t6336;
-        var t6316 = 0.1e1 / t6337;
-        var t6318 = t6314 * t6317;
-        var t7 = t6337 * t6337;
-        var t6319 = 0.1e1 / t7;
-        var t6330 = l * l;
-        var t6331 = 0.1e1 / d;
-        var t6332 = l * t6330;
-        var t6309 = 0.3e1 / 0.5e1 * ((-(t6316 - 0.1e1) * t6331 / 0.3e1 - l * t6317) * t6331 / 0.2e1 - t6330 * t6318) * t6331 - t6332 * t6319;
-        var t6347 = t6309 * t6325;
-        var t6311 = -(t6318 - 0.1e1) * t6331 / 0.5e1 - l * t6319;
-        var t6323 = t6326 * t6326;
-        var t6346 = t6323 * t6311;
-        var t6310 = 0.2e1 / 0.5e1 * (-(t6317 - 0.1e1) * t6331 / 0.4e1 - l * t6318) * t6331 - t6330 * t6319;
-        var t6345 = t6326 * t6310;
-        var t6344 = -t6323 * (t6319 - 0.1e1) / 0.6e1;
-        var t6333 = t6330 * t6330;
-        var t6327 = l * t6333;
-        var t6315 = 0.1e1 / t6336;
-        var t6308 = 0.4e1 / 0.5e1 * (0.3e1 / 0.4e1 * (0.2e1 / 0.3e1 * (-(t6315 - 0.1e1) * t6331 / 0.2e1 - l * t6316) * t6331 - t6330 * t6317) * t6331 - t6332 * t6318) * t6331 - t6333 * t6319;
-        var t6307 = ((((-(t6314 - 0.1e1) * t6331 - l * t6315) * t6331 - t6330 * t6316) * t6331 - t6332 * t6317) * t6331 - t6333 * t6318) * t6331 - t6327 * t6319;
-        var t81 = t6332 * t6332;
-        var t92 = Math.log(t6320);
+        const t6320 = d * l + 0.1e1;
+        const t6314 = 0.1e1 / t6320;
+        const t6336 = t6320 * t6320;
+        const t2 = t6336 * t6336;
+        const t6317 = 0.1e1 / t2;
+        const t6325 = w.y;
+        const t6322 = t6325 * t6325;
+        const t6351 = 0.2e1 * t6322;
+        const t6324 = w.z;
+        const t6326 = w.x;
+        const t6350 = t6324 * t6326 / 0.3e1 + 0.2e1 / 0.3e1 * t6322;
+        const t6321 = t6324 * t6324;
+        const t6349 = t6321 / 0.6e1;
+        const t6348 = -0.2e1 / 0.3e1 * t6324;
+        const t6337 = t6320 * t6336;
+        const t6316 = 0.1e1 / t6337;
+        const t6318 = t6314 * t6317;
+        const t7 = t6337 * t6337;
+        const t6319 = 0.1e1 / t7;
+        const t6330 = l * l;
+        const t6331 = 0.1e1 / d;
+        const t6332 = l * t6330;
+        const t6309 = 0.3e1 / 0.5e1 * ((-(t6316 - 0.1e1) * t6331 / 0.3e1 - l * t6317) * t6331 / 0.2e1 - t6330 * t6318) * t6331 - t6332 * t6319;
+        const t6347 = t6309 * t6325;
+        const t6311 = -(t6318 - 0.1e1) * t6331 / 0.5e1 - l * t6319;
+        const t6323 = t6326 * t6326;
+        const t6346 = t6323 * t6311;
+        const t6310 = 0.2e1 / 0.5e1 * (-(t6317 - 0.1e1) * t6331 / 0.4e1 - l * t6318) * t6331 - t6330 * t6319;
+        const t6345 = t6326 * t6310;
+        const t6344 = -t6323 * (t6319 - 0.1e1) / 0.6e1;
+        const t6333 = t6330 * t6330;
+        const t6327 = l * t6333;
+        const t6315 = 0.1e1 / t6336;
+        const t6308 = 0.4e1 / 0.5e1 * (0.3e1 / 0.4e1 * (0.2e1 / 0.3e1 * (-(t6315 - 0.1e1) * t6331 / 0.2e1 - l * t6316) * t6331 - t6330 * t6317) * t6331 - t6332 * t6318) * t6331 - t6333 * t6319;
+        const t6307 = ((((-(t6314 - 0.1e1) * t6331 - l * t6315) * t6331 - t6330 * t6316) * t6331 - t6332 * t6317) * t6331 - t6333 * t6318) * t6331 - t6327 * t6319;
+        const t81 = t6332 * t6332;
+        const t92 = Math.log(t6320);
         this.f0f1f2.x = (t6326 * t6344 - t6325 * t6346 + t6345 * t6351 - 0.4e1 / 0.3e1 * t6322 * t6347 + (t6323 * t6310 / 0.2e1 + t6308 * t6351 - 0.2e1 * t6326 * t6347) * t6324 + (t6326 * t6308 / 0.2e1 - t6325 * t6307 + (-t81 * t6319 / 0.6e1 + (-t6327 * t6318 / 0.5e1 + (-t6333 * t6317 / 0.4e1 + (-t6332 * t6316 / 0.3e1 + (-t6330 * t6315 / 0.2e1 + (t92 * t6331 - l * t6314) * t6331) * t6331) * t6331) * t6331) * t6331) * t6324) * t6321) * t6331;
         this.f0f1f2.y = (t6344 + t6310 * t6350 + t6308 * t6349 + (-0.2e1 / 0.3e1 * t6326 * t6311 + t6309 * t6348) * t6325) * t6331;
         this.f0f1f2.z = (t6346 / 0.6e1 + t6309 * t6350 + t6307 * t6349 + (-0.2e1 / 0.3e1 * t6345 + t6308 * t6348) * t6325) * t6331;
     }
-    ;
     /**
      *  Sub-function for optimized convolution value and gradient computation (Homothetic Compact Polynomial).
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
      *  Result is stored in this.f0f1f2
      */
     HomotheticCompactPolynomial_approx_segment_FGradF_i6(l, d, q, w) {
-        var t6478 = q * d;
-        var t6443 = t6478 + 0.1e1;
-        var t6479 = 0.1e1 / t6443;
-        var t1 = q * q;
-        var t6449 = 0.1e1 / t1;
-        var t2 = t6443 * t6443;
-        var t3 = t2 * t2;
-        var t6441 = t6479 / t3 / t2;
-        var t6448 = w.x;
-        var t6477 = 0.2e1 * t6448;
-        var t6446 = w.z;
-        var t6444 = 0.1e1 / t6446;
-        var t6476 = d * t6444;
-        var t6447 = w.y;
-        var t6451 = l * l;
-        var t6438 = t6446 * t6451 - 0.2e1 * t6447 * l + t6448;
-        var t6455 = t6438 * t6438;
-        var t6437 = t6438 * t6455;
-        var t6463 = t6448 * t6448;
-        var t6445 = t6448 * t6463;
-        var t10 = t6447 * t6447;
-        var t6439 = t6446 * t6448 - t10;
-        var t6440 = t6446 * l - t6447;
-        var t6470 = t6439 * t6444;
-        var t6433 = 0.4e1 / 0.3e1 * (0.2e1 * t6439 * l + t6440 * t6438 + t6447 * t6448) * t6470 + t6440 * t6455 + t6447 * t6463;
-        var t6473 = t6433 / 0.5e1;
-        var t6432 = t6447 * t6444 * t6473 + t6437 / 0.6e1 - t6445 / 0.6e1;
-        var t6429 = -l * t6437 + (-0.8e1 * t6447 * t6432 + t6448 * t6473) * t6444;
-        var t6469 = t6451 * t6437;
+        const t6478 = q * d;
+        const t6443 = t6478 + 0.1e1;
+        const t6479 = 0.1e1 / t6443;
+        const t1 = q * q;
+        const t6449 = 0.1e1 / t1;
+        const t2 = t6443 * t6443;
+        const t3 = t2 * t2;
+        const t6441 = t6479 / t3 / t2;
+        const t6448 = w.x;
+        const t6477 = 0.2e1 * t6448;
+        const t6446 = w.z;
+        const t6444 = 0.1e1 / t6446;
+        const t6476 = d * t6444;
+        const t6447 = w.y;
+        const t6451 = l * l;
+        const t6438 = t6446 * t6451 - 0.2e1 * t6447 * l + t6448;
+        const t6455 = t6438 * t6438;
+        const t6437 = t6438 * t6455;
+        const t6463 = t6448 * t6448;
+        const t6445 = t6448 * t6463;
+        const t10 = t6447 * t6447;
+        const t6439 = t6446 * t6448 - t10;
+        const t6440 = t6446 * l - t6447;
+        const t6470 = t6439 * t6444;
+        const t6433 = 0.4e1 / 0.3e1 * (0.2e1 * t6439 * l + t6440 * t6438 + t6447 * t6448) * t6470 + t6440 * t6455 + t6447 * t6463;
+        const t6473 = t6433 / 0.5e1;
+        const t6432 = t6447 * t6444 * t6473 + t6437 / 0.6e1 - t6445 / 0.6e1;
+        const t6429 = -l * t6437 + (-0.8e1 * t6447 * t6432 + t6448 * t6473) * t6444;
+        const t6469 = t6451 * t6437;
         // eslint-disable-next-line no-loss-of-precision
-        var t6427 = -t6469 + (0.10e2 / 0.7e1 * t6447 * t6429 + t6432 * t6477) * t6444;
-        var t6475 = -t6427 / 0.8e1;
-        var t6474 = 0.6e1 / 0.35e2 * t6433 * t6470 + t6440 * t6437 / 0.7e1 + t6447 * t6445 / 0.7e1;
-        var t6442 = t6479 * t6441;
-        var t6472 = (0.3e1 * t6441 - 0.300e1 + 0.7e1 * (0.2e1 + t6442) * t6478) * t6449;
-        var t6471 = (0.2e1 - 0.200e1 * t6441 - 0.7e1 * (0.1e1 + t6442) * t6478) / q * t6449;
-        var t6468 = t6444 * t6472;
-        var t6467 = t6444 * t6471;
-        var t6466 = t6444 * t6474;
-        var t6436 = t6455 * t6455;
-        var t57 = t6463 * t6463;
-        var t6430 = t6447 * t6466 + t6436 / 0.8e1 - t57 / 0.8e1;
+        const t6427 = -t6469 + (0.10e2 / 0.7e1 * t6447 * t6429 + t6432 * t6477) * t6444;
+        const t6475 = -t6427 / 0.8e1;
+        const t6474 = 0.6e1 / 0.35e2 * t6433 * t6470 + t6440 * t6437 / 0.7e1 + t6447 * t6445 / 0.7e1;
+        const t6442 = t6479 * t6441;
+        const t6472 = (0.3e1 * t6441 - 0.300e1 + 0.7e1 * (0.2e1 + t6442) * t6478) * t6449;
+        const t6471 = (0.2e1 - 0.200e1 * t6441 - 0.7e1 * (0.1e1 + t6442) * t6478) / q * t6449;
+        const t6468 = t6444 * t6472;
+        const t6467 = t6444 * t6471;
+        const t6466 = t6444 * t6474;
+        const t6436 = t6455 * t6455;
+        const t57 = t6463 * t6463;
+        const t6430 = t6447 * t6466 + t6436 / 0.8e1 - t57 / 0.8e1;
         // eslint-disable-next-line no-loss-of-precision
-        var t6428 = -l * t6436 + (-0.10e2 * t6447 * t6430 + t6448 * t6474) * t6444;
+        const t6428 = -l * t6436 + (-0.10e2 * t6447 * t6430 + t6448 * t6474) * t6444;
         // eslint-disable-next-line no-loss-of-precision
         this.f0f1f2.x = t6466 - 0.7e1 * t6430 * t6476 - t6428 * t6468 / 0.9e1 - (-t6451 * t6436 + (0.4e1 / 0.3e1 * t6447 * t6428 + t6430 * t6477) * t6444) * t6467 / 0.10e2;
         this.f0f1f2.y = (t6473 - 0.7e1 * d * t6432 - t6429 * t6472 / 0.7e1 + t6471 * t6475) * t6444;
@@ -4661,7 +4636,7 @@ class ScalisSegment extends ScalisPrimitive {
 Types.register(ScalisSegment.type, ScalisSegment);
 
 // Number of sample in the Simpsons integration.
-var sampleNumber = 10;
+const sampleNumber = 10;
 /**
  * This class implements a ScalisTriangle primitive.
  *  CONVOL Evaluation is not exact so we use simpsons numerical integration.
@@ -4671,13 +4646,13 @@ var sampleNumber = 10;
  */
 class ScalisTriangle extends ScalisPrimitive {
     static type = "ScalisTriangle";
-    static fromJSON(json) {
-        var v = [
+    fromJSON(json) {
+        const v = [
             ScalisVertex.fromJSON(json.v[0]),
             ScalisVertex.fromJSON(json.v[1]),
             ScalisVertex.fromJSON(json.v[2])
         ];
-        var m = [
+        const m = [
             Material.fromJSON(json.materials[0]),
             Material.fromJSON(json.materials[1]),
             Material.fromJSON(json.materials[2])
@@ -4685,12 +4660,21 @@ class ScalisTriangle extends ScalisPrimitive {
         return new ScalisTriangle(v, json.volType, 1.0, m);
     }
     ;
+    v;
     min_thick;
     max_thick;
     // Temporary for eval
     // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
-    res_gseg = {};
-    tmp_res_gseg = {};
+    res_gseg = {
+        proj_to_p: new Vector3(),
+        weight_proj: 0,
+        t: 0
+    };
+    tmp_res_gseg = {
+        proj_to_p: new Vector3(),
+        weight_proj: 0,
+        t: 0
+    };
     p0p1 = new Vector3();
     p1p2 = new Vector3();
     p2p0 = new Vector3();
@@ -4702,8 +4686,7 @@ class ScalisTriangle extends ScalisPrimitive {
     length_p1p2 = 0;
     length_p2p0 = 0;
     diffThick_p0p1 = 0;
-    diffThick_p0p1 = 0;
-    diffThick_p0p1 = 0;
+    diffThick_p0p2 = 0;
     diffThick_p1p2 = 0;
     diffThick_p2p0 = 0;
     main_dir = new Vector3();
@@ -5103,7 +5086,8 @@ class ScalisTriangle extends ScalisPrimitive {
      *  @param  res {proj_to_p, weight_proj}
      *
      */
-    GenericSegmentComputation(point, p1, p1p2, length, sqr_length, weight_1, delta_weight, // = weight_2-weight_1
+    GenericSegmentComputation(point, p1, p1p2, _length, // Unused parameter
+    sqr_length, weight_1, delta_weight, // = weight_2-weight_1
     res) {
         var origin_to_p = new Vector3();
         origin_to_p.subVectors(point, p1);
@@ -5160,6 +5144,8 @@ class ScalisTriangle extends ScalisPrimitive {
                     self.computeLineIntegral(self.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
                     res_odd += tmpRes.v;
                     if (res.g) {
+                        if (tmpRes.g === null)
+                            throw "[ScalisTriangle] equalConvol : gradient is null";
                         grad_odd.addVectors(grad_odd, tmpRes.g);
                     }
                     t += d_step_size;
@@ -5171,6 +5157,8 @@ class ScalisTriangle extends ScalisPrimitive {
                     t += d_step_size;
                     self.computeLineIntegral(self.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
                     if (res.g) {
+                        if (tmpRes.g === null)
+                            throw "[ScalisTriangle] equalConvol : gradient is null";
                         grad_even.addVectors(grad_even, tmpRes.g);
                     }
                     res_even += tmpRes.v;
@@ -5184,10 +5172,14 @@ class ScalisTriangle extends ScalisPrimitive {
                 res.v *= factor;
                 if (res.g) {
                     var grad_res = new Vector3();
-                    grad_res.addVectors(grad_res, res_low.g);
+                    const res_low_g = res_low.g;
+                    const res_high_g = res_high.g;
+                    if (!res_low_g || !res_high_g)
+                        throw "[ScalisTriangle] equalConvol : gradient is not defined here.";
+                    grad_res.addVectors(grad_res, res_low_g);
                     grad_res.addVectors(grad_res, grad_odd.multiplyScalar(4.0));
                     grad_res.addVectors(grad_res, grad_even.multiplyScalar(2.0));
-                    grad_res.addVectors(grad_res, res_high.g);
+                    grad_res.addVectors(grad_res, res_high_g);
                     res.g = grad_res.multiplyScalar(factor);
                 }
             }
@@ -5196,6 +5188,8 @@ class ScalisTriangle extends ScalisPrimitive {
                 res.g = new Vector3();
             }
             if (res.m) {
+                if (tmpRes.m === null)
+                    throw "[ScalisTriangle] equalConvol : material is null";
                 tmpRes.g = null;
                 self.evalDist(p, tmpRes);
                 res.m.copy(tmpRes.m);
@@ -5280,7 +5274,7 @@ class ScalisTriangle extends ScalisPrimitive {
         return false;
     }
     /**
-     *  @param {!Vector3} point
+     *  @param point
      *  @return Object defining v attribute with the computed value
      *
      *  @protected
@@ -5300,7 +5294,7 @@ class ScalisTriangle extends ScalisPrimitive {
             res.v = this.homotheticCompactPolynomial_segment_F_i6_cste((clipped.l2 - clipped.l1) * inv_local_min_weight, special_coeff);
         }
         else {
-            res = 0;
+            return 0;
         }
         return res;
     }
@@ -5332,6 +5326,8 @@ class ScalisTriangle extends ScalisPrimitive {
         }
         else {
             res.v = 0;
+            if (!res.g)
+                throw "[ScalisTriangle] consWeightEvalGradForSeg : gradient is null";
             res.g.set(0, 0, 0);
         }
         return res;
@@ -5411,35 +5407,27 @@ class ScalisTriangle extends ScalisPrimitive {
 }
 Types.register(ScalisTriangle.type, ScalisTriangle);
 
-/** @typedef {*} Json */
-/**
- * @typedef {{type:string}} DistanceFunctorJSON
- */
 /**
  *  A superclass for Node and Primitive in the blobtree.
- *  @constructor
  */
 class DistanceFunctor {
     static type = "DistanceFunctor";
     /**
      *  @abstract
-     *  @param {DistanceFunctorJSON} json Json description of the object
+     *  @param json Json description of the object
      */
     static fromJSON(json) {
         return Types.fromJSON(json);
     }
-    ;
     /**
-     *  @return {string} Type of the element
+     *  @return Type of the element
      */
     getType() {
         return DistanceFunctor.type;
     }
-    ;
     /**
      *  @abstract
      *  Return a Javscript Object respecting JSON convention and can be used to serialize the functor.
-     *  @returns {DistanceFunctorJSON}
      */
     toJSON() {
         return {
@@ -5448,45 +5436,30 @@ class DistanceFunctor {
     }
     ;
     /**
-     *  @abstract
-     *  @param {number} _d The distance to be considered.
-     *  @return {number} Scalar field value according to given distance d.
-     */
-    value(_d) {
-        throw "Error : not implemented. Must be reimplemented in children classes.";
-    }
-    ;
-    /**
      *  Perform a numerical approximation of the gradient according to epsilon.
-     *  @param {number} d The distance to be considered.
-     *  @param {number} epsilon The numerica step for this gradient computation. Default to 0.00001.
+     *  @param d The distance to be considered.
+     *  @param epsilon The numerical step for this gradient computation. Default to 0.00001.
      */
-    numericalGradient(d, epsilon) {
-        var eps = epsilon ? epsilon : 0.00001;
-        return (this.value(d + eps) - this.value(d - eps)) / (2 * eps);
+    numericalGradient(d, epsilon = 0.00001) {
+        return (this.value(d + epsilon) - this.value(d - epsilon)) / (2 * epsilon);
     }
-    ;
     /**
      *  Compute the gradient. Should be reimplemented in most cases.
-     *  By default, this function return a numerical gradient with epsilon at 0.00001.
-     *  @return {number} One dimensional gradient at d.
+     *  By default, this function returns a numerical gradient with epsilon at 0.00001.
+     *  @return One-dimensional gradient at d.
      */
     gradient(d) {
         return this.numericalGradient(d, 0.00001);
     }
-    ;
     /**
-     *  @returns {number} Distance above which all values will be 0. Should be reimplemented and default to infinity.
+     *  @returns Distance above which all values will be 0. Should be reimplemented and defaults to infinity.
      */
     getSupport() {
         return Infinity;
     }
-    ;
 }
 Types.register(DistanceFunctor.type, DistanceFunctor);
 
-/** @typedef {import('./DistanceFunctor').DistanceFunctorJSON} DistanceFunctorJSON */
-/** @typedef {{scale:number} & DistanceFunctorJSON} Poly6DistanceFunctorJSON */
 /**
  *  Specialised Distance Functor using a 6 degree polynomial function.
  *  This is the function similar to the one used in SCALIS primitives.
@@ -5494,23 +5467,20 @@ Types.register(DistanceFunctor.type, DistanceFunctor);
  */
 class Poly6DistanceFunctor extends DistanceFunctor {
     static type = "Poly6DistanceFunctor";
-    /**
-     * @param {Poly6DistanceFunctorJSON} json
-     */
-    static fromJSON(json) {
+    scale;
+    fromJSON(json) {
         return new Poly6DistanceFunctor(json.scale);
     }
     /**
      * This is the standard 6 degree polynomial function used for implicit modeling.
      * At 0, its value is 1 with a zero derivative.
      * At 1, its value is 0 with a zero derivative.
-     * @param {number} d
      */
-    static evalStandard(d) {
+    evalStandard(d) {
         if (d < 0.0) {
             return 1.0;
         }
-        var aux = 1.0 - d * d;
+        const aux = 1.0 - d * d;
         if (aux > 0.0) {
             return aux * aux * aux;
         }
@@ -5518,21 +5488,18 @@ class Poly6DistanceFunctor extends DistanceFunctor {
             return 0.0;
         }
     }
-    /**
-     * @param {number} scale
-     */
     constructor(scale) {
         super();
         this.scale = scale || 1.0;
     }
     /**
-     *  @return {string} Type of the element
+     *  @return Type of the element
      */
     getType() {
         return Poly6DistanceFunctor.type;
     }
     /**
-     *  @return {Object} Json description of this functor.
+     *  @return Json description of this functor.
      */
     toJSON() {
         return {
@@ -5542,27 +5509,25 @@ class Poly6DistanceFunctor extends DistanceFunctor {
     }
     /**
      * @link DistanceFunctor.value for a complete description.
-     * @param {number} d The distance to be considered.
-     * @returns {number} Scalar field value according to given distance d.
+     * @param d The distance to be considered.
+     * @returns Scalar field value according to given distance d.
      */
     value(d) {
-        var dp = d / (2 * this.scale); // ensure the support fits the scale.
+        let dp = d / (2 * this.scale); // ensure the support fits the scale.
         dp = dp + 0.5;
-        return Poly6DistanceFunctor.evalStandard(dp) / Poly6DistanceFunctor.evalStandard(0.5);
+        return this.evalStandard(dp) / this.evalStandard(0.5);
     }
     /**
-     * @param {number} d
-     * @returns {number} dimensional gradient at d.
+     * @returns dimensional gradient at d.
      */
     gradient(d) {
-        var ds = d / (2 * this.scale) + 0.5;
-        var res = (1 - ds * ds);
-        res = -(6 / (2 * this.scale)) * ds * res * res / Poly6DistanceFunctor.evalStandard(0.5);
+        const ds = d / (2 * this.scale) + 0.5;
+        let res = 1 - ds * ds;
+        res = -(6 / (2 * this.scale)) * ds * res * res / this.evalStandard(0.5);
         return res;
     }
     /**
      * @link DistanceFunctor.getSupport for a complete description.
-     * @returns
      */
     getSupport() {
         return this.scale;
@@ -5571,7 +5536,7 @@ class Poly6DistanceFunctor extends DistanceFunctor {
 Types.register(Poly6DistanceFunctor.type, Poly6DistanceFunctor);
 
 /**
- *  This class implements an abstract primitve class for signed distance field.
+ *  This class implements an abstract primitive class for signed distance field.
  *  SDFPrimitive subclasses must define a scalar field being the distance to a geometry.
  *  @constructor
  *  @extends {Element}
@@ -5581,66 +5546,39 @@ class SDFPrimitive extends Element {
     constructor() {
         super();
         // Default bounding box for a SDF is infinite.
-        this.aabb.set(new Vector3(-Infinity, -Infinity, -Infinity), new Vector3(+Infinity, +Infinity, +Infinity));
+        this.aabb.set(new Vector3(-Infinity, -Infinity, -Infinity), new Vector3(Infinity, Infinity, Infinity));
     }
     /**
-     * @return {string} Type of the element
+     * @return Type of the element
      */
     getType() {
         return SDFPrimitive.type;
     }
     /**
-     * @link Element.computeAABB for a completve description.
+     * @link Element.computeAABB for a complete description.
      */
     computeAABB() {
         // Nothing to do, SDF have infinite bounding box
     }
-    /**
-     * Return the bounding box of the node for a given maximum distance.
-     * Ie, the distance field is greater than d everywhere outside the returned box.
-     * @param {number} _d Distance
-     * @abstract
-     * @return {Box3}
-     */
-    computeDistanceAABB(_d) {
-        console.error("computeDistanceAABB is an abstract function of SDFPrimitive. Please reimplement it in children classes.");
-        return (new Box3()).makeEmpty();
-    }
-    /**
-     * @returns {Array.<{aabb: Box3, bv:Area, obj:Primitive}>}
-     */
     getAreas() {
         throw "No Areas for SDFPrimitive.";
-    }
-    /**
-     * @param {number} _d Distance to consider for the area computation.
-     * @returns {Array.<{aabb: Box3, bv:Area, obj:SDFPrimitive}>}
-     */
-    getDistanceAreas(_d) {
-        console.error("getDistanceAreas is an abstract function of SDFPrimitive. Please reimplement in children classes");
-        return [];
     }
     /**
      * Since SDF Nodes are distance function, this function will return
      * an accurate distance to the surface.
      * @abstract
      *
-     * @param {Vector3} p
+     * @param p
      */
     distanceTo = (function () {
         var res = { v: 0 };
-        /**
-         * @param {Vector3} p
-         */
-        return (p) => {
-            /** @type {SDFPrimitive} */
-            let self = this;
-            self.value(p, res);
+        return function (p) {
+            this.value(p, res);
             return res.v;
         };
     })();
     /**
-     * @link see Element.heuristicStepWithin for a det
+     * @link see Element.heuristicStepWithin for a complete description.
      */
     heuristicStepWithin() {
         console.error("SDFPrimitive.heuristicStepWithin is Not implemented");
@@ -5651,17 +5589,15 @@ class SDFPrimitive extends Element {
 Types.register(SDFPrimitive.type, SDFPrimitive);
 
 /**
- *  This primitive implements a distance field to an extanded "capsule geometry", which is actually a weighted segment.
+ *  This primitive implements a distance field to an extended "capsule geometry", which is actually a weighted segment.
  *  You can find more on Capsule geometry here https://github.com/maximeq/three-js-capsule-geometry
  *
  *  @constructor
  *  @extends SDFPrimitive
- *
  */
 class SDFCapsule extends SDFPrimitive {
     static type = "SDFCapsule";
-    static fromJSON(json) {
-        //var v = ScalisVertex.fromJSON(json.v[0]);
+    fromJSON(json) {
         return new SDFCapsule(new Vector3(json.p1.x, json.p1.y, json.p1.z), new Vector3(json.p2.x, json.p2.y, json.p2.z), json.r1, json.r2);
     }
     p1;
@@ -5673,11 +5609,10 @@ class SDFCapsule extends SDFPrimitive {
     lengthSq;
     length;
     /**
-     *
-     *  @param {Vector3} p1 Position of the first segment extremity
-     *  @param {Vector3} p2 Position of the second segment extremity
-     *  @param {number} r1 Radius of the sphere centered in p1
-     *  @param {number} r2 Radius of the sphere centered in p2
+     *  @param p1 Position of the first segment extremity
+     *  @param p2 Position of the second segment extremity
+     *  @param r1 Radius of the sphere centered in p1
+     *  @param r2 Radius of the sphere centered in p2
      */
     constructor(p1, p2, r1, r2) {
         super();
@@ -5693,7 +5628,7 @@ class SDFCapsule extends SDFPrimitive {
         this.unit_dir.normalize();
     }
     /**
-     *  @return  Type of the element
+     *  @return Type of the element
      */
     getType() {
         return SDFCapsule.type;
@@ -5729,21 +5664,18 @@ class SDFCapsule extends SDFPrimitive {
         this.r2 = r2;
         this.invalidAABB();
     }
-    ;
     /**
      *  @return Current radius at p1
      */
     getRadius1() {
         return this.r1;
     }
-    ;
     /**
      *  @return Current radius at p2
      */
     getRadius2() {
         return this.r2;
     }
-    ;
     /**
      *  @param p1 The new position of the first segment point.
      */
@@ -5751,7 +5683,6 @@ class SDFCapsule extends SDFPrimitive {
         this.p1.copy(p1);
         this.invalidAABB();
     }
-    ;
     /**
      *  @param p2 The new position of the second segment point
      */
@@ -5759,27 +5690,23 @@ class SDFCapsule extends SDFPrimitive {
         this.p2.copy(p2);
         this.invalidAABB();
     }
-    ;
     /**
      *  @return Current position of the first segment point
      */
     getPosition1() {
         return this.p1;
     }
-    ;
     /**
      *  @return Current position of the second segment point
      */
     getPosition2() {
         return this.p2;
     }
-    ;
     computeDistanceAABB(d) {
-        var b1 = new Box3(this.p1.clone().add(new Vector3(-this.r1 - d, -this.r1 - d, -this.r1 - d)), this.p1.clone().add(new Vector3(this.r1 + d, this.r1 + d, this.r1 + d)));
-        var b2 = new Box3(this.p2.clone().add(new Vector3(-this.r2 - d, -this.r2 - d, -this.r2 - d)), this.p2.clone().add(new Vector3(this.r2 + d, this.r2 + d, this.r2 + d)));
+        const b1 = new Box3(this.p1.clone().add(new Vector3(-this.r1 - d, -this.r1 - d, -this.r1 - d)), this.p1.clone().add(new Vector3(this.r1 + d, this.r1 + d, this.r1 + d)));
+        const b2 = new Box3(this.p2.clone().add(new Vector3(-this.r2 - d, -this.r2 - d, -this.r2 - d)), this.p2.clone().add(new Vector3(this.r2 + d, this.r2 + d, this.r2 + d)));
         return b1.union(b2);
     }
-    ;
     /**
      * @link Element.prepareForEval for a complete description
      */
@@ -5788,54 +5715,50 @@ class SDFCapsule extends SDFPrimitive {
             this.valid_aabb = true;
         }
     }
-    ;
     /**
-     * @param  d
      * @return The Areas object corresponding to the node/primitive, in an array
      */
     getDistanceAreas(d) {
         if (!this.valid_aabb) {
-            throw "ERROR : Cannot get area of invalid primitive";
+            throw "ERROR: Cannot get area of invalid primitive";
         }
         else {
             return [{
                     aabb: this.computeDistanceAABB(d),
-                    bv: new AreaCapsule(this.p1, this.p2, this.r1 + d, this.r2 + d, this.r1 / (this.r1 + d), // Adjust accuray factor according to the radius and not only to the required d
+                    bv: new AreaCapsule(this.p1, this.p2, this.r1 + d, this.r2 + d, this.r1 / (this.r1 + d), // Adjust accuracy factor according to the radius and not only to the required d
                     this.r2 / (this.r2 + d)),
                     obj: this
                 }];
         }
     }
-    ;
     /**
      *  @link Element.value for a complete description
      */
     value = (function () {
-        var v = new Vector3();
-        var proj = new Vector3();
+        const v = new Vector3();
+        const proj = new Vector3();
         /**
-         *  @param {Vector3} p
-         *  @param {ValueResultType} res
+         *  @param p
+         *  @param res
          */
         return function (p, res) {
-            /** @type {SDFCapsule} */
-            let self = this;
+            const self = this;
             v.subVectors(p, self.p1);
-            var p1p_sqrl = v.lengthSq();
+            const p1p_sqrl = v.lengthSq();
             // In unit_dir basis, vector (this.r1-this.r2, this.length) is normal to the "weight line"
             // We need a projection in this direction up to the segment line to know in which case we fall.
-            var x_p_2D = v.dot(self.unit_dir);
+            const x_p_2D = v.dot(self.unit_dir);
             // pythagore inc.
-            var y_p_2D = Math.sqrt(Math.max(// Necessary because of rounded errors, pyth result can be <0 and this causes sqrt to return NaN...
+            const y_p_2D = Math.sqrt(Math.max(// Necessary because of rounded errors, pyth result can be <0 and this causes sqrt to return NaN...
             0.0, p1p_sqrl - x_p_2D * x_p_2D // =  y_p_2D² by pythagore
             ));
-            var t = -y_p_2D / self.length;
-            var proj_x = x_p_2D + t * (self.r1 - self.r2);
+            const t = -y_p_2D / self.length;
+            const proj_x = x_p_2D + t * (self.r1 - self.r2);
             // var proj_y = 0.0; // by construction
-            // Easy way to compute the distance now that we ave the projection on the segment
-            var a = MathUtils.clamp(proj_x / self.length, 0, 1.0);
+            // Easy way to compute the distance now that we have the projection on the segment
+            const a = MathUtils.clamp(proj_x / self.length, 0, 1.0);
             proj.copy(self.p1).lerp(self.p2, a); // compute the actual 3D projection
-            var l = v.subVectors(p, proj).length();
+            const l = v.subVectors(p, proj).length();
             res.v = l - (a * self.r2 + (1.0 - a) * self.r1);
             if (res.g) {
                 res.g.copy(v).divideScalar(l);
@@ -5845,42 +5768,33 @@ class SDFCapsule extends SDFPrimitive {
 }
 Types.register(SDFCapsule.type, SDFCapsule);
 
-/** @typedef {import('../areas/Area')} Area */
-/** @typedef {import('./SDFPrimitive')} SDFPrimitive */
-/** @typedef {import('../Node').NodeJSON} NodeJSON */
-/** @typedef {NodeJSON} SDFNodeJSON */
 /**
  *  This class implements an abstract Node class for Signed Distance Field.
- *  The considered primtive is at distance = 0.
+ *  The considered primitive is at distance = 0.
  *  Convention is : negative value inside the surface, positive value outside.
  *  @constructor
  *  @extends {Node}
  */
 class SDFNode extends Node {
     static type = "SDFNode";
+    children;
     constructor() {
         super();
         // Default bounding box for a SDF is infinite.
         this.aabb.set(new Vector3(-Infinity, -Infinity, -Infinity), new Vector3(+Infinity, +Infinity, +Infinity));
-        /** @type {Array<SDFNode|SDFPrimitive>} */
-        this.children;
+        this.children = [];
     }
-    getType() {
+    overridegetType() {
         return SDFNode.type;
     }
-    ;
-    // Abstract
     computeAABB() {
         // Nothing to do, SDF have infinite bounding box
     }
-    ;
     /**
      *  Return the bounding box of the node for a given maximum distance.
      *  Ie, the distance field is greater than d everywhere outside the returned box.
      *  @abstract
-     *  @param {number} d Distance
-     *  @return {Box3}
-     *
+     *  @param d Distance
      */
     computeDistanceAABB(d) {
         let res = new Box3();
@@ -5889,27 +5803,19 @@ class SDFNode extends Node {
         }
         return res;
     }
-    ;
-    /**
-     *
-     * @param {SDFNode | SDFPrimitive} c
-     */
     addChild(c) {
         return super.addChild(c);
     }
     /**
-     *  SDF Field are infinite, so Areas do not make sens except for the SDFRoot, which will
+     *  SDF Field are infinite, so Areas do not make sense except for the SDFRoot, which will
      *  usually apply a compact kernel to the distance field.
      *  @abstract
-     *  @return {Object}
      */
     getAreas() {
         throw "No Areas for SDFNode, except for the SDFRootNode.";
     }
-    ;
     /**
-     * @param {number} d Distance to consider for the area computation.
-     * @returns {Array.<{aabb: Box3, bv:Area, obj:SDFPrimitive}>}
+     * @param d Distance to consider for the area computation.
      */
     getDistanceAreas(d) {
         // By default return areas of all children
@@ -5924,18 +5830,12 @@ class SDFNode extends Node {
      * Since SDF Nodes are distance function, this function will return
      * an accurate distance to the surface.
      * @abstract
-     * @param {Vector3} _p Point
-     * @return {number}
+     * @param _p Point
      */
     distanceTo(_p) {
         throw "distanceTo should be reimplemented in every children classes of SDFNode.";
     }
     ;
-    // Abstract
-    /**
-     * @abstract
-     * @return {number}
-     */
     heuristicStepWithin() {
         throw "heuristicStepWithin may not make sens for all SDFNode, except for the SDFRootNode.";
     }
@@ -5955,10 +5855,10 @@ class SDFPoint extends SDFPrimitive {
      *  @param p Position (ie center) of the point
      *  @param acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
      */
-    constructor(p, acc) {
+    constructor(p, acc = 1.0) {
         super();
         this.p = p.clone();
-        this.acc = acc || 1.0;
+        this.acc = acc;
     }
     getType() {
         return SDFPoint.type;
@@ -6006,12 +5906,12 @@ class SDFPoint extends SDFPrimitive {
         return this.p;
     }
     ;
-    // [Abstract]
+    /**
+     *  @param d Distance
+     */
     computeDistanceAABB(d) {
         return new Box3(this.p.clone().add(new Vector3(-d, -d, -d)), this.p.clone().add(new Vector3(d, d, d)));
     }
-    ;
-    // [Abstract]
     prepareForEval() {
         if (!this.valid_aabb) {
             this.valid_aabb = true;
@@ -6021,11 +5921,10 @@ class SDFPoint extends SDFPrimitive {
     /**
      * @link SDFPrimitive.getDistanceAreas
      * @param d Distance to consider for the area computation.
-     * @returns {Array.<>}
      */
     getDistanceAreas(d) {
         if (!this.valid_aabb) {
-            throw "ERROR : Cannot get area of invalid primitive";
+            throw new Error("ERROR : Cannot get area of invalid primitive");
         }
         else {
             return [{
@@ -6040,13 +5939,13 @@ class SDFPoint extends SDFPrimitive {
      *  @link Element.value for a complete description
      */
     value = (function () {
-        var v = new Vector3();
+        const v = new Vector3();
         return function (p, res) {
             if (!this.valid_aabb) {
-                throw "Error : PrepareForEval should have been called";
+                throw new Error("Error : PrepareForEval should have been called");
             }
             v.subVectors(p, this.p);
-            var l = v.length();
+            const l = v.length();
             res.v = l;
             if (res.g) {
                 res.g.copy(v).multiplyScalar(1 / l);
@@ -6056,151 +5955,88 @@ class SDFPoint extends SDFPrimitive {
 }
 Types.register(SDFPoint.type, SDFPoint);
 
-/** @typedef {import('../areas/Area')} Area */
-/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('../Primitive.js').PrimitiveJSON} PrimitiveJSON */
-/** @typedef {import('./SDFNode').SDFNodeJSON} SDFNodeJSON */
-/** @typedef {import('./DistanceFunctor').DistanceFunctorJSON} DistanceFunctorJSON */
-/** @typedef {{f:DistanceFunctorJSON, sdfRoot:SDFNodeJSON} & PrimitiveJSON} SDFRootNodeJSON */
 /**
  *  This class implements a SDF Root Node, which is basically a Signed Distance Field
- *  made of some noe combination, on which is applied a compact support function.
+ *  made of some node combination, on which is applied a compact support function.
  *  For now SDF nodes do not have materials. A unique material is defined in the SDFRootNode.
- *
  */
 class SDFRootNode extends Primitive {
     static type = "SDFRootNode";
-    /**
-     *
-     * @param {SDFRootNodeJSON} json
-     * @returns
-     */
+    f;
+    sdfRoot;
+    tmp_res;
+    tmp_g;
     static fromJSON(json) {
-        let f = Types.fromJSON(json.f);
+        const f = Types.fromJSON(json.f);
         let material = Material.fromJSON(json.materials[0]);
         let sdfRoot = Types.fromJSON(json.sdfRoot);
-        if (!(f instanceof DistanceFunctor)) {
-            throw new Error("SDFRootNode parsing resulted in the wrong type of object for parameter f.");
-        }
-        if (!(material instanceof Material)) {
-            console.error("SDFRootNode parsing resulted in the wrong type of object for parameter material, using default.");
-            material = null;
-        }
-        if (!(sdfRoot instanceof SDFNode || sdfRoot instanceof SDFPrimitive)) {
-            console.error("SDFRootNode parsing resulted in the wrong type of object for parameter sdfRoot, using default.");
-            sdfRoot = null;
-        }
-        var res = new SDFRootNode(f, material, sdfRoot);
-        return res;
+        return new SDFRootNode(f, material, sdfRoot);
     }
     /**
-     *
-     * @param {DistanceFunctor} f The distance function to be applied to the distance field.
+     * @param f The distance function to be applied to the distance field.
      * It must respect the Blobtree convention, which is : positive everywhere, with a finite support.
-     * @param {Material} material
-     * @param {SDFNode | SDFPrimitive=} sdfRoot The child containng the complete SDF. SDFRootNode can have only one child.
+     * @param material The material for this node.
+     * @param sdfRoot The child containing the complete SDF. SDFRootNode can have only one child.
      */
     constructor(f, material, sdfRoot) {
         super();
         this.f = f;
         this.materials.push(material ? material.clone() : new Material());
-        this.sdfRoot = sdfRoot ?
-            (sdfRoot instanceof SDFNode ? sdfRoot : new SDFNode().addChild(sdfRoot)) : new SDFNode();
-        // Tmp vars to speed up computation (no reallocations)
-        // TODO : should be pushed in the function static variables since there can be no SDFRoot below the SDFRoot.
+        this.sdfRoot = sdfRoot ? (sdfRoot instanceof SDFNode ? sdfRoot : new SDFNode().addChild(sdfRoot)) : new SDFNode();
         this.tmp_res = { v: 0, g: null };
         this.tmp_g = new Vector3(0, 0, 0);
     }
     getType() {
         return SDFRootNode.type;
     }
-    ;
-    /**
-     * @param {SDFNode | SDFPrimitive} c
-     */
     addChild(c) {
         if (this.sdfRoot.children.length === 0) {
             this.sdfRoot.addChild.call(this, c);
         }
         else {
-            throw "Error : SDFRootNode can have only one child.";
+            throw new Error("SDFRootNode can have only one child.");
         }
     }
-    ;
-    /**
-     * @param {SDFNode | SDFPrimitive} c
-     */
     removeChild(c) {
         this.sdfRoot.removeChild(c);
     }
-    /**
-     * @returns {SDFRootNodeJSON}
-     */
     toJSON() {
-        var res = {
+        return {
             ...super.toJSON(),
             f: this.f.toJSON(),
             sdfRoot: this.sdfRoot.toJSON()
         };
-        return res;
     }
-    ;
     prepareForEval() {
         if (!this.valid_aabb) {
-            this.aabb = new Box3(); // Create empty BBox
+            this.aabb = new Box3();
             for (let i = 0; i < this.sdfRoot.children.length; ++i) {
                 let c = this.sdfRoot.children[i];
                 c.prepareForEval();
-                this.aabb.union(c.computeDistanceAABB(this.f.getSupport())); // new aabb is computed according to remaining children aabb
+                this.aabb.union(c.computeDistanceAABB(this.f.getSupport()));
             }
             this.valid_aabb = true;
         }
     }
-    ;
-    /**
-     *  @link Element.getAreas for a complete description
-     *
-     *  This function is an attempt to have SDFRootNode behave like a Primitive in the normal Blobtree.
-     *
-     *  @returns {Array.<{aabb: Box3, bv:Area, obj:Primitive}>}
-     */
     getAreas() {
         if (!this.valid_aabb) {
-            throw "ERROR : Cannot get area of invalid node";
+            throw new Error("ERROR: Cannot get area of invalid node");
         }
         else {
             let distAreas = this.sdfRoot.getDistanceAreas(this.f.getSupport());
-            let res = [];
-            distAreas.forEach((area) => {
-                res.push({
-                    aabb: area.aabb,
-                    bv: area.bv,
-                    obj: this
-                });
-            });
-            return res;
+            return distAreas.map(area => ({
+                aabb: area.aabb,
+                bv: area.bv,
+                obj: this
+            }));
         }
     }
-    ;
-    /**
-     *  @link Node.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
-     */
     value(p, res) {
-        var tmp = this.tmp_res;
+        const tmp = this.tmp_res;
         tmp.g = res.g ? this.tmp_g : null;
-        // Init res
         res.v = 0;
         if (res.m) {
             res.m.copy(Material.defaultMaterial);
-        }
-        if (res.g) ;
-        else if (res.step !== undefined) {
-            // that, is the max distance
-            // we want a value that won't miss any 'min'
-            res.step = 1000000000;
         }
         if (this.aabb.containsPoint(p)) {
             this.sdfRoot.children[0].value(p, tmp);
@@ -6213,11 +6049,9 @@ class SDFRootNode extends Primitive {
             }
         }
         else if (res.step !== undefined) {
-            // return distance to aabb such that next time we'll hit from within the aabbb
             res.step = this.aabb.distanceToPoint(p) + 0.3;
         }
     }
-    ;
 }
 Types.register(SDFRootNode.type, SDFRootNode);
 
@@ -6297,14 +6131,14 @@ class SDFSegment extends SDFPrimitive {
     }
     ;
     /**
-     *  @return {Vector3} Current position of the first segment point
+     *  @return Current position of the first segment point
      */
     getPosition1() {
         return this.p1;
     }
     ;
     /**
-     *  @return {Vector3} Current position of the second segment point
+     *  @return Current position of the second segment point
      */
     getPosition2() {
         return this.p2;
@@ -6326,8 +6160,7 @@ class SDFSegment extends SDFPrimitive {
     }
     ;
     /**
-     * @param {number} d
-     * @return {Object} The Areas object corresponding to the node/primitive, in an array
+     * @return The Areas object corresponding to the node/primitive, in an array
      */
     getDistanceAreas(d) {
         if (!this.valid_aabb) {
@@ -6439,8 +6272,7 @@ class SDFSphere extends SDFPrimitive {
     }
     ;
     /**
-     * @param {number} d
-     * @return {Object} The Areas object corresponding to the node/primitive, in an array
+     * @return The Areas object corresponding to the node/primitive, in an array
      */
     getDistanceAreas(d) {
         if (!this.valid_aabb) {
@@ -6532,60 +6364,22 @@ const Tables = {
 };
 
 /**
- * @typedef {import('../blobtree/RootNode')} RootNode
- */
-/**
- * @typedef {Object} ConvergenceParams
- * @property {number=} ratio A ratio of a the marching cube grid size defining the wanted geometrical accuracy.
- *                           Must be lower than 1, default is 0.01 The maximum number of newton steps, default is 10.
- * @property {number=} step The newton process will stop either when the threshold of ratio*cube_size is matched, or the number of steps allowed has been reached.
- */
-/**
- * @typedef {Object} VertexData
- * @property {Object} p
- * @property {number} p.x
- * @property {number} p.y
- * @property {number} p.z
- * @property {Object} n
- * @property {number} n.x
- * @property {number} n.y
- * @property {number} n.z
- * @property {Object} c
- * @property {number} c.r
- * @property {number} c.g
- * @property {number} c.b
- * @property {number} r
- * @property {number} m
- */
-/**
- * @typedef {Object} ResultingGeometry
- * @property {Array<number>} position,
- * @property {Array<number>} normal
- * @property {Array<number>} color
- * @property {Array<number>} metalness
- * @property {Array<number>} roughness
- * @property {number} nVertices
- * @property {Array<number>} faces
- * @property {number} nFaces
- * @property {(data:VertexData) => void} addVertex
- * @property {(a:number, b:number, c:number) => void} addFace
- */
-/**
  *  Axis Aligned Bounding Box in 2D carrying accuracy data
  *  @constructor
  *  @extends Box2
  */
 class Box2Acc extends Box2 {
+    nice_acc;
+    raw_acc;
     /**
-     *  @param {Vector2=} min Minimum x,y coordinate of the box
-     *  @param {Vector2=} max Maximum x,y coordinate of the box
-     *  @param {number=} nice_acc Nice accuracy in this box
-     *  @param {number=} raw_acc Raw accuracy in this box
+     *  @param min Minimum x,y coordinate of the box
+     *  @param max Maximum x,y coordinate of the box
+     *  @param nice_acc Nice accuracy in this box
+     *  @param raw_acc Raw accuracy in this box
      */
     constructor(min, max, nice_acc, raw_acc) {
         super(min, max);
-        var s = Math.max(this.max.x - this.min.x, this.max.y - this.min.y);
-        /** @type {number} */
+        const s = Math.max(this.max.x - this.min.x, this.max.y - this.min.y);
         this.nice_acc = 10000000;
         // Can nice_acc be 0 ? if yes we can simplify the next line
         if (nice_acc === undefined || nice_acc === null && s > 0) {
@@ -6596,11 +6390,11 @@ class Box2Acc extends Box2 {
         }
         this.raw_acc = this.raw_acc ? this.nice_acc : raw_acc;
     }
-    /**
-     *
-     * @param {Box2Acc} box
-     */
     unionWithAcc(box) {
+        if (box.nice_acc === null || box.raw_acc === null)
+            throw "[Box2Acc] Cannot do union with a box that is empty.";
+        if (this.nice_acc === null || this.raw_acc === null)
+            throw "[Box2Acc] Cannot do union on a box that is empty.";
         super.union(box);
         // Union of 2 boxes get the min acc for both
         this.raw_acc = Math.min(box.raw_acc, this.raw_acc);
@@ -6634,14 +6428,6 @@ class Box2Acc extends Box2 {
             ") ");
     }
     ;
-    /**
-     *  @param {number} min_x
-     *  @param {number} min_y
-     *  @param {number} max_x
-     *  @param {number} max_y
-     *  @param {number=} nice_acc
-     *  @param {number=} raw_acc
-     */
     setWithAcc(min_x, min_y, max_x, max_y, nice_acc, raw_acc) {
         this.min.set(min_x, min_y);
         this.max.set(max_x, max_y);
@@ -6663,37 +6449,48 @@ class Box2Acc extends Box2 {
     ;
 }
 /**
-*  @typedef {Object} SMCParams Parameters and option for this polygonizer.
-*  @property {string=} zResolution Defines how the stepping in z occurs. Options are :
-*                                  "adaptive" (default) steps are computed according to local minimum accuracy.
-*                                  "uniform" steps are uniform along z, according to the global minimum accuracy.
-*  @property {number=} detailRatio The blobtree defines some needed accuracies for polygonizing.
-*                                  However, if you want more details, you can set this to less than 1.
-*                                  Note that this is limited to 0.01, which will already increase your model complexity by a 10 000 factor.
-*  @property {(percent:number) => void=} progress Progress callback, taling a percentage as parameter.
-*  @property {ConvergenceParams=} convergence Add newton convergence steps to position each vertex.
-*  @property {number=} dichotomy NOT YET IMPLEMENTED Add dichotomy steps to position each vertex. Usually using convergence is better, except if the implicit
-*                                field is such that congerging is not possible (for example, null gradients on large areas)
-*/
-/**
  *  Class for a dual marching cube using 2 sliding arrays.
 
  *  @constructor
  */
 class SlidingMarchingCubes {
+    blobtree;
+    uniformZ;
+    detail_ratio;
+    convergence;
+    progress;
+    reso;
+    steps;
+    curr_steps;
+    curr_step_vol;
+    values_xy;
+    vertices_xy;
+    areas;
+    min_acc;
+    values;
+    x;
+    y;
+    z;
+    mask;
+    edge_cross;
+    vertex;
+    vertex_n;
+    vertex_m;
+    extended;
+    dis_o_aabb;
+    ext_p;
+    geometry;
+    minCurvOrient;
+    _isMinCurvatureTriangulation;
     /**
-     *  @param {RootNode} blobtree A blobtree to polygonize.
-     *  @param {SMCParams} smcParams Parameters and option for this polygonizer
+     *  @param blobtree A blobtree to polygonize.
+     *  @param smcParams Parameters and option for this polygonizer
      */
     constructor(blobtree, smcParams) {
         if (!smcParams) {
             throw new Error("smcParams must be provided for SlidingMarchingCubes, to use all default values, please use {}");
         }
-        /**
-         * @type {RootNode}
-         */
         this.blobtree = blobtree;
-        /** @type {boolean} */
         this.uniformZ = smcParams.zResolution === "uniform" ? true : false;
         this.detail_ratio = smcParams.detailRatio
             ? Math.max(0.01, smcParams.detailRatio)
@@ -6706,51 +6503,40 @@ class SlidingMarchingCubes {
         else {
             this.convergence = null;
         }
-        /** @type {(percent:number) => void} */
         this.progress = smcParams.progress
             ? smcParams.progress
             : function (_percent) {
                 //console.log(percent);
             };
-        /** @type {Int32Array} */
         this.reso = new Int32Array(3);
-        /**
-         * @type {{x:Float32Array, y:Float32Array, z:Float32Array}}
-         */
         this.steps = {
             x: null,
             y: null,
             z: null
         };
-        /** @type {!{x:number,y:number,z:number}} */
         this.curr_steps = {
             x: 0,
             y: 0,
             z: 0
         };
         // = this.curr_steps.x*this.curr_steps.y*this.curr_steps.z
-        /** @type {number} */
         this.curr_step_vol = 0;
         /**
          *  Sliding values array
-         *  @type {[Float32Array, Float32Array]}
          */
         this.values_xy = [null, null];
         /**
          *  Sliding values array
-         *  @type {!Array.<Int32Array>}
          */
         this.vertices_xy = [null, null];
         this.areas = [];
         this.min_acc = 1;
-        // Processing vars
-        /** @type {Array<number>} */
+        // Processing consts
         this.values = new Array(8);
         this.x = 0;
         this.y = 0;
         this.z = 0;
         this.mask = 0;
-        /** @type {Array<boolean>} */
         this.edge_cross = [
             false, // Tables.EdgeVMap[0], x=1
             false,
@@ -6765,63 +6551,43 @@ class SlidingMarchingCubes {
             false,
             false
         ];
-        /** @type {Vector3} */
         this.vertex = new Vector3(0, 0, 0); // vertex associated to the cell if any
-        /** @type {Vector3} */
         this.vertex_n = new Vector3(0, 0, 0); // vertex normal
-        /** @type {Material} */
         this.vertex_m = new Material(); // vertex material
-        // Vars and tmp vars for extension checks
-        /** @type {boolean} */
+        // Vars and tmp consts for extension checks
         this.extended = false;
-        /** @type {Box3} */
         this.dis_o_aabb = new Box3();
-        /** @type {Vector3} */
         this.ext_p = new Vector3();
         /**
          * Resulting mesh data
-         * @type {ResultingGeometry}
          */
         this.geometry = null;
         // Ensure triangulation along min curvature edge
-        /** @type {boolean} */
         this.minCurvOrient = true;
         // Returns true if 123/143 split is along min curvature
-        /** @type {(v1:number,v2:number,v3:number,v4:number) => boolean} */
         this._isMinCurvatureTriangulation =
             (function () {
-                //Var and tmp var pre allocated and Scoped
+                //Var and tmp const pre allocated and Scoped
                 //for optimization of triangulation criteria
                 //assuming a v1v2v3v4 quad
-                /** @type {Vector3} */
                 let p1 = new Vector3(); //v1 position
-                /** @type {Vector3} */
                 let p2 = new Vector3(); //v2 position
-                /** @type {Vector3} */
                 let p3 = new Vector3(); //v3 position
-                /** @type {Vector3} */
                 let p4 = new Vector3(); //v4 position
                 //Edges from v2
-                /** @type {Vector3} */
                 let pp_2_1 = new Vector3(); //v2v1 edge
-                /** @type {Vector3} */
                 let pp_2_3 = new Vector3(); //v2v3 edge
-                /** @type {Vector3} */
                 let pp_2_4 = new Vector3(); //v2v4 edge
                 //Edges from v4
-                /** @type {Vector3} */
                 let pp_4_1 = new Vector3(); //v4v1 edge
-                /** @type {Vector3} */
                 let pp_4_3 = new Vector3(); //v3v1 edge
-                /** @type {Vector3} */
                 let n_2 = new Vector3(); //123 normal
-                /** @type {Vector3} */
                 let n_4 = new Vector3(); //341 normal
-                /** @type {Vector3} */
                 let n_23 = new Vector3(); //234 normal
-                /** @type {Vector3} */
                 let n_42 = new Vector3(); //412 normal
                 return function (v1, v2, v3, v4) {
+                    if (this.geometry === null)
+                        throw "[SlidingMarchingCubes] geometry must be initialized before calling _isMinCurvatureTriangulation";
                     //Quad opposes v1 and v3 and v2 and v4
                     //check min curvature
                     p1.x = this.geometry.position[v1 * 3];
@@ -6895,7 +6661,10 @@ class SlidingMarchingCubes {
      *  @private
      */
     buildResultingBufferGeometry() {
-        var res = new BufferGeometry();
+        if (this.geometry === null) {
+            throw "[SlidingMarchinCubes] Geometry must be initialized before calling buildResultingBufferGeometry";
+        }
+        const res = new BufferGeometry();
         res.setAttribute("position", new BufferAttribute(new Float32Array(this.geometry.position), 3));
         res.setAttribute("normal", new BufferAttribute(new Float32Array(this.geometry.normal), 3));
         res.setAttribute("color", new BufferAttribute(new Float32Array(this.geometry.color), 3));
@@ -6912,6 +6681,9 @@ class SlidingMarchingCubes {
      */
     setFrontToZero() {
         // init to 0, can be omptim later
+        if (this.values_xy[1] === null) {
+            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling setFrontToZero";
+        }
         for (let i = 0; i < this.values_xy[1].length; ++i) {
             this.values_xy[1][i] = 0;
         }
@@ -6923,6 +6695,9 @@ class SlidingMarchingCubes {
      */
     setFrontToMinus() {
         // init to 0, can be omptim later
+        if (this.values_xy[1] === null) {
+            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling setFrontToMinus";
+        }
         for (let i = 0; i < this.values_xy[1].length; ++i) {
             this.values_xy[1][i] = -1;
         }
@@ -6933,6 +6708,9 @@ class SlidingMarchingCubes {
      */
     setFrontToZeroIfMinus() {
         // init to 0, can be omptim later
+        if (this.values_xy[1] === null) {
+            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling setFrontToZeroIfMinus";
+        }
         for (let i = 0; i < this.values_xy[1].length; ++i) {
             if (this.values_xy[1][i] === -1) {
                 this.values_xy[1][i] = 0;
@@ -6942,24 +6720,27 @@ class SlidingMarchingCubes {
     /**
      *  Perform bilinear interpolation in a given 2D box to set values in front array
      *
-     *  @param {number} cx Coordinate x of bottom left corner of the front array
-     *  @param {number} cy Coordinate x of bottom left corner of the front array
-     *  @param {number} cz Coordinate x of bottom left corner of the front array
+     *  @param cx Coordinate x of bottom left corner of the front array
+     *  @param cy Coordinate x of bottom left corner of the front array
+     *  @param cz Coordinate x of bottom left corner of the front array
      *
-     *  @param {number} x0 Lower x box osition in the array
-     *  @param {number} x1 Upper x box position in the array
-     *  @param {number} y0 Lower y box position in the array
-     *  @param {number} y1 Upper y box position in the array
+     *  @param x0 Lower x box osition in the array
+     *  @param x1 Upper x box position in the array
+     *  @param y0 Lower y box position in the array
+     *  @param y1 Upper y box position in the array
      *
      *  @private
      */
-    interpolateInBox(cx, cy, cz, x0, x1, y0, y1) {
-        let varr = this.values_xy[1];
+    interpolateInBox(_cx, _cy, _cz, x0, x1, y0, y1) {
+        if (this.values_xy[1] === null) {
+            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling interpolateInBox";
+        }
+        let constr = this.values_xy[1];
         let nx = x1 - x0;
         let ny = y1 - y0;
         /*
         this.computeFrontValAtBoxCorners(cx,cy,cz, new Vector2(x0,y0), new Vector2(x1,y1));
-        var mask = this.computeBoxMask(new Vector2(x0,y0), new Vector2(x1,y1));
+        const mask = this.computeBoxMask(new Vector2(x0,y0), new Vector2(x1,y1));
         if(!(mask === 0xf || mask === 0x0)){
             throw "Error bad mask when interpolating";
         }
@@ -6967,11 +6748,11 @@ class SlidingMarchingCubes {
         if (nx > 1) {
             // must interpolate
             let line = y0 * this.reso[0];
-            let val0 = varr[line + x0];
-            let v_step = (varr[line + x1] - val0) / nx;
-            for (var i = 1; i < nx; ++i) {
-                if (varr[line + x0 + i] === -1) {
-                    varr[line + x0 + i] = val0 + i * v_step;
+            let val0 = constr[line + x0];
+            let v_step = (constr[line + x1] - val0) / nx;
+            for (let i = 1; i < nx; ++i) {
+                if (constr[line + x0 + i] === -1) {
+                    constr[line + x0 + i] = val0 + i * v_step;
                     //this.computeFrontValAt(cx,cy,cz,x0+i,y0);
                 }
             }
@@ -6979,23 +6760,20 @@ class SlidingMarchingCubes {
         if (ny > 1) {
             // compute upper line
             let line = y1 * this.reso[0];
-            let val0 = varr[line + x0];
-            let v_step = (varr[line + x1] - val0) / nx;
+            let val0 = constr[line + x0];
+            let v_step = (constr[line + x1] - val0) / nx;
             for (let i = 1; i < nx; ++i) {
-                if (varr[line + x0 + i] === -1) {
-                    varr[line + x0 + i] = val0 + i * v_step;
+                if (constr[line + x0 + i] === -1) {
+                    constr[line + x0 + i] = val0 + i * v_step;
                     //this.computeFrontValAt(cx,cy,cz,x0+i,y1);
                 }
             }
             for (let i = 0; i <= nx; ++i) {
-                val0 = varr[y0 * this.reso[0] + x0 + i];
-                v_step = (varr[y1 * this.reso[0] + x0 + i] - val0) / ny;
-                for (var k = 1; k < ny; ++k) {
-                    if (varr[(y0 + k) * this.reso[0] + x0 + i] === -1) {
-                        varr[(y0 + k) * this.reso[0] + x0 + i] = val0 + k * v_step;
-                        //if(i===0 || i==nx){
-                        //    this.computeFrontValAt(cx,cy,cz,x0+i,(y0+k));
-                        //}
+                val0 = constr[y0 * this.reso[0] + x0 + i];
+                v_step = (constr[y1 * this.reso[0] + x0 + i] - val0) / ny;
+                for (let k = 1; k < ny; ++k) {
+                    if (constr[(y0 + k) * this.reso[0] + x0 + i] === -1) {
+                        constr[(y0 + k) * this.reso[0] + x0 + i] = val0 + k * v_step;
                     }
                 }
             }
@@ -7004,12 +6782,12 @@ class SlidingMarchingCubes {
     /**
      *  Compute blobtree value at a given position in the front sliding array.
      *
-     *  @param {number} cx Coordinate x of bottom left corner of the front array
-     *  @param {number} cy Coordinate x of bottom left corner of the front array
-     *  @param {number} cz Coordinate x of bottom left corner of the front array
+     *  @param cx Coordinate x of bottom left corner of the front array
+     *  @param cy Coordinate x of bottom left corner of the front array
+     *  @param cz Coordinate x of bottom left corner of the front array
      *
-     *  @param {number} x X position in the array
-     *  @param {number} y Y position in the array
+     *  @param x X position in the array
+     *  @param y Y position in the array
      *
      *  @private
      */
@@ -7018,17 +6796,18 @@ class SlidingMarchingCubes {
     }
     ;
     /**
-     *  Function using closure to have static variable. Wrapped in computeFrontValAt
+     *  Function using closure to have static constiable. Wrapped in computeFrontValAt
      *  for profiling purpose.
      */
     computeFrontValAtClosure = (function () {
-        var eval_res = { v: 0 };
-        var p = new Vector3();
+        const eval_res = { v: 0 };
+        const p = new Vector3();
         return function (cx, cy, cz, x, y) {
-            /** @type {SlidingMarchingCubes} */
-            let self = this;
-            var index = y * self.reso[0] + x;
+            const self = this;
+            const index = y * self.reso[0] + x;
             eval_res.v = self.blobtree.getNeutralValue();
+            if (self.values_xy[1] === null)
+                throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling computeFrontValAtClosure";
             if (self.values_xy[1][index] === -1) {
                 p.set(cx + x * self.min_acc, cy + y * self.min_acc, cz);
                 self.blobtree.value(p, eval_res);
@@ -7038,11 +6817,11 @@ class SlidingMarchingCubes {
     })();
     /**
      *  Compute corner values in the front buffer in 2D box defined by min,max
-     *  @param {number} cx X coordinate of the front buffer corner
-     *  @param {number} cy Y coordinate of the front buffer corner
-     *  @param {number} cz Z coordinate of the front buffer corner
-     *  @param {!Vector2} min 2D box min
-     *  @param {!Vector2} max 2D box max
+     *  @param cx X coordinate of the front buffer corner
+     *  @param cy Y coordinate of the front buffer corner
+     *  @param cz Z coordinate of the front buffer corner
+     *  @param min 2D box min
+     *  @param max 2D box max
      */
     computeFrontValAtBoxCorners(cx, cy, cz, min, max) {
         this.computeFrontValAt(cx, cy, cz, min.x, min.y);
@@ -7053,15 +6832,15 @@ class SlidingMarchingCubes {
     ;
     /**
      *  Compute all values in the front buffer in 2D box defined by min,max
-     *  @param {number} cx X coordinate of the front buffer corner
-     *  @param {number} cy Y coordinate of the front buffer corner
-     *  @param {number} cz Z coordinate of the front buffer corner
-     *  @param {!Vector2} min 2D box min
-     *  @param {!Vector2} max 2D box max
+     *  @param cx X coordinate of the front buffer corner
+     *  @param cy Y coordinate of the front buffer corner
+     *  @param cz Z coordinate of the front buffer corner
+     *  @param min 2D box min
+     *  @param max 2D box max
      */
     computeFrontValInBox(cx, cy, cz, min, max) {
-        for (var xx = min.x; xx <= max.x; ++xx) {
-            for (var yy = min.y; yy <= max.y; ++yy) {
+        for (let xx = min.x; xx <= max.x; ++xx) {
+            for (let yy = min.y; yy <= max.y; ++yy) {
                 this.computeFrontValAt(cx, cy, cz, xx, yy);
             }
         }
@@ -7069,12 +6848,14 @@ class SlidingMarchingCubes {
     ;
     /**
      *  Set all values in 2D box min,max at 0.
-     *  @param {!Vector2} min 2D box min
-     *  @param {!Vector2} max 2D box max
+     *  @param min 2D box min
+     *  @param max 2D box max
      */
     setFrontValZeroInBox(min, max) {
-        for (var ix = min.x; ix <= max.x; ++ix) {
-            for (var iy = min.y; iy <= max.y; ++iy) {
+        if (this.values_xy[1] === null)
+            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling setFrontValZeroInBox";
+        for (let ix = min.x; ix <= max.x; ++ix) {
+            for (let iy = min.y; iy <= max.y; ++iy) {
                 this.values_xy[1][iy * this.reso[0] + ix] = 0;
             }
         }
@@ -7083,12 +6864,14 @@ class SlidingMarchingCubes {
     /**
      *  Compute 2D mask of a given 2D box. Mask is an hex integer unique for each
      *  combination of iso value crossing (like in 3D marching cubes, but in 2D).
-     *  @param {!Vector2} min 2D box min
-     *  @param {!Vector2} max 2D box max
-     *  @return {number} The mask
+     *  @param min 2D box min
+     *  @param max 2D box max
+     *  @return The mask
      */
     computeBoxMask(min, max) {
-        var mask = 0;
+        if (this.values_xy[1] === null)
+            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling computeBoxMask";
+        let mask = 0;
         mask |=
             this.values_xy[1][min.y * this.reso[0] + min.x] >
                 this.blobtree.getIsoValue()
@@ -7114,11 +6897,12 @@ class SlidingMarchingCubes {
     ;
     /**
      *  Return 0 if and only if all coners value of 2D box min,max are 0
-     *  @param {!Vector2} min 2D box min
-     *  @param {!Vector2} max 2D box max
-     *  @return {number}
+     *  @param min 2D box min
+     *  @param max 2D box max
      */
     checkZeroBox(min, max) {
+        if (this.values_xy[1] === null)
+            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling checkZeroBox";
         return (this.values_xy[1][min.y * this.reso[0] + min.x] +
             this.values_xy[1][min.y * this.reso[0] + max.x] +
             this.values_xy[1][max.y * this.reso[0] + max.x] +
@@ -7131,58 +6915,56 @@ class SlidingMarchingCubes {
      *  "smart", since computed boxes are buid with their scalar field accuracy.
      *  Depending on the accuracy, scalar field values may be computed from the
      *  blobtree or interpolated (linear).
-     *  @param {number} cx X coordinate of the front buffer corner
-     *  @param {number} cy Y coordinate of the front buffer corner
-     *  @param {number} cz Z coordinate of the front buffer corner
-     *  @param {!Array.<!Box2Acc>} boxes2D 2D boxes intersecting box. Used to compute accuracy for split boxes.
-     *  @param {!Box2Acc} box The 2D box in which we compute values
+     *  @param cx X coordinate of the front buffer corner
+     *  @param cy Y coordinate of the front buffer corner
+     *  @param cz Z coordinate of the front buffer corner
+     *  @param boxes2D 2D boxes intersecting box. Used to compute accuracy for split boxes.
+     *  @param box The 2D box in which we compute values
      */
     recursiveBoxComputation(cx, cy, cz, box, boxes2D) {
         // split the current box in 2 boxes in the largest dimension
-        var new_boxes = null;
-        var diff = new Vector2(Math.round(box.max.x - box.min.x), Math.round(box.max.y - box.min.y));
+        let new_boxes = null;
+        const diff = new Vector2(Math.round(box.max.x - box.min.x), Math.round(box.max.y - box.min.y));
         if (diff.x > 1 && diff.x >= diff.y) {
             // cut in x
-            var x_cut = box.min.x + Math.floor(diff.x / 2);
+            const x_cut = box.min.x + Math.floor(diff.x / 2);
             new_boxes = [
                 new Box2Acc(box.min, new Vector2(x_cut, box.max.y), 10000, 10000),
                 new Box2Acc(new Vector2(x_cut, box.min.y), box.max, 10000, 10000)
             ];
             this.computeFrontValAt(cx, cy, cz, x_cut, box.min.y);
             this.computeFrontValAt(cx, cy, cz, x_cut, box.max.y);
-            //this.computeFrontValAt(cx,cy,cz, x_cut+1, box.min.y);
-            //this.computeFrontValAt(cx,cy,cz, x_cut+1, box.max.y);
         }
         else {
             // cut in y
             if (diff.y > 1) {
-                var y_cut = box.min.y + Math.floor(diff.y / 2);
+                const y_cut = box.min.y + Math.floor(diff.y / 2);
                 new_boxes = [
                     new Box2Acc(box.min, new Vector2(box.max.x, y_cut), 10000, 10000),
                     new Box2Acc(new Vector2(box.min.x, y_cut), box.max, 10000, 10000)
                 ];
                 this.computeFrontValAt(cx, cy, cz, box.min.x, y_cut);
                 this.computeFrontValAt(cx, cy, cz, box.max.x, y_cut);
-                //this.computeFrontValAt(cx,cy,cz, box.min.x, y_cut+1);
-                //this.computeFrontValAt(cx,cy,cz, box.max.x, y_cut+1);
             }
             else {
                 // the box is 1 in size, so we stop
                 return;
             }
         }
-        /*
-        if(new_boxes[0].intersectsBox(new_boxes[1])){
-            console.log("Fucking shit");
-        }
-        */
         // Compute accuracies for each box
-        var boxes2D_rec = [[], []];
-        for (var i = 0; i < boxes2D.length; ++i) {
-            for (var k = 0; k < new_boxes.length; ++k) {
+        const boxes2D_rec = [[], []];
+        for (let i = 0; i < boxes2D.length; ++i) {
+            for (let k = 0; k < new_boxes.length; ++k) {
                 if (new_boxes[k].intersectsBox(boxes2D[i])) {
-                    new_boxes[k].setRawAcc(Math.min(new_boxes[k].getRawAcc(), boxes2D[i].getRawAcc()));
-                    new_boxes[k].setNiceAcc(Math.min(new_boxes[k].getNiceAcc(), boxes2D[i].getNiceAcc()));
+                    const new_box_nice_acc = new_boxes[k].getNiceAcc();
+                    const new_box_raw_acc = new_boxes[k].getRawAcc();
+                    const boxes2D_nice_acc = boxes2D[i].getNiceAcc();
+                    if (new_box_nice_acc === null || new_box_raw_acc === null)
+                        throw "[SlidingMarchingCubes] recursiveBoxComputation: new_box_nice_acc or new_box_raw_acc is null, this cannot happen here";
+                    if (boxes2D_nice_acc === null)
+                        throw "[SlidingMarchingCubes] recursiveBoxComputation: boxes2D_nice_acc is null, do not give empty boxes to this function.";
+                    new_boxes[k].setRawAcc(Math.min(new_box_nice_acc, new_box_raw_acc));
+                    new_boxes[k].setNiceAcc(Math.min(new_box_nice_acc, boxes2D_nice_acc));
                     boxes2D_rec[k].push(boxes2D[i]);
                 }
             }
@@ -7194,7 +6976,11 @@ class SlidingMarchingCubes {
                 this.setFrontValZeroInBox(b.min, b.max);
             }
             else {
-                if (bsize.x <= b.getRawAcc() && bsize.y <= b.getRawAcc()) {
+                const b_raw_acc = b.getRawAcc();
+                const b_nice_acc = b.getNiceAcc();
+                if (b_raw_acc === null || b_nice_acc === null)
+                    throw "[SlidingMarchingCubes] recursiveBoxComputation: b_raw_acc or b_nice_acc is null, this cannot happen here";
+                if (bsize.x <= b_raw_acc && bsize.y <= b_raw_acc) {
                     // We reach the raw level
                     let mask = this.computeBoxMask(b.min, b.max);
                     if (mask === 0xf || mask === 0x0) {
@@ -7206,8 +6992,8 @@ class SlidingMarchingCubes {
                     }
                     else {
                         //Surface is crossed, must go down to the nice
-                        if (bsize.x <= b.getNiceAcc() &&
-                            bsize.y <= b.getNiceAcc()) {
+                        if (bsize.x <= b_nice_acc &&
+                            bsize.y <= b_nice_acc) {
                             // We are under nice acc, just interpolate
                             this.interpolateInBox(cx, cy, cz, b.min.x, b.max.x, b.min.y, b.max.y);
                             // OR just compute all values.
@@ -7229,23 +7015,23 @@ class SlidingMarchingCubes {
     ;
     /**
      *  Compute all values in the front buffer.
-     *  @param {number} cx X coordinate of the front buffer corner
-     *  @param {number} cy Y coordinate of the front buffer corner
-     *  @param {number} cz Z coordinate of the front buffer corner
+     *  @param cx X coordinate of the front buffer corner
+     *  @param cy Y coordinate of the front buffer corner
+     *  @param cz Z coordinate of the front buffer corner
      */
     computeFrontValues(cx, cy, cz) {
         this.setFrontToMinus();
-        var areas = this.blobtree.getAreas();
-        var bigbox = new Box2Acc();
+        const areas = this.blobtree.getAreas();
+        const bigbox = new Box2Acc();
         bigbox.makeEmpty();
-        var boxes2D = [];
-        for (var i = 0; i < areas.length; ++i) {
-            var raw_acc = Math.round((areas[i].bv.getMinRawAcc() * this.detail_ratio) / this.min_acc);
-            var nice_acc = Math.round((areas[i].bv.getMinAcc() * this.detail_ratio) / this.min_acc);
-            var x_min = Math.max(0, Math.floor((areas[i].aabb.min.x - cx) / this.min_acc));
-            var y_min = Math.max(0, Math.floor((areas[i].aabb.min.y - cy) / this.min_acc));
-            var x_max = Math.min(this.reso[0] - 1, Math.ceil((areas[i].aabb.max.x - cx) / this.min_acc));
-            var y_max = Math.min(this.reso[1] - 1, Math.ceil((areas[i].aabb.max.y - cy) / this.min_acc));
+        const boxes2D = [];
+        for (let i = 0; i < areas.length; ++i) {
+            const raw_acc = Math.round((areas[i].bv.getMinRawAcc() * this.detail_ratio) / this.min_acc);
+            const nice_acc = Math.round((areas[i].bv.getMinAcc() * this.detail_ratio) / this.min_acc);
+            const x_min = Math.max(0, Math.floor((areas[i].aabb.min.x - cx) / this.min_acc));
+            const y_min = Math.max(0, Math.floor((areas[i].aabb.min.y - cy) / this.min_acc));
+            const x_max = Math.min(this.reso[0] - 1, Math.ceil((areas[i].aabb.max.x - cx) / this.min_acc));
+            const y_max = Math.min(this.reso[1] - 1, Math.ceil((areas[i].aabb.max.y - cy) / this.min_acc));
             boxes2D.push(new Box2Acc(new Vector2(x_min, y_min), new Vector2(x_max, y_max), nice_acc, raw_acc));
             bigbox.unionWithAcc(boxes2D[boxes2D.length - 1]);
         }
@@ -7257,18 +7043,18 @@ class SlidingMarchingCubes {
     ;
     /**
      *   get the min accuracy needed for this zone
-     *   @param {Box3} bbox the zone for which we want the minAcc
-     *   @return {number} the min acc for this zone
+     *   @param bbox the zone for which we want the minAcc
+     *   @return the min acc for this zone
      */
     getMinAcc(bbox) {
-        var areas = this.blobtree.getAreas();
-        var minAcc = Number.MAX_VALUE;
-        for (var i = 0; i < areas.length; i++) {
-            var area = areas[i];
+        const areas = this.blobtree.getAreas();
+        let minAcc = Number.MAX_VALUE;
+        for (let i = 0; i < areas.length; i++) {
+            const area = areas[i];
             if (area.aabb.intersectsBox(bbox)) {
                 if (area.bv) {
                     // it's a new area, we can get the min acc
-                    var areaMinAcc = area.bv.getMinAcc();
+                    const areaMinAcc = area.bv.getMinAcc();
                     if (areaMinAcc < minAcc) {
                         minAcc = areaMinAcc;
                     }
@@ -7280,18 +7066,18 @@ class SlidingMarchingCubes {
     ;
     /**
      *   get the max accuracy needed for this zone
-     *   @param {Box3} bbox the zone for which we want the minAcc
-     *   @return {number} the max acc for this zone
+     *   @param bbox the zone for which we want the minAcc
+     *   @return the max acc for this zone
      */
     getMaxAcc(bbox) {
-        var areas = this.blobtree.getAreas();
-        var maxAcc = 0;
-        for (var i = 0; i < areas.length; i++) {
-            var area = areas[i];
+        const areas = this.blobtree.getAreas();
+        let maxAcc = 0;
+        for (let i = 0; i < areas.length; i++) {
+            const area = areas[i];
             if (area.aabb.intersectsBox(bbox)) {
                 if (area.bv) {
                     // it's a new area, we can get the min acc
-                    var areaMaxAcc = area.bv.getMinAcc();
+                    const areaMaxAcc = area.bv.getMinAcc();
                     if (areaMaxAcc > maxAcc) {
                         maxAcc = areaMaxAcc;
                     }
@@ -7303,16 +7089,16 @@ class SlidingMarchingCubes {
     /**
      *  Note : returned mesh data will be accurate only if extened AABB difference
      *  with o_aabb is small. compared to o_aabb size.
-     *  @param {Box3} o_aabb The aabb where to compute the surface, if null, the blobtree AABB will be used
-     *  @param {boolean=} extended True if we want the agorithm to extend the computation zone
+     *  @param o_aabb The aabb where to compute the surface, if null, the blobtree AABB will be used
+     *  @param extended True if we want the agorithm to extend the computation zone
      *                            to ensure overlap with a mesh resulting from a computation
      *                            in a neighbouring aabb (Especially usefull for parallelism).
      */
     compute(o_aabb, extended) {
         this.initGeometry();
-        var timer_begin = new Date().getTime();
+        const timer_begin = new Date().getTime();
         this.blobtree.prepareForEval();
-        var aabb = null;
+        let aabb = null;
         if (o_aabb) {
             aabb = o_aabb.clone();
         }
@@ -7322,7 +7108,7 @@ class SlidingMarchingCubes {
         this.extended = extended !== undefined ? extended : false;
         if (this.extended) {
             let adims = aabb.getSize(new Vector3());
-            let minAcc = Math.min(Math.min(this.getMinAcc(aabb), adims[0]), Math.min(adims[1], adims[2]));
+            let minAcc = Math.min(Math.min(this.getMinAcc(aabb), adims.x), Math.min(adims.y, adims.z));
             let acc_box = aabb.clone();
             let final_bbox = aabb.clone();
             let axis = ["x", "y", "z"];
@@ -7340,8 +7126,8 @@ class SlidingMarchingCubes {
             }
             aabb.copy(final_bbox);
         }
-        var aabb_trim = [];
-        var aabb_trim_parents = [];
+        const aabb_trim = [];
+        const aabb_trim_parents = [];
         if (o_aabb) {
             this.blobtree.externalTrim(aabb, aabb_trim, aabb_trim_parents);
             this.blobtree.prepareForEval();
@@ -7359,14 +7145,14 @@ class SlidingMarchingCubes {
             }
         }
         this.min_acc = this.min_acc * this.detail_ratio;
-        var corner = aabb.min;
-        var dims = aabb.getSize(new Vector3());
+        const corner = aabb.min;
+        const dims = aabb.getSize(new Vector3());
         this.steps.z = new Float32Array(Math.ceil(dims.z / this.min_acc) + 2);
         this.steps.z[0] = corner.z;
-        var index = 1;
-        var areas = this.blobtree.getAreas();
+        let index = 1;
+        const areas = this.blobtree.getAreas();
         while (this.steps.z[index - 1] < corner.z + dims.z) {
-            var min_step = dims.z;
+            let min_step = dims.z;
             // If uniformZ is true, we do not adapt z stepping to local slice accuracy.
             if (this.uniformZ) {
                 min_step = this.min_acc;
@@ -7386,10 +7172,10 @@ class SlidingMarchingCubes {
         // If necessary, set this.dis_o_aabb
         // Reminder : dis_o_aabb is the discret o_aabb, ie indices for which we are in the o_aabb.
         if (this.extended) {
-            var i = 0;
+            let i = 0;
             this.dis_o_aabb.set(new Vector3(-1, -1, -1), new Vector3(-1, -1, -1));
             while (i < this.reso[2] && this.dis_o_aabb.min.z === -1) {
-                if (this.steps.z[i] >= o_aabb.min.z) {
+                if (this.steps.z[i] >= aabb.min.z) {
                     this.dis_o_aabb.min.z = i;
                 }
                 i++;
@@ -7399,7 +7185,7 @@ class SlidingMarchingCubes {
             } // should never happen
             i = this.reso[2] - 1;
             while (i >= 0 && this.dis_o_aabb.max.z === -1) {
-                if (this.steps.z[i] < o_aabb.max.z) {
+                if (this.steps.z[i] < aabb.max.z) {
                     this.dis_o_aabb.max.z = i;
                 }
                 i--;
@@ -7407,16 +7193,16 @@ class SlidingMarchingCubes {
             if (i < 0) {
                 this.dis_o_aabb.max.z = 0;
             } // should never happen
-            this.dis_o_aabb.min.x = Math.round((o_aabb.min.x - aabb.min.x) / this.min_acc);
-            this.dis_o_aabb.min.y = Math.round((o_aabb.min.y - aabb.min.y) / this.min_acc);
+            this.dis_o_aabb.min.x = Math.round((aabb.min.x - aabb.min.x) / this.min_acc);
+            this.dis_o_aabb.min.y = Math.round((aabb.min.y - aabb.min.y) / this.min_acc);
             this.dis_o_aabb.max.x =
                 this.reso[0] -
                     2 -
-                    Math.round((aabb.max.x - o_aabb.max.x) / this.min_acc);
+                    Math.round((aabb.max.x - aabb.max.x) / this.min_acc);
             this.dis_o_aabb.max.y =
                 this.reso[1] -
                     2 -
-                    Math.round((aabb.max.y - o_aabb.max.y) / this.min_acc);
+                    Math.round((aabb.max.y - aabb.max.y) / this.min_acc);
         }
         // Back values
         this.values_xy[0] = new Float32Array(this.reso[0] * this.reso[1]);
@@ -7425,10 +7211,10 @@ class SlidingMarchingCubes {
         this.vertices_xy[0] = new Int32Array(this.reso[0] * this.reso[1]);
         this.vertices_xy[1] = new Int32Array(this.reso[0] * this.reso[1]);
         // Aabb for trimming the blobtree
-        var trim_aabb = new Box3();
+        const trim_aabb = new Box3();
         this.computeFrontValues(corner.x, corner.y, corner.z);
-        var percent = 0;
-        for (var iz = 0; iz < this.reso[2] - 1; ++iz) {
+        let percent = 0;
+        for (let iz = 0; iz < this.reso[2] - 1; ++iz) {
             // Switch the 2 arrays, and fill the one in front
             let valuesSwitcher = this.values_xy[0];
             this.values_xy[0] = this.values_xy[1];
@@ -7436,7 +7222,7 @@ class SlidingMarchingCubes {
             let verticesSwitcher = this.vertices_xy[0];
             this.vertices_xy[0] = this.vertices_xy[1];
             this.vertices_xy[1] = verticesSwitcher;
-            var z1 = this.steps.z[iz + 1];
+            const z1 = this.steps.z[iz + 1];
             trim_aabb.set(new Vector3(corner.x, corner.y, z1 - this.min_acc / 64), new Vector3(corner.x + this.reso[0] * this.min_acc, corner.y + this.reso[1] * this.min_acc, z1 + this.min_acc / 64));
             this.blobtree.internalTrim(trim_aabb);
             this.blobtree.prepareForEval();
@@ -7449,8 +7235,8 @@ class SlidingMarchingCubes {
             this.curr_steps.y = this.min_acc;
             this.curr_step_vol =
                 this.curr_steps.x * this.curr_steps.y * this.curr_steps.z;
-            for (var iy = 0; iy < this.reso[1] - 1; ++iy) {
-                for (var ix = 0; ix < this.reso[0] - 1; ++ix) {
+            for (let iy = 0; iy < this.reso[1] - 1; ++iy) {
+                for (let ix = 0; ix < this.reso[0] - 1; ++ix) {
                     this.y = corner.y + iy * this.min_acc;
                     this.fetchAndTriangulate(ix, iy, iz, corner);
                 }
@@ -7464,7 +7250,7 @@ class SlidingMarchingCubes {
             this.blobtree.untrim(aabb_trim, aabb_trim_parents);
             this.blobtree.prepareForEval();
         }
-        var timer_end = new Date().getTime();
+        const timer_end = new Date().getTime();
         console.log("Sliding Marching Cubes computed in " + (timer_end - timer_begin) + "ms");
         // Clear memory, in case this object is kept alive
         this.values_xy[0] = null;
@@ -7478,13 +7264,21 @@ class SlidingMarchingCubes {
     /**
      *  Check values for cube at x, y. Ie get values front front and back arrays,
      *  compute marching cube mask, build the resulting vertex and faces if necessary.
-     *  @param {number} x
-     *  @param {number} y
-     *  @param {Vector3} corner Bottom left corner of front array.
+     *  @param x
+     *  @param y
+     *  @param corner Bottom left corner of front array.
      */
     fetchAndTriangulate(x, y, z, corner) {
-        var idx_y_0 = y * this.reso[0] + x;
-        var idx_y_1 = (y + 1) * this.reso[0] + x;
+        if (this.values_xy[1] === null)
+            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling fetchAndTriangulate";
+        if (this.values_xy[0] === null)
+            throw "[SlidingMarchingCubes] values_xy[0] must be initialized before calling fetchAndTriangulate";
+        if (this.vertices_xy[1] === null)
+            throw "[SlidingMarchingCubes] vertices_xy[1] must be initialized before calling fetchAndTriangulate";
+        if (this.geometry === null)
+            throw "[SlidingMarchingCubes] geometry must be initialized before calling fetchAndTriangulate";
+        const idx_y_0 = y * this.reso[0] + x;
+        const idx_y_1 = (y + 1) * this.reso[0] + x;
         this.values[0] = this.values_xy[0][idx_y_0]; //v_000;
         this.values[1] = this.values_xy[1][idx_y_0]; //v_001;
         this.values[2] = this.values_xy[0][idx_y_1]; //v_010;
@@ -7513,35 +7307,43 @@ class SlidingMarchingCubes {
     ;
     /**
      *  Push 2 faces in direct order (right handed).
-     *  @param {number} v1 Index of vertex 1 in this.geometry
-     *  @param {number} v2 Index of vertex 2 in this.geometry
-     *  @param {number} v3 Index of vertex 3 in this.geometry
-     *  @param {number} v4 Index of vertex 4 in this.geometry
+     *  @param v1 Index of vertex 1 in this.geometry
+     *  @param v2 Index of vertex 2 in this.geometry
+     *  @param v3 Index of vertex 3 in this.geometry
+     *  @param v4 Index of vertex 4 in this.geometry
      */
     pushDirectFaces(v1, v2, v3, v4) {
+        if (this.geometry === null)
+            throw "[SlidingMarchingCubes] geometry must be initialized before calling pushDirectFaces";
         this.geometry.addFace(v1, v2, v3);
         this.geometry.addFace(v3, v4, v1);
     }
     ;
     /**
      *  Push 2 faces in undirect order (left handed).
-     *  @param {number} v1 Index of vertex 1 in this.geometry
-     *  @param {number} v2 Index of vertex 2 in this.geometry
-     *  @param {number} v3 Index of vertex 3 in this.geometry
-     *  @param {number} v4 Index of vertex 4 in this.geometry
+     *  @param v1 Index of vertex 1 in this.geometry
+     *  @param v2 Index of vertex 2 in this.geometry
+     *  @param v3 Index of vertex 3 in this.geometry
+     *  @param v4 Index of vertex 4 in this.geometry
      */
     pushUndirectFaces(v1, v2, v3, v4) {
+        if (this.geometry === null)
+            throw "[SlidingMarchingCubes] geometry must be initialized before calling pushUndirectFaces";
         this.geometry.addFace(v3, v2, v1);
         this.geometry.addFace(v1, v4, v3);
     }
     ;
     /**
      *  Compute and add faces depending on current cell crossing mask
-     *  @param {number} x Current cell x coordinate in the grid (integer)
-     *  @param {number} y Current cell y coordinate in the grid (integer)
-     *  @param {number} z Current cell z coordinate in the grid (integer)
+     *  @param x Current cell x coordinate in the grid (integer)
+     *  @param y Current cell y coordinate in the grid (integer)
+     *  @param z Current cell z coordinate in the grid (integer)
      */
     triangulate(x, y, z) {
+        if (this.vertices_xy[1] === null)
+            throw "[SlidingMarchingCubes] vertices_xy[1] must be initialized before calling triangulate";
+        if (this.vertices_xy[0] === null)
+            throw "[SlidingMarchingCubes] vertices_xy[0] must be initialized before calling triangulate";
         let idx_y_0 = y * this.reso[0] + x;
         if (this.edge_cross[0] && y !== 0 && z !== 0) {
             // x edge is crossed
@@ -7622,35 +7424,35 @@ class SlidingMarchingCubes {
      *  Use this.x, this.y, this.z
      */
     computeVertex = (function () {
-        // Function static variable
-        var eval_res = {
-            v: null,
+        // Function static constiable
+        const eval_res = {
+            v: 0,
             g: new Vector3(0, 0, 0),
             m: new Material()
         };
-        var conv_res = new Vector3();
+        const conv_res = new Vector3();
         return function () {
             eval_res.v = this.blobtree.getNeutralValue();
             // Optimization note :
             //      Here I dont use tables but performances may be improved
             //      by using tables. See marching cube and surface net for examples
             // Average edge intersection
-            var e_count = 0;
+            let e_count = 0;
             this.vertex.set(0, 0, 0);
             //For every edge of the cube...
-            for (var i = 0; i < 12; ++i) {
+            for (let i = 0; i < 12; ++i) {
                 // --> the following code does not seem to work. Tables.EdgeCross may be broken
                 //Use edge mask to check if it is crossed
                 // if(!(edge_mask & (1<<i))) {
                 //     continue;
                 // }
                 //Now find the point of intersection
-                var e0 = Tables.EdgeVMap[i][0]; //Unpack vertices
-                var e1 = Tables.EdgeVMap[i][1];
-                var p0 = Tables.VertexTopo[e0];
-                var p1 = Tables.VertexTopo[e1];
-                var g0 = this.values[e0]; //Unpack grid values
-                var g1 = this.values[e1];
+                const e0 = Tables.EdgeVMap[i][0]; //Unpack vertices
+                const e1 = Tables.EdgeVMap[i][1];
+                const p0 = Tables.VertexTopo[e0];
+                const p1 = Tables.VertexTopo[e1];
+                const g0 = this.values[e0]; //Unpack grid values
+                const g1 = this.values[e1];
                 // replace the mask check with that. Slower.
                 this.edge_cross[i] =
                     g0 > this.blobtree.getIsoValue() !==
@@ -7660,8 +7462,8 @@ class SlidingMarchingCubes {
                 }
                 //If it did, increment number of edge crossings
                 ++e_count;
-                var d = g1 - g0;
-                var t = 0; //Compute point of intersection
+                const d = g1 - g0;
+                let t = 0; //Compute point of intersection
                 if (Math.abs(d) > 1e-6) {
                     t = (this.blobtree.getIsoValue() - g0) / d;
                 }
@@ -7702,8 +7504,8 @@ class SlidingMarchingCubes {
     computeMask() {
         this.mask = 0;
         //For each this, compute cube mask
-        for (var i = 0; i < 8; ++i) {
-            var s = this.values[i];
+        for (let i = 0; i < 8; ++i) {
+            const s = this.values[i];
             this.mask |= s > this.blobtree.getIsoValue() ? 1 << i : 0;
         }
     }
@@ -7768,10 +7570,10 @@ class SplitMaxPolygonizer {
         this.blobtree = blobtree;
         this.blobtree.prepareForEval();
         const getBlobtreeMinAcc = function (btree) {
-            var areas = btree.getAreas();
-            var min_acc = areas.length !== 0 ? areas[0].bv.getMinAcc() : null;
-            for (var i = 0; i < areas.length; ++i) {
-                if (areas[i].bv.getMinAcc() < min_acc) {
+            const areas = btree.getAreas();
+            let min_acc = areas.length !== 0 ? areas[0].bv.getMinAcc() : null;
+            for (let i = 0; i < areas.length; ++i) {
+                if (areas[i].bv.getMinAcc() < (min_acc === null ? 0 : min_acc)) {
                     min_acc = areas[i].bv.getMinAcc();
                 }
             }
@@ -7781,9 +7583,9 @@ class SplitMaxPolygonizer {
         this.subtrees = [];
         this.progCoeff = [];
         this.totalCoeff = 0;
-        var self = this;
-        var addToSubtrees = function (n) {
-            var subtree = null;
+        const self = this;
+        const addToSubtrees = function (n) {
+            let subtree;
             if (n instanceof RootNode) {
                 subtree = n.clone();
             }
@@ -7793,11 +7595,14 @@ class SplitMaxPolygonizer {
             }
             self.subtrees.push(subtree);
             subtree.prepareForEval();
-            self.minAccs.push(getBlobtreeMinAcc(subtree));
+            const subtreeMinAcc = getBlobtreeMinAcc(subtree);
+            if (subtreeMinAcc === null)
+                throw "[SplitMaxPolygonizer] setBlobTreee: subtree's minAcc is null when it shouldn't be.";
+            self.minAccs.push(subtreeMinAcc);
             self.progCoeff.push(subtree.count(ScalisPoint) + subtree.count(ScalisSegment) + subtree.count(ScalisTriangle));
             self.totalCoeff += self.progCoeff[self.progCoeff.length - 1];
         };
-        var recurse = function (n) {
+        const recurse = function (n) {
             if (n instanceof RicciNode) {
                 if (n.getRicciN() < self.ricciThreshold) {
                     // This node must be copied and generated using SMC
@@ -7806,7 +7611,7 @@ class SplitMaxPolygonizer {
                     }
                 }
                 else {
-                    for (var i = 0; i < n.children.length; ++i) {
+                    for (let i = 0; i < n.children.length; ++i) {
                         recurse(n.children[i]);
                     }
                 }
@@ -7835,12 +7640,12 @@ class SplitMaxPolygonizer {
         if (!this.blobtree.isValidAABB()) {
             this.setBlobtree(this.blobtree);
         }
-        var self = this;
+        const self = this;
         this.progress(0);
-        var prog = 0;
-        var geometries = [];
-        for (var i = 0; i < this.subtrees.length; ++i) {
-            var prev_detailRatio = this.subPolygonizer.smcParams.detailRatio || 1.0;
+        let prog = 0;
+        const geometries = [];
+        for (let i = 0; i < this.subtrees.length; ++i) {
+            const prev_detailRatio = this.subPolygonizer.smcParams.detailRatio || 1.0;
             if (this.uniformRes && this.min_acc) {
                 this.subPolygonizer.smcParams.detailRatio = prev_detailRatio * this.min_acc / this.minAccs[i];
             }
@@ -7852,26 +7657,20 @@ class SplitMaxPolygonizer {
                 case "SlidingMarchingCubes":
                     polygonizer = new SlidingMarchingCubes(this.subtrees[i], this.subPolygonizer.smcParams);
             }
+            if (polygonizer === null) {
+                throw "[SplitMaxPolygonizer] compute: Unknown polygonizer class" + this.subPolygonizer.className;
+            }
             geometries.push(polygonizer.compute());
             this.subPolygonizer.smcParams.detailRatio = prev_detailRatio;
             prog += this.progCoeff[i];
         }
-        var res = BufferGeometryUtils.mergeBufferGeometries(geometries);
+        const res = BufferGeometryUtils.mergeBufferGeometries(geometries);
         this.progress(100);
         return res;
     }
     ;
 }
 
-/**
- * @typedef {import('../blobtree/RootNode')} RootNode
- * @typedef {import('./SlidingMarchingCubes')} SMCParams
- */
-/**
- * metaBlobtree is The blobtree from which normals will be computed.
- * Usually a blobtree containing blobtree.
- * @typedef {{metaBlobtree: RootNode} & SMCParams} SplitSMCParams
- */
 /**
  *  A special SlidingMarchingCubes with a different function
  *  to compute vertex normal in a cell.
@@ -7880,10 +7679,7 @@ class SplitMaxPolygonizer {
  *  the complete blobtree.
  */
 class SplitSMC extends SlidingMarchingCubes {
-    /**
-     *  @param {RootNode} blobtree
-     *  @param {SplitSMCParams} params
-     */
+    metaBlobtree;
     constructor(blobtree, params) {
         super(blobtree, params);
         if (params.metaBlobtree) {
@@ -7900,10 +7696,9 @@ class SplitSMC extends SlidingMarchingCubes {
      */
     computeVertex = (function () {
         // Function static variable
-        var eval_res = { v: null, g: new Vector3(0, 0, 0), m: new Material() };
+        var eval_res = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
         var conv_res = new Vector3();
         return function () {
-            /** @type {SplitSMC} */
             let self = this;
             eval_res.v = self.blobtree.getNeutralValue();
             // Optimization note :

@@ -233,9 +233,7 @@ export abstract class Element {
         return 0;
     }
 
-    destroy() {
-        console.error("Blobtree.Element: destroy is a virtual function, should be reimplemented in all classes extending Element.");
-    }
+    abstract destroy(): void;
 
 };
 

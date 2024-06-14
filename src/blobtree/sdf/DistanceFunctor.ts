@@ -6,7 +6,7 @@ export type DistanceFunctorJSON = { type: string };
  *  A superclass for Node and Primitive in the blobtree.
  */
 export abstract class DistanceFunctor {
-    static type = "DistanceFunctor" as const;
+    static type = "DistanceFunctor";
 
     /**
      *  @abstract
@@ -35,10 +35,10 @@ export abstract class DistanceFunctor {
 
     /**
      *  @abstract
-     *  @param _d The distance to be considered.
+     *  @param d The distance to be considered.
      *  @return Scalar field value according to given distance d.
      */
-    abstract value(_d: number): number;
+    abstract value(d: number): number;
 
     /**
      *  Perform a numerical approximation of the gradient according to epsilon.

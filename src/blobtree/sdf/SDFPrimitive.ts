@@ -1,103 +1,82 @@
-import { Vector3, Box3 } from "three"
+import { Vector3, Box3 } from "three";
 import { Types } from "../Types";
 import { Element, type ElementJSON } from "../Element";
+import type { Area } from '../areas/Area';
+import type { Primitive } from '../Primitive';
 
-/** @typedef {import('../areas/Area')} Area */
-/** @typedef {import('../Element').ElementJSON} ElementJSON */
-/** @typedef {import('../Primitive')} Primitive */
-
-export type SDFPrimitiveJSON = ElementJSON
+export type SDFPrimitiveJSON = ElementJSON;
 
 /**
- *  This class implements an abstract primitve class for signed distance field.
+ *  This class implements an abstract primitive class for signed distance field.
  *  SDFPrimitive subclasses must define a scalar field being the distance to a geometry.
  *  @constructor
  *  @extends {Element}
  */
-export class SDFPrimitive extends Element {
-
-    static type = "SDFPrimitive";
+export abstract class SDFPrimitive extends Element {
+    static override type = "SDFPrimitive";
 
     constructor() {
         super();
         // Default bounding box for a SDF is infinite.
         this.aabb.set(
-            new Vector3(- Infinity, - Infinity, - Infinity),
-            new Vector3(+ Infinity, + Infinity, + Infinity)
+            new Vector3(-Infinity, -Infinity, -Infinity),
+            new Vector3(Infinity, Infinity, Infinity)
         );
     }
 
     /**
-     * @return {string} Type of the element
+     * @return Type of the element
      */
-    getType() {
+    override getType(): string {
         return SDFPrimitive.type;
     }
 
     /**
-     * @link Element.computeAABB for a completve description.
+     * @link Element.computeAABB for a complete description.
      */
-    computeAABB() {
+    computeAABB(): void {
         // Nothing to do, SDF have infinite bounding box
     }
 
     /**
      * Return the bounding box of the node for a given maximum distance.
      * Ie, the distance field is greater than d everywhere outside the returned box.
-     * @param {number} _d Distance
+     * @param d Distance
      * @abstract
-     * @return {Box3}
      */
-    computeDistanceAABB(_d) {
-        console.error("computeDistanceAABB is an abstract function of SDFPrimitive. Please reimplement it in children classes.");
-        return (new Box3()).makeEmpty()
-    }
+    abstract computeDistanceAABB(d: number): Box3;
 
-    /**
-     * @returns {Array.<{aabb: Box3, bv:Area, obj:Primitive}>}
-     */
-    getAreas() {
+    override getAreas(): {aabb: Box3; bv: Area; obj: Primitive }[] {
         throw "No Areas for SDFPrimitive.";
     }
 
     /**
-     * @param {number} _d Distance to consider for the area computation.
-     * @returns {Array.<{aabb: Box3, bv:Area, obj:SDFPrimitive}>}
+     * @param d Distance to consider for the area computation.
      */
-    getDistanceAreas(_d) {
-        console.error("getDistanceAreas is an abstract function of SDFPrimitive. Please reimplement in children classes");
-        return [];
-    }
+    abstract getDistanceAreas(d: number): { aabb: Box3; bv: Area; obj: SDFPrimitive }[];
 
     /**
      * Since SDF Nodes are distance function, this function will return
      * an accurate distance to the surface.
      * @abstract
      *
-     * @param {Vector3} p
+     * @param p
      */
-    distanceTo = (function () {
+    override distanceTo = (function() {
         var res = { v: 0 };
-        /**
-         * @param {Vector3} p
-         */
-        return (p) => {
-            /** @type {SDFPrimitive} */
-            let self = this;
-
-            self.value(p, res);
+        return function (this: SDFPrimitive, p: Vector3) {
+            this.value(p, res);
             return res.v;
         };
     })();
 
     /**
-     * @link see Element.heuristicStepWithin for a det
+     * @link see Element.heuristicStepWithin for a complete description.
      */
-    heuristicStepWithin() {
+    heuristicStepWithin(): number {
         console.error("SDFPrimitive.heuristicStepWithin is Not implemented");
         return 1;
     };
 }
 
 Types.register(SDFPrimitive.type, SDFPrimitive);
-

@@ -13,14 +13,14 @@ export type NodeJSON = {
 export declare abstract class Node extends Element {
     children: Element[];
     static type: string;
-    abstract fromJSON(json: NodeJSON): Node;
+    static fromJSON(_json: NodeJSON): Node;
     constructor();
     getType(): string;
     toJSON(): NodeJSON;
     /**
      *  Clone current node and itss hierarchy
      */
-    clone(): Node;
+    clone(): this;
     /**
      *  @link Element.prepareForEval
      */

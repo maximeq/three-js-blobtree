@@ -20,7 +20,7 @@ export class MinNode extends Node {
 
     static override type = "MinNode";
 
-    override fromJSON(json: MinNodeJSON): MinNode {
+    fromJSON(json: MinNodeJSON): MinNode {
         const res = new MinNode();
         for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
@@ -129,4 +129,4 @@ export class MinNode extends Node {
     };
 }
 
-Types.register(MinNode.type, MinNode);
+Types.register(MinNode.type, {fromJSON: (new MinNode()).fromJSON});

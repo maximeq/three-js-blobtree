@@ -20,7 +20,7 @@ export class MaxNode extends Node {
 
     static override type = "MaxNode";
 
-    override fromJSON(json: MaxNodeJSON): MaxNode {
+    static override fromJSON(json: MaxNodeJSON): MaxNode {
         const res = new MaxNode();
         for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));

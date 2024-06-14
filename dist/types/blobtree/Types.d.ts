@@ -1,4 +1,3 @@
-import type { ElementJSON } from "./Element";
 type Types = {
     types: {
         [key: string]: {
@@ -8,7 +7,10 @@ type Types = {
     register(name: string, cls: {
         fromJSON: Function;
     }): void;
-    fromJSON(json: ElementJSON): any;
+    fromJSON(json: {
+        type: string;
+        [key: string]: any;
+    }): any;
 };
 /**
  *  Keep track of all Types added to the Blobtree library.

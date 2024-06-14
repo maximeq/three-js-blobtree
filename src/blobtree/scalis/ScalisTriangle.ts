@@ -34,19 +34,19 @@ export class ScalisTriangle extends ScalisPrimitive {
     static override type = "ScalisTriangle" as const;
 
     override fromJSON(json: ScalisTriangleJSON) {
-        var v = [
+        const v: [ScalisVertex, ScalisVertex, ScalisVertex] = [
             ScalisVertex.fromJSON(json.v[0]),
             ScalisVertex.fromJSON(json.v[1]),
             ScalisVertex.fromJSON(json.v[2])
         ];
-        var m = [
+        const m: [Material, Material, Material] = [
             Material.fromJSON(json.materials[0]),
             Material.fromJSON(json.materials[1]),
             Material.fromJSON(json.materials[2])
         ];
         return new ScalisTriangle(v, json.volType, 1.0, m);
     };
-
+    override v: [ScalisVertex, ScalisVertex, ScalisVertex];
     min_thick: number
     max_thick: number
 
@@ -108,7 +108,7 @@ export class ScalisTriangle extends ScalisPrimitive {
      *                                  Use [Material.defaultMaterial.clone(), Material.defaultMaterial.clone()] by default.
      *
      */
-    constructor(v: ScalisVertex[], volType: ScalisPrimitiveVolType, density: number, mats: Material[]) {
+    constructor(v: [ScalisVertex, ScalisVertex, ScalisVertex], volType: ScalisPrimitiveVolType, density: number, mats: Material[]) {
         super();
 
         if (density !== 1.0) {

@@ -73,7 +73,7 @@ export class RicciNode extends Node {
     /**
      * @link Node.fromJSON
      */
-    override fromJSON(json: RicciNodeJSON): RicciNode {
+    fromJSON(json: RicciNodeJSON): RicciNode {
         let res = new RicciNode(json.ricci_n);
         for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
@@ -222,4 +222,4 @@ export class RicciNode extends Node {
 
 };
 
-Types.register(RicciNode.type, RicciNode);
+Types.register(RicciNode.type, {fromJSON: (new RicciNode(0)).fromJSON});

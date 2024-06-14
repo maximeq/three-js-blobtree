@@ -117,7 +117,7 @@ export declare class Material {
      *  @param v_arr Array of values being the corresponding weights
      *  @param n Can be set if you want to mean only the n first element of the arrays
      */
-    weightedMean(m_arr: Material[], v_arr: (number[] | Float32Array), n: number): this;
+    weightedMean(m_arr: Material[], v_arr: (number[] | Float32Array), n?: number): this;
 }
 export {};
 //# sourceMappingURL=Material.d.ts.map

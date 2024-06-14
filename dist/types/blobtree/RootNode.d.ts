@@ -22,7 +22,7 @@ export declare class RootNode extends RicciNode {
     trimmed: Element[];
     trim_parents: Node[];
     static type: string;
-    fromJSON(json: RootNodeJSON): RootNode;
+    static fromJSON(json: RootNodeJSON): RootNode;
     constructor();
     /**
      * @link Node.getType

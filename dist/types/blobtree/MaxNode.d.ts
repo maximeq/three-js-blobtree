@@ -15,7 +15,7 @@ export declare class MaxNode extends Node {
     tmp_g: Vector3;
     tmp_m: Material;
     static type: string;
-    fromJSON(json: MaxNodeJSON): MaxNode;
+    static fromJSON(json: MaxNodeJSON): MaxNode;
     /**
      *  @constructor
      *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.

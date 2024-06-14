@@ -13,8 +13,8 @@ import type { Material } from "./Material";
  */
 export type ValueResultType = {
     v: number;
-    m: Material | null;
-    g: Vector3 | null;
+    m?: Material | null;
+    g?: Vector3 | null;
     step?: number;
     stepOrtho?: number;
 };
@@ -148,6 +148,6 @@ export declare abstract class Element {
      *  @return  The number of element of class cls
      */
     count(_cls: Function): number;
-    destroy(): void;
+    abstract destroy(): void;
 }
 //# sourceMappingURL=Element.d.ts.map

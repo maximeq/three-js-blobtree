@@ -3,18 +3,19 @@ import { Material } from "../blobtree/Material.js"
 import { Tables } from "./MCTables.js"
 import { Convergence } from "../utils/Convergence.js"
 import { SlidingMarchingCubes } from "./SlidingMarchingCubes.js"
-
-/**
- * @typedef {import('../blobtree/RootNode')} RootNode
- * @typedef {import('./SlidingMarchingCubes')} SMCParams
- */
+import type { RootNode } from "../exports.js";
+import type { SMCParams } from './SlidingMarchingCubes';
 
 
 /**
  * metaBlobtree is The blobtree from which normals will be computed.
  * Usually a blobtree containing blobtree.
- * @typedef {{metaBlobtree: RootNode} & SMCParams} SplitSMCParams
  */
+
+export interface SplitSMCParams extends SMCParams {
+  metaBlobtree: RootNode;
+}
+
 
 /**
  *  A special SlidingMarchingCubes with a different function
@@ -24,12 +25,9 @@ import { SlidingMarchingCubes } from "./SlidingMarchingCubes.js"
  *  the complete blobtree.
  */
 export class SplitSMC extends SlidingMarchingCubes {
+    metaBlobtree: RootNode;
 
-    /**
-     *  @param {RootNode} blobtree
-     *  @param {SplitSMCParams} params
-     */
-    constructor(blobtree, params) {
+    constructor(blobtree: RootNode, params: SplitSMCParams) {
         super(blobtree, params);
 
         if (params.metaBlobtree) {
@@ -44,14 +42,13 @@ export class SplitSMC extends SlidingMarchingCubes {
      *  Compute the vertex in the current cube.
      *  Use this.x, this.y, this.z
      */
-    computeVertex = (function () {
+    override computeVertex = (function () {
         // Function static variable
-        var eval_res = { v: null, g: new Vector3(0, 0, 0), m: new Material() };
+        var eval_res = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
         var conv_res = new Vector3();
 
-        return function () {
+        return function (this: SplitSMC): void {
 
-            /** @type {SplitSMC} */
             let self = this;
 
             eval_res.v = self.blobtree.getNeutralValue();

@@ -47,18 +47,17 @@ export declare class SDFSegment extends SDFPrimitive {
      */
     setPosition2(p2: Vector3): void;
     /**
-     *  @return {Vector3} Current position of the first segment point
+     *  @return Current position of the first segment point
      */
     getPosition1(): Vector3;
     /**
-     *  @return {Vector3} Current position of the second segment point
+     *  @return Current position of the second segment point
      */
     getPosition2(): Vector3;
     computeDistanceAABB(d: number): Box3;
     prepareForEval(): void;
     /**
-     * @param {number} d
-     * @return {Object} The Areas object corresponding to the node/primitive, in an array
+     * @return The Areas object corresponding to the node/primitive, in an array
      */
     getDistanceAreas(d: number): {
         aabb: Box3;
@@ -68,6 +67,6 @@ export declare class SDFSegment extends SDFPrimitive {
     /**
      *  @link Element.value for a complete description
      */
-    value: (p: Vector3, res: ValueResultType) => void;
+    value: (this: SDFSegment, p: Vector3, res: ValueResultType) => void;
 }
 //# sourceMappingURL=SDFSegment.d.ts.map

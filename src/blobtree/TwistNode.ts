@@ -80,7 +80,7 @@ export class TwistNode extends Node {
      * @param {TwistNodeJSON} json
      * @returns {TwistNode}
      */
-    override fromJSON(json: TwistNodeJSON): TwistNode {
+    static override fromJSON(json: TwistNodeJSON): TwistNode {
         const res = new TwistNode();
         res.setTwistAmount(json.twist_amount);
         res.setTwistAxis(new Vector3(json.axis_x

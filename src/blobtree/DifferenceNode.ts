@@ -31,7 +31,7 @@ export class DifferenceNode extends Node {
 
     static override type = "DifferenceNode";
 
-    override fromJSON(json: DifferenceNodeJSON): DifferenceNode {
+    static override fromJSON(json: DifferenceNodeJSON): DifferenceNode {
         return new DifferenceNode(Types.fromJSON(json.children[0]), Types.fromJSON(json.children[1]), json.alpha);
     };
 

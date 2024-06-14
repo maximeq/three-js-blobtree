@@ -24,7 +24,7 @@ export declare class DifferenceNode extends Node {
     tmp_v_arr: Float32Array;
     tmp_m_arr: [Material | null, Material | null];
     static type: string;
-    fromJSON(json: DifferenceNodeJSON): DifferenceNode;
+    static fromJSON(json: DifferenceNodeJSON): DifferenceNode;
     /**
      *
      *  @param node0 The first node

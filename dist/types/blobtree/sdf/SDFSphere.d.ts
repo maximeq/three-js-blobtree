@@ -41,8 +41,7 @@ export declare class SDFSphere extends SDFPrimitive {
     computeDistanceAABB(d: number): Box3;
     prepareForEval(): void;
     /**
-     * @param {number} d
-     * @return {Object} The Areas object corresponding to the node/primitive, in an array
+     * @return The Areas object corresponding to the node/primitive, in an array
      */
     getDistanceAreas(d: number): {
         aabb: Box3;
@@ -52,6 +51,6 @@ export declare class SDFSphere extends SDFPrimitive {
     /**
      *  @link Element.value for a complete description
      */
-    value: (p: Vector3, res: ValueResultType) => void;
+    value: (this: SDFSphere, p: Vector3, res: ValueResultType) => void;
 }
 //# sourceMappingURL=SDFSphere.d.ts.map

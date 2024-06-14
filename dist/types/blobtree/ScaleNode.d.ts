@@ -1,8 +1,8 @@
 import { Vector3, Box3 } from "three";
 import { Node } from "./Node";
 import { Material } from "./Material";
-import type { ValueResultType, Element } from './Element.js';
-import type { NodeJSON } from './Node.js';
+import type { ValueResultType, Element } from './Element';
+import type { NodeJSON } from './Node';
 type ScaleNodeJSON = {
     scale_x: number;
     scale_y: number;
@@ -32,7 +32,7 @@ export declare class ScaleNode extends Node {
     /**
      * @link Node.fromJSON
      */
-    fromJSON(json: ScaleNodeJSON): ScaleNode;
+    static fromJSON(json: ScaleNodeJSON): ScaleNode;
     /**
      * @link ScaleNode.setScale
      */

@@ -42,11 +42,8 @@ export class ScaleNode extends Node {
         }
 
         // temp consts to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:Vector3, m:Material}} */
         this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {Vector3} */
         this.tmp_g = new Vector3();
-        /** @type {Material} */
         this.tmp_m = new Material();
 
         this._scale = new Vector3(1, 1, 1);
@@ -72,7 +69,7 @@ export class ScaleNode extends Node {
     /**
      * @link Node.fromJSON
      */
-    override fromJSON(json: ScaleNodeJSON): ScaleNode {
+    static override fromJSON(json: ScaleNodeJSON): ScaleNode {
         const res = new ScaleNode();
         res.setScale(
             new Vector3(

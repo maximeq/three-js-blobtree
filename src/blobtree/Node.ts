@@ -19,7 +19,9 @@ export abstract class Node extends Element {
 
     static override type = "Node";
 
-    abstract fromJSON(json: NodeJSON): Node;
+    static override fromJSON(_json: NodeJSON): Node {
+        throw new Error("Node.fromJSON should never be called as Node is abstract.");
+    }
 
     constructor() {
         super();
@@ -44,7 +46,7 @@ export abstract class Node extends Element {
     /**
      *  Clone current node and itss hierarchy
      */
-    override clone(): Node {
+    override clone(): this {
         return Types.fromJSON(this.toJSON());
     }
 
@@ -69,7 +71,7 @@ export abstract class Node extends Element {
      *  Destroy the node and its children. The node is removed from the blobtree
      *  (basically clean up the links between blobtree elements).
      */
-    override destroy(): void {
+    destroy(): void {
         // need to Copy the array since indices will change.
         const arr_c = this.children.slice(0, this.children.length);
         for (let i = 0; i < arr_c.length; i++) {
@@ -140,7 +142,7 @@ export abstract class Node extends Element {
     /**
      * @link Element.computeAABB for a complete description
      */
-    computeAABB() {
+    override computeAABB() {
         this.aabb.makeEmpty();
         for (let i = 0; i < this.children.length; i++) {
             this.children[i].computeAABB();
@@ -177,7 +179,7 @@ export abstract class Node extends Element {
     /**
      * @returns
      */
-    override heuristicStepWithin(): number {
+    heuristicStepWithin(): number {
         let res = 10000000;
         for (let i = 0; i < this.children.length; i++) {
             res = Math.min(res, this.children[i].heuristicStepWithin());
@@ -225,5 +227,5 @@ export abstract class Node extends Element {
 
 };
 
-Types.register(Node.type, Node);
+Types.register(Node.type, {fromJSON: () => null});
 

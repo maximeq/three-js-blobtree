@@ -16,7 +16,7 @@ export abstract class Primitive extends Element {
     static override type = "Primitive";
 
     static override fromJSON(_json: PrimitiveJSON) {
-        throw new Error("Primitibe.fromJSON should never be called as Primitibe is abstract.");
+        throw new Error("Primitive.fromJSON should never be called as Primitive is abstract.");
     }
 
     materials: Material[] = [];

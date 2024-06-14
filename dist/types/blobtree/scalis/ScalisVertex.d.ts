@@ -1,5 +1,5 @@
 import { Vector3, Box3 } from "three";
-import type { ScalisPrimitive } from "./ScalisPrimitive.js";
+import type { ScalisPrimitive } from "./ScalisPrimitive";
 export type ScalisVertexJSON = {
     position: {
         x: number;

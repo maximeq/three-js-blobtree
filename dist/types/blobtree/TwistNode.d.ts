@@ -39,7 +39,7 @@ export declare class TwistNode extends Node {
      * @param {TwistNodeJSON} json
      * @returns {TwistNode}
      */
-    fromJSON(json: TwistNodeJSON): TwistNode;
+    static fromJSON(json: TwistNodeJSON): TwistNode;
     setTwistAmount(amount: number): void;
     setTwistAxis(axis: Vector3): void;
     _computeTransforms(): void;

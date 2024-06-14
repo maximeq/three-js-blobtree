@@ -31,7 +31,7 @@ export class RootNode extends RicciNode {
 
     static override type = "RootNode";
 
-    override fromJSON(json: RootNodeJSON): RootNode {
+    static override fromJSON(json: RootNodeJSON): RootNode {
         const res = new RootNode();
         for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
