@@ -3,6 +3,33 @@ import { Material } from "../blobtree/Material.js";
 import { RootNode } from '../blobtree/RootNode';
 import { Area } from '../blobtree/areas/Area';
 import { Primitive } from "../blobtree/Primitive";
+export interface SMCParams {
+    /**
+     * Defines how the stepping in z occurs. Options are :
+     * "adaptive" (default) steps are computed according to local minimum accuracy.
+     * "uniform" steps are uniform along z, according to the global minimum accuracy.
+     */
+    zResolution?: string;
+    /**
+     * The blobtree defines some needed accuracies for polygonizing.
+     * However, if you want more details, you can set this to less than 1.
+     * Note that this is limited to 0.01, which will already increase your model complexity by a 10 000 factor.
+     */
+    detailRatio?: number;
+    /**
+     * Progress callback, taking a percentage as parameter.
+     */
+    progress?: (percent: number) => void;
+    /**
+     * Add newton convergence steps to position each vertex.
+     */
+    convergence?: ConvergenceParams;
+    /**
+     * NOT YET IMPLEMENTED Add dichotomy steps to position each vertex. Usually using convergence is better,
+     * except if the implicit field is such that converging is not possible (for example, null gradients on large areas)
+     */
+    dichotomy?: number;
+}
 export interface ConvergenceParams {
     /**
      * A ratio of a the marching cube grid size defining the wanted geometrical accuracy.
@@ -72,33 +99,6 @@ declare class Box2Acc extends Box2 {
      *  Get corner with the minimum coordinates
      */
     getMinCorner(): Vector2;
-}
-export interface SMCParams {
-    /**
-     * Defines how the stepping in z occurs. Options are :
-     * "adaptive" (default) steps are computed according to local minimum accuracy.
-     * "uniform" steps are uniform along z, according to the global minimum accuracy.
-     */
-    zResolution?: string;
-    /**
-     * The blobtree defines some needed accuracies for polygonizing.
-     * However, if you want more details, you can set this to less than 1.
-     * Note that this is limited to 0.01, which will already increase your model complexity by a 10 000 factor.
-     */
-    detailRatio?: number;
-    /**
-     * Progress callback, taking a percentage as parameter.
-     */
-    progress?: (percent: number) => void;
-    /**
-     * Add newton convergence steps to position each vertex.
-     */
-    convergence?: ConvergenceParams;
-    /**
-     * NOT YET IMPLEMENTED Add dichotomy steps to position each vertex. Usually using convergence is better,
-     * except if the implicit field is such that converging is not possible (for example, null gradients on large areas)
-     */
-    dichotomy?: number;
 }
 /**
  *  Class for a dual marching cube using 2 sliding arrays.
@@ -207,7 +207,7 @@ export declare class SlidingMarchingCubes {
      */
     computeFrontValAt(cx: number, cy: number, cz: number, x: number, y: number): void;
     /**
-     *  Function using closure to have static constiable. Wrapped in computeFrontValAt
+     *  Function using closure to have static variable. Wrapped in computeFrontValAt
      *  for profiling purpose.
      */
     computeFrontValAtClosure: (this: SlidingMarchingCubes, cx: number, cy: number, cz: number, x: number, y: number) => void;

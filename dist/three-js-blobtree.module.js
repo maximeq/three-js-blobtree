@@ -6385,7 +6385,8 @@ class Box2Acc extends Box2 {
      */
     constructor(min, max, nice_acc, raw_acc) {
         super(min, max);
-        const s = Math.max(this.max.x - this.min.x, this.max.y - this.min.y);
+        var s = Math.max(this.max.x - this.min.x, this.max.y - this.min.y);
+        /** @type {number} */
         this.nice_acc = 10000000;
         // Can nice_acc be 0 ? if yes we can simplify the next line
         if (nice_acc === undefined || nice_acc === null && s > 0) {
@@ -6394,13 +6395,13 @@ class Box2Acc extends Box2 {
         else {
             this.nice_acc = nice_acc;
         }
-        this.raw_acc = raw_acc ? raw_acc : this.nice_acc;
+        this.raw_acc = raw_acc ?? this.nice_acc;
     }
     unionWithAcc(box) {
         if (box.nice_acc === null || box.raw_acc === null)
-            throw "[Box2Acc] Cannot do union with a box that is empty.";
-        if (this.nice_acc === null || this.raw_acc === null)
-            throw "[Box2Acc] Cannot do union on a box that is empty.";
+            throw "[SlidingMarchingCubes] unionWithAcc : box has no accuracy data";
+        if (this.raw_acc === null || this.nice_acc === null)
+            throw "[SlidingMarchingCubes] unionWithAcc : this has no accuracy data";
         super.union(box);
         // Union of 2 boxes get the min acc for both
         this.raw_acc = Math.min(box.raw_acc, this.raw_acc);
@@ -6536,7 +6537,7 @@ class SlidingMarchingCubes {
         this.vertices_xy = [null, null];
         this.areas = [];
         this.min_acc = 1;
-        // Processing consts
+        // Processing vars
         this.values = new Array(8);
         this.x = 0;
         this.y = 0;
@@ -6559,7 +6560,7 @@ class SlidingMarchingCubes {
         this.vertex = new Vector3(0, 0, 0); // vertex associated to the cell if any
         this.vertex_n = new Vector3(0, 0, 0); // vertex normal
         this.vertex_m = new Material(); // vertex material
-        // Vars and tmp consts for extension checks
+        // Vars and tmp vars for extension checks
         this.extended = false;
         this.dis_o_aabb = new Box3();
         this.ext_p = new Vector3();
@@ -6572,7 +6573,7 @@ class SlidingMarchingCubes {
         // Returns true if 123/143 split is along min curvature
         this._isMinCurvatureTriangulation =
             (function () {
-                //Var and tmp const pre allocated and Scoped
+                //Var and tmp var pre allocated and Scoped
                 //for optimization of triangulation criteria
                 //assuming a v1v2v3v4 quad
                 let p1 = new Vector3(); //v1 position
@@ -6591,10 +6592,10 @@ class SlidingMarchingCubes {
                 let n_23 = new Vector3(); //234 normal
                 let n_42 = new Vector3(); //412 normal
                 return function (v1, v2, v3, v4) {
-                    if (this.geometry === null)
-                        throw "[SlidingMarchingCubes] geometry must be initialized before calling _isMinCurvatureTriangulation";
                     //Quad opposes v1 and v3 and v2 and v4
                     //check min curvature
+                    if (this.geometry === null)
+                        throw "[SlidingMarchingCubes] _isMinCurvatureTriangulation : Geometry not initialized";
                     p1.x = this.geometry.position[v1 * 3];
                     p1.y = this.geometry.position[v1 * 3 + 1];
                     p1.z = this.geometry.position[v1 * 3 + 2];
@@ -6653,14 +6654,12 @@ class SlidingMarchingCubes {
                 this.roughness.push(data.r);
                 this.metalness.push(data.m);
                 this.nVertices++;
-                console.log("addVertex", this.position, this);
             },
             addFace: function (a, b, c) {
                 this.faces.push(a, b, c);
                 this.nFaces++;
             }
         };
-        console.log("init", this.geometry.position);
     }
     /**
      *  Build the resulting BufferGeometry from current values in this.geometry.
@@ -6668,10 +6667,9 @@ class SlidingMarchingCubes {
      *  @private
      */
     buildResultingBufferGeometry() {
-        if (this.geometry === null) {
-            throw "[SlidingMarchinCubes] Geometry must be initialized before calling buildResultingBufferGeometry";
-        }
-        const res = new BufferGeometry();
+        if (this.geometry === null)
+            throw "[SlidingMarchingCubes] buildResultingBufferGeometry : Geometry not initialized";
+        var res = new BufferGeometry();
         res.setAttribute("position", new BufferAttribute(new Float32Array(this.geometry.position), 3));
         res.setAttribute("normal", new BufferAttribute(new Float32Array(this.geometry.normal), 3));
         res.setAttribute("color", new BufferAttribute(new Float32Array(this.geometry.color), 3));
@@ -6687,10 +6685,9 @@ class SlidingMarchingCubes {
      *  @private
      */
     setFrontToZero() {
+        if (this.values_xy[1] === null)
+            throw "[SlidingMarchingCubes] setFrontToZero : values_xy[1] is null when it should not be";
         // init to 0, can be omptim later
-        if (this.values_xy[1] === null) {
-            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling setFrontToZero";
-        }
         for (let i = 0; i < this.values_xy[1].length; ++i) {
             this.values_xy[1][i] = 0;
         }
@@ -6701,10 +6698,9 @@ class SlidingMarchingCubes {
      *  @private
      */
     setFrontToMinus() {
+        if (this.values_xy[1] === null)
+            throw "[SlidingMarchingCubes] setFrontToMinus : values_xy[1] is null when it should not be";
         // init to 0, can be omptim later
-        if (this.values_xy[1] === null) {
-            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling setFrontToMinus";
-        }
         for (let i = 0; i < this.values_xy[1].length; ++i) {
             this.values_xy[1][i] = -1;
         }
@@ -6714,10 +6710,9 @@ class SlidingMarchingCubes {
      *  @private
      */
     setFrontToZeroIfMinus() {
+        if (this.values_xy[1] === null)
+            throw "[SlidingMarchingCubes] setFrontToZeroIfMinus : values_xy[1] is null when it should not be";
         // init to 0, can be omptim later
-        if (this.values_xy[1] === null) {
-            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling setFrontToZeroIfMinus";
-        }
         for (let i = 0; i < this.values_xy[1].length; ++i) {
             if (this.values_xy[1][i] === -1) {
                 this.values_xy[1][i] = 0;
@@ -6742,12 +6737,12 @@ class SlidingMarchingCubes {
         if (this.values_xy[1] === null) {
             throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling interpolateInBox";
         }
-        let constr = this.values_xy[1];
+        let varr = this.values_xy[1];
         let nx = x1 - x0;
         let ny = y1 - y0;
         /*
         this.computeFrontValAtBoxCorners(cx,cy,cz, new Vector2(x0,y0), new Vector2(x1,y1));
-        const mask = this.computeBoxMask(new Vector2(x0,y0), new Vector2(x1,y1));
+        var mask = this.computeBoxMask(new Vector2(x0,y0), new Vector2(x1,y1));
         if(!(mask === 0xf || mask === 0x0)){
             throw "Error bad mask when interpolating";
         }
@@ -6755,11 +6750,11 @@ class SlidingMarchingCubes {
         if (nx > 1) {
             // must interpolate
             let line = y0 * this.reso[0];
-            let val0 = constr[line + x0];
-            let v_step = (constr[line + x1] - val0) / nx;
+            let val0 = varr[line + x0];
+            let v_step = (varr[line + x1] - val0) / nx;
             for (let i = 1; i < nx; ++i) {
-                if (constr[line + x0 + i] === -1) {
-                    constr[line + x0 + i] = val0 + i * v_step;
+                if (varr[line + x0 + i] === -1) {
+                    varr[line + x0 + i] = val0 + i * v_step;
                     //this.computeFrontValAt(cx,cy,cz,x0+i,y0);
                 }
             }
@@ -6767,20 +6762,23 @@ class SlidingMarchingCubes {
         if (ny > 1) {
             // compute upper line
             let line = y1 * this.reso[0];
-            let val0 = constr[line + x0];
-            let v_step = (constr[line + x1] - val0) / nx;
+            let val0 = varr[line + x0];
+            let v_step = (varr[line + x1] - val0) / nx;
             for (let i = 1; i < nx; ++i) {
-                if (constr[line + x0 + i] === -1) {
-                    constr[line + x0 + i] = val0 + i * v_step;
+                if (varr[line + x0 + i] === -1) {
+                    varr[line + x0 + i] = val0 + i * v_step;
                     //this.computeFrontValAt(cx,cy,cz,x0+i,y1);
                 }
             }
             for (let i = 0; i <= nx; ++i) {
-                val0 = constr[y0 * this.reso[0] + x0 + i];
-                v_step = (constr[y1 * this.reso[0] + x0 + i] - val0) / ny;
+                val0 = varr[y0 * this.reso[0] + x0 + i];
+                v_step = (varr[y1 * this.reso[0] + x0 + i] - val0) / ny;
                 for (let k = 1; k < ny; ++k) {
-                    if (constr[(y0 + k) * this.reso[0] + x0 + i] === -1) {
-                        constr[(y0 + k) * this.reso[0] + x0 + i] = val0 + k * v_step;
+                    if (varr[(y0 + k) * this.reso[0] + x0 + i] === -1) {
+                        varr[(y0 + k) * this.reso[0] + x0 + i] = val0 + k * v_step;
+                        //if(i===0 || i==nx){
+                        //    this.computeFrontValAt(cx,cy,cz,x0+i,(y0+k));
+                        //}
                     }
                 }
             }
@@ -6803,18 +6801,18 @@ class SlidingMarchingCubes {
     }
     ;
     /**
-     *  Function using closure to have static constiable. Wrapped in computeFrontValAt
+     *  Function using closure to have static variable. Wrapped in computeFrontValAt
      *  for profiling purpose.
      */
     computeFrontValAtClosure = (function () {
-        const eval_res = { v: 0 };
-        const p = new Vector3();
+        var eval_res = { v: 0 };
+        var p = new Vector3();
         return function (cx, cy, cz, x, y) {
-            const self = this;
-            const index = y * self.reso[0] + x;
-            eval_res.v = self.blobtree.getNeutralValue();
+            let self = this;
             if (self.values_xy[1] === null)
-                throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling computeFrontValAtClosure";
+                throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling computeFrontValAt";
+            var index = y * self.reso[0] + x;
+            eval_res.v = self.blobtree.getNeutralValue();
             if (self.values_xy[1][index] === -1) {
                 p.set(cx + x * self.min_acc, cy + y * self.min_acc, cz);
                 self.blobtree.value(p, eval_res);
@@ -6930,11 +6928,11 @@ class SlidingMarchingCubes {
      */
     recursiveBoxComputation(cx, cy, cz, box, boxes2D) {
         // split the current box in 2 boxes in the largest dimension
-        let new_boxes = null;
-        const diff = new Vector2(Math.round(box.max.x - box.min.x), Math.round(box.max.y - box.min.y));
+        var new_boxes = null;
+        var diff = new Vector2(Math.round(box.max.x - box.min.x), Math.round(box.max.y - box.min.y));
         if (diff.x > 1 && diff.x >= diff.y) {
             // cut in x
-            const x_cut = box.min.x + Math.floor(diff.x / 2);
+            var x_cut = box.min.x + Math.floor(diff.x / 2);
             new_boxes = [
                 new Box2Acc(box.min, new Vector2(x_cut, box.max.y), 10000, 10000),
                 new Box2Acc(new Vector2(x_cut, box.min.y), box.max, 10000, 10000)
@@ -6945,7 +6943,7 @@ class SlidingMarchingCubes {
         else {
             // cut in y
             if (diff.y > 1) {
-                const y_cut = box.min.y + Math.floor(diff.y / 2);
+                var y_cut = box.min.y + Math.floor(diff.y / 2);
                 new_boxes = [
                     new Box2Acc(box.min, new Vector2(box.max.x, y_cut), 10000, 10000),
                     new Box2Acc(new Vector2(box.min.x, y_cut), box.max, 10000, 10000)
@@ -6959,19 +6957,20 @@ class SlidingMarchingCubes {
             }
         }
         // Compute accuracies for each box
-        const boxes2D_rec = [[], []];
+        var boxes2D_rec = [[], []];
         for (let i = 0; i < boxes2D.length; ++i) {
             for (let k = 0; k < new_boxes.length; ++k) {
+                const newBoxRawAcc = new_boxes[k].getRawAcc();
+                const newBoxNiceAcc = new_boxes[k].getNiceAcc();
+                if (newBoxRawAcc === null || newBoxNiceAcc === null)
+                    throw "[SlidingMarchingCubes] recursiveBoxComputation : new_boxes[" + k + "] has no accuracy data";
+                const boxRawAcc = boxes2D[i].getRawAcc();
+                const boxNiceAcc = boxes2D[i].getNiceAcc();
+                if (boxRawAcc === null || boxNiceAcc === null)
+                    throw "[SlidingMarchingCubes] recursiveBoxComputation : box has no accuracy data";
                 if (new_boxes[k].intersectsBox(boxes2D[i])) {
-                    const new_box_nice_acc = new_boxes[k].getNiceAcc();
-                    const new_box_raw_acc = new_boxes[k].getRawAcc();
-                    const boxes2D_nice_acc = boxes2D[i].getNiceAcc();
-                    if (new_box_nice_acc === null || new_box_raw_acc === null)
-                        throw "[SlidingMarchingCubes] recursiveBoxComputation: new_box_nice_acc or new_box_raw_acc is null, this cannot happen here";
-                    if (boxes2D_nice_acc === null)
-                        throw "[SlidingMarchingCubes] recursiveBoxComputation: boxes2D_nice_acc is null, do not give empty boxes to this function.";
-                    new_boxes[k].setRawAcc(Math.min(new_box_nice_acc, new_box_raw_acc));
-                    new_boxes[k].setNiceAcc(Math.min(new_box_nice_acc, boxes2D_nice_acc));
+                    new_boxes[k].setRawAcc(Math.min(newBoxRawAcc, boxRawAcc));
+                    new_boxes[k].setNiceAcc(Math.min(newBoxNiceAcc, boxNiceAcc));
                     boxes2D_rec[k].push(boxes2D[i]);
                 }
             }
@@ -6983,11 +6982,11 @@ class SlidingMarchingCubes {
                 this.setFrontValZeroInBox(b.min, b.max);
             }
             else {
-                const b_raw_acc = b.getRawAcc();
-                const b_nice_acc = b.getNiceAcc();
-                if (b_raw_acc === null || b_nice_acc === null)
-                    throw "[SlidingMarchingCubes] recursiveBoxComputation: b_raw_acc or b_nice_acc is null, this cannot happen here";
-                if (bsize.x <= b_raw_acc && bsize.y <= b_raw_acc) {
+                const bRawAcc = b.getRawAcc();
+                const bNiceAcc = b.getNiceAcc();
+                if (bRawAcc === null || bNiceAcc === null)
+                    throw "[SlidingMarchingCubes] recursiveBoxComputation : b has no accuracy data";
+                if (bsize.x <= bRawAcc && bsize.y <= bRawAcc) {
                     // We reach the raw level
                     let mask = this.computeBoxMask(b.min, b.max);
                     if (mask === 0xf || mask === 0x0) {
@@ -6999,8 +6998,8 @@ class SlidingMarchingCubes {
                     }
                     else {
                         //Surface is crossed, must go down to the nice
-                        if (bsize.x <= b_nice_acc &&
-                            bsize.y <= b_nice_acc) {
+                        if (bsize.x <= bNiceAcc &&
+                            bsize.y <= bNiceAcc) {
                             // We are under nice acc, just interpolate
                             this.interpolateInBox(cx, cy, cz, b.min.x, b.max.x, b.min.y, b.max.y);
                             // OR just compute all values.
@@ -7028,17 +7027,17 @@ class SlidingMarchingCubes {
      */
     computeFrontValues(cx, cy, cz) {
         this.setFrontToMinus();
-        const areas = this.blobtree.getAreas();
-        const bigbox = new Box2Acc();
+        var areas = this.blobtree.getAreas();
+        var bigbox = new Box2Acc();
         bigbox.makeEmpty();
-        const boxes2D = [];
+        var boxes2D = [];
         for (let i = 0; i < areas.length; ++i) {
-            const raw_acc = Math.round((areas[i].bv.getMinRawAcc() * this.detail_ratio) / this.min_acc);
-            const nice_acc = Math.round((areas[i].bv.getMinAcc() * this.detail_ratio) / this.min_acc);
-            const x_min = Math.max(0, Math.floor((areas[i].aabb.min.x - cx) / this.min_acc));
-            const y_min = Math.max(0, Math.floor((areas[i].aabb.min.y - cy) / this.min_acc));
-            const x_max = Math.min(this.reso[0] - 1, Math.ceil((areas[i].aabb.max.x - cx) / this.min_acc));
-            const y_max = Math.min(this.reso[1] - 1, Math.ceil((areas[i].aabb.max.y - cy) / this.min_acc));
+            var raw_acc = Math.round((areas[i].bv.getMinRawAcc() * this.detail_ratio) / this.min_acc);
+            var nice_acc = Math.round((areas[i].bv.getMinAcc() * this.detail_ratio) / this.min_acc);
+            var x_min = Math.max(0, Math.floor((areas[i].aabb.min.x - cx) / this.min_acc));
+            var y_min = Math.max(0, Math.floor((areas[i].aabb.min.y - cy) / this.min_acc));
+            var x_max = Math.min(this.reso[0] - 1, Math.ceil((areas[i].aabb.max.x - cx) / this.min_acc));
+            var y_max = Math.min(this.reso[1] - 1, Math.ceil((areas[i].aabb.max.y - cy) / this.min_acc));
             boxes2D.push(new Box2Acc(new Vector2(x_min, y_min), new Vector2(x_max, y_max), nice_acc, raw_acc));
             bigbox.unionWithAcc(boxes2D[boxes2D.length - 1]);
         }
@@ -7054,14 +7053,14 @@ class SlidingMarchingCubes {
      *   @return the min acc for this zone
      */
     getMinAcc(bbox) {
-        const areas = this.blobtree.getAreas();
-        let minAcc = Number.MAX_VALUE;
+        var areas = this.blobtree.getAreas();
+        var minAcc = Number.MAX_VALUE;
         for (let i = 0; i < areas.length; i++) {
-            const area = areas[i];
+            var area = areas[i];
             if (area.aabb.intersectsBox(bbox)) {
                 if (area.bv) {
                     // it's a new area, we can get the min acc
-                    const areaMinAcc = area.bv.getMinAcc();
+                    var areaMinAcc = area.bv.getMinAcc();
                     if (areaMinAcc < minAcc) {
                         minAcc = areaMinAcc;
                     }
@@ -7077,14 +7076,14 @@ class SlidingMarchingCubes {
      *   @return the max acc for this zone
      */
     getMaxAcc(bbox) {
-        const areas = this.blobtree.getAreas();
-        let maxAcc = 0;
+        var areas = this.blobtree.getAreas();
+        var maxAcc = 0;
         for (let i = 0; i < areas.length; i++) {
-            const area = areas[i];
+            var area = areas[i];
             if (area.aabb.intersectsBox(bbox)) {
                 if (area.bv) {
                     // it's a new area, we can get the min acc
-                    const areaMaxAcc = area.bv.getMinAcc();
+                    var areaMaxAcc = area.bv.getMinAcc();
                     if (areaMaxAcc > maxAcc) {
                         maxAcc = areaMaxAcc;
                     }
@@ -7111,7 +7110,6 @@ class SlidingMarchingCubes {
         }
         else {
             aabb = this.blobtree.getAABB();
-            console.log("aabb: ", aabb);
         }
         this.extended = extended !== undefined ? extended : false;
         if (this.extended) {
@@ -7134,8 +7132,8 @@ class SlidingMarchingCubes {
             }
             aabb.copy(final_bbox);
         }
-        const aabb_trim = [];
-        const aabb_trim_parents = [];
+        var aabb_trim = [];
+        var aabb_trim_parents = [];
         if (o_aabb) {
             this.blobtree.externalTrim(aabb, aabb_trim, aabb_trim_parents);
             this.blobtree.prepareForEval();
@@ -7149,19 +7147,18 @@ class SlidingMarchingCubes {
         this.min_acc = this.areas.length !== 0 ? this.areas[0].bv.getMinAcc() : 1;
         for (let i = 0; i < this.areas.length; ++i) {
             if (this.areas[i].bv.getMinAcc() < this.min_acc) {
-                console.log("min_acc: ", this.areas[i].bv.getMinAcc());
                 this.min_acc = this.areas[i].bv.getMinAcc();
             }
         }
         this.min_acc = this.min_acc * this.detail_ratio;
-        const corner = aabb.min;
-        const dims = aabb.getSize(new Vector3());
+        var corner = aabb.min;
+        var dims = aabb.getSize(new Vector3());
         this.steps.z = new Float32Array(Math.ceil(dims.z / this.min_acc) + 2);
         this.steps.z[0] = corner.z;
-        let index = 1;
-        const areas = this.blobtree.getAreas();
+        var index = 1;
+        var areas = this.blobtree.getAreas();
         while (this.steps.z[index - 1] < corner.z + dims.z) {
-            let min_step = dims.z;
+            var min_step = dims.z;
             // If uniformZ is true, we do not adapt z stepping to local slice accuracy.
             if (this.uniformZ) {
                 min_step = this.min_acc;
@@ -7181,7 +7178,7 @@ class SlidingMarchingCubes {
         // If necessary, set this.dis_o_aabb
         // Reminder : dis_o_aabb is the discret o_aabb, ie indices for which we are in the o_aabb.
         if (this.extended) {
-            let i = 0;
+            var i = 0;
             this.dis_o_aabb.set(new Vector3(-1, -1, -1), new Vector3(-1, -1, -1));
             while (i < this.reso[2] && this.dis_o_aabb.min.z === -1) {
                 if (this.steps.z[i] >= aabb.min.z) {
@@ -7220,9 +7217,9 @@ class SlidingMarchingCubes {
         this.vertices_xy[0] = new Int32Array(this.reso[0] * this.reso[1]);
         this.vertices_xy[1] = new Int32Array(this.reso[0] * this.reso[1]);
         // Aabb for trimming the blobtree
-        const trim_aabb = new Box3();
+        var trim_aabb = new Box3();
         this.computeFrontValues(corner.x, corner.y, corner.z);
-        let percent = 0;
+        var percent = 0;
         for (let iz = 0; iz < this.reso[2] - 1; ++iz) {
             // Switch the 2 arrays, and fill the one in front
             let valuesSwitcher = this.values_xy[0];
@@ -7231,7 +7228,7 @@ class SlidingMarchingCubes {
             let verticesSwitcher = this.vertices_xy[0];
             this.vertices_xy[0] = this.vertices_xy[1];
             this.vertices_xy[1] = verticesSwitcher;
-            const z1 = this.steps.z[iz + 1];
+            var z1 = this.steps.z[iz + 1];
             trim_aabb.set(new Vector3(corner.x, corner.y, z1 - this.min_acc / 64), new Vector3(corner.x + this.reso[0] * this.min_acc, corner.y + this.reso[1] * this.min_acc, z1 + this.min_acc / 64));
             this.blobtree.internalTrim(trim_aabb);
             this.blobtree.prepareForEval();
@@ -7255,12 +7252,11 @@ class SlidingMarchingCubes {
                 this.progress(percent);
             }
         }
-        console.log(this.geometry?.position);
         if (o_aabb) {
             this.blobtree.untrim(aabb_trim, aabb_trim_parents);
             this.blobtree.prepareForEval();
         }
-        const timer_end = new Date().getTime();
+        var timer_end = new Date().getTime();
         console.log("Sliding Marching Cubes computed in " + (timer_end - timer_begin) + "ms");
         // Clear memory, in case this object is kept alive
         this.values_xy[0] = null;
@@ -7310,7 +7306,6 @@ class SlidingMarchingCubes {
                     m: this.vertex_m.getMetalness()
                 });
                 this.vertices_xy[1][idx_y_0] = this.geometry.nVertices - 1;
-                console.log("going to triangulate");
                 this.triangulate(x, y, z);
             }
         }
@@ -7435,20 +7430,20 @@ class SlidingMarchingCubes {
      *  Use this.x, this.y, this.z
      */
     computeVertex = (function () {
-        // Function static constiable
-        const eval_res = {
+        // Function static variable
+        var eval_res = {
             v: 0,
             g: new Vector3(0, 0, 0),
             m: new Material()
         };
-        const conv_res = new Vector3();
+        var conv_res = new Vector3();
         return function () {
             eval_res.v = this.blobtree.getNeutralValue();
             // Optimization note :
             //      Here I dont use tables but performances may be improved
             //      by using tables. See marching cube and surface net for examples
             // Average edge intersection
-            let e_count = 0;
+            var e_count = 0;
             this.vertex.set(0, 0, 0);
             //For every edge of the cube...
             for (let i = 0; i < 12; ++i) {
@@ -7458,12 +7453,12 @@ class SlidingMarchingCubes {
                 //     continue;
                 // }
                 //Now find the point of intersection
-                const e0 = Tables.EdgeVMap[i][0]; //Unpack vertices
-                const e1 = Tables.EdgeVMap[i][1];
-                const p0 = Tables.VertexTopo[e0];
-                const p1 = Tables.VertexTopo[e1];
-                const g0 = this.values[e0]; //Unpack grid values
-                const g1 = this.values[e1];
+                var e0 = Tables.EdgeVMap[i][0]; //Unpack vertices
+                var e1 = Tables.EdgeVMap[i][1];
+                var p0 = Tables.VertexTopo[e0];
+                var p1 = Tables.VertexTopo[e1];
+                var g0 = this.values[e0]; //Unpack grid values
+                var g1 = this.values[e1];
                 // replace the mask check with that. Slower.
                 this.edge_cross[i] =
                     g0 > this.blobtree.getIsoValue() !==
@@ -7473,8 +7468,8 @@ class SlidingMarchingCubes {
                 }
                 //If it did, increment number of edge crossings
                 ++e_count;
-                const d = g1 - g0;
-                let t = 0; //Compute point of intersection
+                var d = g1 - g0;
+                var t = 0; //Compute point of intersection
                 if (Math.abs(d) > 1e-6) {
                     t = (this.blobtree.getIsoValue() - g0) / d;
                 }
@@ -7515,11 +7510,10 @@ class SlidingMarchingCubes {
     computeMask() {
         this.mask = 0;
         //For each this, compute cube mask
-        for (var i = 0; i < 8; ++i) {
+        for (let i = 0; i < 8; ++i) {
             var s = this.values[i];
             this.mask |= s > this.blobtree.getIsoValue() ? 1 << i : 0;
         }
-        console.log("mask", this.mask);
     }
 }
 
