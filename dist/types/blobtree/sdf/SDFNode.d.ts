@@ -3,6 +3,7 @@ import { Node, type NodeJSON } from '../Node';
 import type { Area } from '../areas/Area';
 import type { SDFPrimitive } from './SDFPrimitive';
 import type { Primitive } from '../Primitive';
+import type { ValueResultType } from '../Element';
 export type SDFNodeJSON = NodeJSON;
 /**
  *  This class implements an abstract Node class for Signed Distance Field.
@@ -51,5 +52,7 @@ export declare class SDFNode extends Node {
      */
     distanceTo(_p: Vector3): number;
     heuristicStepWithin(): number;
+    prepareForEval(): void;
+    value(_p: Vector3, _res: ValueResultType): void;
 }
 //# sourceMappingURL=SDFNode.d.ts.map

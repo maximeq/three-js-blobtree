@@ -84,7 +84,7 @@ export class RicciNode extends Node {
     /**
      * @link Node.prepareForEval
      */
-    prepareForEval() {
+    prepareForEval(): void {
         if (!this.valid_aabb) {
             this.aabb = new Box3();  // Create empty BBox
             for (let i = 0; i < this.children.length; ++i) {

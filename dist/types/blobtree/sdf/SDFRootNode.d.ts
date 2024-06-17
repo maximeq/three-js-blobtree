@@ -31,7 +31,7 @@ export declare class SDFRootNode extends Primitive {
      * @param material The material for this node.
      * @param sdfRoot The child containing the complete SDF. SDFRootNode can have only one child.
      */
-    constructor(f: DistanceFunctor, material: Material, sdfRoot?: SDFNode | SDFPrimitive);
+    constructor(f: DistanceFunctor, material?: Material, sdfRoot?: SDFNode | SDFPrimitive);
     getType(): string;
     addChild(c: SDFNode | SDFPrimitive): void;
     removeChild(c: SDFNode | SDFPrimitive): void;
@@ -43,5 +43,7 @@ export declare class SDFRootNode extends Primitive {
         obj: Primitive;
     }[];
     value(p: Vector3, res: ValueResultType): void;
+    computeHelpVariables(): void;
+    heuristicStepWithin(): number;
 }
 //# sourceMappingURL=SDFRootNode.d.ts.map

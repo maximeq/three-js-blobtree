@@ -86,7 +86,7 @@ class Box2Acc extends Box2 {
         } else {
             this.nice_acc = nice_acc;
         }
-        this.raw_acc = this.raw_acc ? this.nice_acc : raw_acc;
+        this.raw_acc = raw_acc ? raw_acc : this.nice_acc ;
 
     }
 
@@ -144,7 +144,6 @@ class Box2Acc extends Box2 {
 
     /**
      *  Get corner with the minimum coordinates
-     *  @return {Vector2}
      */
     getMinCorner() {
         return this.min;
@@ -915,7 +914,7 @@ export class SlidingMarchingCubes {
         const areas = this.blobtree.getAreas();
         const bigbox = new Box2Acc();
         bigbox.makeEmpty();
-        const boxes2D = [];
+        const boxes2D: Box2Acc[] = [];
         for (let i = 0; i < areas.length; ++i) {
             const raw_acc = Math.round(
                 (areas[i].bv.getMinRawAcc() * this.detail_ratio) / this.min_acc
@@ -1021,7 +1020,7 @@ export class SlidingMarchingCubes {
      *                            to ensure overlap with a mesh resulting from a computation
      *                            in a neighbouring aabb (Especially usefull for parallelism).
      */
-    compute(o_aabb?: Box3, extended?: boolean) {
+    compute(o_aabb?: Box3, extended?: boolean): BufferGeometry {
         this.initGeometry();
 
         const timer_begin = new Date().getTime();
@@ -1211,13 +1210,12 @@ export class SlidingMarchingCubes {
                     this.fetchAndTriangulate(ix, iy, iz, corner);
                 }
             }
-
+            
             if (Math.round((100 * iz) / this.reso[2]) > percent) {
                 percent = Math.round((100 * iz) / this.reso[2]);
                 this.progress(percent);
             }
         }
-
         if (o_aabb) {
             this.blobtree.untrim(aabb_trim, aabb_trim_parents);
             this.blobtree.prepareForEval();
@@ -1235,7 +1233,6 @@ export class SlidingMarchingCubes {
         this.vertices_xy[1] = null;
 
         this.progress(100);
-
         return this.buildResultingBufferGeometry();
     };
 

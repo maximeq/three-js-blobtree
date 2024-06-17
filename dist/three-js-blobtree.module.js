@@ -424,7 +424,6 @@ class Material {
 class Primitive extends Element {
     static type = "Primitive";
     static fromJSON(_json) {
-        console.log(_json);
         throw new Error("Primitive.fromJSON should never be called as Primitive is abstract.");
     }
     materials = [];
@@ -5841,6 +5840,12 @@ class SDFNode extends Node {
         throw "heuristicStepWithin may not make sens for all SDFNode, except for the SDFRootNode.";
     }
     ;
+    prepareForEval() {
+        throw "prepareForEval is not implemented for SDFNode.";
+    }
+    value(_p, _res) {
+        throw "value is not implemented for SDFNode.";
+    }
 }
 Types.register(SDFNode.type, SDFNode);
 
@@ -6052,6 +6057,12 @@ class SDFRootNode extends Primitive {
         else if (res.step !== undefined) {
             res.step = this.aabb.distanceToPoint(p) + 0.3;
         }
+    }
+    computeHelpVariables() {
+        throw "computeHelpVariables is not implemented for SDFRootNode.";
+    }
+    heuristicStepWithin() {
+        throw "heuristicStepWithin is not implemented for SDFRootNode.";
     }
 }
 Types.register(SDFRootNode.type, SDFRootNode);
@@ -6325,15 +6336,9 @@ Types.register(SDFSphere.type, SDFSphere);
  * Tables for Marching Cube
  */
 const Tables = {
-    //
     /**
      * edgevmap[i][0] = first vertex index of the ith edge of a cube
      * edgevmap[i][0] = second vertex index of the ith edge of a cube
-     * @type {[
-    *   EdgeIndexPair, EdgeIndexPair, EdgeIndexPair, EdgeIndexPair,
-    *   EdgeIndexPair, EdgeIndexPair, EdgeIndexPair, EdgeIndexPair,
-    *   EdgeIndexPair, EdgeIndexPair, EdgeIndexPair, EdgeIndexPair
-     * ]}
      */
     EdgeVMap: [
         [0, 4],
@@ -6350,7 +6355,7 @@ const Tables = {
         [6, 7],
     ],
     /**
-     * @type {[TopoTriple,TopoTriple,TopoTriple,TopoTriple,TopoTriple,TopoTriple,TopoTriple,TopoTriple]}
+     * Vertex topology for Marching Cubes
      */
     VertexTopo: [
         [0, 0, 0], //0 (MC = 0)
@@ -6389,7 +6394,7 @@ class Box2Acc extends Box2 {
         else {
             this.nice_acc = nice_acc;
         }
-        this.raw_acc = this.raw_acc ? this.nice_acc : raw_acc;
+        this.raw_acc = raw_acc ? raw_acc : this.nice_acc;
     }
     unionWithAcc(box) {
         if (box.nice_acc === null || box.raw_acc === null)
@@ -6442,7 +6447,6 @@ class Box2Acc extends Box2 {
     ;
     /**
      *  Get corner with the minimum coordinates
-     *  @return {Vector2}
      */
     getMinCorner() {
         return this.min;
@@ -6649,12 +6653,14 @@ class SlidingMarchingCubes {
                 this.roughness.push(data.r);
                 this.metalness.push(data.m);
                 this.nVertices++;
+                console.log("addVertex", this.position, this);
             },
             addFace: function (a, b, c) {
                 this.faces.push(a, b, c);
                 this.nFaces++;
             }
         };
+        console.log("init", this.geometry.position);
     }
     /**
      *  Build the resulting BufferGeometry from current values in this.geometry.
@@ -7105,6 +7111,7 @@ class SlidingMarchingCubes {
         }
         else {
             aabb = this.blobtree.getAABB();
+            console.log("aabb: ", aabb);
         }
         this.extended = extended !== undefined ? extended : false;
         if (this.extended) {
@@ -7142,6 +7149,7 @@ class SlidingMarchingCubes {
         this.min_acc = this.areas.length !== 0 ? this.areas[0].bv.getMinAcc() : 1;
         for (let i = 0; i < this.areas.length; ++i) {
             if (this.areas[i].bv.getMinAcc() < this.min_acc) {
+                console.log("min_acc: ", this.areas[i].bv.getMinAcc());
                 this.min_acc = this.areas[i].bv.getMinAcc();
             }
         }
@@ -7247,6 +7255,7 @@ class SlidingMarchingCubes {
                 this.progress(percent);
             }
         }
+        console.log(this.geometry?.position);
         if (o_aabb) {
             this.blobtree.untrim(aabb_trim, aabb_trim_parents);
             this.blobtree.prepareForEval();
@@ -7301,6 +7310,7 @@ class SlidingMarchingCubes {
                     m: this.vertex_m.getMetalness()
                 });
                 this.vertices_xy[1][idx_y_0] = this.geometry.nVertices - 1;
+                console.log("going to triangulate");
                 this.triangulate(x, y, z);
             }
         }
@@ -7505,10 +7515,11 @@ class SlidingMarchingCubes {
     computeMask() {
         this.mask = 0;
         //For each this, compute cube mask
-        for (let i = 0; i < 8; ++i) {
-            const s = this.values[i];
+        for (var i = 0; i < 8; ++i) {
+            var s = this.values[i];
             this.mask |= s > this.blobtree.getIsoValue() ? 1 << i : 0;
         }
+        console.log("mask", this.mask);
     }
 }
 
@@ -7657,6 +7668,7 @@ class SplitMaxPolygonizer {
             switch (this.subPolygonizer.className) {
                 case "SlidingMarchingCubes":
                     polygonizer = new SlidingMarchingCubes(this.subtrees[i], this.subPolygonizer.smcParams);
+                    break;
             }
             if (polygonizer === null) {
                 throw "[SplitMaxPolygonizer] compute: Unknown polygonizer class" + this.subPolygonizer.className;
@@ -7697,8 +7709,8 @@ class SplitSMC extends SlidingMarchingCubes {
      */
     computeVertex = (function () {
         // Function static variable
-        var eval_res = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
-        var conv_res = new Vector3();
+        const eval_res = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
+        const conv_res = new Vector3();
         return function () {
             let self = this;
             eval_res.v = self.blobtree.getNeutralValue();

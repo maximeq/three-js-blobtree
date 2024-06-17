@@ -11,7 +11,7 @@ export type NodeJSON = {
  *  @extends {Element}
  */
 export declare abstract class Node extends Element {
-    children: Node[];
+    children: Element[];
     static type: string;
     static fromJSON(_json: NodeJSON): Node;
     constructor();
@@ -42,7 +42,7 @@ export declare abstract class Node extends Element {
      *
      *  @param c The child to add.
      */
-    addChild(c: Node): this;
+    addChild(c: Element): this;
     /**
      *  Only works with n-ary nodes, otherwise order matters and we therefore
      *  have to set "null" and node cannot be evaluated.

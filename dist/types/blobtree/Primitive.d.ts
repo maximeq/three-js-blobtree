@@ -2,7 +2,7 @@ import { Element, type ElementJSON } from './Element';
 import { Material, type MaterialJSON } from './Material';
 import type { Area } from './areas';
 export type PrimitiveJSON = {
-    materials: Array<MaterialJSON>;
+    materials: MaterialJSON[];
 } & ElementJSON;
 /**
  *  Represent a blobtree primitive.

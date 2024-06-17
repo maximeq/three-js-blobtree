@@ -70,7 +70,6 @@ declare class Box2Acc extends Box2 {
     setWithAcc(min_x: number, min_y: number, max_x: number, max_y: number, nice_acc: number, raw_acc: number): void;
     /**
      *  Get corner with the minimum coordinates
-     *  @return {Vector2}
      */
     getMinCorner(): Vector2;
 }

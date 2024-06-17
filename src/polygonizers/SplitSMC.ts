@@ -44,12 +44,11 @@ export class SplitSMC extends SlidingMarchingCubes {
      */
     override computeVertex = (function () {
         // Function static variable
-        var eval_res = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
-        var conv_res = new Vector3();
+        const eval_res = { v: 0, g: new Vector3(0, 0, 0), m: new Material() };
+        const conv_res = new Vector3();
+        return function (this: SlidingMarchingCubes): void {
 
-        return function (this: SplitSMC): void {
-
-            let self = this;
+            let self = this as SplitSMC;
 
             eval_res.v = self.blobtree.getNeutralValue();
 

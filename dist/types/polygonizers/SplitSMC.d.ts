@@ -22,6 +22,6 @@ export declare class SplitSMC extends SlidingMarchingCubes {
      *  Compute the vertex in the current cube.
      *  Use this.x, this.y, this.z
      */
-    computeVertex: (this: SplitSMC) => void;
+    computeVertex: (this: SlidingMarchingCubes) => void;
 }
 //# sourceMappingURL=SplitSMC.d.ts.map

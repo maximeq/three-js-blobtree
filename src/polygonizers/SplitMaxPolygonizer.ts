@@ -9,6 +9,7 @@ import { MaxNode } from "../blobtree/MaxNode";
 import { ScalisPoint } from "../blobtree/scalis/ScalisPoint";
 import { ScalisSegment } from "../blobtree/scalis/ScalisSegment";
 import { ScalisTriangle } from "../blobtree/scalis/ScalisTriangle";
+import { Element } from "../blobtree/Element";
 
 import { SlidingMarchingCubes, type SMCParams } from "./SlidingMarchingCubes";
 

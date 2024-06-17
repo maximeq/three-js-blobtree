@@ -427,7 +427,7 @@ declare class Material {
 }
 
 type PrimitiveJSON = {
-    materials: Array<MaterialJSON>;
+    materials: MaterialJSON[];
 } & ElementJSON;
 /**
  *  Represent a blobtree primitive.
@@ -976,7 +976,7 @@ type NodeJSON = {
  *  @extends {Element}
  */
 declare abstract class Node extends Element {
-    children: Node[];
+    children: Element[];
     static type: string;
     static fromJSON(_json: NodeJSON): Node;
     constructor();
@@ -1007,7 +1007,7 @@ declare abstract class Node extends Element {
      *
      *  @param c The child to add.
      */
-    addChild(c: Node): this;
+    addChild(c: Element): this;
     /**
      *  Only works with n-ary nodes, otherwise order matters and we therefore
      *  have to set "null" and node cannot be evaluated.
@@ -1235,7 +1235,7 @@ interface IntersectionResult {
  */
 declare class RootNode extends RicciNode {
     iso_value: number;
-    trimmed: Node[];
+    trimmed: Element[];
     trim_parents: Node[];
     static type: string;
     static fromJSON(json: RootNodeJSON): RootNode;
@@ -1282,7 +1282,7 @@ declare class RootNode extends RicciNode {
      *  @param trimmed Array of trimmed Elements
      *  @param parents Array of fathers from which each trimmed element has been removed.
      */
-    untrim(trimmed: Node[], parents: Node[]): void;
+    untrim(trimmed: Element[], parents: Node[]): void;
     /**
      *  Tell if the blobtree is empty
      *  @return true if blobtree is empty
@@ -2240,6 +2240,8 @@ declare class SDFNode extends Node {
      */
     distanceTo(_p: Vector3): number;
     heuristicStepWithin(): number;
+    prepareForEval(): void;
+    value(_p: Vector3, _res: ValueResultType): void;
 }
 
 type SDFPointJSON = {
@@ -2323,7 +2325,7 @@ declare class SDFRootNode extends Primitive {
      * @param material The material for this node.
      * @param sdfRoot The child containing the complete SDF. SDFRootNode can have only one child.
      */
-    constructor(f: DistanceFunctor, material: Material, sdfRoot?: SDFNode | SDFPrimitive);
+    constructor(f: DistanceFunctor, material?: Material, sdfRoot?: SDFNode | SDFPrimitive);
     getType(): string;
     addChild(c: SDFNode | SDFPrimitive): void;
     removeChild(c: SDFNode | SDFPrimitive): void;
@@ -2335,6 +2337,8 @@ declare class SDFRootNode extends Primitive {
         obj: Primitive;
     }[];
     value(p: Vector3, res: ValueResultType): void;
+    computeHelpVariables(): void;
+    heuristicStepWithin(): number;
 }
 
 type SDFSegmentJSON = {
@@ -2463,25 +2467,18 @@ declare class SDFSphere extends SDFPrimitive {
  * @typedef {0|1} TopoValue
  * @typedef {[TopoValue, TopoValue, TopoValue]} TopoTriple
  */
+type EdgeIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type EdgeIndexPair = [EdgeIndex, EdgeIndex];
+type TopoValue = 0 | 1;
+type TopoTriple = [TopoValue, TopoValue, TopoValue];
+type MarchinCubeTables = {
+    EdgeVMap: EdgeIndexPair[];
+    VertexTopo: TopoTriple[];
+};
 /**
  * Tables for Marching Cube
  */
-declare const Tables: {
-    /**
-     * edgevmap[i][0] = first vertex index of the ith edge of a cube
-     * edgevmap[i][0] = second vertex index of the ith edge of a cube
-     * @type {[
-    *   EdgeIndexPair, EdgeIndexPair, EdgeIndexPair, EdgeIndexPair,
-    *   EdgeIndexPair, EdgeIndexPair, EdgeIndexPair, EdgeIndexPair,
-    *   EdgeIndexPair, EdgeIndexPair, EdgeIndexPair, EdgeIndexPair
-     * ]}
-     */
-    EdgeVMap: number[][];
-    /**
-     * @type {[TopoTriple,TopoTriple,TopoTriple,TopoTriple,TopoTriple,TopoTriple,TopoTriple,TopoTriple]}
-     */
-    VertexTopo: number[][];
-};
+declare const Tables: MarchinCubeTables;
 
 interface ConvergenceParams {
     /**
@@ -2550,7 +2547,6 @@ declare class Box2Acc extends Box2 {
     setWithAcc(min_x: number, min_y: number, max_x: number, max_y: number, nice_acc: number, raw_acc: number): void;
     /**
      *  Get corner with the minimum coordinates
-     *  @return {Vector2}
      */
     getMinCorner(): Vector2;
 }
@@ -2871,7 +2867,7 @@ declare class SplitSMC extends SlidingMarchingCubes {
      *  Compute the vertex in the current cube.
      *  Use this.x, this.y, this.z
      */
-    computeVertex: (this: SplitSMC) => void;
+    computeVertex: (this: SlidingMarchingCubes) => void;
 }
 
 /**
