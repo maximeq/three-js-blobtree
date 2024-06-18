@@ -1,6 +1,6 @@
 import { Box3, Vector3 } from "three";
 import { Material } from "../Material";
-import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType } from "./ScalisPrimitive";
+import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType, type ScalisPointType } from "./ScalisPrimitive";
 import { ScalisVertex } from "./ScalisVertex";
 import { AreaSphere } from "../areas/AreaSphere";
 import type { ValueResultType } from "../Element";
@@ -8,7 +8,7 @@ export type ScalisPointJSON = {
     density: number;
 } & ScalisPrimitiveJSON;
 export declare class ScalisPoint extends ScalisPrimitive {
-    static type: string;
+    static type: ScalisPointType;
     static fromJSON(json: ScalisPointJSON): ScalisPoint;
     density: number;
     v_to_p: Vector3;
@@ -24,7 +24,7 @@ export declare class ScalisPoint extends ScalisPrimitive {
      * @param mat Material for the point
      */
     constructor(vertex: ScalisVertex, volType: ScalisPrimitiveVolType, density: number, mat: Material);
-    getType(): string;
+    getType(): ScalisPointType;
     toJSON(): ScalisPointJSON;
     /**
      * @param d New density to set

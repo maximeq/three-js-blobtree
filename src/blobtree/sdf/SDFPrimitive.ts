@@ -6,6 +6,13 @@ import type { Primitive } from '../Primitive';
 
 export type SDFPrimitiveJSON = ElementJSON;
 
+export type SDFPointType = "SDFPoint";
+export type SDFCapsuleType = "SDFCapsule";
+export type SDFSegmentType = "SDFSegment";
+export type SDFSphereType = "SDFSphere";
+
+export type SDFPrimitiveType = "SDFPrimitive" | SDFPointType | SDFCapsuleType | SDFSegmentType | SDFSphereType;
+
 /**
  *  This class implements an abstract primitive class for signed distance field.
  *  SDFPrimitive subclasses must define a scalar field being the distance to a geometry.
@@ -13,7 +20,7 @@ export type SDFPrimitiveJSON = ElementJSON;
  *  @extends {Element}
  */
 export abstract class SDFPrimitive extends Element {
-    static override type = "SDFPrimitive";
+    static override type: SDFPrimitiveType = "SDFPrimitive";
 
     constructor() {
         super();
@@ -27,7 +34,7 @@ export abstract class SDFPrimitive extends Element {
     /**
      * @return Type of the element
      */
-    override getType(): string {
+    override getType(): SDFPrimitiveType {
         return SDFPrimitive.type;
     }
 
@@ -77,6 +84,10 @@ export abstract class SDFPrimitive extends Element {
         console.error("SDFPrimitive.heuristicStepWithin is Not implemented");
         return 1;
     };
+
+    destroy(): void {
+        throw "[SDFPrimitive] destroy not implemented for SDFPrimitives";
+    }
 }
 
 Types.register(SDFPrimitive.type, SDFPrimitive);

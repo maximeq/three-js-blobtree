@@ -5,6 +5,10 @@ export type ScalisPrimitiveJSON = {
     v: Array<ScalisVertexJSON>;
     volType: ScalisPrimitiveVolType;
 } & PrimitiveJSON;
+export type ScalisPointType = "ScalisPoint";
+export type ScalisSegmentType = "ScalisSegment";
+export type ScalisTriangleType = "ScalisTriangle";
+export type ScalisPrimitiveType = "ScalisPrimitive" | ScalisPointType | ScalisSegmentType | ScalisTriangleType;
 /**
  *  Represent an implicit primitive respecting the SCALIS model developed by Cedric Zanni
  *
@@ -12,7 +16,7 @@ export type ScalisPrimitiveJSON = {
  *  @extends {Primitive}
  */
 export declare abstract class ScalisPrimitive extends Primitive {
-    static type: string;
+    static type: ScalisPrimitiveType;
     static DIST: "dist";
     static CONVOL: "convol";
     volType: ScalisPrimitiveVolType;
@@ -21,7 +25,7 @@ export declare abstract class ScalisPrimitive extends Primitive {
     /**
      *  @return Type of the element
      */
-    getType(): string;
+    getType(): ScalisPrimitiveType;
     /**
      *  @return {ScalisPrimitiveJSON}
      */

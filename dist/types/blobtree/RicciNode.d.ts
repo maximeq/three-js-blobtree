@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import { Node, type NodeJSON } from "./Node";
+import { Node, type NodeJSON, type RicciNodeType, type RootNodeType } from "./Node";
 import { Material } from "./Material";
 import { type ValueResultType } from './Element';
 export type RicciNodeJSON = {
@@ -19,7 +19,7 @@ export declare class RicciNode extends Node {
     tmp_res: ValueResultType;
     tmp_g: Vector3;
     tmp_m: Material;
-    static type: string;
+    static type: RicciNodeType | RootNodeType;
     /**
      *  @param ricci_n The value for ricci
      *  @param children The children to add to this node. Just a convenient parameter, you can do it manually using addChild
@@ -28,7 +28,7 @@ export declare class RicciNode extends Node {
     /**
      * @link Node.getType
      */
-    getType(): string;
+    getType(): RicciNodeType | RootNodeType;
     /**
      * @link Node.toJSON
      */

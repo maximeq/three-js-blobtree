@@ -1,6 +1,6 @@
 import { Box3, Vector3 } from "three";
 import { Material } from "../Material";
-import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType } from "./ScalisPrimitive";
+import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType, type ScalisSegmentType } from "./ScalisPrimitive";
 import { ScalisVertex } from "./ScalisVertex";
 import { AreaScalisSeg } from "../areas/AreaScalisSeg";
 import type { ValueResultType } from "../Element";
@@ -14,7 +14,7 @@ export type ScalisSegmentJSON = {
  *  @extends ScalisPrimitive
  */
 export declare class ScalisSegment extends ScalisPrimitive {
-    static type: "ScalisSegment";
+    static type: ScalisSegmentType;
     static fromJSON(json: ScalisSegmentJSON): ScalisSegment;
     density: number;
     clipped_l1: number;
@@ -55,7 +55,7 @@ export declare class ScalisSegment extends ScalisPrimitive {
      *              Use [Material.defaultMaterial.clone(), Material.defaultMaterial.clone()] by default.
      */
     constructor(v0: ScalisVertex, v1: ScalisVertex, volType: ScalisPrimitiveVolType, density: number, mats: Material[]);
-    getType(): string;
+    getType(): ScalisSegmentType;
     toJSON(): ScalisSegmentJSON;
     mutableVolType(): boolean;
     /**

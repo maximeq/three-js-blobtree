@@ -29,9 +29,7 @@ export class Material {
 
     // Other static functions
     /**
-     *  Compare arrays of materials.
-     *
-     *  @deprecated
+     *  Compare arrays of materials 
      *
      *  @param {Array.<Material>} arr1
      *  @param {Array.<Material>} arr2
@@ -40,6 +38,7 @@ export class Material {
      *  @param {Array.<Material>=} arr5
      *
      *  @return true if and only if all arguments are arrays of the same length and containing the same material values.
+     *  @deprecated
      */
     static areEqualsArrays(arr1: Material[]): boolean {
 
@@ -113,7 +112,7 @@ export class Material {
 
     /**
      *  Return a clone of the material
-     *  @return {!Material} The new material
+     *  @return The new material
      */
     clone() {
         return new Material({
@@ -126,7 +125,7 @@ export class Material {
 
     /**
      *  Copy the given material parameters
-     *  @param {!Material} mat Material to be copied
+     *  @param mat Material to be copied
      */
     copy(mat: Material) {
         this.color.copy(mat.color);
@@ -138,9 +137,9 @@ export class Material {
     /**
      *  @deprecated Use setParams instead
      *  Set Material parameters at once. DEPRECATED. Use setParams
-     *  @param {Color!} c Color
-     *  @param {number!} r roughness
-     *  @param {number!} m Metalness
+     *  @param  c Color
+     *  @param r roughness
+     *  @param m Metalness
      */
     set(c: Color, r: number, m: number) {
         this.color.copy(c);
@@ -168,7 +167,7 @@ export class Material {
 
     getRoughness(): number { return this.roughness; };
 
-    getMetalness = function (this: Material): number { return this.metalness; };
+    getMetalness(): number { return this.metalness; };
 
     getEmissive(): Color { return this.emissive; }
 

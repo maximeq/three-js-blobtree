@@ -1,6 +1,6 @@
 import { Vector3, Box3, MathUtils } from "three";
 import { Types } from "../Types";
-import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive";
+import { SDFPrimitive, type SDFPrimitiveJSON, type SDFCapsuleType } from "./SDFPrimitive";
 import { AreaCapsule } from "../areas/AreaCapsule";
 import type { ValueResultType } from "../Element";
 
@@ -15,7 +15,7 @@ export type SDFCapsuleJSON = { p1: { x: number, y: number, z: number }, r1: numb
  */
 export class SDFCapsule extends SDFPrimitive {
 
-    static override type = "SDFCapsule";
+    static override type: SDFCapsuleType = "SDFCapsule" as const;
 
     fromJSON(json: SDFCapsuleJSON): SDFCapsule {
         return new SDFCapsule(
@@ -60,7 +60,7 @@ export class SDFCapsule extends SDFPrimitive {
     /**
      *  @return Type of the element
      */
-    override getType(): string {
+    override getType(): SDFCapsuleType {
         return SDFCapsule.type;
     }
 

@@ -1,6 +1,6 @@
 import { Vector3, Box3 } from "three";
 import { Types } from "./Types";
-import { Node, type NodeJSON } from "./Node";
+import { Node, type NodeJSON, type RicciNodeType, type RootNodeType } from "./Node";
 import { Material } from "./Material";
 import { type ValueResultType } from './Element';
 
@@ -17,13 +17,13 @@ export type RicciNodeJSON = {
  */
 export class RicciNode extends Node {
     ricci_n: number;
-    tmp_v_arr: Float32Array;
-    tmp_m_arr: Material[];
-    tmp_res: ValueResultType;
-    tmp_g: Vector3;
-    tmp_m: Material;
+    tmp_v_arr: Float32Array = new Float32Array(0);
+    tmp_m_arr: Material[] = [];
+    tmp_res: ValueResultType = { v: 0, g: null, m: null };
+    tmp_g: Vector3 = new Vector3();
+    tmp_m: Material = new Material();
 
-    static override type = "RicciNode";
+    static override type: RicciNodeType | RootNodeType = "RicciNode";
 
     /**
      *  @param ricci_n The value for ricci
@@ -40,21 +40,12 @@ export class RicciNode extends Node {
                 self.addChild(c);
             });
         }
-
-        // Tmp consts to speed up computation (no reallocations)
-        this.tmp_v_arr = new Float32Array(0);
-        this.tmp_m_arr = [];
-
-        // temp consts to speed up evaluation by avoiding allocations
-        this.tmp_res = { v: 0, g: null, m: null };
-        this.tmp_g = new Vector3();
-        this.tmp_m = new Material();
     }
 
     /**
      * @link Node.getType
      */
-    override getType(): string {
+    override getType(): RicciNodeType | RootNodeType {
         return RicciNode.type;
     };
 
@@ -222,4 +213,4 @@ export class RicciNode extends Node {
 
 };
 
-Types.register(RicciNode.type, {fromJSON: RicciNode.fromJSON});
+Types.register(RicciNode.type, RicciNode);

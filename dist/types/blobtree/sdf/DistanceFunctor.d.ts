@@ -1,11 +1,13 @@
 export type DistanceFunctorJSON = {
     type: string;
 };
+export type Poly6DistanceFunctorType = "Poly6DistanceFunctor";
+type DistanceFunctorType = "DistanceFunctor" | Poly6DistanceFunctorType;
 /**
  *  A superclass for Node and Primitive in the blobtree.
  */
 export declare abstract class DistanceFunctor {
-    static type: string;
+    static type: DistanceFunctorType;
     /**
      *  @abstract
      *  @param json Json description of the object
@@ -14,7 +16,7 @@ export declare abstract class DistanceFunctor {
     /**
      *  @return Type of the element
      */
-    getType(): string;
+    getType(): DistanceFunctorType;
     /**
      *  @abstract
      *  Return a Javscript Object respecting JSON convention and can be used to serialize the functor.
@@ -43,4 +45,5 @@ export declare abstract class DistanceFunctor {
      */
     getSupport(): number;
 }
+export {};
 //# sourceMappingURL=DistanceFunctor.d.ts.map

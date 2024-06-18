@@ -1,6 +1,6 @@
 import { Vector3, Matrix4, Box3 } from "three"
 import { Types } from "./Types";
-import { Node, type NodeJSON } from "./Node";
+import { Node, type NodeJSON, type TwistNodeType } from "./Node";
 import { Material } from "./Material";
 import type { ValueResultType, Element } from './Element';
 
@@ -26,7 +26,7 @@ export class TwistNode extends Node {
     tmp_g: Vector3;
     tmp_m: Material;
 
-    static override type = "TwistNode";
+    static override type: TwistNodeType = "TwistNode";
 
     /**
     *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
@@ -43,11 +43,8 @@ export class TwistNode extends Node {
         }
 
         // temp consts to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:Vector3, m:Material}} */
         this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {Vector3} */
         this.tmp_g = new Vector3();
-        /** @type {Material} */
         this.tmp_m = new Material();
 
         this._twist_amount = 1.0;
@@ -60,7 +57,6 @@ export class TwistNode extends Node {
 
     /**
     * @link Node.toJSON
-    * @returns {TwistNodeJSON}
     */
     override toJSON(): TwistNodeJSON {
         let res = {
@@ -76,9 +72,6 @@ export class TwistNode extends Node {
 
     /**
      *@link Node.fromJSON
-     * 
-     * @param {TwistNodeJSON} json
-     * @returns {TwistNode}
      */
     static override fromJSON(json: TwistNodeJSON): TwistNode {
         const res = new TwistNode();
@@ -116,7 +109,7 @@ export class TwistNode extends Node {
         this._twist_axis_mat_inv.invert();
     }
 
-    override getType() {
+    override getType(): TwistNodeType {
         return TwistNode.type;
     }
 
@@ -224,4 +217,4 @@ export class TwistNode extends Node {
     };
 }
 
-Types.register(TwistNode.type, {fromJSON: TwistNode.fromJSON});
+Types.register(TwistNode.type, TwistNode);

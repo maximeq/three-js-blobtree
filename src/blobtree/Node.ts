@@ -8,6 +8,16 @@ export type NodeJSON = {
     children: ElementJSON[];
 } & ElementJSON;
 
+export type RicciNodeType = "RicciNode";
+export type RootNodeType = "RootNode";
+export type ScaleNodeType = "ScaleNode";
+export type TwistNodeType = "TwistNode";
+export type DifferenceNodeType = "DifferenceNode";
+export type MaxNodeType = "MaxNode";
+export type MinNodeType = "MinNode";
+export type SDFNodeType = "SDFNode";
+
+export type NodeType = "Node" | RicciNodeType | RootNodeType | ScaleNodeType | TwistNodeType | DifferenceNodeType | MaxNodeType | MinNodeType | SDFNodeType;
 
 /**
  *  This class implements an abstract Node class for implicit blobtree.
@@ -17,7 +27,7 @@ export type NodeJSON = {
 export abstract class Node extends Element {
     children: Element[];
 
-    static override type = "Node";
+    static override type: NodeType = "Node";
 
     static override fromJSON(_json: NodeJSON): Node {
         throw new Error("Node.fromJSON should never be called as Node is abstract.");
@@ -28,7 +38,7 @@ export abstract class Node extends Element {
         this.children = [];
     }
 
-    override getType(): string {
+    override getType(): NodeType {
         return Node.type;
     }
 
@@ -44,7 +54,7 @@ export abstract class Node extends Element {
     }
 
     /**
-     *  Clone current node and itss hierarchy
+     *  Clone current node and its hierarchy
      */
     override clone(): this {
         return Types.fromJSON(this.toJSON());
@@ -227,5 +237,5 @@ export abstract class Node extends Element {
 
 };
 
-Types.register(Node.type, {fromJSON: Node.fromJSON});
+Types.register(Node.type, Node);
 

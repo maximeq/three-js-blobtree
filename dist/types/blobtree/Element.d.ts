@@ -1,8 +1,9 @@
 import { Box3, Vector3 } from "three";
-import type { Node } from "./Node";
+import type { Node, NodeType } from "./Node";
 import type { Area } from "./areas";
-import type { Primitive } from "./Primitive";
+import type { Primitive, PrimitiveType } from "./Primitive";
 import type { Material } from "./Material";
+import type { SDFPrimitiveType } from "./sdf/SDFPrimitive";
 /**
  * Computed values will be stored here. Each values should exist and be allocated already.
  * @property v Value, must be defined
@@ -18,6 +19,7 @@ export type ValueResultType = {
     step?: number;
     stepOrtho?: number;
 };
+type ElementType = "Element" | NodeType | PrimitiveType | SDFPrimitiveType;
 export type ElementJSON = {
     type: string;
 };
@@ -27,7 +29,7 @@ export type ElementJSON = {
  *  @constructor
  */
 export declare abstract class Element {
-    static type: string;
+    static type: ElementType;
     static fromJSON(_json: ElementJSON): void;
     id: number;
     aabb: Box3;
@@ -50,7 +52,7 @@ export declare abstract class Element {
     /**
      *  @return Type of the element
      */
-    getType(): string;
+    getType(): ElementType;
     /**
      *  Perform precomputation that will help to reduce future processing time,
      *  especially on calls to value.
@@ -150,4 +152,5 @@ export declare abstract class Element {
     count(_cls: Function): number;
     abstract destroy(): void;
 }
+export {};
 //# sourceMappingURL=Element.d.ts.map

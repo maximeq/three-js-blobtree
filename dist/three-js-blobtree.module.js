@@ -181,7 +181,7 @@ class Element {
         return 0;
     }
 }
-Types.register(Element.type, { fromJSON: Element.fromJSON });
+Types.register(Element.type, Element);
 
 /**
  *  Material object for blobtree. It is an internal material, that should especially
@@ -196,9 +196,7 @@ class Material {
     static defaultMaterial = new Material();
     // Other static functions
     /**
-     *  Compare arrays of materials.
-     *
-     *  @deprecated
+     *  Compare arrays of materials
      *
      *  @param {Array.<Material>} arr1
      *  @param {Array.<Material>} arr2
@@ -207,6 +205,7 @@ class Material {
      *  @param {Array.<Material>=} arr5
      *
      *  @return true if and only if all arguments are arrays of the same length and containing the same material values.
+     *  @deprecated
      */
     static areEqualsArrays(arr1) {
         console.warn("Material.areEqualsArrays is deprecated, please use your own comparison function using Material.equals.");
@@ -275,7 +274,7 @@ class Material {
     }
     /**
      *  Return a clone of the material
-     *  @return {!Material} The new material
+     *  @return The new material
      */
     clone() {
         return new Material({
@@ -287,7 +286,7 @@ class Material {
     }
     /**
      *  Copy the given material parameters
-     *  @param {!Material} mat Material to be copied
+     *  @param mat Material to be copied
      */
     copy(mat) {
         this.color.copy(mat.color);
@@ -298,9 +297,9 @@ class Material {
     /**
      *  @deprecated Use setParams instead
      *  Set Material parameters at once. DEPRECATED. Use setParams
-     *  @param {Color!} c Color
-     *  @param {number!} r roughness
-     *  @param {number!} m Metalness
+     *  @param  c Color
+     *  @param r roughness
+     *  @param m Metalness
      */
     set(c, r, m) {
         this.color.copy(c);
@@ -326,7 +325,8 @@ class Material {
     ;
     getRoughness() { return this.roughness; }
     ;
-    getMetalness = function () { return this.metalness; };
+    getMetalness() { return this.metalness; }
+    ;
     getEmissive() { return this.emissive; }
     equals(m) {
         return this.color.equals(m.color) &&
@@ -489,7 +489,7 @@ class Primitive extends Element {
     ;
     /**
      * @abstract
-     * Compute constiables to help with value computation.
+     * Compute variables to help with value computation.
      * @param cls The class to count. Primitives have no children so no complexty here.
      */
     count(cls) {
@@ -497,7 +497,7 @@ class Primitive extends Element {
     }
     ;
 }
-Types.register(Primitive.type, { fromJSON: Primitive.fromJSON });
+Types.register(Primitive.type, Primitive);
 
 /**
  *  Bounding area for a primitive
@@ -541,7 +541,7 @@ class Node extends Element {
         return res;
     }
     /**
-     *  Clone current node and itss hierarchy
+     *  Clone current node and its hierarchy
      */
     clone() {
         return Types.fromJSON(this.toJSON());
@@ -708,7 +708,7 @@ class Node extends Element {
     }
     ;
 }
-Types.register(Node.type, { fromJSON: Node.fromJSON });
+Types.register(Node.type, Node);
 
 /**
  *  This class implement a difference blending node.
@@ -894,7 +894,7 @@ class DifferenceNode extends Node {
     }
     ;
 }
-Types.register(DifferenceNode.type, { fromJSON: DifferenceNode.fromJSON });
+Types.register(DifferenceNode.type, DifferenceNode);
 
 /**
  *  This class implement a Max node.
@@ -904,9 +904,9 @@ Types.register(DifferenceNode.type, { fromJSON: DifferenceNode.fromJSON });
  *  @extends Node
  */
 class MaxNode extends Node {
-    tmp_res;
-    tmp_g;
-    tmp_m;
+    tmp_res = { v: 0, g: null, m: null };
+    tmp_g = new Vector3();
+    tmp_m = new Material();
     static type = "MaxNode";
     static fromJSON(json) {
         const res = new MaxNode();
@@ -927,10 +927,6 @@ class MaxNode extends Node {
                 self.addChild(c);
             });
         }
-        // temp consts to speed up evaluation by avoiding allocations
-        this.tmp_res = { v: 0, g: null, m: null };
-        this.tmp_g = new Vector3();
-        this.tmp_m = new Material();
     }
     getType() {
         return MaxNode.type;
@@ -997,7 +993,7 @@ class MaxNode extends Node {
         }
     }
 }
-Types.register(MaxNode.type, { fromJSON: MaxNode.fromJSON });
+Types.register(MaxNode.type, MaxNode);
 
 /**
  *  This class implement a Min node.
@@ -1007,9 +1003,9 @@ Types.register(MaxNode.type, { fromJSON: MaxNode.fromJSON });
  *  @extends Node
  */
 class MinNode extends Node {
-    tmp_res;
-    tmp_g;
-    tmp_m;
+    tmp_res = { v: 0, g: null, m: null };
+    tmp_g = new Vector3();
+    tmp_m = new Material();
     static type = "MinNode";
     static fromJSON(json) {
         const res = new MinNode();
@@ -1029,10 +1025,6 @@ class MinNode extends Node {
                 self.addChild(c);
             });
         }
-        // temp consts to speed up evaluation by avoiding allocations
-        this.tmp_res = { v: 0, g: null, m: null };
-        this.tmp_g = new Vector3();
-        this.tmp_m = new Material();
     }
     getType() {
         return MinNode.type;
@@ -1110,7 +1102,7 @@ class MinNode extends Node {
     }
     ;
 }
-Types.register(MinNode.type, { fromJSON: MinNode.fromJSON });
+Types.register(MinNode.type, MinNode);
 
 /**
  *  This class implement a n-ary blend node which use a Ricci Blend.
@@ -1121,11 +1113,11 @@ Types.register(MinNode.type, { fromJSON: MinNode.fromJSON });
  */
 class RicciNode extends Node {
     ricci_n;
-    tmp_v_arr;
-    tmp_m_arr;
-    tmp_res;
-    tmp_g;
-    tmp_m;
+    tmp_v_arr = new Float32Array(0);
+    tmp_m_arr = [];
+    tmp_res = { v: 0, g: null, m: null };
+    tmp_g = new Vector3();
+    tmp_m = new Material();
     static type = "RicciNode";
     /**
      *  @param ricci_n The value for ricci
@@ -1140,13 +1132,6 @@ class RicciNode extends Node {
                 self.addChild(c);
             });
         }
-        // Tmp consts to speed up computation (no reallocations)
-        this.tmp_v_arr = new Float32Array(0);
-        this.tmp_m_arr = [];
-        // temp consts to speed up evaluation by avoiding allocations
-        this.tmp_res = { v: 0, g: null, m: null };
-        this.tmp_g = new Vector3();
-        this.tmp_m = new Material();
     }
     /**
      * @link Node.getType
@@ -1305,7 +1290,7 @@ class RicciNode extends Node {
     }
     ;
 }
-Types.register(RicciNode.type, { fromJSON: RicciNode.fromJSON });
+Types.register(RicciNode.type, RicciNode);
 
 /**
  * @author Maxime Quiblier
@@ -1377,6 +1362,28 @@ const Convergence = {
             res.copy(starting_point);
             return;
         }
+        /*
+     if(broken){
+ 
+         this.eval_res.g = null; // deactive gradient computation
+ 
+         // Check the point between last_moving_point and starting_point which is closest to the surface and return it.
+         pot.value(this.last_mov_pt,this.eval_res);
+         var ev_last_mov_pt = this.eval_res.v;
+         pot.value(starting_point,this.eval_res);
+         var ev_st_pt = this.eval_res.v;
+         if( Math.abs(ev_last_mov_pt-value) > Math.abs(starting_point-value) )
+         {
+             res.copy(starting_point);
+             return;
+         }
+         else
+         {
+             res.copy(this.last_mov_pt);
+             return;
+         }
+     }
+     */
     },
     /** This algorithm uses Newton convergence to find a point epsilon close to
     *        a point "p" such that the given potential "pot" evaluated at "p" is "value".
@@ -1786,14 +1793,14 @@ class RootNode extends RicciNode {
                         point: curPos.clone(),
                         g: dicho_res.g.clone()
                     });
-                    // set constiable in order to resume to where we were
+                    // set variables in order to resume to where we were
                     curPos.copy(resumePos);
                 }
             }
         };
     }();
 }
-Types.register(RootNode.type, { fromJSON: RootNode.fromJSON });
+Types.register(RootNode.type, RootNode);
 
 /**
  *  This class implement a ScaleNode node.
@@ -1803,10 +1810,10 @@ Types.register(RootNode.type, { fromJSON: RootNode.fromJSON });
  *  @extends Node
  */
 class ScaleNode extends Node {
-    _scale;
-    tmp_res;
-    tmp_g;
-    tmp_m;
+    _scale = new Vector3(1, 1, 1);
+    tmp_res = { v: 0, g: null, m: null };
+    tmp_g = new Vector3();
+    tmp_m = new Material();
     static type = "ScaleNode";
     /**
     *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
@@ -1819,11 +1826,6 @@ class ScaleNode extends Node {
                 self.addChild(c);
             });
         }
-        // temp consts to speed up evaluation by avoiding allocations
-        this.tmp_res = { v: 0, g: null, m: null };
-        this.tmp_g = new Vector3();
-        this.tmp_m = new Material();
-        this._scale = new Vector3(1, 1, 1);
     }
     /**
     * @link Node.toJSON
@@ -1957,7 +1959,7 @@ class ScaleNode extends Node {
     }
     ;
 }
-Types.register(ScaleNode.type, { fromJSON: ScaleNode.fromJSON });
+Types.register(ScaleNode.type, ScaleNode);
 
 /**
  *  This class implement a TwistNode node.
@@ -1987,11 +1989,8 @@ class TwistNode extends Node {
             });
         }
         // temp consts to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:Vector3, m:Material}} */
         this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {Vector3} */
         this.tmp_g = new Vector3();
-        /** @type {Material} */
         this.tmp_m = new Material();
         this._twist_amount = 1.0;
         this._twist_axis = new Vector3(0.0, 1.0, 0.0);
@@ -2000,7 +1999,6 @@ class TwistNode extends Node {
     }
     /**
     * @link Node.toJSON
-    * @returns {TwistNodeJSON}
     */
     toJSON() {
         let res = {
@@ -2015,9 +2013,6 @@ class TwistNode extends Node {
     ;
     /**
      *@link Node.fromJSON
-     *
-     * @param {TwistNodeJSON} json
-     * @returns {TwistNode}
      */
     static fromJSON(json) {
         const res = new TwistNode();
@@ -2135,7 +2130,7 @@ class TwistNode extends Node {
     }
     ;
 }
-Types.register(TwistNode.type, { fromJSON: TwistNode.fromJSON });
+Types.register(TwistNode.type, TwistNode);
 
 /**
  * Accuracies Contains the accuracies needed in Areas. Can be changed when importing blobtree.js.
@@ -2273,7 +2268,6 @@ class AreaCapsule extends Area {
     }
     /**
      * @link Area.contains for a complete description
-     * @param p
      */
     contains(p) {
         this.proj_computation(p);
@@ -2725,6 +2719,35 @@ class AreaScalisSeg extends Area {
      *  @todo Check the Maths
      */
     getAcc(sphere, factor) {
+        /*
+            // Following is a modified bit that improves acc computation outside of segments.
+                // However, it appears that we are losing some quality in the models
+                // (as the other computation gives a lower min acc bound by design)
+                // TODO: decide if we uncomment or delete this
+
+                // Get the point at the intersection of the line defined by the center of the sphere and of vector dir orthovec
+                // and the weight line going through (0,thick0)  and orthogonal to orthovec
+                var t = (thick0*this.ortho_vec_y - this.p_proj_x*this.ortho_vec_x)/(this.ortho_vec_x*this.ortho_vec_x+this.ortho_vec_y*this.ortho_vec_y);
+                var inter_proj_x = this.p_proj_x +t*this.ortho_vec_x;
+                var inter_proj_y = t*this.ortho_vec_y;
+                // If inside the min acc is found according to the sphere normal radius
+                var newR = sphere.radius;
+                if (this.y_p_2D > inter_proj_y){
+                    // If we are outside the segment, the sphere intersection with the weight line is computed
+                    var sub1 = this.x_p_2D-inter_proj_x;
+                    var sub2 = this.y_p_2D-inter_proj_y;
+                    var dist = Math.sqrt(sub1*sub1 +sub2*sub2);
+                    // Pythagore this
+                    newR = Math.sqrt(sphere.radius*sphere.radius-dist*dist);
+                }
+                var tmp = this.abs_diff_thick/this.length;
+                var half_delta = newR*Math.sqrt(1+tmp*tmp)*0.5;
+        */
+        // Thales between two triangles that have the same angles gives us the dist of:
+        // side A = sphere.radius*this.abs_diff_thick/this.length;
+        // Then pythagore this shit up as A² + sphere.radius² = delta²
+        // i.e delta² = (sphere.radius*this.abs_diff_thick/this.length)² + sphere.radius²
+        // <=> delta = sphere.radius*Math.sqrt(1+(this.abs_diff_thick/this.length)²);
         this.proj_computation(sphere.center);
         const tmp = this.abs_diff_thick / this.length;
         const half_delta = sphere.radius * Math.sqrt(1 + tmp * tmp) * 0.5;
@@ -2808,14 +2831,14 @@ class AreaScalisSeg extends Area {
         }
         else if (diff < 2 * thick0) {
             step = Math.min(step, Accuracies.curr * thick0);
-        }
+        } // else the vertex is behind us
         diff = t - p1[axis];
         if (diff < -2 * thick1) {
             step = Math.min(step, Math.max(Math.abs(diff + 2 * thick1), Accuracies.curr * thick1));
         }
         else if (diff < 2 * thick1) {
             step = Math.min(step, Accuracies.curr * thick1);
-        }
+        } // else the vertex is behind us
         const tbis = t - p0[axis];
         const axis_l = p1[axis] - p0[axis];
         if (tbis > 0 && tbis < axis_l && axis_l !== 0) {
@@ -2868,7 +2891,7 @@ const TriangleUtils = {
     cleanIndex(ind, lengthArray) {
         let res = ind;
         if (lengthArray === 0) {
-            throw new Error("Lenght of the array should not be 0");
+            throw "[TriangleUtils] cleanIndex : Length of the array should not be 0";
         }
         if (lengthArray === 1) {
             return 0;
@@ -2890,9 +2913,12 @@ const TriangleUtils = {
         let v0_p = triangle.v[0].getPos();
         let v1_p = triangle.v[1].getPos();
         let v2_p = triangle.v[2].getPos();
-        triangle.p0p1 ? triangle.p0p1.subVectors(v1_p, v0_p) : null;
-        triangle.p1p2 ? triangle.p1p2.subVectors(v2_p, v1_p) : null;
-        triangle.p2p0 ? triangle.p2p0.subVectors(v0_p, v2_p) : null;
+        if (triangle.p0p1)
+            triangle.p0p1.subVectors(v1_p, v0_p);
+        if (triangle.p1p2)
+            triangle.p1p2.subVectors(v2_p, v1_p);
+        if (triangle.p2p0)
+            triangle.p2p0.subVectors(v0_p, v2_p);
         if (triangle.unit_normal && triangle.p0p1 && triangle.p2p0) {
             // triangle.unit_normal.crossVectors(triangle.p0p1,triangle.p1p2);
             triangle.unit_normal.crossVectors(triangle.p0p1, triangle.p2p0);
@@ -3088,7 +3114,7 @@ const TriangleUtils = {
             if (delta_1 < delta_2) { //delta_1 is closer to 0
                 triangle.ortho_dir = dir_1.clone();
                 triangle.ortho_dir.normalize();
-                // direction of fastest constiation of weight
+                // direction of fastest variation of weight
                 triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
                 triangle.main_dir.normalize();
                 if ((triangle.main_dir.dot(dir_2)) < 0.0) {
@@ -3100,7 +3126,7 @@ const TriangleUtils = {
             else { //delta_2 is closer to 0
                 triangle.ortho_dir = dir_2.clone();
                 triangle.ortho_dir.normalize();
-                // direction of fastest constiation of weight
+                // direction of fastest variation of weight
                 triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
                 triangle.main_dir.normalize();
                 if ((triangle.main_dir.dot(dir_1)) < 0.0) {
@@ -3124,7 +3150,7 @@ const TriangleUtils = {
             // along ortho_dir the weight are const
             triangle.ortho_dir.subVectors(point_iso_zero2, point_iso_zero1);
             triangle.ortho_dir.normalize();
-            // direction of fastest constiation of weight
+            // direction of fastest variation of weight
             triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
             triangle.main_dir.normalize();
             if ((triangle.main_dir.dot(dir_1)) < 0.0 || (triangle.main_dir.dot(dir_2)) < 0.0) {
@@ -3376,7 +3402,7 @@ class ScalisVertex {
  *  @extends {Area}
  */
 class AreaScalisTri extends Area {
-    tmpVect;
+    tmpVect = new Vector3();
     min_thick;
     max_thick;
     v;
@@ -3398,7 +3424,6 @@ class AreaScalisTri extends Area {
      */
     constructor(v, unit_normal, main_dir, segParams, min_thick, max_thick) {
         super();
-        this.tmpVect = new Vector3();
         this.min_thick = min_thick;
         this.max_thick = max_thick;
         this.v = v;
@@ -3492,10 +3517,7 @@ class AreaScalisTri extends Area {
     /**
      * @link Area.sphereIntersect for a complete description
      * @todo Check the Maths (Ask Cedric Zanni?)
-     * @param sphere
-     * @
-
-return true if the sphere and the area intersect
+     * @return true if the sphere and the area intersect
      */
     sphereIntersect(sphere) {
         // First: Test the intersection of the sphere to all three segments as they are included in the triangle bv
@@ -3707,7 +3729,6 @@ return true if the sphere and the area intersect
     }
     /**
      * @link Area.getMinAcc
-     * @return number
      */
     getMinAcc() {
         return Accuracies.curr * this.min_thick;
@@ -4065,7 +4086,7 @@ class ScalisPoint extends ScalisPrimitive {
         // return p.distanceTo(this.v[0].getPos()) - this.v[0].getThickness();
     }
 }
-Types.register(ScalisPoint.type, { fromJSON: ScalisPoint.fromJSON });
+Types.register(ScalisPoint.type, ScalisPoint);
 
 /**
  *  Implicit segment class in the blobtree.
@@ -4174,7 +4195,7 @@ class ScalisSegment extends ScalisPrimitive {
      */
     setVolType(vt) {
         if (!(vt == ScalisPrimitive.CONVOL || vt == ScalisPrimitive.DIST)) {
-            throw new Error("volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST");
+            throw "[ScalisSegment] setVolType: volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST";
         }
         if (this.volType != vt) {
             this.volType = vt;
@@ -4195,7 +4216,7 @@ class ScalisSegment extends ScalisPrimitive {
     // [Abstract] See Primtive.getArea for more details
     getAreas() {
         if (!this.valid_aabb) {
-            console.error("ERROR: Cannot get area of invalid primitive");
+            console.error("[ScalisSegment] getAreas : Cannot get area of invalid primitive");
             return [];
         }
         else {
@@ -4228,7 +4249,7 @@ class ScalisSegment extends ScalisPrimitive {
         this.cyl_bd0 = Math.min(-bound_supp0, this.length - bound_supp1);
         this.cyl_bd1 = Math.max(this.length + bound_supp1, bound_supp0);
         this.increase_unit_dir.copy(this.unit_dir);
-        // weight help constiables
+        // weight help varables
         if (this.c1 < 0) {
             this.p_min.copy(this.v1_p);
             this.weight_min = this.weight_p1;
@@ -4255,7 +4276,7 @@ class ScalisSegment extends ScalisPrimitive {
                 this.evalConvol(p, res);
                 break;
             default:
-                throw new Error("Unknown volType, cannot evaluate.");
+                throw "[ScalisSegment] value : Unknown volType, cannot evaluate.";
         }
     }
     ///////////////////////////////////////////////////////////////////////////
@@ -4382,7 +4403,7 @@ class ScalisSegment extends ScalisPrimitive {
      */
     evalConvol(p, res) {
         if (!this.valid_aabb) {
-            throw new Error("prepareForEval should have been called");
+            throw "[ScalisSegment] evalConvol : prepareForEval should have been called";
         }
         if (res.g)
             res.g.set(0, 0, 0);
@@ -4633,7 +4654,7 @@ class ScalisSegment extends ScalisPrimitive {
     }
     ;
 }
-Types.register(ScalisSegment.type, { fromJSON: ScalisSegment.fromJSON });
+Types.register(ScalisSegment.type, ScalisSegment);
 
 // Number of sample in the Simpsons integration.
 const sampleNumber = 10;
@@ -4753,7 +4774,7 @@ class ScalisTriangle extends ScalisPrimitive {
             return [];
         }
         else {
-            var segParams = [];
+            const segParams = [];
             segParams.push({
                 "norm": this.length_p0p1,
                 "diffThick": this.diffThick_p0p1,
@@ -4787,7 +4808,7 @@ class ScalisTriangle extends ScalisPrimitive {
     }
     // [Abstract] See Primitive.computeHelpVariables for more details
     computeHelpVariables() {
-        TriangleUtils.computeVectorsDirs(this);
+        TriangleUtils.updateComputedAttributes(this);
         // Compute the AABB from the union of the BBox of the vertices
         this.computeAABB();
     }
@@ -4821,10 +4842,10 @@ class ScalisTriangle extends ScalisPrimitive {
     }
     // [Abstract] See Primitive.distanceTo for more details
     distanceTo = (function () {
-        var p0p = new Vector3();
-        var p1p = new Vector3();
-        var p2p = new Vector3();
-        var tmp = new Vector3();
+        const p0p = new Vector3();
+        const p1p = new Vector3();
+        const p2p = new Vector3();
+        const tmp = new Vector3();
         return function (p) {
             /** @type {ScalisTriangle} */
             let self = this;
@@ -4838,21 +4859,21 @@ class ScalisTriangle extends ScalisPrimitive {
                 return Math.abs(p0p.dot(self.unit_normal));
             }
             else {
-                var t0 = p0p.dot(self.p0p1) / self.length_p0p1;
+                let t0 = p0p.dot(self.p0p1) / self.length_p0p1;
                 // clamp is our own function declared there
                 t0 = self.clamp(t0, 0, 1);
                 tmp.copy(self.p0p1)
                     .multiplyScalar(t0)
                     .add(self.v[0].getPos());
                 t0 = p.distanceToSquared(tmp);
-                var t1 = p1p.dot(self.p1p2) / self.length_p1p2;
+                let t1 = p1p.dot(self.p1p2) / self.length_p1p2;
                 // clamp is our own function declared there
                 t1 = self.clamp(t1, 0, 1);
                 tmp.copy(self.p1p2)
                     .multiplyScalar(t1)
                     .add(self.v[1].getPos());
                 t1 = p.distanceToSquared(tmp);
-                var t2 = p2p.dot(self.p2p0) / self.length_p2p0;
+                let t2 = p2p.dot(self.p2p0) / self.length_p2p0;
                 // clamp is our own function declared there
                 t2 = self.clamp(t2, 0, 1);
                 tmp.copy(self.p2p0)
@@ -4886,8 +4907,8 @@ class ScalisTriangle extends ScalisPrimitive {
      *  value function for Distance volume type (distance field).
      */
     evalDist = (function () {
-        var ev_eps = { v: 0 };
-        var p_eps = new Vector3();
+        const ev_eps = { v: 0 };
+        const p_eps = new Vector3();
         /**
          *  value function for Distance volume type (distance field).
          *
@@ -4907,9 +4928,9 @@ class ScalisTriangle extends ScalisPrimitive {
             */
             // First compute the distance to the triangle and find the nearest point
             // Code taken from EuclideanDistance functor, can be optimized.
-            var p0_to_p = new Vector3();
+            const p0_to_p = new Vector3();
             p0_to_p.subVectors(p, self.v[0].getPos());
-            var normal_inv = self.unit_normal.clone().multiplyScalar(-1);
+            const normal_inv = self.unit_normal.clone().multiplyScalar(-1);
             ///////////////////////////////////////////////////////////////////////
             // We must generalize the principle used for the segment
             if (!self.equal_weights) {
@@ -4924,41 +4945,41 @@ class ScalisTriangle extends ScalisPrimitive {
                 // TODO : this formula can probably be optimized :
                 //        - some elements can be stored
                 //        - some assertion are verified and may help to simplify the computation, for example : n3 = n2%n1
-                var n1 = normal_inv;
-                var n2 = self.unsigned_ortho_dir;
-                var n3 = self.main_dir.clone().multiplyScalar(-1);
-                var d1 = -self.v[0].getPos().dot(n1);
-                var d2 = -p.dot(n2);
-                var d3 = -self.point_iso_zero.dot(n3);
-                var d1n2n3 = new Vector3();
+                const n1 = normal_inv;
+                const n2 = self.unsigned_ortho_dir;
+                const n3 = self.main_dir.clone().multiplyScalar(-1);
+                const d1 = -self.v[0].getPos().dot(n1);
+                const d2 = -p.dot(n2);
+                const d3 = -self.point_iso_zero.dot(n3);
+                const d1n2n3 = new Vector3();
                 d1n2n3.crossVectors(n2, n3);
                 d1n2n3.multiplyScalar(-d1);
-                var d2n3n1 = new Vector3();
+                const d2n3n1 = new Vector3();
                 d2n3n1.crossVectors(n3, n1);
                 d2n3n1.multiplyScalar(-d2);
-                var d3n1n2 = new Vector3();
+                const d3n1n2 = new Vector3();
                 d3n1n2.crossVectors(n1, n2);
                 d3n1n2.multiplyScalar(-d3);
-                var n2cn3 = new Vector3();
+                const n2cn3 = new Vector3();
                 n2cn3.crossVectors(n2, n3);
-                var Z = new Vector3(d1n2n3.x + d2n3n1.x + d3n1n2.x, d1n2n3.y + d2n3n1.y + d3n1n2.y, d1n2n3.z + d2n3n1.z + d3n1n2.z);
+                const Z = new Vector3(d1n2n3.x + d2n3n1.x + d3n1n2.x, d1n2n3.y + d2n3n1.y + d3n1n2.y, d1n2n3.z + d2n3n1.z + d3n1n2.z);
                 Z.divideScalar(n1.dot(n2cn3));
                 // Now we want to project in the direction orthogonal to (pZ) and ortho_dir
-                var pz = new Vector3(Z.x - p.x, Z.y - p.y, Z.z - p.z);
+                const pz = new Vector3(Z.x - p.x, Z.y - p.y, Z.z - p.z);
                 // set proj_dir
                 self.proj_dir = new Vector3();
                 self.proj_dir.crossVectors(pz, self.unsigned_ortho_dir);
                 self.proj_dir.normalize(); // should be useless
             }
             // Project along the given direction
-            var non_ortho_proj = new Vector3();
+            const non_ortho_proj = new Vector3();
             non_ortho_proj.copy(self.proj_dir);
             non_ortho_proj.multiplyScalar(-p0_to_p.dot(normal_inv) / self.proj_dir.dot(normal_inv));
             non_ortho_proj.add(p);
-            var tmp_vec = new Vector3();
-            var tmp_vec0 = new Vector3();
-            var tmp_vec1 = new Vector3();
-            var tmp_vec2 = new Vector3();
+            const tmp_vec = new Vector3();
+            const tmp_vec0 = new Vector3();
+            const tmp_vec1 = new Vector3();
+            const tmp_vec2 = new Vector3();
             tmp_vec0.subVectors(non_ortho_proj, self.v[0].getPos());
             tmp_vec1.subVectors(non_ortho_proj, self.v[1].getPos());
             tmp_vec2.subVectors(non_ortho_proj, self.v[2].getPos());
@@ -4968,28 +4989,28 @@ class ScalisTriangle extends ScalisPrimitive {
                 tmp_vec.subVectors(p, non_ortho_proj);
                 res.v = tmp_vec.lengthSq();
                 // get barycentric coordinates of nearest_point (which is necessarily in the triangle
-                var p0 = self.v[0].getPos();
-                var p1 = self.v[1].getPos();
-                var p2 = self.v[2].getPos();
-                var tmp_vec_bis = new Vector3();
+                const p0 = self.v[0].getPos();
+                const p1 = self.v[1].getPos();
+                const p2 = self.v[2].getPos();
+                const tmp_vec_bis = new Vector3();
                 tmp_vec.subVectors(p1, p0);
                 tmp_vec_bis.subVectors(p2, p0);
-                var n = new Vector3();
+                const n = new Vector3();
                 n.crossVectors(tmp_vec, tmp_vec_bis);
                 tmp_vec.subVectors(p2, p1);
-                var nv1 = new Vector3();
+                const nv1 = new Vector3();
                 nv1.crossVectors(tmp_vec, tmp_vec1);
                 tmp_vec.subVectors(p0, p2);
-                var nv2 = new Vector3();
+                const nv2 = new Vector3();
                 nv2.crossVectors(tmp_vec, tmp_vec2);
                 tmp_vec.subVectors(p1, p0);
-                var nv3 = new Vector3();
+                const nv3 = new Vector3();
                 nv3.crossVectors(tmp_vec, tmp_vec0);
-                var nsq = n.lengthSq();
-                var a1 = n.dot(nv1);
-                var a2 = n.dot(nv2);
-                var a3 = n.dot(nv3);
-                var inter_weight = (a1 * self.v[0].getThickness() + a2 * self.v[1].getThickness() + a3 * self.v[2].getThickness()) / nsq;
+                const nsq = n.lengthSq();
+                const a1 = n.dot(nv1);
+                const a2 = n.dot(nv2);
+                const a3 = n.dot(nv3);
+                const inter_weight = (a1 * self.v[0].getThickness() + a2 * self.v[1].getThickness() + a3 * self.v[2].getThickness()) / nsq;
                 res.v = ScalisMath.Poly6Eval(Math.sqrt(res.v) / inter_weight) * ScalisMath.Poly6NF0D;
                 if (res.m) {
                     res.m.triMean(self.materials[0], self.materials[1], self.materials[2], a1, a2, a3, nsq);
@@ -4997,12 +5018,12 @@ class ScalisTriangle extends ScalisPrimitive {
             }
             else {
                 // Use to keep the case selected in case we need to compute the material
-                var seg_case = 0;
+                let seg_case = 0;
                 // do the same as for a segment on all triangle sides
-                self.GenericSegmentComputation(p, self.v[0].getPos(), self.p0p1, self.length_p0p1, self.length_p0p1 * self.length_p0p1, self.v[0].getThickness(), self.v[1].getThickness() - self.v[0].getThickness(), self.res_gseg);
+                self.GenericSegmentComputation(p, self.v[0].getPos(), self.p0p1, self.length_p0p1 * self.length_p0p1, self.v[0].getThickness(), self.v[1].getThickness() - self.v[0].getThickness(), self.res_gseg);
                 self.res_gseg.sqrdist = self.res_gseg.proj_to_p.lengthSq();
                 self.res_gseg.ratio = self.res_gseg.sqrdist / (self.res_gseg.weight_proj * self.res_gseg.weight_proj);
-                self.GenericSegmentComputation(p, self.v[1].getPos(), self.p1p2, self.length_p1p2, self.length_p1p2 * self.length_p1p2, self.v[1].getThickness(), self.v[2].getThickness() - self.v[1].getThickness(), self.tmp_res_gseg);
+                self.GenericSegmentComputation(p, self.v[1].getPos(), self.p1p2, self.length_p1p2 * self.length_p1p2, self.v[1].getThickness(), self.v[2].getThickness() - self.v[1].getThickness(), self.tmp_res_gseg);
                 self.tmp_res_gseg.sqrdist = self.tmp_res_gseg.proj_to_p.lengthSq();
                 self.tmp_res_gseg.ratio = self.tmp_res_gseg.sqrdist / (self.tmp_res_gseg.weight_proj * self.tmp_res_gseg.weight_proj);
                 if (self.res_gseg.ratio > self.tmp_res_gseg.ratio) {
@@ -5013,7 +5034,7 @@ class ScalisTriangle extends ScalisPrimitive {
                     self.res_gseg.t = self.tmp_res_gseg.t;
                     seg_case = 1;
                 }
-                self.GenericSegmentComputation(p, self.v[2].getPos(), self.p2p0, self.length_p2p0, self.length_p2p0 * self.length_p2p0, self.v[2].getThickness(), self.v[0].getThickness() - self.v[2].getThickness(), self.tmp_res_gseg);
+                self.GenericSegmentComputation(p, self.v[2].getPos(), self.p2p0, self.length_p2p0 * self.length_p2p0, self.v[2].getThickness(), self.v[0].getThickness() - self.v[2].getThickness(), self.tmp_res_gseg);
                 self.tmp_res_gseg.sqrdist = self.tmp_res_gseg.proj_to_p.lengthSq();
                 self.tmp_res_gseg.ratio = self.tmp_res_gseg.sqrdist / (self.tmp_res_gseg.weight_proj * self.tmp_res_gseg.weight_proj);
                 if (self.res_gseg.ratio > self.tmp_res_gseg.ratio) {
@@ -5051,7 +5072,7 @@ class ScalisTriangle extends ScalisPrimitive {
             // We should use an analytical gradient here. It should be possible to
             // compute.
             if (res.g) {
-                var epsilon = 0.00001;
+                const epsilon = 0.00001;
                 p_eps.copy(p);
                 p_eps.x += epsilon;
                 self.evalDist(p_eps, ev_eps);
@@ -5086,15 +5107,14 @@ class ScalisTriangle extends ScalisPrimitive {
      *  @param  res {proj_to_p, weight_proj}
      *
      */
-    GenericSegmentComputation(point, p1, p1p2, _length, // Unused parameter
-    sqr_length, weight_1, delta_weight, // = weight_2-weight_1
+    GenericSegmentComputation(point, p1, p1p2, sqr_length, weight_1, delta_weight, // = weight_2-weight_1
     res) {
-        var origin_to_p = new Vector3();
+        const origin_to_p = new Vector3();
         origin_to_p.subVectors(point, p1);
-        var orig_p_scal_dir = origin_to_p.dot(p1p2);
-        var orig_p_sqr = origin_to_p.lengthSq();
-        var denum = sqr_length * weight_1 + orig_p_scal_dir * delta_weight;
-        var t = (delta_weight < 0.0) ? 0.0 : 1.0;
+        const orig_p_scal_dir = origin_to_p.dot(p1p2);
+        const orig_p_sqr = origin_to_p.lengthSq();
+        const denum = sqr_length * weight_1 + orig_p_scal_dir * delta_weight;
+        let t = (delta_weight < 0.0) ? 0.0 : 1.0;
         if (denum > 0.0) {
             t = (orig_p_scal_dir * weight_1 + orig_p_sqr * delta_weight) / denum;
             t = (t < 0.0) ? 0.0 : ((t > 1.0) ? 1.0 : t); // clipping (nearest point on segment not line)
@@ -5113,34 +5133,34 @@ class ScalisTriangle extends ScalisPrimitive {
      *  @param {ValueResultType} res
      */
     evalConvol = (function () {
-        var g = new Vector3();
-        var m = new Material();
-        var tmpRes = { v: 0, g: null, m: null };
-        var g2 = new Vector3();
-        var m2 = new Material();
-        var tmpRes2 = { v: 0, g: null, m: null };
+        const g = new Vector3();
+        const m = new Material();
+        const tmpRes = { v: 0, g: null, m: null };
+        const g2 = new Vector3();
+        const m2 = new Material();
+        const tmpRes2 = { v: 0, g: null, m: null };
         return function (p, res) {
             /** @type {ScalisTriangle} */
             let self = this;
             tmpRes.g = res.g ? g : null;
             tmpRes.m = res.m ? m : null;
             // Compute closest point (t parameter) on the triangle in "warped space" as well as clipping
-            var clipped = { l1: 0, l2: 0 };
+            const clipped = { l1: 0, l2: 0 };
             if (self.ComputeTParam(p, clipped)) {
-                var t_low = clipped.l1;
-                var t_high = clipped.l2;
+                const t_low = clipped.l1;
+                const t_high = clipped.l2;
                 // Compute local warp coordinates
-                var w_local = self.weight_min + t_low * self.unit_delta_weight;
-                var local_t_max = self.warpAbscissa((t_high - t_low) / w_local);
+                const w_local = self.weight_min + t_low * self.unit_delta_weight;
+                const local_t_max = self.warpAbscissa((t_high - t_low) / w_local);
                 // Compute the required number of sample
-                var nb_samples = 2 * (0.5 * sampleNumber * local_t_max + 1.0);
-                var d_step_size = local_t_max / nb_samples;
+                const nb_samples = 2 * (0.5 * sampleNumber * local_t_max + 1.0);
+                let d_step_size = local_t_max / nb_samples;
                 // Perform Simpson scheme
-                var t = d_step_size;
+                let t = d_step_size;
                 d_step_size *= 2.0;
-                var res_odd = 0.0;
-                var grad_odd = new Vector3();
-                for (var i = 1; i < nb_samples; i += 2) {
+                let res_odd = 0.0;
+                const grad_odd = new Vector3();
+                for (let i = 1; i < nb_samples; i += 2) {
                     self.computeLineIntegral(self.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
                     res_odd += tmpRes.v;
                     if (res.g) {
@@ -5150,10 +5170,10 @@ class ScalisTriangle extends ScalisPrimitive {
                     }
                     t += d_step_size;
                 }
-                var res_even = 0.0;
-                var grad_even = new Vector3();
+                let res_even = 0.0;
+                let grad_even = new Vector3();
                 t = 0.0;
-                for (var j = 2; j < nb_samples; j += 2) {
+                for (let j = 2; j < nb_samples; j += 2) {
                     t += d_step_size;
                     self.computeLineIntegral(self.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
                     if (res.g) {
@@ -5165,21 +5185,19 @@ class ScalisTriangle extends ScalisPrimitive {
                 }
                 tmpRes2.g = res.g ? g2 : null;
                 tmpRes2.m = res.m ? m2 : null;
-                var res_low = self.computeLineIntegral(t_low, p, tmpRes);
-                var res_high = self.computeLineIntegral(t_high, p, tmpRes2);
+                const res_low = self.computeLineIntegral(t_low, p, tmpRes);
+                const res_high = self.computeLineIntegral(t_high, p, tmpRes2);
                 res.v = res_low.v + 4.0 * res_odd + 2.0 * res_even + res_low.v;
-                var factor = (local_t_max / (3.0 * (nb_samples))) * ScalisMath.Poly6NF2D;
+                const factor = (local_t_max / (3.0 * (nb_samples))) * ScalisMath.Poly6NF2D;
                 res.v *= factor;
                 if (res.g) {
-                    var grad_res = new Vector3();
-                    const res_low_g = res_low.g;
-                    const res_high_g = res_high.g;
-                    if (!res_low_g || !res_high_g)
+                    const grad_res = new Vector3();
+                    if (!res_low.g || !res_high.g)
                         throw "[ScalisTriangle] equalConvol : gradient is not defined here.";
-                    grad_res.addVectors(grad_res, res_low_g);
+                    grad_res.addVectors(grad_res, res_low.g);
                     grad_res.addVectors(grad_res, grad_odd.multiplyScalar(4.0));
                     grad_res.addVectors(grad_res, grad_even.multiplyScalar(2.0));
-                    grad_res.addVectors(grad_res, res_high_g);
+                    grad_res.addVectors(grad_res, res_high.g);
                     res.g = grad_res.multiplyScalar(factor);
                 }
             }
@@ -5201,11 +5219,11 @@ class ScalisTriangle extends ScalisPrimitive {
      */
     warpAbscissa(t) {
         // Compute approx of ln(d*l+1)/d
-        var dt = t * this.unit_delta_weight;
-        var inv_dtp2 = 1.0 / (dt + 2.0);
-        var sqr_dt_divdlp2 = dt * inv_dtp2;
+        const dt = t * this.unit_delta_weight;
+        const inv_dtp2 = 1.0 / (dt + 2.0);
+        let sqr_dt_divdlp2 = dt * inv_dtp2;
         sqr_dt_divdlp2 *= sqr_dt_divdlp2;
-        var serie_approx = 1.0 + sqr_dt_divdlp2 * ((1.0 / 3.0) + sqr_dt_divdlp2 * ((1.0 / 5.0) + sqr_dt_divdlp2 * ((1.0 / 7.0) + sqr_dt_divdlp2 * ((1.0 / 9.0) + sqr_dt_divdlp2 * ((1.0 / 11.0) + sqr_dt_divdlp2 * (1.0 / 13.0))))));
+        const serie_approx = 1.0 + sqr_dt_divdlp2 * ((1.0 / 3.0) + sqr_dt_divdlp2 * ((1.0 / 5.0) + sqr_dt_divdlp2 * ((1.0 / 7.0) + sqr_dt_divdlp2 * ((1.0 / 9.0) + sqr_dt_divdlp2 * ((1.0 / 11.0) + sqr_dt_divdlp2 * (1.0 / 13.0))))));
         return 2.0 * t * inv_dtp2 * serie_approx;
     }
     /**
@@ -5213,7 +5231,7 @@ class ScalisTriangle extends ScalisPrimitive {
      */
     unwarpAbscissa(t) {
         // Compute approx of (exp(d*l)-1)/d
-        var dt = t * this.unit_delta_weight;
+        const dt = t * this.unit_delta_weight;
         return t * (1.0 + dt * (1.0 / 2.0 + dt * (1.0 / 6.0 + dt * (1.0 / 24.0 + dt * (1.0 / 120.0 + dt * 1.0 / 720.0)))));
     }
     /**
@@ -5223,10 +5241,10 @@ class ScalisTriangle extends ScalisPrimitive {
      *  @return the res parameter, filled with proper values
      */
     computeLineIntegral(t, p, res) {
-        var weight = this.weight_min + t * this.unit_delta_weight;
-        var p_1 = new Vector3();
+        const weight = this.weight_min + t * this.unit_delta_weight;
+        const p_1 = new Vector3();
         p_1.addVectors(this.point_min, this.longest_dir_special.clone().multiplyScalar(t));
-        var length = (t < this.coord_middle) ? (t / this.coord_middle) * this.max_seg_length
+        const length = (t < this.coord_middle) ? (t / this.coord_middle) * this.max_seg_length
             : ((this.coord_max - t) / (this.coord_max - this.coord_middle)) * this.max_seg_length;
         if (res.g) {
             this.consWeightEvalGradForSeg(p_1, weight, this.ortho_dir, length, p, res);
@@ -5254,19 +5272,19 @@ class ScalisTriangle extends ScalisPrimitive {
      */
     homotheticClippingSpecial(w, length, clipped) {
         // we search solution t \in [0,1] such that at^2-2bt+c<=0
-        var a = -w.z;
-        var b = -w.y;
-        var c = -w.x;
-        var delta = b * b - a * c;
+        const a = -w.z;
+        const b = -w.y;
+        const c = -w.x;
+        const delta = b * b - a * c;
         if (delta >= 0.0) {
-            var b_p_sqrt_delta = b + Math.sqrt(delta);
+            const b_p_sqrt_delta = b + Math.sqrt(delta);
             if ((b_p_sqrt_delta < 0.0) || (length * b_p_sqrt_delta < c)) {
                 return false;
             }
             else {
-                var main_root = c / b_p_sqrt_delta;
+                const main_root = c / b_p_sqrt_delta;
                 clipped.l1 = (main_root < 0.0) ? 0.0 : main_root;
-                var a_r = a * main_root;
+                const a_r = a * main_root;
                 clipped.l2 = (2.0 * b < a_r + a * length) ? c / (a_r) : length;
                 return true;
             }
@@ -5280,15 +5298,15 @@ class ScalisTriangle extends ScalisPrimitive {
      *  @protected
      */
     consWeightEvalForSeg(p_1, w_1, unit_dir, length, point, res) {
-        var p_min_to_point = new Vector3();
+        const p_min_to_point = new Vector3();
         p_min_to_point.subVectors(point, p_1);
-        var uv = unit_dir.dot(p_min_to_point);
-        var d2 = p_min_to_point.lengthSq();
-        var special_coeff = new Vector3();
+        const uv = unit_dir.dot(p_min_to_point);
+        const d2 = p_min_to_point.lengthSq();
+        const special_coeff = new Vector3();
         special_coeff.set(w_1 * w_1 - ScalisMath.KIS2 * d2, -ScalisMath.KIS2 * uv, -ScalisMath.KIS2);
-        var clipped = { l1: 0, l2: 0 };
+        const clipped = { l1: 0, l2: 0 };
         if (this.homotheticClippingSpecial(special_coeff, length, clipped)) {
-            var inv_local_min_weight = 1.0 / w_1;
+            const inv_local_min_weight = 1.0 / w_1;
             special_coeff.x = 1.0 - ScalisMath.KIS2 * (clipped.l1 * (clipped.l1 - 2.0 * uv) + d2) * inv_local_min_weight * inv_local_min_weight;
             special_coeff.y = -ScalisMath.KIS2 * (uv - clipped.l1) * inv_local_min_weight;
             res.v = this.homotheticCompactPolynomial_segment_F_i6_cste((clipped.l2 - clipped.l1) * inv_local_min_weight, special_coeff);
@@ -5303,22 +5321,22 @@ class ScalisTriangle extends ScalisPrimitive {
      *  @protected
      */
     consWeightEvalGradForSeg(p_1, w_1, unit_dir, length, point, res) {
-        var p_min_to_point = new Vector3();
+        const p_min_to_point = new Vector3();
         p_min_to_point.subVectors(point, p_1);
-        var uv = unit_dir.dot(p_min_to_point);
-        var d2 = p_min_to_point.lengthSq();
-        var special_coeff = new Vector3();
+        const uv = unit_dir.dot(p_min_to_point);
+        const d2 = p_min_to_point.lengthSq();
+        const special_coeff = new Vector3();
         special_coeff.set(w_1 * w_1 - ScalisMath.KIS2 * d2, -ScalisMath.KIS2 * uv, -ScalisMath.KIS2);
-        var clipped = { l1: 0, l2: 0 };
+        const clipped = { l1: 0, l2: 0 };
         if (this.homotheticClippingSpecial(special_coeff, length, clipped)) {
-            var inv_local_min_weight = 1.0 / w_1;
+            const inv_local_min_weight = 1.0 / w_1;
             special_coeff.x = 1.0 - ScalisMath.KIS2 * (clipped.l1 * (clipped.l1 - 2.0 * uv) + d2) * inv_local_min_weight * inv_local_min_weight;
             special_coeff.y = -ScalisMath.KIS2 * (uv - clipped.l1) * inv_local_min_weight;
-            var F0F1F2 = new Vector3();
+            const F0F1F2 = new Vector3();
             this.homotheticCompactPolynomial_segment_FGradF_i6_cste((clipped.l2 - clipped.l1) * inv_local_min_weight, special_coeff, F0F1F2);
             res.v = F0F1F2.x;
             F0F1F2.y *= inv_local_min_weight;
-            var vect = unit_dir.clone();
+            const vect = unit_dir.clone();
             vect.multiplyScalar(F0F1F2.z + clipped.l1 * F0F1F2.y);
             p_min_to_point.multiplyScalar(-F0F1F2.y);
             p_min_to_point.addVectors(p_min_to_point, vect);
@@ -5339,13 +5357,13 @@ class ScalisTriangle extends ScalisPrimitive {
      *  @return  true if clipping occured
      */
     ComputeTParam(point, clipped) {
-        var p_min_to_point = new Vector3();
+        const p_min_to_point = new Vector3();
         p_min_to_point.subVectors(point, this.point_min);
-        var coord_main_dir = p_min_to_point.dot(this.main_dir);
-        var coord_normal = p_min_to_point.dot(this.unit_normal);
+        const coord_main_dir = p_min_to_point.dot(this.main_dir);
+        const coord_normal = p_min_to_point.dot(this.unit_normal);
         //WARNING : Assume that the compact support is defined in the same way as HomotheticCompactPolynomial kernels
-        var dist_sqr = coord_main_dir * coord_main_dir + coord_normal * coord_normal;
-        var special_coeff = new Vector3();
+        const dist_sqr = coord_main_dir * coord_main_dir + coord_normal * coord_normal;
+        const special_coeff = new Vector3();
         special_coeff.set(this.weight_min * this.weight_min - ScalisMath.KIS2 * dist_sqr, -this.unit_delta_weight * this.weight_min - ScalisMath.KIS2 * coord_main_dir, this.unit_delta_weight * this.unit_delta_weight - ScalisMath.KIS2);
         return this.homotheticClippingSpecial(special_coeff, this.coord_max, clipped);
     }
@@ -5356,20 +5374,20 @@ class ScalisTriangle extends ScalisPrimitive {
      *  @return  the value
      */
     homotheticCompactPolynomial_segment_F_i6_cste(l, w) {
-        var t7068 = w.z;
-        var t7078 = t7068 * l;
-        var t7069 = w.y;
-        var t7070 = w.x;
-        var t2 = t7069 * t7069;
-        var t7065 = t7068 * t7070 - t2;
-        var t7067 = 0.1e1 / t7068;
-        var t7077 = t7065 * t7067;
-        var t7064 = t7070 + (-0.2e1 * t7069 + t7078) * l;
-        var t7066 = t7078 - t7069;
-        var t6 = t7064 * t7064;
-        var t7076 = t7066 * t6;
-        var t7 = t7070 * t7070;
-        var t7075 = t7069 * t7;
+        const t7068 = w.z;
+        const t7078 = t7068 * l;
+        const t7069 = w.y;
+        const t7070 = w.x;
+        const t2 = t7069 * t7069;
+        const t7065 = t7068 * t7070 - t2;
+        const t7067 = 0.1e1 / t7068;
+        const t7077 = t7065 * t7067;
+        const t7064 = t7070 + (-0.2e1 * t7069 + t7078) * l;
+        const t7066 = t7078 - t7069;
+        const t6 = t7064 * t7064;
+        const t7076 = t7066 * t6;
+        const t7 = t7070 * t7070;
+        const t7075 = t7069 * t7;
         return (0.6e1 / 0.5e1 * (0.4e1 / 0.3e1 * (0.2e1 * t7065 * l + t7066 * t7064 + t7069 * t7070) * t7077 + t7076 + t7075) * t7077 + t7064 * t7076 + t7070 * t7075) * t7067 / 0.7e1;
     }
     // optimized function for segment of constant weight
@@ -5384,28 +5402,28 @@ class ScalisTriangle extends ScalisPrimitive {
      *
      */
     homotheticCompactPolynomial_segment_FGradF_i6_cste(l, w, res) {
-        var t7086 = w.z;
-        var t7095 = t7086 * l;
-        var t7087 = w.y;
-        var t7088 = w.x;
-        var t2 = t7087 * t7087;
-        var t7082 = t7086 * t7088 - t2;
-        var t7084 = 0.1e1 / t7086;
-        var t7094 = t7082 * t7084;
-        var t7081 = t7088 + (-0.2e1 * t7087 + t7095) * l;
-        var t7083 = t7095 - t7087;
-        var t7089 = t7081 * t7081;
-        var t7091 = t7088 * t7088;
-        var t7079 = 0.4e1 / 0.3e1 * (0.2e1 * t7082 * l + t7083 * t7081 + t7087 * t7088) * t7094 + t7083 * t7089 + t7087 * t7091;
-        var t7093 = t7079 * t7084 / 0.5e1;
-        var t7085 = t7088 * t7091;
-        var t7080 = t7081 * t7089;
+        const t7086 = w.z;
+        const t7095 = t7086 * l;
+        const t7087 = w.y;
+        const t7088 = w.x;
+        const t2 = t7087 * t7087;
+        const t7082 = t7086 * t7088 - t2;
+        const t7084 = 0.1e1 / t7086;
+        const t7094 = t7082 * t7084;
+        const t7081 = t7088 + (-0.2e1 * t7087 + t7095) * l;
+        const t7083 = t7095 - t7087;
+        const t7089 = t7081 * t7081;
+        const t7091 = t7088 * t7088;
+        const t7079 = 0.4e1 / 0.3e1 * (0.2e1 * t7082 * l + t7083 * t7081 + t7087 * t7088) * t7094 + t7083 * t7089 + t7087 * t7091;
+        const t7093 = t7079 * t7084 / 0.5e1;
+        const t7085 = t7088 * t7091;
+        const t7080 = t7081 * t7089;
         res.x = (0.6e1 / 0.5e1 * t7079 * t7094 + t7083 * t7080 + t7087 * t7085) * t7084 / 0.7e1;
         res.y = t7093;
         res.z = (t7087 * t7093 + t7080 / 0.6e1 - t7085 / 0.6e1) * t7084;
     }
 }
-Types.register(ScalisTriangle.type, { fromJSON: ScalisTriangle.fromJSON });
+Types.register(ScalisTriangle.type, ScalisTriangle);
 
 /**
  *  A superclass for Node and Primitive in the blobtree.
@@ -5476,7 +5494,7 @@ class Poly6DistanceFunctor extends DistanceFunctor {
      * At 0, its value is 1 with a zero derivative.
      * At 1, its value is 0 with a zero derivative.
      */
-    evalStandard(d) {
+    static evalStandard(d) {
         if (d < 0.0) {
             return 1.0;
         }
@@ -5515,7 +5533,7 @@ class Poly6DistanceFunctor extends DistanceFunctor {
     value(d) {
         let dp = d / (2 * this.scale); // ensure the support fits the scale.
         dp = dp + 0.5;
-        return this.evalStandard(dp) / this.evalStandard(0.5);
+        return Poly6DistanceFunctor.evalStandard(dp) / Poly6DistanceFunctor.evalStandard(0.5);
     }
     /**
      * @returns dimensional gradient at d.
@@ -5523,7 +5541,7 @@ class Poly6DistanceFunctor extends DistanceFunctor {
     gradient(d) {
         const ds = d / (2 * this.scale) + 0.5;
         let res = 1 - ds * ds;
-        res = -(6 / (2 * this.scale)) * ds * res * res / this.evalStandard(0.5);
+        res = -(6 / (2 * this.scale)) * ds * res * res / Poly6DistanceFunctor.evalStandard(0.5);
         return res;
     }
     /**
@@ -5585,6 +5603,9 @@ class SDFPrimitive extends Element {
         return 1;
     }
     ;
+    destroy() {
+        throw "[SDFPrimitive] destroy not implemented for SDFPrimitives";
+    }
 }
 Types.register(SDFPrimitive.type, SDFPrimitive);
 
@@ -5784,7 +5805,7 @@ class SDFNode extends Node {
         this.aabb.set(new Vector3(-Infinity, -Infinity, -Infinity), new Vector3(+Infinity, +Infinity, +Infinity));
         this.children = [];
     }
-    overridegetType() {
+    getType() {
         return SDFNode.type;
     }
     computeAABB() {
@@ -5812,7 +5833,7 @@ class SDFNode extends Node {
      *  @abstract
      */
     getAreas() {
-        throw "No Areas for SDFNode, except for the SDFRootNode.";
+        throw "[SDFNode] getAreas : No Areas for SDFNode, except for the SDFRootNode.";
     }
     /**
      * @param d Distance to consider for the area computation.
@@ -5833,11 +5854,11 @@ class SDFNode extends Node {
      * @param _p Point
      */
     distanceTo(_p) {
-        throw "distanceTo should be reimplemented in every children classes of SDFNode.";
+        throw "[SDFNode] distanceTo should be reimplemented in every children classes of SDFNode.";
     }
     ;
     heuristicStepWithin() {
-        throw "heuristicStepWithin may not make sens for all SDFNode, except for the SDFRootNode.";
+        throw "[SDFNode] heuristicStepWithin may not make sens for all SDFNode, except for the SDFRootNode.";
     }
     ;
     prepareForEval() {
@@ -5930,7 +5951,7 @@ class SDFPoint extends SDFPrimitive {
      */
     getDistanceAreas(d) {
         if (!this.valid_aabb) {
-            throw new Error("ERROR : Cannot get area of invalid primitive");
+            throw "[SDFPoint] getDistanceAreas : Cannot get area of invalid primitive";
         }
         else {
             return [{
@@ -5948,7 +5969,7 @@ class SDFPoint extends SDFPrimitive {
         const v = new Vector3();
         return function (p, res) {
             if (!this.valid_aabb) {
-                throw new Error("Error : PrepareForEval should have been called");
+                throw "[SDFPoint] value : PrepareForEval should have been called";
             }
             v.subVectors(p, this.p);
             const l = v.length();
@@ -5970,8 +5991,10 @@ class SDFRootNode extends Primitive {
     static type = "SDFRootNode";
     f;
     sdfRoot;
-    tmp_res;
-    tmp_g;
+    // Tmp vars to speed up computation (no reallocations)
+    // TODO : should be pushed in the function static variables since there can be no SDFRoot below the SDFRoot.
+    tmp_res = { v: 0, g: null };
+    tmp_g = new Vector3(0, 0, 0);
     static fromJSON(json) {
         const f = Types.fromJSON(json.f);
         let material = Material.fromJSON(json.materials[0]);
@@ -5989,8 +6012,6 @@ class SDFRootNode extends Primitive {
         this.f = f;
         this.materials.push(material ? material.clone() : new Material());
         this.sdfRoot = sdfRoot ? (sdfRoot instanceof SDFNode ? sdfRoot : new SDFNode().addChild(sdfRoot)) : new SDFNode();
-        this.tmp_res = { v: 0, g: null };
-        this.tmp_g = new Vector3(0, 0, 0);
     }
     getType() {
         return SDFRootNode.type;
@@ -6000,7 +6021,7 @@ class SDFRootNode extends Primitive {
             this.sdfRoot.addChild.call(this, c);
         }
         else {
-            throw new Error("SDFRootNode can have only one child.");
+            throw new Error("[SDFRootNode] addChild : SDFRootNode can have only one child.");
         }
     }
     removeChild(c) {
@@ -6015,7 +6036,7 @@ class SDFRootNode extends Primitive {
     }
     prepareForEval() {
         if (!this.valid_aabb) {
-            this.aabb = new Box3();
+            this.aabb = new Box3(); // Create empty BBox
             for (let i = 0; i < this.sdfRoot.children.length; ++i) {
                 let c = this.sdfRoot.children[i];
                 c.prepareForEval();
@@ -6024,6 +6045,11 @@ class SDFRootNode extends Primitive {
             this.valid_aabb = true;
         }
     }
+    /**
+     *  @link Element.getAreas for a complete description
+     *
+     *  This function is an attempt to have SDFRootNode behave like a Primitive in the normal Blobtree.
+     */
     getAreas() {
         if (!this.valid_aabb) {
             throw new Error("ERROR: Cannot get area of invalid node");
@@ -6037,12 +6063,22 @@ class SDFRootNode extends Primitive {
             }));
         }
     }
+    /**
+     *  @link Node.value for a complete description
+     */
     value(p, res) {
         const tmp = this.tmp_res;
         tmp.g = res.g ? this.tmp_g : null;
+        // Init res
         res.v = 0;
         if (res.m) {
             res.m.copy(Material.defaultMaterial);
+        }
+        if (res.g) ;
+        else if (res.step !== undefined) {
+            // that, is the max distance
+            // we want a value that won't miss any 'min'
+            res.step = 1000000000;
         }
         if (this.aabb.containsPoint(p)) {
             this.sdfRoot.children[0].value(p, tmp);
@@ -6055,6 +6091,7 @@ class SDFRootNode extends Primitive {
             }
         }
         else if (res.step !== undefined) {
+            // return distance to aabb such that next time we'll hit from within the aabbb
             res.step = this.aabb.distanceToPoint(p) + 0.3;
         }
     }

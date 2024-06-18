@@ -1,4 +1,4 @@
-import { DistanceFunctor, type DistanceFunctorJSON } from "./DistanceFunctor";
+import { DistanceFunctor, type DistanceFunctorJSON, type Poly6DistanceFunctorType } from "./DistanceFunctor";
 export type Poly6DistanceFunctorJSON = {
     scale: number;
 } & DistanceFunctorJSON;
@@ -8,7 +8,7 @@ export type Poly6DistanceFunctorJSON = {
  *  @constructor
  */
 export declare class Poly6DistanceFunctor extends DistanceFunctor {
-    static type: string;
+    static type: Poly6DistanceFunctorType;
     scale: number;
     fromJSON(json: Poly6DistanceFunctorJSON): Poly6DistanceFunctor;
     /**
@@ -16,12 +16,12 @@ export declare class Poly6DistanceFunctor extends DistanceFunctor {
      * At 0, its value is 1 with a zero derivative.
      * At 1, its value is 0 with a zero derivative.
      */
-    evalStandard(d: number): number;
+    static evalStandard(d: number): number;
     constructor(scale: number);
     /**
      *  @return Type of the element
      */
-    getType(): string;
+    getType(): Poly6DistanceFunctorType;
     /**
      *  @return Json description of this functor.
      */

@@ -1,5 +1,5 @@
 import { Vector3, Matrix4, Box3 } from "three";
-import { Node, type NodeJSON } from "./Node";
+import { Node, type NodeJSON, type TwistNodeType } from "./Node";
 import { Material } from "./Material";
 import type { ValueResultType, Element } from './Element';
 type TwistNodeJSON = {
@@ -23,27 +23,23 @@ export declare class TwistNode extends Node {
     tmp_res: ValueResultType;
     tmp_g: Vector3;
     tmp_m: Material;
-    static type: string;
+    static type: TwistNodeType;
     /**
     *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
     constructor(children?: Node[]);
     /**
     * @link Node.toJSON
-    * @returns {TwistNodeJSON}
     */
     toJSON(): TwistNodeJSON;
     /**
      *@link Node.fromJSON
-     *
-     * @param {TwistNodeJSON} json
-     * @returns {TwistNode}
      */
     static fromJSON(json: TwistNodeJSON): TwistNode;
     setTwistAmount(amount: number): void;
     setTwistAxis(axis: Vector3): void;
     _computeTransforms(): void;
-    getType(): string;
+    getType(): TwistNodeType;
     /**
      *  @link Element.prepareForEval for a complete description
      */

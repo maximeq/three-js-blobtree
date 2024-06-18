@@ -1,5 +1,5 @@
 import { Vector3, Box3 } from "three";
-import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive.js";
+import { SDFPrimitive, type SDFPrimitiveJSON, type SDFPointType } from "./SDFPrimitive.js";
 import type { Area } from "../areas/Area.js";
 import type { ValueResultType } from "../Element.js";
 export type SDFPointJSON = {
@@ -11,7 +11,7 @@ export type SDFPointJSON = {
     acc: number;
 } & SDFPrimitiveJSON;
 export declare class SDFPoint extends SDFPrimitive {
-    static type: string;
+    static type: SDFPointType;
     static fromJSON(json: SDFPointJSON): SDFPoint;
     p: Vector3;
     acc: number;
@@ -20,7 +20,7 @@ export declare class SDFPoint extends SDFPrimitive {
      *  @param acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
      */
     constructor(p: Vector3, acc?: number);
-    getType(): string;
+    getType(): SDFPointType;
     toJSON(): SDFPointJSON;
     /**
      *  @param acc The new accuracy factor

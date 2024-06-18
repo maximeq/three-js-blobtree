@@ -4,7 +4,7 @@ import { RicciNode } from "./RicciNode";
 import { Convergence } from "../utils/Convergence"
 
 import type { Element, ValueResultType } from './Element';
-import type { Node } from './Node';
+import type { Node, RootNodeType } from './Node';
 import type { RicciNodeJSON } from './RicciNode';
 
 type RootNodeJSON = {
@@ -29,7 +29,7 @@ export class RootNode extends RicciNode {
     trimmed: Element[];
     trim_parents: Node[];
 
-    static override type = "RootNode";
+    static override type: RootNodeType = "RootNode";
 
     static override fromJSON(json: RootNodeJSON): RootNode {
         const res = new RootNode();
@@ -56,7 +56,7 @@ export class RootNode extends RicciNode {
     /**
      * @link Node.getType
      */
-    override getType(): string {
+    override getType(): RootNodeType {
         return RootNode.type;
     };
 
@@ -361,7 +361,7 @@ export class RootNode extends RicciNode {
                         point: curPos.clone(),
                         g: dicho_res.g.clone()
                     });
-                    // set constiable in order to resume to where we were
+                    // set variables in order to resume to where we were
                     curPos.copy(resumePos);
                 }
             }
@@ -370,4 +370,4 @@ export class RootNode extends RicciNode {
 
 };
 
-Types.register(RootNode.type, {fromJSON: RootNode.fromJSON});
+Types.register(RootNode.type, RootNode);

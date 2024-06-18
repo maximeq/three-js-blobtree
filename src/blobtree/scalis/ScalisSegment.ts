@@ -1,7 +1,7 @@
 import { Box3, Vector3 } from "three";
 import { Types } from "../Types";
 import { Material } from "../Material";
-import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType } from "./ScalisPrimitive";
+import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType, type ScalisSegmentType } from "./ScalisPrimitive";
 import { ScalisVertex } from "./ScalisVertex";
 import { ScalisMath } from "./ScalisMath";
 import { AreaScalisSeg } from "../areas/AreaScalisSeg";
@@ -17,7 +17,7 @@ export type ScalisSegmentJSON = { density: number } & ScalisPrimitiveJSON;
  */
 export class ScalisSegment extends ScalisPrimitive {
 
-    static override type = "ScalisSegment" as const;
+    static override type: ScalisSegmentType = "ScalisSegment" as const;
 
     static override fromJSON(json: ScalisSegmentJSON): ScalisSegment {
         const v0 = ScalisVertex.fromJSON(json.v[0]);
@@ -100,7 +100,7 @@ export class ScalisSegment extends ScalisPrimitive {
         this.computeHelpVariables();
     }
 
-    override getType(): string {
+    override getType(): ScalisSegmentType {
         return ScalisSegment.type;
     }
 
@@ -136,7 +136,7 @@ export class ScalisSegment extends ScalisPrimitive {
      */
     override setVolType(vt: ScalisPrimitiveVolType): void {
         if (!(vt == ScalisPrimitive.CONVOL || vt == ScalisPrimitive.DIST)) {
-            throw new Error("volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST");
+            throw "[ScalisSegment] setVolType: volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST";
         }
 
         if (this.volType != vt) {
@@ -165,7 +165,7 @@ export class ScalisSegment extends ScalisPrimitive {
         obj: ScalisSegment,
     }[] {
         if (!this.valid_aabb) {
-            console.error("ERROR: Cannot get area of invalid primitive");
+            console.error("[ScalisSegment] getAreas : Cannot get area of invalid primitive");
             return [];
         } else {
             return [{
@@ -209,7 +209,7 @@ export class ScalisSegment extends ScalisPrimitive {
         this.cyl_bd1 = Math.max(this.length + bound_supp1, bound_supp0);
 
         this.increase_unit_dir.copy(this.unit_dir);
-        // weight help constiables
+        // weight help varables
         if (this.c1 < 0) {
             this.p_min.copy(this.v1_p);
             this.weight_min = this.weight_p1;
@@ -237,7 +237,7 @@ export class ScalisSegment extends ScalisPrimitive {
                 this.evalConvol(p, res);
                 break;
             default:
-                throw new Error("Unknown volType, cannot evaluate.");
+                throw "[ScalisSegment] value : Unknown volType, cannot evaluate.";
         }
     }
 
@@ -375,7 +375,7 @@ export class ScalisSegment extends ScalisPrimitive {
      */
     evalConvol(p: Vector3, res: ValueResultType): void {
         if (!this.valid_aabb) {
-            throw new Error("prepareForEval should have been called");
+            throw "[ScalisSegment] evalConvol : prepareForEval should have been called";
         }
 
         if (res.g) res.g.set(0, 0, 0);
@@ -660,4 +660,4 @@ export class ScalisSegment extends ScalisPrimitive {
     ////////////////////////////////////////////////////////////////////////////
 }
 
-Types.register(ScalisSegment.type,  {fromJSON: ScalisSegment.fromJSON});
+Types.register(ScalisSegment.type, ScalisSegment);

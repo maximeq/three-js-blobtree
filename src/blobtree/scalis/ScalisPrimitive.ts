@@ -5,6 +5,12 @@ import type { ScalisVertex, ScalisVertexJSON } from "./ScalisVertex";
 export type ScalisPrimitiveVolType = "dist" | "convol";
 export type ScalisPrimitiveJSON = { v: Array<ScalisVertexJSON>, volType: ScalisPrimitiveVolType } & PrimitiveJSON;
 
+export type ScalisPointType = "ScalisPoint";
+export type ScalisSegmentType = "ScalisSegment";
+export type ScalisTriangleType = "ScalisTriangle";
+ 
+export type ScalisPrimitiveType = "ScalisPrimitive" | ScalisPointType | ScalisSegmentType | ScalisTriangleType;
+
 /**
  *  Represent an implicit primitive respecting the SCALIS model developed by Cedric Zanni
  *
@@ -13,7 +19,7 @@ export type ScalisPrimitiveJSON = { v: Array<ScalisVertexJSON>, volType: ScalisP
  */
 export abstract class ScalisPrimitive extends Primitive {
 
-    static override type = "ScalisPrimitive";
+    static override type: ScalisPrimitiveType = "ScalisPrimitive";
     static DIST = "dist" as const;
     static CONVOL = "convol" as const;
 
@@ -30,7 +36,7 @@ export abstract class ScalisPrimitive extends Primitive {
     /**
      *  @return Type of the element
      */
-    override getType(): string {
+    override getType(): ScalisPrimitiveType {
         return ScalisPrimitive.type;
     }
 

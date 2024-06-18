@@ -1,6 +1,6 @@
 import { Vector3, Box3 } from "three";
 import { Types } from "../Types.js";
-import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive.js";
+import { SDFPrimitive, type SDFPrimitiveJSON, type SDFPointType } from "./SDFPrimitive.js";
 import { AreaSphere } from "../areas/AreaSphere.js";
 import type { Area } from "../areas/Area.js";
 import type { ValueResultType } from "../Element.js";
@@ -9,7 +9,7 @@ export type SDFPointJSON = { p: { x: number, y: number, z: number }, acc: number
 
 export class SDFPoint extends SDFPrimitive {
 
-    static override type = "SDFPoint";
+    static override type: SDFPointType = "SDFPoint";
 
     static override fromJSON(json: SDFPointJSON): SDFPoint {
         return new SDFPoint(new Vector3(json.p.x, json.p.y, json.p.z), json.acc);
@@ -28,7 +28,7 @@ export class SDFPoint extends SDFPrimitive {
         this.acc = acc;
     }
 
-    override getType(): string {
+    override getType(): SDFPointType {
         return SDFPoint.type;
     };
 
@@ -96,7 +96,7 @@ export class SDFPoint extends SDFPrimitive {
      */
     getDistanceAreas(d: number): { aabb: Box3, bv: Area, obj: SDFPoint }[] {
         if (!this.valid_aabb) {
-            throw new Error("ERROR : Cannot get area of invalid primitive");
+            throw "[SDFPoint] getDistanceAreas : Cannot get area of invalid primitive";
         } else {
             return [{
                 aabb: this.computeDistanceAABB(d),
@@ -114,7 +114,7 @@ export class SDFPoint extends SDFPrimitive {
 
         return function (this: SDFPoint, p: Vector3, res: ValueResultType): void {
             if (!this.valid_aabb) {
-                throw new Error("Error : PrepareForEval should have been called");
+                throw "[SDFPoint] value : PrepareForEval should have been called";
             }
 
             v.subVectors(p, this.p);

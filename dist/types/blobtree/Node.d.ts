@@ -5,6 +5,15 @@ import { Area } from './areas/Area';
 export type NodeJSON = {
     children: ElementJSON[];
 } & ElementJSON;
+export type RicciNodeType = "RicciNode";
+export type RootNodeType = "RootNode";
+export type ScaleNodeType = "ScaleNode";
+export type TwistNodeType = "TwistNode";
+export type DifferenceNodeType = "DifferenceNode";
+export type MaxNodeType = "MaxNode";
+export type MinNodeType = "MinNode";
+export type SDFNodeType = "SDFNode";
+export type NodeType = "Node" | RicciNodeType | RootNodeType | ScaleNodeType | TwistNodeType | DifferenceNodeType | MaxNodeType | MinNodeType | SDFNodeType;
 /**
  *  This class implements an abstract Node class for implicit blobtree.
  *  @constructor
@@ -12,13 +21,13 @@ export type NodeJSON = {
  */
 export declare abstract class Node extends Element {
     children: Element[];
-    static type: string;
+    static type: NodeType;
     static fromJSON(_json: NodeJSON): Node;
     constructor();
-    getType(): string;
+    getType(): NodeType;
     toJSON(): NodeJSON;
     /**
-     *  Clone current node and itss hierarchy
+     *  Clone current node and its hierarchy
      */
     clone(): this;
     /**

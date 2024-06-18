@@ -1,6 +1,6 @@
 import { Vector3, Box3 } from "three"
 import { Types } from "./Types";
-import { Node, type NodeJSON } from "./Node";
+import { Node, type NodeJSON, type MinNodeType } from "./Node";
 import { Material } from "./Material";
 import { type ValueResultType, Element } from './Element';
 
@@ -14,11 +14,11 @@ type MinNodeJSON = NodeJSON;
  *  @extends Node
  */
 export class MinNode extends Node {
-    tmp_res: ValueResultType;
-    tmp_g: Vector3;
-    tmp_m: Material;
+    tmp_res: ValueResultType = { v: 0, g: null, m: null };
+    tmp_g: Vector3 = new Vector3();
+    tmp_m: Material = new Material();
 
-    static override type = "MinNode";
+    static override type: MinNodeType = "MinNode";
 
     static override fromJSON(json: MinNodeJSON): MinNode {
         const res = new MinNode();
@@ -41,15 +41,9 @@ export class MinNode extends Node {
                 self.addChild(c);
             });
         }
-
-        // temp consts to speed up evaluation by avoiding allocations
-        this.tmp_res = { v: 0, g: null, m: null };
-        this.tmp_g = new Vector3();
-        this.tmp_m = new Material();
-
     }
 
-    override getType(): string {
+    override getType(): MinNodeType {
         return MinNode.type;
     }
 
@@ -129,4 +123,4 @@ export class MinNode extends Node {
     };
 }
 
-Types.register(MinNode.type, {fromJSON: MinNode.fromJSON});
+Types.register(MinNode.type, MinNode);

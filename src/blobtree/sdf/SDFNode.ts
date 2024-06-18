@@ -1,6 +1,6 @@
 import { Vector3, Box3 } from "three";
 import { Types } from "../Types";
-import { Node, type NodeJSON } from '../Node';
+import { Node, type NodeJSON, type SDFNodeType } from '../Node';
 import type { Area } from '../areas/Area';
 import type { SDFPrimitive } from './SDFPrimitive';
 import type { Primitive } from '../Primitive';
@@ -17,7 +17,7 @@ export type SDFNodeJSON = NodeJSON;
  */
 export class SDFNode extends Node {
 
-    static override type = "SDFNode";
+    static override type: SDFNodeType = "SDFNode";
 
     override children: (SDFNode | SDFPrimitive)[];
 
@@ -33,7 +33,7 @@ export class SDFNode extends Node {
         this.children = [];
     }
 
-    overridegetType(): string {
+    override getType(): SDFNodeType {
         return SDFNode.type;
     }
 
@@ -65,7 +65,7 @@ export class SDFNode extends Node {
      *  @abstract
      */
     override getAreas(): { aabb: Box3; bv: Area; obj: Primitive; }[] {
-        throw "No Areas for SDFNode, except for the SDFRootNode.";
+        throw "[SDFNode] getAreas : No Areas for SDFNode, except for the SDFRootNode.";
     }
 
     /**
@@ -88,11 +88,11 @@ export class SDFNode extends Node {
      * @param _p Point
      */
     override distanceTo(_p: Vector3): number {
-        throw "distanceTo should be reimplemented in every children classes of SDFNode.";
+        throw "[SDFNode] distanceTo should be reimplemented in every children classes of SDFNode.";
     };
 
     override heuristicStepWithin(): number {
-        throw "heuristicStepWithin may not make sens for all SDFNode, except for the SDFRootNode.";
+        throw "[SDFNode] heuristicStepWithin may not make sens for all SDFNode, except for the SDFRootNode.";
     };
 
     prepareForEval(): void {

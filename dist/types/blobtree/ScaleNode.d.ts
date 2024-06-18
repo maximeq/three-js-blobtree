@@ -2,7 +2,7 @@ import { Vector3, Box3 } from "three";
 import { Node } from "./Node";
 import { Material } from "./Material";
 import type { ValueResultType, Element } from './Element';
-import type { NodeJSON } from './Node';
+import type { NodeJSON, ScaleNodeType } from './Node';
 type ScaleNodeJSON = {
     scale_x: number;
     scale_y: number;
@@ -20,7 +20,7 @@ export declare class ScaleNode extends Node {
     tmp_res: ValueResultType;
     tmp_g: Vector3;
     tmp_m: Material;
-    static type: string;
+    static type: ScaleNodeType;
     /**
     *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
@@ -40,7 +40,7 @@ export declare class ScaleNode extends Node {
     /**
      * @link Node.getType
      */
-    getType(): string;
+    getType(): ScaleNodeType;
     /**
      *  @link Element.prepareForEval for a complete description
      */

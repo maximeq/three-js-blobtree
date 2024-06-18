@@ -1,5 +1,5 @@
 import { Vector3, Line3, Box3 } from "three";
-import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive.js";
+import { SDFPrimitive, type SDFPrimitiveJSON, type SDFSegmentType } from "./SDFPrimitive.js";
 import { AreaCapsule } from "../areas/AreaCapsule.js";
 import type { ValueResultType } from "../Element.js";
 export type SDFSegmentJSON = {
@@ -16,7 +16,7 @@ export type SDFSegmentJSON = {
     acc: number;
 } & SDFPrimitiveJSON;
 export declare class SDFSegment extends SDFPrimitive {
-    static type: string;
+    static type: SDFSegmentType;
     static fromJSON(json: SDFSegmentJSON): SDFSegment;
     p1: Vector3;
     p2: Vector3;
@@ -28,7 +28,7 @@ export declare class SDFSegment extends SDFPrimitive {
     *  @param acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
     */
     constructor(p1: Vector3, p2: Vector3, acc: number);
-    getType(): string;
+    getType(): SDFSegmentType;
     toJSON(): SDFSegmentJSON;
     /**
      *  @param acc The new accuracy factor

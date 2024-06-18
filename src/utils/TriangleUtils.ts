@@ -121,7 +121,7 @@ export const TriangleUtils = {
 cleanIndex(ind: number, lengthArray: number) {
     let res = ind;
     if (lengthArray === 0) {
-        throw new Error("Lenght of the array should not be 0");
+        throw "[TriangleUtils] cleanIndex : Length of the array should not be 0";
     }
     if (lengthArray === 1) {
         return 0;
@@ -144,9 +144,9 @@ updateComputedAttributes(triangle: TriangleLike) {
     let v1_p = triangle.v[1].getPos();
     let v2_p = triangle.v[2].getPos();
 
-    triangle.p0p1 ? triangle.p0p1.subVectors(v1_p, v0_p) : null;
-    triangle.p1p2 ? triangle.p1p2.subVectors(v2_p, v1_p) : null;
-    triangle.p2p0 ? triangle.p2p0.subVectors(v0_p, v2_p) : null;
+    if (triangle.p0p1) triangle.p0p1.subVectors(v1_p, v0_p);
+    if (triangle.p1p2) triangle.p1p2.subVectors(v2_p, v1_p);
+    if (triangle.p2p0) triangle.p2p0.subVectors(v0_p, v2_p);
 
     if (triangle.unit_normal && triangle.p0p1 && triangle.p2p0) {
         // triangle.unit_normal.crossVectors(triangle.p0p1,triangle.p1p2);
@@ -382,7 +382,7 @@ computeVectorsDirs(triangle: TriangleLikeDeprecated) {
             triangle.ortho_dir = dir_1.clone();
             triangle.ortho_dir.normalize();
 
-            // direction of fastest constiation of weight
+            // direction of fastest variation of weight
             triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
             triangle.main_dir.normalize();
             if ((triangle.main_dir.dot(dir_2)) < 0.0) {
@@ -397,7 +397,7 @@ computeVectorsDirs(triangle: TriangleLikeDeprecated) {
             triangle.ortho_dir = dir_2.clone();
             triangle.ortho_dir.normalize();
 
-            // direction of fastest constiation of weight
+            // direction of fastest variation of weight
             triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
             triangle.main_dir.normalize();
             if ((triangle.main_dir.dot(dir_1)) < 0.0) {
@@ -429,7 +429,7 @@ computeVectorsDirs(triangle: TriangleLikeDeprecated) {
         triangle.ortho_dir.subVectors(point_iso_zero2, point_iso_zero1);
         triangle.ortho_dir.normalize();
 
-        // direction of fastest constiation of weight
+        // direction of fastest variation of weight
         triangle.main_dir.crossVectors(triangle.ortho_dir, triangle.unit_normal);
         triangle.main_dir.normalize();
         if ((triangle.main_dir.dot(dir_1)) < 0.0 || (triangle.main_dir.dot(dir_2)) < 0.0) {

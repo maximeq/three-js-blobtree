@@ -1,6 +1,6 @@
 import { Vector3, Box3 } from "three"
 import { Types } from "./Types";
-import { Node, type NodeJSON, } from "./Node";
+import { Node, type NodeJSON, type MaxNodeType } from "./Node";
 import { Material } from "./Material";
 import { type ValueResultType } from './Element';
 
@@ -14,11 +14,11 @@ type MaxNodeJSON = NodeJSON;
  *  @extends Node
  */
 export class MaxNode extends Node {
-    tmp_res: ValueResultType;
-    tmp_g: Vector3;
-    tmp_m: Material;
+    tmp_res: ValueResultType = { v: 0, g: null, m: null };
+    tmp_g: Vector3 = new Vector3();
+    tmp_m: Material = new Material();
 
-    static override type = "MaxNode";
+    static override type: MaxNodeType = "MaxNode";
 
     static override fromJSON(json: MaxNodeJSON): MaxNode {
         const res = new MaxNode();
@@ -40,14 +40,9 @@ export class MaxNode extends Node {
                 self.addChild(c);
             });
         }
-
-        // temp consts to speed up evaluation by avoiding allocations
-        this.tmp_res = { v: 0, g: null, m: null };
-        this.tmp_g = new Vector3();
-        this.tmp_m = new Material();
     }
 
-    override getType (): string {
+    override getType (): MaxNodeType {
         return MaxNode.type;
     }
 
@@ -118,4 +113,4 @@ export class MaxNode extends Node {
 
 };
 
-Types.register(MaxNode.type,  {fromJSON: MaxNode.fromJSON});
+Types.register(MaxNode.type,  MaxNode);

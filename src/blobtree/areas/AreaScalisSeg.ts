@@ -163,6 +163,35 @@ export class AreaScalisSeg extends Area {
      *  @todo Check the Maths
      */
     getAcc(sphere: AreaSphereParam, factor: number): number {
+        /*
+            // Following is a modified bit that improves acc computation outside of segments.
+                // However, it appears that we are losing some quality in the models
+                // (as the other computation gives a lower min acc bound by design)
+                // TODO: decide if we uncomment or delete this
+
+                // Get the point at the intersection of the line defined by the center of the sphere and of vector dir orthovec
+                // and the weight line going through (0,thick0)  and orthogonal to orthovec
+                var t = (thick0*this.ortho_vec_y - this.p_proj_x*this.ortho_vec_x)/(this.ortho_vec_x*this.ortho_vec_x+this.ortho_vec_y*this.ortho_vec_y);
+                var inter_proj_x = this.p_proj_x +t*this.ortho_vec_x;
+                var inter_proj_y = t*this.ortho_vec_y;
+                // If inside the min acc is found according to the sphere normal radius
+                var newR = sphere.radius;
+                if (this.y_p_2D > inter_proj_y){
+                    // If we are outside the segment, the sphere intersection with the weight line is computed
+                    var sub1 = this.x_p_2D-inter_proj_x;
+                    var sub2 = this.y_p_2D-inter_proj_y;
+                    var dist = Math.sqrt(sub1*sub1 +sub2*sub2);
+                    // Pythagore this
+                    newR = Math.sqrt(sphere.radius*sphere.radius-dist*dist);
+                }
+                var tmp = this.abs_diff_thick/this.length;
+                var half_delta = newR*Math.sqrt(1+tmp*tmp)*0.5;
+        */
+        // Thales between two triangles that have the same angles gives us the dist of:
+        // side A = sphere.radius*this.abs_diff_thick/this.length;
+        // Then pythagore this shit up as A² + sphere.radius² = delta²
+        // i.e delta² = (sphere.radius*this.abs_diff_thick/this.length)² + sphere.radius²
+        // <=> delta = sphere.radius*Math.sqrt(1+(this.abs_diff_thick/this.length)²);
         this.proj_computation(sphere.center);
         const tmp = this.abs_diff_thick / this.length;
         const half_delta = sphere.radius * Math.sqrt(1 + tmp * tmp) * 0.5;
@@ -251,13 +280,13 @@ export class AreaScalisSeg extends Area {
             step = Math.min(step, Math.max(Math.abs(diff + 2 * thick0), Accuracies.curr * thick0));
         } else if (diff < 2 * thick0) {
             step = Math.min(step, Accuracies.curr * thick0);
-        }
+        } // else the vertex is behind us
         diff = t - p1[axis];
         if (diff < -2 * thick1) {
             step = Math.min(step, Math.max(Math.abs(diff + 2 * thick1), Accuracies.curr * thick1));
         } else if (diff < 2 * thick1) {
             step = Math.min(step, Accuracies.curr * thick1);
-        }
+        } // else the vertex is behind us
 
         const tbis = t - p0[axis];
         const axis_l = p1[axis] - p0[axis];

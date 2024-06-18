@@ -1,6 +1,6 @@
 import { Box3, Vector3 } from "three";
 import { Material } from "../Material";
-import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType } from "./ScalisPrimitive";
+import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType, type ScalisTriangleType } from "./ScalisPrimitive";
 import { ScalisVertex } from "./ScalisVertex";
 import { AreaScalisTri } from "../areas/AreaScalisTri";
 import type { ValueResultType } from "../Element";
@@ -20,7 +20,7 @@ export type ScalisTriangleJSON = ScalisPrimitiveJSON;
  *  @extends ScalisPrimitive
  */
 export declare class ScalisTriangle extends ScalisPrimitive {
-    static type: "ScalisTriangle";
+    static type: ScalisTriangleType;
     static fromJSON(json: ScalisTriangleJSON): ScalisTriangle;
     v: [ScalisVertex, ScalisVertex, ScalisVertex];
     min_thick: number;
@@ -70,7 +70,7 @@ export declare class ScalisTriangle extends ScalisPrimitive {
      *
      */
     constructor(v: [ScalisVertex, ScalisVertex, ScalisVertex], volType: ScalisPrimitiveVolType, density: number, mats: Material[]);
-    getType(): string;
+    getType(): ScalisTriangleType;
     toJSON(): ScalisTriangleJSON;
     prepareForEval(): void;
     getAreas(): {
@@ -114,8 +114,7 @@ export declare class ScalisTriangle extends ScalisPrimitive {
      *  @param  res {proj_to_p, weight_proj}
      *
      */
-    GenericSegmentComputation(point: Vector3, p1: Vector3, p1p2: Vector3, _length: number, // Unused parameter
-    sqr_length: number, weight_1: number, delta_weight: number, // = weight_2-weight_1
+    GenericSegmentComputation(point: Vector3, p1: Vector3, p1p2: Vector3, sqr_length: number, weight_1: number, delta_weight: number, // = weight_2-weight_1
     res: {
         proj_to_p: Vector3;
         weight_proj: number;

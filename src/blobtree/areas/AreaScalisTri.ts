@@ -4,7 +4,7 @@ import { Area, type AreaSphereParam, type Coordinate } from "./Area";
 import { TriangleUtils } from "../../utils/TriangleUtils";
 import { Accuracies } from "../accuracies/Accuracies";
 import { AreaScalisSeg } from "./AreaScalisSeg";
-import { ScalisVertex } from "../scalis/ScalisVertex";
+import { ScalisVertex, type SegParam } from "../scalis/ScalisVertex";
 
 /**
  *  Bounding area for the triangle.
@@ -18,7 +18,7 @@ import { ScalisVertex } from "../scalis/ScalisVertex";
  *  @extends {Area}
  */
 export class AreaScalisTri extends Area {
-    tmpVect: Vector3;
+    tmpVect: Vector3 = new Vector3();
     min_thick: number;
     max_thick: number;
     v: [ScalisVertex, ScalisVertex, ScalisVertex];
@@ -27,7 +27,7 @@ export class AreaScalisTri extends Area {
     unit_normal: Vector3;
     main_dir: Vector3;
     equal_weights: boolean;
-    segParams: any; // Define type for segParams as per your actual structure
+    segParams: SegParam[]; // Define type for segParams as per your actual structure
     segAttr: {
         p0_to_p: Vector3;
         p0_to_p_sqrnorm: number;
@@ -50,13 +50,12 @@ export class AreaScalisTri extends Area {
         v: [ScalisVertex, ScalisVertex, ScalisVertex],
         unit_normal: Vector3,
         main_dir: Vector3,
-        segParams: any,
+        segParams: SegParam[],
         min_thick: number,
         max_thick: number
     ) {
         super();
 
-        this.tmpVect = new Vector3();
         this.min_thick = min_thick;
         this.max_thick = max_thick;
         this.v = v;
@@ -174,7 +173,7 @@ export class AreaScalisTri extends Area {
      *
      *  @protected
      */
-    protected proj_computation(p: Vector3, segParams: any): void {
+    protected proj_computation(p: Vector3, segParams: SegParam): void {
         this.segAttr.p0_to_p.subVectors(p, segParams.v[0].getPos());
         this.segAttr.p0_to_p_sqrnorm = this.segAttr.p0_to_p.lengthSq();
         this.segAttr.x_p_2D = this.segAttr.p0_to_p.dot(segParams.dir);
@@ -194,10 +193,7 @@ export class AreaScalisTri extends Area {
     /**
      * @link Area.sphereIntersect for a complete description
      * @todo Check the Maths (Ask Cedric Zanni?)
-     * @param sphere
-     * @
-
-return true if the sphere and the area intersect
+     * @return true if the sphere and the area intersect
      */
     sphereIntersect(sphere: AreaSphereParam): boolean {
         // First: Test the intersection of the sphere to all three segments as they are included in the triangle bv
@@ -414,7 +410,6 @@ return true if the sphere and the area intersect
 
     /**
      * @link Area.getMinAcc
-     * @return number
      */
     getMinAcc(): number {
         return Accuracies.curr * this.min_thick;

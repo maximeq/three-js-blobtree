@@ -1,5 +1,5 @@
 import { Vector3, Box3 } from "three";
-import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive.js";
+import { SDFPrimitive, type SDFPrimitiveJSON, type SDFSphereType } from "./SDFPrimitive.js";
 import { AreaSphere } from "../areas/AreaSphere.js";
 import type { ValueResultType } from "../Element.js";
 export type SDFSphereJSON = {
@@ -11,7 +11,7 @@ export type SDFSphereJSON = {
     r: number;
 } & SDFPrimitiveJSON;
 export declare class SDFSphere extends SDFPrimitive {
-    static type: string;
+    static type: SDFSphereType;
     static fromJSON(json: SDFSphereJSON): SDFSphere;
     p: Vector3;
     r: number;
@@ -20,7 +20,7 @@ export declare class SDFSphere extends SDFPrimitive {
      *  @param  r Radius of the sphere
      */
     constructor(p: Vector3, r: number);
-    getType(): string;
+    getType(): SDFSphereType;
     toJSON(): SDFSphereJSON;
     /**
      *  @param r The new radius

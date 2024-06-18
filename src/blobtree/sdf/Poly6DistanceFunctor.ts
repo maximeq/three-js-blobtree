@@ -1,5 +1,5 @@
 import { Types } from "../Types";
-import { DistanceFunctor, type DistanceFunctorJSON } from "./DistanceFunctor";
+import { DistanceFunctor, type DistanceFunctorJSON, type Poly6DistanceFunctorType } from "./DistanceFunctor";
 
 export type Poly6DistanceFunctorJSON = { scale: number } & DistanceFunctorJSON;
 
@@ -9,7 +9,7 @@ export type Poly6DistanceFunctorJSON = { scale: number } & DistanceFunctorJSON;
  *  @constructor
  */
 export class Poly6DistanceFunctor extends DistanceFunctor {
-    static override type = "Poly6DistanceFunctor";
+    static override type: Poly6DistanceFunctorType = "Poly6DistanceFunctor";
     scale: number;
 
     fromJSON(json: Poly6DistanceFunctorJSON): Poly6DistanceFunctor {
@@ -21,7 +21,7 @@ export class Poly6DistanceFunctor extends DistanceFunctor {
      * At 0, its value is 1 with a zero derivative.
      * At 1, its value is 0 with a zero derivative.
      */
-    evalStandard(d: number): number {
+    static evalStandard(d: number): number {
         if (d < 0.0) {
             return 1.0;
         }
@@ -42,7 +42,7 @@ export class Poly6DistanceFunctor extends DistanceFunctor {
     /**
      *  @return Type of the element
      */
-    override getType(): string {
+    override getType(): Poly6DistanceFunctorType {
         return Poly6DistanceFunctor.type;
     }
 
@@ -64,7 +64,7 @@ export class Poly6DistanceFunctor extends DistanceFunctor {
     value(d: number): number {
         let dp = d / (2 * this.scale); // ensure the support fits the scale.
         dp = dp + 0.5;
-        return this.evalStandard(dp) / this.evalStandard(0.5);
+        return Poly6DistanceFunctor.evalStandard(dp) / Poly6DistanceFunctor.evalStandard(0.5);
     }
 
     /**
@@ -73,7 +73,7 @@ export class Poly6DistanceFunctor extends DistanceFunctor {
     override gradient(d: number): number {
         const ds = d / (2 * this.scale) + 0.5;
         let res = 1 - ds * ds;
-        res = -(6 / (2 * this.scale)) * ds * res * res / this.evalStandard(0.5);
+        res = -(6 / (2 * this.scale)) * ds * res * res / Poly6DistanceFunctor.evalStandard(0.5);
         return res;
     }
 

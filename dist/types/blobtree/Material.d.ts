@@ -23,9 +23,7 @@ export declare class Material {
     emissive: Color;
     static defaultMaterial: Material;
     /**
-     *  Compare arrays of materials.
-     *
-     *  @deprecated
+     *  Compare arrays of materials
      *
      *  @param {Array.<Material>} arr1
      *  @param {Array.<Material>} arr2
@@ -34,6 +32,7 @@ export declare class Material {
      *  @param {Array.<Material>=} arr5
      *
      *  @return true if and only if all arguments are arrays of the same length and containing the same material values.
+     *  @deprecated
      */
     static areEqualsArrays(arr1: Material[]): boolean;
     static fromJSON(json: MaterialJSON): Material;
@@ -59,20 +58,20 @@ export declare class Material {
     };
     /**
      *  Return a clone of the material
-     *  @return {!Material} The new material
+     *  @return The new material
      */
     clone(): Material;
     /**
      *  Copy the given material parameters
-     *  @param {!Material} mat Material to be copied
+     *  @param mat Material to be copied
      */
     copy(mat: Material): void;
     /**
      *  @deprecated Use setParams instead
      *  Set Material parameters at once. DEPRECATED. Use setParams
-     *  @param {Color!} c Color
-     *  @param {number!} r roughness
-     *  @param {number!} m Metalness
+     *  @param  c Color
+     *  @param r roughness
+     *  @param m Metalness
      */
     set(c: Color, r: number, m: number): void;
     /**
@@ -87,7 +86,7 @@ export declare class Material {
     setParams(params: MaterialParams): void;
     getColor(): Color;
     getRoughness(): number;
-    getMetalness: (this: Material) => number;
+    getMetalness(): number;
     getEmissive(): Color;
     equals(m: Material): boolean;
     /**

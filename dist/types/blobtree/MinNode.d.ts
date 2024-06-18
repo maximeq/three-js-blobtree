@@ -1,5 +1,5 @@
 import { Vector3, Box3 } from "three";
-import { Node, type NodeJSON } from "./Node";
+import { Node, type NodeJSON, type MinNodeType } from "./Node";
 import { Material } from "./Material";
 import { type ValueResultType, Element } from './Element';
 type MinNodeJSON = NodeJSON;
@@ -14,13 +14,13 @@ export declare class MinNode extends Node {
     tmp_res: ValueResultType;
     tmp_g: Vector3;
     tmp_m: Material;
-    static type: string;
+    static type: MinNodeType;
     static fromJSON(json: MinNodeJSON): MinNode;
     /**
     *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
     constructor(children?: Node[]);
-    getType(): string;
+    getType(): MinNodeType;
     /**
      *  @link Element.prepareForEval for a complete description
      */

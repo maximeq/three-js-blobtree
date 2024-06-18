@@ -1,5 +1,5 @@
 import { Vector3, Box3 } from "three";
-import { Node, type NodeJSON } from '../Node';
+import { Node, type NodeJSON, type SDFNodeType } from '../Node';
 import type { Area } from '../areas/Area';
 import type { SDFPrimitive } from './SDFPrimitive';
 import type { Primitive } from '../Primitive';
@@ -13,10 +13,10 @@ export type SDFNodeJSON = NodeJSON;
  *  @extends {Node}
  */
 export declare class SDFNode extends Node {
-    static type: string;
+    static type: SDFNodeType;
     children: (SDFNode | SDFPrimitive)[];
     constructor();
-    overridegetType(): string;
+    getType(): SDFNodeType;
     computeAABB(): void;
     /**
      *  Return the bounding box of the node for a given maximum distance.

@@ -1,5 +1,5 @@
 import { Vector3, Box3 } from "three";
-import { Node, type NodeJSON } from "./Node";
+import { Node, type NodeJSON, type DifferenceNodeType } from "./Node";
 import { Material } from "./Material";
 import { Element, type ValueResultType } from './Element';
 type DifferenceNodeJSON = {
@@ -23,7 +23,7 @@ export declare class DifferenceNode extends Node {
     m1: Material;
     tmp_v_arr: Float32Array;
     tmp_m_arr: [Material | null, Material | null];
-    static type: string;
+    static type: DifferenceNodeType;
     static fromJSON(json: DifferenceNodeJSON): DifferenceNode;
     /**
      *

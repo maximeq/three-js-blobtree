@@ -10,18 +10,23 @@ import { type ValueResultType } from "../Element.js";
 
 export type SDFRootNodeJSON = { f: DistanceFunctorJSON, sdfRoot: SDFNodeJSON } & PrimitiveJSON;
 
+export type SDFRootNodeType = "SDFRootNode";
+
 /**
  *  This class implements a SDF Root Node, which is basically a Signed Distance Field
  *  made of some node combination, on which is applied a compact support function.
  *  For now SDF nodes do not have materials. A unique material is defined in the SDFRootNode.
  */
 export class SDFRootNode extends Primitive {
-    static override type = "SDFRootNode";
+    static override type: SDFRootNodeType = "SDFRootNode";
 
     f: DistanceFunctor;
     sdfRoot: SDFNode;
-    tmp_res: { v: number, g: Vector3 | null };
-    tmp_g: Vector3;
+
+    // Tmp vars to speed up computation (no reallocations)
+    // TODO : should be pushed in the function static variables since there can be no SDFRoot below the SDFRoot.
+    tmp_res: ValueResultType = { v: 0, g: null };
+    tmp_g: Vector3 = new Vector3(0, 0, 0);
 
     static override fromJSON(json: SDFRootNodeJSON): SDFRootNode {
         const f: DistanceFunctor = Types.fromJSON(json.f);
@@ -43,12 +48,9 @@ export class SDFRootNode extends Primitive {
         this.f = f;
         this.materials.push(material ? material.clone() : new Material());
         this.sdfRoot = sdfRoot ? (sdfRoot instanceof SDFNode ? sdfRoot : new SDFNode().addChild(sdfRoot)) : new SDFNode();
-
-        this.tmp_res = { v: 0, g: null };
-        this.tmp_g = new Vector3(0, 0, 0);
     }
 
-    override getType(): string {
+    override getType(): SDFRootNodeType {
         return SDFRootNode.type;
     }
 
@@ -56,7 +58,7 @@ export class SDFRootNode extends Primitive {
         if (this.sdfRoot.children.length === 0) {
             this.sdfRoot.addChild.call(this, c);
         } else {
-            throw new Error("SDFRootNode can have only one child.");
+            throw new Error("[SDFRootNode] addChild : SDFRootNode can have only one child.");
         }
     }
 
@@ -74,7 +76,7 @@ export class SDFRootNode extends Primitive {
 
     prepareForEval(): void {
         if (!this.valid_aabb) {
-            this.aabb = new Box3();
+            this.aabb = new Box3(); // Create empty BBox
             for (let i = 0; i < this.sdfRoot.children.length; ++i) {
                 let c = this.sdfRoot.children[i];
                 c.prepareForEval();
@@ -84,6 +86,11 @@ export class SDFRootNode extends Primitive {
         }
     }
 
+    /**
+     *  @link Element.getAreas for a complete description
+     *
+     *  This function is an attempt to have SDFRootNode behave like a Primitive in the normal Blobtree.
+     */
     override getAreas(): { aabb: Box3, bv: Area, obj: Primitive }[] {
         if (!this.valid_aabb) {
             throw new Error("ERROR: Cannot get area of invalid node");
@@ -97,14 +104,25 @@ export class SDFRootNode extends Primitive {
         }
     }
 
+    /**
+     *  @link Node.value for a complete description
+     */
     value(p: Vector3, res: ValueResultType): void {
         const tmp = this.tmp_res;
         tmp.g = res.g ? this.tmp_g : null;
 
+        // Init res
         res.v = 0;
         if (res.m) {
             res.m.copy(Material.defaultMaterial);
+        } if (res.g) {
+            // res.g.set(0,0,0); // Useless here
+        } else if (res.step !== undefined) {
+            // that, is the max distance
+            // we want a value that won't miss any 'min'
+            res.step = 1000000000;
         }
+
         if (this.aabb.containsPoint(p)) {
             this.sdfRoot.children[0].value(p, tmp);
 
@@ -116,6 +134,7 @@ export class SDFRootNode extends Primitive {
                 res.m.copy(this.materials[0]);
             }
         } else if (res.step !== undefined) {
+            // return distance to aabb such that next time we'll hit from within the aabbb
             res.step = this.aabb.distanceToPoint(p) + 0.3;
         }
     }

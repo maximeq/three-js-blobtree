@@ -1,7 +1,7 @@
 import { Vector3 } from "three";
 import { Area, type AreaSphereParam, type Coordinate } from "./Area";
 import { AreaScalisSeg } from "./AreaScalisSeg";
-import { ScalisVertex } from "../scalis/ScalisVertex";
+import { ScalisVertex, type SegParam } from "../scalis/ScalisVertex";
 /**
  *  Bounding area for the triangle.
  *  It is the same for DIST and CONVOL primitives since the support of the convolution
@@ -23,7 +23,7 @@ export declare class AreaScalisTri extends Area {
     unit_normal: Vector3;
     main_dir: Vector3;
     equal_weights: boolean;
-    segParams: any;
+    segParams: SegParam[];
     segAttr: {
         p0_to_p: Vector3;
         p0_to_p_sqrnorm: number;
@@ -44,7 +44,7 @@ export declare class AreaScalisTri extends Area {
      *  @param min_thick Minimum thickness in the Triangle
      *  @param max_thick Maximum thickness in the triangle
      */
-    constructor(v: [ScalisVertex, ScalisVertex, ScalisVertex], unit_normal: Vector3, main_dir: Vector3, segParams: any, min_thick: number, max_thick: number);
+    constructor(v: [ScalisVertex, ScalisVertex, ScalisVertex], unit_normal: Vector3, main_dir: Vector3, segParams: SegParam[], min_thick: number, max_thick: number);
     /**
      *  Compute projection (used in other functions)
      *  @param p Point to proj
@@ -52,14 +52,11 @@ export declare class AreaScalisTri extends Area {
      *
      *  @protected
      */
-    protected proj_computation(p: Vector3, segParams: any): void;
+    protected proj_computation(p: Vector3, segParams: SegParam): void;
     /**
      * @link Area.sphereIntersect for a complete description
      * @todo Check the Maths (Ask Cedric Zanni?)
-     * @param sphere
-     * @
-
-return true if the sphere and the area intersect
+     * @return true if the sphere and the area intersect
      */
     sphereIntersect(sphere: AreaSphereParam): boolean;
     /**
@@ -125,7 +122,6 @@ return true if the sphere and the area intersect
     getRawAcc(sphere: AreaSphereParam): number;
     /**
      * @link Area.getMinAcc
-     * @return number
      */
     getMinAcc(): number;
     /**

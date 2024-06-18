@@ -4,7 +4,7 @@ import { Node } from "./Node";
 import { Material } from "./Material";
 
 import type { ValueResultType, Element } from './Element';
-import type { NodeJSON } from './Node';
+import type { NodeJSON, ScaleNodeType } from './Node';
 
 type ScaleNodeJSON = {
   scale_x: number;
@@ -20,12 +20,12 @@ type ScaleNodeJSON = {
  *  @extends Node
  */
 export class ScaleNode extends Node {
-    _scale: Vector3;
-    tmp_res: ValueResultType;
-    tmp_g: Vector3;
-    tmp_m: Material;
+    _scale: Vector3 = new Vector3(1, 1, 1);
+    tmp_res: ValueResultType = { v: 0, g: null, m: null };
+    tmp_g: Vector3 = new Vector3();
+    tmp_m: Material = new Material();
 
-    static override type = "ScaleNode";
+    static override type: ScaleNodeType = "ScaleNode";
 
     /**
     *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
@@ -40,14 +40,6 @@ export class ScaleNode extends Node {
                 self.addChild(c);
             });
         }
-
-        // temp consts to speed up evaluation by avoiding allocations
-        this.tmp_res = { v: 0, g: null, m: null };
-        this.tmp_g = new Vector3();
-        this.tmp_m = new Material();
-
-        this._scale = new Vector3(1, 1, 1);
-
     }
 
 
@@ -95,7 +87,7 @@ export class ScaleNode extends Node {
     /**
      * @link Node.getType
      */
-    override getType(): string {
+    override getType(): ScaleNodeType {
         return ScaleNode.type;
     }
 
@@ -208,4 +200,4 @@ export class ScaleNode extends Node {
     };
 }
 
-Types.register(ScaleNode.type, {fromJSON: ScaleNode.fromJSON});
+Types.register(ScaleNode.type, ScaleNode);

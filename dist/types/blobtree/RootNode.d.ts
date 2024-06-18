@@ -1,7 +1,7 @@
 import { Box3, Ray, Vector3 } from "three";
 import { RicciNode } from "./RicciNode";
 import type { Element } from './Element';
-import type { Node } from './Node';
+import type { Node, RootNodeType } from './Node';
 import type { RicciNodeJSON } from './RicciNode';
 type RootNodeJSON = {
     iso: number;
@@ -21,13 +21,13 @@ export declare class RootNode extends RicciNode {
     iso_value: number;
     trimmed: Element[];
     trim_parents: Node[];
-    static type: string;
+    static type: RootNodeType;
     static fromJSON(json: RootNodeJSON): RootNode;
     constructor();
     /**
      * @link Node.getType
      */
-    getType(): string;
+    getType(): RootNodeType;
     /**
      * @link RicciNode.toJSON
      */

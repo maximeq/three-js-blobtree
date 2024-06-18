@@ -1,6 +1,6 @@
 import { Vector3, Box3 } from "three"
 import { Types } from "../Types.js";
-import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive.js";
+import { SDFPrimitive, type SDFPrimitiveJSON, type SDFSphereType } from "./SDFPrimitive.js";
 import { AreaSphere } from "../areas/AreaSphere.js";
 import type { ValueResultType } from "../Element.js";
 
@@ -8,7 +8,7 @@ export type SDFSphereJSON = { p: { x: number, y: number, z: number }, r: number 
 
 export class SDFSphere extends SDFPrimitive {
 
-    static override type = "SDFSphere";
+    static override type: SDFSphereType = "SDFSphere";
 
     static override fromJSON(json: SDFSphereJSON): SDFSphere {
         return new SDFSphere(new Vector3(json.p.x, json.p.y, json.p.z), json.r);
@@ -28,7 +28,7 @@ export class SDFSphere extends SDFPrimitive {
         this.r = r;
     }
 
-    override getType(): string {
+    override getType(): SDFSphereType {
         return SDFSphere.type;
     };
 

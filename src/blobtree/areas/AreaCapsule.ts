@@ -125,7 +125,6 @@ export class AreaCapsule extends Area {
 
     /**
      * @link Area.contains for a complete description
-     * @param p
      */
     contains(p: Vector3): boolean {
         this.proj_computation(p);

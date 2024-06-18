@@ -1,7 +1,7 @@
 import { Box3, Vector3 } from "three";
 import { Types } from "../Types";
 import { Material } from "../Material";
-import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType } from "./ScalisPrimitive";
+import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType, type ScalisPointType } from "./ScalisPrimitive";
 import { ScalisVertex } from "./ScalisVertex";
 import { ScalisMath } from "./ScalisMath";
 import { AreaSphere } from "../areas/AreaSphere";
@@ -12,9 +12,8 @@ import type { ValueResultType } from "../Element";
 // const AreaScalisPoint = require("../areas/deprecated/AreaScalisPoint");
 
 export type ScalisPointJSON = { density: number } & ScalisPrimitiveJSON;
-
 export class ScalisPoint extends ScalisPrimitive {
-    static override type = "ScalisPoint";
+    static override type: ScalisPointType = "ScalisPoint";
 
     static override fromJSON(json: ScalisPointJSON): ScalisPoint {
         const v = ScalisVertex.fromJSON(json.v[0]);
@@ -47,7 +46,7 @@ export class ScalisPoint extends ScalisPrimitive {
         this.materials.push(mat);
     }
 
-    override getType(): string {
+    override getType(): ScalisPointType {
         return ScalisPoint.type;
     }
 
@@ -165,4 +164,4 @@ export class ScalisPoint extends ScalisPrimitive {
     }
 }
 
-Types.register(ScalisPoint.type,  {fromJSON: ScalisPoint.fromJSON});
+Types.register(ScalisPoint.type, ScalisPoint);

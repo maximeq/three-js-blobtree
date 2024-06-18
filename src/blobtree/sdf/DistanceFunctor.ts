@@ -2,11 +2,14 @@ import { Types } from "../Types";
 
 export type DistanceFunctorJSON = { type: string };
 
+export type Poly6DistanceFunctorType = "Poly6DistanceFunctor";
+type DistanceFunctorType = "DistanceFunctor" | Poly6DistanceFunctorType;
+
 /**
  *  A superclass for Node and Primitive in the blobtree.
  */
 export abstract class DistanceFunctor {
-    static type = "DistanceFunctor";
+    static type: DistanceFunctorType = "DistanceFunctor";
 
     /**
      *  @abstract
@@ -19,7 +22,7 @@ export abstract class DistanceFunctor {
     /**
      *  @return Type of the element
      */
-    getType(): string {
+    getType(): DistanceFunctorType {
         return DistanceFunctor.type;
     }
 

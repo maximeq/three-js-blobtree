@@ -1,9 +1,10 @@
 import { Box3, Vector3 } from "three";
 import { Types } from "./Types";
-import type { Node } from "./Node";
+import type { Node, NodeType } from "./Node";
 import type { Area } from "./areas";
-import type { Primitive } from "./Primitive";
+import type { Primitive, PrimitiveType } from "./Primitive";
 import type { Material } from "./Material";
+import type { SDFPrimitiveType } from "./sdf/SDFPrimitive";
 
 /**   
  * Computed values will be stored here. Each values should exist and be allocated already.              
@@ -21,6 +22,8 @@ export type ValueResultType = {
     stepOrtho?: number,
 };
 
+type ElementType = "Element" | NodeType | PrimitiveType | SDFPrimitiveType;
+
 export type ElementJSON = { type: string }
 
 let elementIds = 0;
@@ -32,7 +35,7 @@ let elementIds = 0;
  */
 export abstract class Element {
 
-    static type = "Element";
+    static type: ElementType = "Element";
 
     static fromJSON(_json: ElementJSON) {
         throw new Error("Element.fromJSON should never be called as Element is abstract.");
@@ -74,7 +77,7 @@ export abstract class Element {
     /**
      *  @return Type of the element
      */
-    getType(): string {
+    getType(): ElementType {
         return Element.type;
     }
 
@@ -237,5 +240,5 @@ export abstract class Element {
 
 };
 
-Types.register(Element.type,  {fromJSON: Element.fromJSON});
+Types.register(Element.type,  Element);
 

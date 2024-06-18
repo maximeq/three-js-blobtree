@@ -1,5 +1,5 @@
 import { Vector3, Box3 } from "three";
-import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive";
+import { SDFPrimitive, type SDFPrimitiveJSON, type SDFCapsuleType } from "./SDFPrimitive";
 import { AreaCapsule } from "../areas/AreaCapsule";
 import type { ValueResultType } from "../Element";
 export type SDFCapsuleJSON = {
@@ -24,7 +24,7 @@ export type SDFCapsuleJSON = {
  *  @extends SDFPrimitive
  */
 export declare class SDFCapsule extends SDFPrimitive {
-    static type: string;
+    static type: SDFCapsuleType;
     fromJSON(json: SDFCapsuleJSON): SDFCapsule;
     p1: Vector3;
     p2: Vector3;
@@ -44,7 +44,7 @@ export declare class SDFCapsule extends SDFPrimitive {
     /**
      *  @return Type of the element
      */
-    getType(): string;
+    getType(): SDFCapsuleType;
     toJSON(): SDFCapsuleJSON;
     /**
      *  @param r1 The new radius at p1

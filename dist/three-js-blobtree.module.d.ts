@@ -1,5 +1,5 @@
 import * as three from 'three';
-import { Vector3, Color, Box3, Ray, Matrix4, Line3, BufferGeometry, Vector2, Box2 } from 'three';
+import { Vector3, Color, Box3, Line3, Ray, Matrix4, BufferGeometry, Vector2, Box2 } from 'three';
 
 type AreaSphereParam$2 = {
     radius: number;
@@ -147,7 +147,6 @@ declare class AreaCapsule extends Area {
     sphereIntersect(sphere: AreaSphereParam$1): boolean;
     /**
      * @link Area.contains for a complete description
-     * @param p
      */
     contains(p: Vector3): boolean;
     /**
@@ -329,9 +328,7 @@ declare class Material {
     emissive: Color;
     static defaultMaterial: Material;
     /**
-     *  Compare arrays of materials.
-     *
-     *  @deprecated
+     *  Compare arrays of materials
      *
      *  @param {Array.<Material>} arr1
      *  @param {Array.<Material>} arr2
@@ -340,6 +337,7 @@ declare class Material {
      *  @param {Array.<Material>=} arr5
      *
      *  @return true if and only if all arguments are arrays of the same length and containing the same material values.
+     *  @deprecated
      */
     static areEqualsArrays(arr1: Material[]): boolean;
     static fromJSON(json: MaterialJSON): Material;
@@ -365,20 +363,20 @@ declare class Material {
     };
     /**
      *  Return a clone of the material
-     *  @return {!Material} The new material
+     *  @return The new material
      */
     clone(): Material;
     /**
      *  Copy the given material parameters
-     *  @param {!Material} mat Material to be copied
+     *  @param mat Material to be copied
      */
     copy(mat: Material): void;
     /**
      *  @deprecated Use setParams instead
      *  Set Material parameters at once. DEPRECATED. Use setParams
-     *  @param {Color!} c Color
-     *  @param {number!} r roughness
-     *  @param {number!} m Metalness
+     *  @param  c Color
+     *  @param r roughness
+     *  @param m Metalness
      */
     set(c: Color, r: number, m: number): void;
     /**
@@ -393,7 +391,7 @@ declare class Material {
     setParams(params: MaterialParams): void;
     getColor(): Color;
     getRoughness(): number;
-    getMetalness: (this: Material) => number;
+    getMetalness(): number;
     getEmissive(): Color;
     equals(m: Material): boolean;
     /**
@@ -426,319 +424,83 @@ declare class Material {
     weightedMean(m_arr: Material[], v_arr: (number[] | Float32Array), n?: number): this;
 }
 
-type PrimitiveJSON = {
-    materials: MaterialJSON[];
-} & ElementJSON;
-/**
- *  Represent a blobtree primitive.
- *
- *  @constructor
- *  @extends {Element}
- */
-declare abstract class Primitive extends Element {
-    static type: string;
-    static fromJSON(_json: PrimitiveJSON): void;
-    materials: Material[];
-    constructor();
-    toJSON(): PrimitiveJSON;
+declare const ScalisMath: {
+    KS: number;
+    KIS: number;
+    KS2: number;
+    KIS2: number;
     /**
-     *  @param  mats Array of materials to set. they will be copied to the primitive materials
+     *  Compact Polynomial of degree 6 evaluation function
+     *  @param r Radius (ie distance)
      */
-    setMaterials(mats: Material[]): void;
+    Poly6Eval: (r: number) => number;
     /**
-     *  @return Current primitive materials
+     *  Compact Polynomial of degree 6 evaluation function from a squared radius.
+     *  (avoid square roots in some cases)
+     *  @param r2 Radius squared (ie distance squared)
      */
-    getMaterials(): Material[];
+    Poly6EvalSq: (r2: number) => number;
     /**
-     * @link Element.computeAABB for a complete description
+     *  Compute the iso value at a given distance for a given polynomial degree
+     *  and scale in 0 dimension (point)
+     *
+     *  @param degree  Polynomial degree of the kernel
+     *  @param scale   Kernel scale
+     *  @param dist    Distance
+     *  @return The iso value at a given distance for a given polynomial degree and scale
      */
-    computeAABB(): void;
+    GetIsoValueAtDistanceGeom0D: (degree: number, scale: number, dist: number) => number;
     /**
-     *  @abstract
-     *  Destroy the current primitive and remove it from the blobtree (basically
-     *  clean up the links between blobtree elements).
+     * Normalization Factor for polynomial 4 in 0 dimension
+     * @const
      */
-    destroy(): void;
+    Poly4NF0D: number;
     /**
-     * @abstract
+     * Normalization Factor for polynomial 6 in 0 dimension
+     * @const
      */
-    getAreas(): {
-        aabb: THREE.Box3;
-        bv: Area;
-        obj: Primitive;
-    }[];
+    Poly6NF0D: number;
     /**
-     * @abstract
-     * Compute constiables to help with value computation.
+     *  Compute the iso value at a given distance for a given polynomial degree
+     *  and scale in 1 dimension
+     *
+     *  @param degree  Polynomial degree of the kernel
+     *  @param scale   Kernel scale
+     *  @param dist    Distance
+     *  @return The iso value at a given distance for a given polynomial degree and scale
      */
-    abstract computeHelpVariables(): void;
+    GetIsoValueAtDistanceGeom1D: (degree: number, scale: number, dist: number) => number;
     /**
-     * @abstract
-     * Compute constiables to help with value computation.
-     * @param cls The class to count. Primitives have no children so no complexty here.
+     * Normalization Factor for polynomial 4 in 1 dimension
+     * @const
      */
-    count(cls: Function): 1 | 0;
-}
-
-type ScalisPrimitiveVolType = "dist" | "convol";
-type ScalisPrimitiveJSON = {
-    v: Array<ScalisVertexJSON>;
-    volType: ScalisPrimitiveVolType;
-} & PrimitiveJSON;
-/**
- *  Represent an implicit primitive respecting the SCALIS model developed by Cedric Zanni
- *
- *  @constructor
- *  @extends {Primitive}
- */
-declare abstract class ScalisPrimitive extends Primitive {
-    static type: string;
-    static DIST: "dist";
-    static CONVOL: "convol";
-    volType: ScalisPrimitiveVolType;
-    v: ScalisVertex[];
-    constructor();
+    Poly4NF1D: number;
     /**
-     *  @return Type of the element
+     * Normalization Factor for polynomial 6 in 1 dimension
+     * @const
      */
-    getType(): string;
+    Poly6NF1D: number;
     /**
-     *  @return {ScalisPrimitiveJSON}
+     *  Compute the iso value at a given distance for a given polynomial degree
+     *  and scale in 2 dimensions
+     *
+     *  @param degree  Polynomial degree of the kernel
+     *  @param scale   Kernel scale
+     *  @param dist    Distance
+     *  @return The iso value at a given distance for a given polynomial degree and scale
      */
-    toJSON(): ScalisPrimitiveJSON;
+    GetIsoValueAtDistanceGeom2D: (degree: number, scale: number, dist: number) => number;
     /**
-     *  @abstract Specify if the voltype can be changed
-     *  @return True if and only if the VolType can be changed.
+     * Normalization Factor for polynomial 4 in 2 dimension
+     * @const
      */
-    mutableVolType(): boolean;
+    Poly4NF2D: number;
     /**
-     *  @param vt New VolType to set (Only for SCALIS primitives)
+     * Normalization Factor for polynomial 6 in 2 dimension
+     * @const
      */
-    setVolType(vt: "dist" | "convol"): void;
-    /**
-     *  @return  Current volType
-     */
-    getVolType(): ScalisPrimitiveVolType;
-    /**
-     * @link Element.computeAABB for a complete description
-     */
-    computeAABB(): void;
-}
-
-type ScalisVertexJSON = {
-    position: {
-        x: number;
-        y: number;
-        z: number;
-    };
-    thickness: number;
+    Poly6NF2D: number;
 };
-/**
- *  A scalis ScalisVertex. Basically a point and a wanted thickness.
- */
-declare class ScalisVertex {
-    static fromJSON(json: ScalisVertexJSON): ScalisVertex;
-    pos: Vector3;
-    thickness: number;
-    id: number;
-    prim: ScalisPrimitive | null;
-    aabb: Box3;
-    valid_aabb: boolean;
-    /**
-     *  @param  pos A position in space, as a Vector3
-     *  @param  thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
-     */
-    constructor(pos: Vector3, thickness: number);
-    /**
-     *  Set an internal pointer to the primitive using this vertex.
-     *  Should be called from primitive constructor.
-     * @param prim
-     */
-    setPrimitive(prim: ScalisPrimitive): void;
-    toJSON(): ScalisVertexJSON;
-    /**
-     *  Set a new position.
-     *  @param pos A position in space, as a Vector3
-     */
-    setPos(pos: Vector3): void;
-    /**
-     *  Set a new thickness
-     *  @param thickness The new thickness
-     */
-    setThickness(thickness: number): void;
-    /**
-     *  Set a both position and thickness
-     *  @param thickness The new thickness
-     *  @param pos A position in space, as a Vector3
-     */
-    setAll(pos: Vector3, thickness: number): void;
-    /**
-     *  Get the current position
-     *  @return Current position, as a Vector3
-     */
-    getPos(): Vector3;
-    /**
-     *  Get the current Thickness
-     *  @return {number} Current Thickness
-     */
-    getThickness(): number;
-    /**
-     *  Get the current AxisAlignedBoundingBox
-     *  @return The AABB of this vertex.
-     */
-    getAABB(): Box3;
-    /**
-     *  Compute the current AABB.
-     *  @protected
-     */
-    computeAABB(): void;
-    /**
-     *  Check equality between 2 vertices
-     */
-    equals(other: ScalisVertex): boolean;
-}
-
-/**
- *  Bounding area for the triangle.
- *  It is the same for DIST and CONVOL primitives since the support of the convolution
- *  kernel is the same as the support for the distance field.
- *
- *  The Area must be able to return accuracy needed in a given zone (Sphere for now,
- *  since box intersections with such a complex shape are not trivial), and also
- *  propose an intersection test.
- *
- *  @extends {Area}
- */
-declare class AreaScalisTri extends Area {
-    tmpVect: Vector3;
-    min_thick: number;
-    max_thick: number;
-    v: [ScalisVertex, ScalisVertex, ScalisVertex];
-    p0p1: Vector3;
-    p2p0: Vector3;
-    unit_normal: Vector3;
-    main_dir: Vector3;
-    equal_weights: boolean;
-    segParams: any;
-    segAttr: {
-        p0_to_p: Vector3;
-        p0_to_p_sqrnorm: number;
-        x_p_2D: number;
-        y_p_2D: number;
-        y_p_2DSq: number;
-        p_proj_x: number;
-    };
-    planeParams: {
-        orig: Vector3;
-        n: Vector3;
-    }[];
-    segAreas: AreaScalisSeg[];
-    /**
-     *  @param v Array or vertices
-     *  @param unit_normal Normal to the plane made by the 3 vertices, as a Vector3
-     *  @param main_dir Main direction depending on thicknesses
-     *  @param min_thick Minimum thickness in the Triangle
-     *  @param max_thick Maximum thickness in the triangle
-     */
-    constructor(v: [ScalisVertex, ScalisVertex, ScalisVertex], unit_normal: Vector3, main_dir: Vector3, segParams: any, min_thick: number, max_thick: number);
-    /**
-     *  Compute projection (used in other functions)
-     *  @param p Point to proj
-     *  @param segParams A seg param object
-     *
-     *  @protected
-     */
-    protected proj_computation(p: Vector3, segParams: any): void;
-    /**
-     * @link Area.sphereIntersect for a complete description
-     * @todo Check the Maths (Ask Cedric Zanni?)
-     * @param sphere
-     * @
-
-return true if the sphere and the area intersect
-     */
-    sphereIntersect(sphere: AreaSphereParam$2): boolean;
-    /**
-     *  Adapted from the segment sphere intersection. Could be factorised!
-     *  @return true if the sphere and the area intersect
-     *
-     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param segParams A segParams object containing data for a segment
-     *  @param KS Kernel Scale, ie ScalisMath.KS (Why is it a parameter, its global!?)
-     *
-     */
-    sphereIntersectSegment(sphere: AreaSphereParam$2, segParams: any, KS: number): boolean;
-    /**
-     * @link Area.contains for a complete description
-     * @param p
-     */
-    contains: (this: AreaScalisTri, p: Vector3) => boolean;
-    /**
-     *  Copied from AreaSeg.getAcc
-     *
-     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param segParams A segParams object containing data for a segment area
-     *
-     *  @return Object containing intersect (boolean) and currAcc (number) attributes
-     */
-    getAccSegment(sphere: AreaSphereParam$2, segParams: any): {
-        intersect: boolean;
-        currAcc: number;
-    };
-    /**
-     *  Get accuracy for the inner triangle (do not consider segment edges)
-     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     */
-    getAccTri(sphere: AreaSphereParam$2): number;
-    /**
-     *  @link Area.getAcc for a complete description
-     *
-     *  @return the accuracy needed in the intersection zone
-     *
-     *  @param sphere  A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param factor  the ratio to determine the wanted accuracy.
-     *
-     *  @todo Check the Maths
-     */
-    getAcc(sphere: AreaSphereParam$2, factor: number): number;
-    /**
-     *  @link Area.getNiceAcc for a complete description
-     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return The Nice accuracy needed in the intersection zone
-     */
-    getNiceAcc(sphere: AreaSphereParam$2): number;
-    /**
-     *  @link Area.getNiceAcc for a complete description
-     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return The Curr accuracy needed in the intersection zone
-     */
-    getCurrAcc(sphere: AreaSphereParam$2): number;
-    /**
-     *  @link Area.getRawAcc for a complete description
-     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return The raw accuracy needed in the intersection zone
-     */
-    getRawAcc(sphere: AreaSphereParam$2): number;
-    /**
-     * @link Area.getMinAcc
-     * @return number
-     */
-    getMinAcc(): number;
-    /**
-     * @link Area.getMinRawAcc
-     * @return number
-     */
-    getMinRawAcc: () => number;
-    /**
-     *  Return the minimum accuracy required at some point on the given axis.
-     *  The returned accuracy is the one you would need when stepping in the axis
-     *  direction when you are on the axis at coordinate t.
-     *  @param axis x, y or z
-     *  @param t Coordinate on the axis
-     *  @return The step you can safely do in axis direction
-     */
-    getAxisProjectionMinStep(axis: Coordinate, t: number): number;
-}
 
 /**
  *  AreaSphere is a general representation of a spherical area.
@@ -819,735 +581,11 @@ declare class AreaSphere extends Area {
     getAxisProjectionMinStep(axis: Coordinate, t: number): number;
 }
 
-/**
- * Computed values will be stored here. Each values should exist and be allocated already.
- * @property v Value, must be defined
- * @property m Material, must be allocated and defined if wanted
- * @property g Gradient, must be allocated and defined if wanted
- * @property step ??? Not sure, probably a "safe" step for raymarching
- * @property stepOrtho ??? Same as step but in orthogonal direction ?
- */
-type ValueResultType = {
-    v: number;
-    m?: Material | null;
-    g?: Vector3 | null;
-    step?: number;
-    stepOrtho?: number;
-};
-type ElementJSON = {
-    type: string;
-};
-/**
- *  A superclass for Node and Primitive in the blobtree.
- *  @class
- *  @constructor
- */
-declare abstract class Element {
-    static type: string;
-    static fromJSON(_json: ElementJSON): void;
-    id: number;
-    aabb: Box3;
-    valid_aabb: boolean;
-    parentNode: Node | null;
-    constructor();
-    /**
-     *  Return a Javscript Object respecting JSON convention.
-     *  All classes must defined it.
-     */
-    toJSON(): ElementJSON;
-    /**
-     *  Clone the object.
-     */
-    clone(): Element;
-    /**
-     *  @return The parent node of this primitive.
-     */
-    getParentNode(): Node | null;
-    /**
-     *  @return Type of the element
-     */
-    getType(): string;
-    /**
-     *  Perform precomputation that will help to reduce future processing time,
-     *  especially on calls to value.
-     *  @protected
-     */
-    computeHelpVariables(): void;
-    /**
-     *  @abstract
-     *  Compute the Axis Aligned Bounding Box (AABB) for the current primitive.
-     *  By default, the AABB returned is the unionns of all vertices AABB (This is
-     *  good for almost all basic primitives).
-     */
-    abstract computeAABB(): void;
-    /**
-     *  @return The AABB of this Element (primitive or node). WARNING : call
-     *  isValidAABB before to ensure the current AABB does correspond to the primitive
-     *  settings.
-     */
-    getAABB(): Box3;
-    /**
-     *  @return True if the current aabb is valid, ie it does
-     *  correspond to the internal primitive parameters.
-     */
-    isValidAABB(): boolean;
-    /**
-     *  Invalid the bounding boxes recursively up to the root
-     */
-    invalidAABB(): void;
-    /**
-     *  Note : This function was made for Node to recursively invalidate
-     *  children AABB. Default is to invalidate only this AABB.
-     */
-    invalidAll(): void;
-    /**
-     *  @abstract
-     *  Prepare the element for a call to value.
-     *  Important note: For now, a primitive is considered prepared for eval if and only
-     *                  if its bounding box is valid (valid_aabb is true).
-     */
-    abstract prepareForEval(): void;
-    /**
-     *  @abstract
-     *  Compute the value and/or gradient and/or material
-     *  of the element at position p in space. return computations in res (see below)
-     *
-     *  @param p Point where we want to evaluate the primitive field
-     */
-    abstract value(p: Vector3, res: ValueResultType): void;
-    /**
-     * @param p The point where we want the numerical gradient
-     * @param res The resulting gradient
-     * @param epsilon The step value for the numerical evaluation
-     */
-    numericalGradient: (this: Element, p: Vector3, res: Vector3, epsilon: number) => void;
-    /**
-     *  @abstract
-     *  Get the Area object.
-     *  Area objects do provide methods useful when rasterizing, raytracing or polygonizing
-     *  the area (intersections with other areas, minimum level of detail needed to
-     *  capture the feature nicely, etc etc...).
-     *  @returns The Areas object corresponding to the node/primitive, in an array
-     */
-    getAreas(): {
-        aabb: Box3;
-        bv: Area;
-        obj: Primitive;
-    }[];
-    /**
-     *  @abstract
-     *  This function is called when a point is outside of the potential influence of a primitive/node.
-     *  @param  _p
-     *  @return  The next step length to do with respect to this primitive/node
-     */
-    distanceTo(_p: Vector3): number;
-    /**
-     *  @abstract
-     *  This function is called when a point is within the potential influence of a primitive/node.
-     *  @return The next step length to do with respect to this primitive/node.
-     */
-    abstract heuristicStepWithin(): number;
-    /**
-     *  Trim the tree to keep only nodes influencing a given bounding box.
-     *  The tree must be prepared for eval for this process to be working.
-     *  Default behaviour is doing nothing, leaves cannot be sub-trimmed, only nodes.
-     *  Note : only the root can untrim
-     *
-     *  @param _aabb
-     *  @param _trimmed Array of trimmed Elements
-     *  @param _parents Array of fathers from which each trimmed element has been removed.
-     */
-    trim(_aabb: Box3, _trimmed: Element[], _parents: Node[]): void;
-    /**
-     *  count the number of elements of class cls in this node and subnodes
-     *  @param  _cls the class of the elements we want to count
-     *  @return  The number of element of class cls
-     */
-    count(_cls: Function): number;
-    abstract destroy(): void;
-}
-
-type NodeJSON = {
-    children: ElementJSON[];
-} & ElementJSON;
-/**
- *  This class implements an abstract Node class for implicit blobtree.
- *  @constructor
- *  @extends {Element}
- */
-declare abstract class Node extends Element {
-    children: Element[];
-    static type: string;
-    static fromJSON(_json: NodeJSON): Node;
-    constructor();
-    getType(): string;
-    toJSON(): NodeJSON;
-    /**
-     *  Clone current node and itss hierarchy
-     */
-    clone(): this;
-    /**
-     *  @link Element.prepareForEval
-     */
-    abstract prepareForEval(): void;
-    /**
-     *  Invalid the bounding boxes recursively down for all children
-     */
-    invalidAll(): void;
-    /**
-     *  Destroy the node and its children. The node is removed from the blobtree
-     *  (basically clean up the links between blobtree elements).
-     */
-    destroy(): void;
-    /**
-     *  Only works with nary nodes, otherwise a set function would be more appropriate.
-     *  -> TODO : check that if we have something else than n-ary nodes one day...
-     *  If c already belongs to the tree, it is removed from its current parent
-     *  children list before anything (ie it is "moved").
-     *
-     *  @param c The child to add.
-     */
-    addChild(c: Element): this;
-    /**
-     *  Only works with n-ary nodes, otherwise order matters and we therefore
-     *  have to set "null" and node cannot be evaluated.
-     *  -> TODO : check that if we have something else than n-ary nodes one day...
-     *  WARNING:
-     *      Should only be called when a Primitive is deleted.
-     *      Otherwise :
-     *          To move a node to another parent : use addChild.
-     *  @param c The child to remove.
-     */
-    removeChild(c: Element): void;
-    /**
-     * @link Element.computeAABB for a complete description
-     */
-    computeAABB(): void;
-    /**
-     *  @link Element.getAreas for a complete description
-     *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
-     */
-    getAreas(): {
-        aabb: Box3;
-        bv: Area;
-        obj: Primitive;
-    }[];
-    /**
-     * @link Element.distanceTo for a complete description
-     */
-    distanceTo(p: Vector3): number;
-    /**
-     * @returns
-     */
-    heuristicStepWithin(): number;
-    /**
-     *  @link Element.trim for a complete description.
-     */
-    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
-    /**
-     *  @link Element.count for a complete description.
-     */
-    count(cls: Function): number;
-}
-
-type DifferenceNodeJSON = {
-    alpha: number;
-} & NodeJSON;
-/**
- *  This class implement a difference blending node.
- *  The scalar field of the second child of this node will be substracted to the first node field.
- *  The result is clamped to 0 to always keep a positive field value.
- *  @constructor
- *  @extends Node
- */
-declare class DifferenceNode extends Node {
-    alpha: number;
-    clamped: number;
-    tmp_res0: ValueResultType;
-    tmp_res1: ValueResultType;
-    g0: Vector3;
-    m0: Material;
-    g1: Vector3;
-    m1: Material;
-    tmp_v_arr: Float32Array;
-    tmp_m_arr: [Material | null, Material | null];
-    static type: string;
-    static fromJSON(json: DifferenceNodeJSON): DifferenceNode;
-    /**
-     *
-     *  @param node0 The first node
-     *  @param node1 The second node, its value will be substracted to the node 0 value.
-     *  @param alpha Power of the second field : the greater alpha the sharper the difference. Default is 1, must be > 1.
-     */
-    constructor(node0: Node, node1: Node, alpha: number);
-    getAlpha(): number;
-    setAlpha(alpha: number): void;
-    toJSON(): DifferenceNodeJSON;
-    /**
-     * @link Node.prepareForEval for a complete description
-     **/
-    prepareForEval(): void;
-    /**
-     *  Compute the value and/or gradient and/or material
-     *  of the element at position p in space. return computations in res (see below)
-     *
-     *  @param p Point where we want to evaluate the primitive field
-     *  @param res Computed values will be stored here. Each values should exist and
-     *                       be allocated already.
-     *  @param res.v Value, must be defined
-     *  @param res.m Material, must be allocated and defined if wanted
-     *  @param res.g Gradient, must be allocated and defined if wanted
-     *  @param res.step The next step we can safely walk without missing the iso (0). Mostly used for convergence function or ray marching.
-     *  @param res.stepOrtho
-     */
-    value(p: Vector3, res: ValueResultType): void;
-    /**
-     *  @link Element.trim for a complete description.
-     *
-     *  Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
-     */
-    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
-}
-
-type MaxNodeJSON = NodeJSON;
-/**
- *  This class implement a Max node.
- *  It will return the maximum value of the field of each primitive.
- *  Return 0 in region were no primitive is present.
- *  @class MaxNode
- *  @extends Node
- */
-declare class MaxNode extends Node {
-    tmp_res: ValueResultType;
-    tmp_g: Vector3;
-    tmp_m: Material;
-    static type: string;
-    static fromJSON(json: MaxNodeJSON): MaxNode;
-    /**
-     *  @constructor
-     *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
-     */
-    constructor(children?: Node[]);
-    getType(): string;
-    /**
-     * @link Node.prepareForEval for a complete description
-     **/
-    prepareForEval(): void;
-    /**
-     *  @link Element.value for a complete description
-     */
-    value(p: Vector3, res: ValueResultType): void;
-}
-
-type MinNodeJSON = NodeJSON;
-/**
- *  This class implement a Min node.
- *  It will return the minimum value of the field of each primitive.
- *  Return 0 in regioin were no primitive is present.
- *  @constructor
- *  @extends Node
- */
-declare class MinNode extends Node {
-    tmp_res: ValueResultType;
-    tmp_g: Vector3;
-    tmp_m: Material;
-    static type: string;
-    static fromJSON(json: MinNodeJSON): MinNode;
-    /**
-    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
-    */
-    constructor(children?: Node[]);
-    getType(): string;
-    /**
-     *  @link Element.prepareForEval for a complete description
-     */
-    prepareForEval(): void;
-    /**
-     *  @link Element.value for a complete description
-     */
-    value(p: Vector3, res: ValueResultType): void;
-    /**
-     *  @link Element.trim for a complete description.
-     */
-    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
-}
-
-type RicciNodeJSON = {
-    ricci_n: number;
-} & NodeJSON;
-/**
- *  This class implement a n-ary blend node which use a Ricci Blend.
- *  Ricci blend is : v = k-root( Sum(c.value^k) ) for all c in node children.
- *  Return 0 in regioin were no primitive is present.
- *  @constructor
- *  @extends Node
- */
-declare class RicciNode extends Node {
-    ricci_n: number;
-    tmp_v_arr: Float32Array;
-    tmp_m_arr: Material[];
-    tmp_res: ValueResultType;
-    tmp_g: Vector3;
-    tmp_m: Material;
-    static type: string;
-    /**
-     *  @param ricci_n The value for ricci
-     *  @param children The children to add to this node. Just a convenient parameter, you can do it manually using addChild
-     */
-    constructor(ricci_n: number, children?: Node[]);
-    /**
-     * @link Node.getType
-     */
-    getType(): string;
-    /**
-     * @link Node.toJSON
-     */
-    toJSON(): RicciNodeJSON;
-    /**
-     * @link Node.fromJSON
-     */
-    static fromJSON(json: RicciNodeJSON): RicciNode;
-    /**
-     * @link Node.prepareForEval
-     */
-    prepareForEval(): void;
-    /**
-     *  @link Element.value for a complete description
-     */
-    value(p: Vector3, res: ValueResultType): void;
-    setRicciN(n: number): void;
-    getRicciN(): number;
-}
-
-type RootNodeJSON = {
-    iso: number;
-} & RicciNodeJSON;
-interface IntersectionResult {
-    distance?: number;
-    point: Vector3;
-    g?: Vector3;
-}
-/**
- *  The root of any implicit blobtree. Does behave computationaly like a RicciNode with n = 64.
- *  The RootNode is the only node to be its own parent.
- *  @constructor
- *  @extends RicciNode
- */
-declare class RootNode extends RicciNode {
-    iso_value: number;
-    trimmed: Element[];
-    trim_parents: Node[];
-    static type: string;
-    static fromJSON(json: RootNodeJSON): RootNode;
-    constructor();
-    /**
-     * @link Node.getType
-     */
-    getType(): string;
-    /**
-     * @link RicciNode.toJSON
-     */
-    toJSON(): RootNodeJSON;
-    getIsoValue(): number;
-    setIsoValue(v: number): void;
-    /**
-     *  @return The neutral value of this tree, ie the value of the field in empty region of space.
-     *                   This is an API for external use and future development. For now it is hard set to 0.
-     */
-    getNeutralValue(): number;
-    /**
-     * @link Node.invalidAABB for a complete description
-     */
-    invalidAABB(): void;
-    /**
-     *  Basically perform a trim but keep track of trimmed elements.
-     *  This is usefull if you want to trim, then untrim, then trim, etc...
-     *  For example, this is very useful for evaluation optimization.
-     */
-    internalTrim(aabb: Box3): void;
-    /**
-     *  Wrapper for trim, will help programmers to make the difference between
-     *  internal and external trim.
-     *  @param trimmed Array of trimmed Elements
-     *  @param parents Array of fathers from which each trimmed element has been removed.
-     */
-    externalTrim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
-    /**
-     *  Reset the full blobtree
-     */
-    internalUntrim(): void;
-    /**
-     *  Reset the full blobtree given previous trimming data.
-     *  Note : don't forget to recall prepareForEval if you want to perform evaluation.
-     *  @param trimmed Array of trimmed Elements
-     *  @param parents Array of fathers from which each trimmed element has been removed.
-     */
-    untrim(trimmed: Element[], parents: Node[]): void;
-    /**
-     *  Tell if the blobtree is empty
-     *  @return true if blobtree is empty
-     */
-    isEmpty(): boolean;
-    intersectRayBlob: (this: RootNode, ray: Ray, res: IntersectionResult, maxDistance: number, _precision: number) => boolean;
-    /**
-     *  Kaiser function for some intersection and raycasting...
-     *  Undocumented.
-     *  TODO : check, it is probably an optimized intersection for blob intersection
-     *         in X, Y or Z directions.
-     */
-    intersectOrthoRayBlob: (this: RootNode, wOffset: number, hOffset: number, res: IntersectionResult[], dim: {
-        axis: {
-            x: boolean;
-            y: boolean;
-            z: boolean;
-        };
-        get: (v: Vector3) => number;
-        add: (v: Vector3, s: number) => void;
-        divide: (v: Vector3, s: number) => void;
-    }) => void;
-}
-
-type ScaleNodeJSON = {
-    scale_x: number;
-    scale_y: number;
-    scale_z: number;
-} & NodeJSON;
-/**
- *  This class implement a ScaleNode node.
- *  It will return the minimum value of the field of each primitive.
- *  Return 0 in regioin were no primitive is present.
- *  @constructor
- *  @extends Node
- */
-declare class ScaleNode extends Node {
-    _scale: Vector3;
-    tmp_res: ValueResultType;
-    tmp_g: Vector3;
-    tmp_m: Material;
-    static type: string;
-    /**
-    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
-    */
-    constructor(children?: Node[]);
-    /**
-    * @link Node.toJSON
-    */
-    toJSON(): ScaleNodeJSON;
-    /**
-     * @link Node.fromJSON
-     */
-    static fromJSON(json: ScaleNodeJSON): ScaleNode;
-    /**
-     * @link ScaleNode.setScale
-     */
-    setScale(scale: Vector3): void;
-    /**
-     * @link Node.getType
-     */
-    getType(): string;
-    /**
-     *  @link Element.prepareForEval for a complete description
-     */
-    prepareForEval(): void;
-    /**
-    * @link Element.computeAABB for a complete description
-    */
-    computeAABB(): void;
-    /**
-     *  @link Element.value for a complete description
-     */
-    value(p: Vector3, res: ValueResultType): void;
-    /**
-     *  @link Element.trim for a complete description.
-     */
-    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
-}
-
-type TwistNodeJSON = {
-    twist_amount: number;
-    axis_x: number;
-    axis_y: number;
-    axis_z: number;
-} & NodeJSON;
-/**
- *  This class implement a TwistNode node.
- *  It will return the minimum value of the field of each primitive.
- *  Return 0 in regioin were no primitive is present.
- *  @constructor
- *  @extends Node
- */
-declare class TwistNode extends Node {
-    _twist_amount: number;
-    _twist_axis: Vector3;
-    _twist_axis_mat: Matrix4;
-    _twist_axis_mat_inv: Matrix4;
-    tmp_res: ValueResultType;
-    tmp_g: Vector3;
-    tmp_m: Material;
-    static type: string;
-    /**
-    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
-    */
-    constructor(children?: Node[]);
-    /**
-    * @link Node.toJSON
-    * @returns {TwistNodeJSON}
-    */
-    toJSON(): TwistNodeJSON;
-    /**
-     *@link Node.fromJSON
-     *
-     * @param {TwistNodeJSON} json
-     * @returns {TwistNode}
-     */
-    static fromJSON(json: TwistNodeJSON): TwistNode;
-    setTwistAmount(amount: number): void;
-    setTwistAxis(axis: Vector3): void;
-    _computeTransforms(): void;
-    getType(): string;
-    /**
-     *  @link Element.prepareForEval for a complete description
-     */
-    prepareForEval(): void;
-    /**
-     *  @link Element.value for a complete description
-     */
-    value(p: Vector3, res: ValueResultType): void;
-    /**
-     *  @link Element.trim for a complete description.
-     */
-    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
-}
-
-type Types = {
-    types: {
-        [key: string]: {
-            fromJSON: Function;
-        };
-    };
-    register(name: string, cls: {
-        fromJSON: Function;
-    }): void;
-    fromJSON(json: {
-        type: string;
-        [key: string]: any;
-    }): any;
-};
-/**
- *  Keep track of all Types added to the Blobtree library.
- *  For now just a list of strings registered by the classes.
- */
-declare const Types: Types;
-
-/**
- * Accuracies Contains the accuracies needed in Areas. Can be changed when importing blobtree.js.
- * For classic segments and sphere, we setteled for a raw accuracy being proportional to
- * the radii. 1/3 of the radius is considered nice, 1 radius is considered raw.
- * For new primitives, feel free to create your own accuracies factors depending on the features.
- */
-declare const Accuracies: {
-    /**
-     * Factor for the nice accuracy needed to represent the features nicely
-     * @type {number}
-     */
-    nice: number;
-    /**
-     * Factor for the raw accuracy needed to represent the features roughly
-     * @type {number}
-     */
-    raw: number;
-    /**
-     * Current accuracy factor, should be between Accuracies.nice and Accuracies.raw.
-     * It will be the one used by rendering algorithms to decide to stop even if nice accuracy has not been reached.
-     * @type {number}
-     *
-     */
-    curr: number;
-};
-
-declare const ScalisMath: {
-    KS: number;
-    KIS: number;
-    KS2: number;
-    KIS2: number;
-    /**
-     *  Compact Polynomial of degree 6 evaluation function
-     *  @param r Radius (ie distance)
-     */
-    Poly6Eval: (r: number) => number;
-    /**
-     *  Compact Polynomial of degree 6 evaluation function from a squared radius.
-     *  (avoid square roots in some cases)
-     *  @param r2 Radius squared (ie distance squared)
-     */
-    Poly6EvalSq: (r2: number) => number;
-    /**
-     *  Compute the iso value at a given distance for a given polynomial degree
-     *  and scale in 0 dimension (point)
-     *
-     *  @param degree  Polynomial degree of the kernel
-     *  @param scale   Kernel scale
-     *  @param dist    Distance
-     *  @return The iso value at a given distance for a given polynomial degree and scale
-     */
-    GetIsoValueAtDistanceGeom0D: (degree: number, scale: number, dist: number) => number;
-    /**
-     * Normalization Factor for polynomial 4 in 0 dimension
-     * @const
-     */
-    Poly4NF0D: number;
-    /**
-     * Normalization Factor for polynomial 6 in 0 dimension
-     * @const
-     */
-    Poly6NF0D: number;
-    /**
-     *  Compute the iso value at a given distance for a given polynomial degree
-     *  and scale in 1 dimension
-     *
-     *  @param degree  Polynomial degree of the kernel
-     *  @param scale   Kernel scale
-     *  @param dist    Distance
-     *  @return The iso value at a given distance for a given polynomial degree and scale
-     */
-    GetIsoValueAtDistanceGeom1D: (degree: number, scale: number, dist: number) => number;
-    /**
-     * Normalization Factor for polynomial 4 in 1 dimension
-     * @const
-     */
-    Poly4NF1D: number;
-    /**
-     * Normalization Factor for polynomial 6 in 1 dimension
-     * @const
-     */
-    Poly6NF1D: number;
-    /**
-     *  Compute the iso value at a given distance for a given polynomial degree
-     *  and scale in 2 dimensions
-     *
-     *  @param degree  Polynomial degree of the kernel
-     *  @param scale   Kernel scale
-     *  @param dist    Distance
-     *  @return The iso value at a given distance for a given polynomial degree and scale
-     */
-    GetIsoValueAtDistanceGeom2D: (degree: number, scale: number, dist: number) => number;
-    /**
-     * Normalization Factor for polynomial 4 in 2 dimension
-     * @const
-     */
-    Poly4NF2D: number;
-    /**
-     * Normalization Factor for polynomial 6 in 2 dimension
-     * @const
-     */
-    Poly6NF2D: number;
-};
-
 type ScalisPointJSON = {
     density: number;
 } & ScalisPrimitiveJSON;
 declare class ScalisPoint extends ScalisPrimitive {
-    static type: string;
+    static type: ScalisPointType;
     static fromJSON(json: ScalisPointJSON): ScalisPoint;
     density: number;
     v_to_p: Vector3;
@@ -1563,7 +601,7 @@ declare class ScalisPoint extends ScalisPrimitive {
      * @param mat Material for the point
      */
     constructor(vertex: ScalisVertex, volType: ScalisPrimitiveVolType, density: number, mat: Material);
-    getType(): string;
+    getType(): ScalisPointType;
     toJSON(): ScalisPointJSON;
     /**
      * @param d New density to set
@@ -1616,7 +654,7 @@ type ScalisSegmentJSON = {
  *  @extends ScalisPrimitive
  */
 declare class ScalisSegment extends ScalisPrimitive {
-    static type: "ScalisSegment";
+    static type: ScalisSegmentType;
     static fromJSON(json: ScalisSegmentJSON): ScalisSegment;
     density: number;
     clipped_l1: number;
@@ -1657,7 +695,7 @@ declare class ScalisSegment extends ScalisPrimitive {
      *              Use [Material.defaultMaterial.clone(), Material.defaultMaterial.clone()] by default.
      */
     constructor(v0: ScalisVertex, v1: ScalisVertex, volType: ScalisPrimitiveVolType, density: number, mats: Material[]);
-    getType(): string;
+    getType(): ScalisSegmentType;
     toJSON(): ScalisSegmentJSON;
     mutableVolType(): boolean;
     /**
@@ -1768,7 +806,7 @@ type ScalisTriangleJSON = ScalisPrimitiveJSON;
  *  @extends ScalisPrimitive
  */
 declare class ScalisTriangle extends ScalisPrimitive {
-    static type: "ScalisTriangle";
+    static type: ScalisTriangleType;
     static fromJSON(json: ScalisTriangleJSON): ScalisTriangle;
     v: [ScalisVertex, ScalisVertex, ScalisVertex];
     min_thick: number;
@@ -1818,7 +856,7 @@ declare class ScalisTriangle extends ScalisPrimitive {
      *
      */
     constructor(v: [ScalisVertex, ScalisVertex, ScalisVertex], volType: ScalisPrimitiveVolType, density: number, mats: Material[]);
-    getType(): string;
+    getType(): ScalisTriangleType;
     toJSON(): ScalisTriangleJSON;
     prepareForEval(): void;
     getAreas(): {
@@ -1862,8 +900,7 @@ declare class ScalisTriangle extends ScalisPrimitive {
      *  @param  res {proj_to_p, weight_proj}
      *
      */
-    GenericSegmentComputation(point: Vector3, p1: Vector3, p1p2: Vector3, _length: number, // Unused parameter
-    sqr_length: number, weight_1: number, delta_weight: number, // = weight_2-weight_1
+    GenericSegmentComputation(point: Vector3, p1: Vector3, p1p2: Vector3, sqr_length: number, weight_1: number, delta_weight: number, // = weight_2-weight_1
     res: {
         proj_to_p: Vector3;
         weight_proj: number;
@@ -1959,11 +996,13 @@ declare class ScalisTriangle extends ScalisPrimitive {
 type DistanceFunctorJSON = {
     type: string;
 };
+type Poly6DistanceFunctorType = "Poly6DistanceFunctor";
+type DistanceFunctorType = "DistanceFunctor" | Poly6DistanceFunctorType;
 /**
  *  A superclass for Node and Primitive in the blobtree.
  */
 declare abstract class DistanceFunctor {
-    static type: string;
+    static type: DistanceFunctorType;
     /**
      *  @abstract
      *  @param json Json description of the object
@@ -1972,7 +1011,7 @@ declare abstract class DistanceFunctor {
     /**
      *  @return Type of the element
      */
-    getType(): string;
+    getType(): DistanceFunctorType;
     /**
      *  @abstract
      *  Return a Javscript Object respecting JSON convention and can be used to serialize the functor.
@@ -2011,7 +1050,7 @@ type Poly6DistanceFunctorJSON = {
  *  @constructor
  */
 declare class Poly6DistanceFunctor extends DistanceFunctor {
-    static type: string;
+    static type: Poly6DistanceFunctorType;
     scale: number;
     fromJSON(json: Poly6DistanceFunctorJSON): Poly6DistanceFunctor;
     /**
@@ -2019,12 +1058,12 @@ declare class Poly6DistanceFunctor extends DistanceFunctor {
      * At 0, its value is 1 with a zero derivative.
      * At 1, its value is 0 with a zero derivative.
      */
-    evalStandard(d: number): number;
+    static evalStandard(d: number): number;
     constructor(scale: number);
     /**
      *  @return Type of the element
      */
-    getType(): string;
+    getType(): Poly6DistanceFunctorType;
     /**
      *  @return Json description of this functor.
      */
@@ -2046,6 +1085,11 @@ declare class Poly6DistanceFunctor extends DistanceFunctor {
 }
 
 type SDFPrimitiveJSON = ElementJSON;
+type SDFPointType = "SDFPoint";
+type SDFCapsuleType = "SDFCapsule";
+type SDFSegmentType = "SDFSegment";
+type SDFSphereType = "SDFSphere";
+type SDFPrimitiveType = "SDFPrimitive" | SDFPointType | SDFCapsuleType | SDFSegmentType | SDFSphereType;
 /**
  *  This class implements an abstract primitive class for signed distance field.
  *  SDFPrimitive subclasses must define a scalar field being the distance to a geometry.
@@ -2053,12 +1097,12 @@ type SDFPrimitiveJSON = ElementJSON;
  *  @extends {Element}
  */
 declare abstract class SDFPrimitive extends Element {
-    static type: string;
+    static type: SDFPrimitiveType;
     constructor();
     /**
      * @return Type of the element
      */
-    getType(): string;
+    getType(): SDFPrimitiveType;
     /**
      * @link Element.computeAABB for a complete description.
      */
@@ -2095,6 +1139,7 @@ declare abstract class SDFPrimitive extends Element {
      * @link see Element.heuristicStepWithin for a complete description.
      */
     heuristicStepWithin(): number;
+    destroy(): void;
 }
 
 type SDFCapsuleJSON = {
@@ -2119,7 +1164,7 @@ type SDFCapsuleJSON = {
  *  @extends SDFPrimitive
  */
 declare class SDFCapsule extends SDFPrimitive {
-    static type: string;
+    static type: SDFCapsuleType;
     fromJSON(json: SDFCapsuleJSON): SDFCapsule;
     p1: Vector3;
     p2: Vector3;
@@ -2139,7 +1184,7 @@ declare class SDFCapsule extends SDFPrimitive {
     /**
      *  @return Type of the element
      */
-    getType(): string;
+    getType(): SDFCapsuleType;
     toJSON(): SDFCapsuleJSON;
     /**
      *  @param r1 The new radius at p1
@@ -2201,10 +1246,10 @@ type SDFNodeJSON = NodeJSON;
  *  @extends {Node}
  */
 declare class SDFNode extends Node {
-    static type: string;
+    static type: SDFNodeType;
     children: (SDFNode | SDFPrimitive)[];
     constructor();
-    overridegetType(): string;
+    getType(): SDFNodeType;
     computeAABB(): void;
     /**
      *  Return the bounding box of the node for a given maximum distance.
@@ -2253,7 +1298,7 @@ type SDFPointJSON = {
     acc: number;
 } & SDFPrimitiveJSON;
 declare class SDFPoint extends SDFPrimitive {
-    static type: string;
+    static type: SDFPointType;
     static fromJSON(json: SDFPointJSON): SDFPoint;
     p: Vector3;
     acc: number;
@@ -2262,7 +1307,7 @@ declare class SDFPoint extends SDFPrimitive {
      *  @param acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
      */
     constructor(p: Vector3, acc?: number);
-    getType(): string;
+    getType(): SDFPointType;
     toJSON(): SDFPointJSON;
     /**
      *  @param acc The new accuracy factor
@@ -2304,19 +1349,17 @@ type SDFRootNodeJSON = {
     f: DistanceFunctorJSON;
     sdfRoot: SDFNodeJSON;
 } & PrimitiveJSON;
+type SDFRootNodeType = "SDFRootNode";
 /**
  *  This class implements a SDF Root Node, which is basically a Signed Distance Field
  *  made of some node combination, on which is applied a compact support function.
  *  For now SDF nodes do not have materials. A unique material is defined in the SDFRootNode.
  */
 declare class SDFRootNode extends Primitive {
-    static type: string;
+    static type: SDFRootNodeType;
     f: DistanceFunctor;
     sdfRoot: SDFNode;
-    tmp_res: {
-        v: number;
-        g: Vector3 | null;
-    };
+    tmp_res: ValueResultType;
     tmp_g: Vector3;
     static fromJSON(json: SDFRootNodeJSON): SDFRootNode;
     /**
@@ -2326,16 +1369,24 @@ declare class SDFRootNode extends Primitive {
      * @param sdfRoot The child containing the complete SDF. SDFRootNode can have only one child.
      */
     constructor(f: DistanceFunctor, material?: Material, sdfRoot?: SDFNode | SDFPrimitive);
-    getType(): string;
+    getType(): SDFRootNodeType;
     addChild(c: SDFNode | SDFPrimitive): void;
     removeChild(c: SDFNode | SDFPrimitive): void;
     toJSON(): SDFRootNodeJSON;
     prepareForEval(): void;
+    /**
+     *  @link Element.getAreas for a complete description
+     *
+     *  This function is an attempt to have SDFRootNode behave like a Primitive in the normal Blobtree.
+     */
     getAreas(): {
         aabb: Box3;
         bv: Area;
         obj: Primitive;
     }[];
+    /**
+     *  @link Node.value for a complete description
+     */
     value(p: Vector3, res: ValueResultType): void;
     computeHelpVariables(): void;
     heuristicStepWithin(): number;
@@ -2355,7 +1406,7 @@ type SDFSegmentJSON = {
     acc: number;
 } & SDFPrimitiveJSON;
 declare class SDFSegment extends SDFPrimitive {
-    static type: string;
+    static type: SDFSegmentType;
     static fromJSON(json: SDFSegmentJSON): SDFSegment;
     p1: Vector3;
     p2: Vector3;
@@ -2367,7 +1418,7 @@ declare class SDFSegment extends SDFPrimitive {
     *  @param acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
     */
     constructor(p1: Vector3, p2: Vector3, acc: number);
-    getType(): string;
+    getType(): SDFSegmentType;
     toJSON(): SDFSegmentJSON;
     /**
      *  @param acc The new accuracy factor
@@ -2418,7 +1469,7 @@ type SDFSphereJSON = {
     r: number;
 } & SDFPrimitiveJSON;
 declare class SDFSphere extends SDFPrimitive {
-    static type: string;
+    static type: SDFSphereType;
     static fromJSON(json: SDFSphereJSON): SDFSphere;
     p: Vector3;
     r: number;
@@ -2427,7 +1478,7 @@ declare class SDFSphere extends SDFPrimitive {
      *  @param  r Radius of the sphere
      */
     constructor(p: Vector3, r: number);
-    getType(): string;
+    getType(): SDFSphereType;
     toJSON(): SDFSphereJSON;
     /**
      *  @param r The new radius
@@ -2460,6 +1511,981 @@ declare class SDFSphere extends SDFPrimitive {
      */
     value: (this: SDFSphere, p: Vector3, res: ValueResultType) => void;
 }
+
+type PrimitiveJSON = {
+    materials: MaterialJSON[];
+} & ElementJSON;
+type PrimitiveType = "Primitive" | ScalisPrimitiveType | SDFRootNodeType;
+/**
+ *  Represent a blobtree primitive.
+ *
+ *  @constructor
+ *  @extends {Element}
+ */
+declare abstract class Primitive extends Element {
+    static type: PrimitiveType;
+    static fromJSON(_json: PrimitiveJSON): void;
+    materials: Material[];
+    constructor();
+    toJSON(): PrimitiveJSON;
+    /**
+     *  @param  mats Array of materials to set. they will be copied to the primitive materials
+     */
+    setMaterials(mats: Material[]): void;
+    /**
+     *  @return Current primitive materials
+     */
+    getMaterials(): Material[];
+    /**
+     * @link Element.computeAABB for a complete description
+     */
+    computeAABB(): void;
+    /**
+     *  @abstract
+     *  Destroy the current primitive and remove it from the blobtree (basically
+     *  clean up the links between blobtree elements).
+     */
+    destroy(): void;
+    /**
+     * @abstract
+     */
+    getAreas(): {
+        aabb: THREE.Box3;
+        bv: Area;
+        obj: Primitive;
+    }[];
+    /**
+     * @abstract
+     * Compute variables to help with value computation.
+     */
+    abstract computeHelpVariables(): void;
+    /**
+     * @abstract
+     * Compute variables to help with value computation.
+     * @param cls The class to count. Primitives have no children so no complexty here.
+     */
+    count(cls: Function): 1 | 0;
+}
+
+type ScalisPrimitiveVolType = "dist" | "convol";
+type ScalisPrimitiveJSON = {
+    v: Array<ScalisVertexJSON>;
+    volType: ScalisPrimitiveVolType;
+} & PrimitiveJSON;
+type ScalisPointType = "ScalisPoint";
+type ScalisSegmentType = "ScalisSegment";
+type ScalisTriangleType = "ScalisTriangle";
+type ScalisPrimitiveType = "ScalisPrimitive" | ScalisPointType | ScalisSegmentType | ScalisTriangleType;
+/**
+ *  Represent an implicit primitive respecting the SCALIS model developed by Cedric Zanni
+ *
+ *  @constructor
+ *  @extends {Primitive}
+ */
+declare abstract class ScalisPrimitive extends Primitive {
+    static type: ScalisPrimitiveType;
+    static DIST: "dist";
+    static CONVOL: "convol";
+    volType: ScalisPrimitiveVolType;
+    v: ScalisVertex[];
+    constructor();
+    /**
+     *  @return Type of the element
+     */
+    getType(): ScalisPrimitiveType;
+    /**
+     *  @return {ScalisPrimitiveJSON}
+     */
+    toJSON(): ScalisPrimitiveJSON;
+    /**
+     *  @abstract Specify if the voltype can be changed
+     *  @return True if and only if the VolType can be changed.
+     */
+    mutableVolType(): boolean;
+    /**
+     *  @param vt New VolType to set (Only for SCALIS primitives)
+     */
+    setVolType(vt: "dist" | "convol"): void;
+    /**
+     *  @return  Current volType
+     */
+    getVolType(): ScalisPrimitiveVolType;
+    /**
+     * @link Element.computeAABB for a complete description
+     */
+    computeAABB(): void;
+}
+
+type SegParam = {
+    norm: number;
+    diffThick: number;
+    dir: Vector3;
+    v: [ScalisVertex, ScalisVertex];
+    ortho_vec_x: number;
+    ortho_vec_y: number;
+};
+type ScalisVertexJSON = {
+    position: {
+        x: number;
+        y: number;
+        z: number;
+    };
+    thickness: number;
+};
+/**
+ *  A scalis ScalisVertex. Basically a point and a wanted thickness.
+ */
+declare class ScalisVertex {
+    static fromJSON(json: ScalisVertexJSON): ScalisVertex;
+    pos: Vector3;
+    thickness: number;
+    id: number;
+    prim: ScalisPrimitive | null;
+    aabb: Box3;
+    valid_aabb: boolean;
+    /**
+     *  @param  pos A position in space, as a Vector3
+     *  @param  thickness Wanted thickness at this point. Misnamed parameter : this is actually half the thickness.
+     */
+    constructor(pos: Vector3, thickness: number);
+    /**
+     *  Set an internal pointer to the primitive using this vertex.
+     *  Should be called from primitive constructor.
+     * @param prim
+     */
+    setPrimitive(prim: ScalisPrimitive): void;
+    toJSON(): ScalisVertexJSON;
+    /**
+     *  Set a new position.
+     *  @param pos A position in space, as a Vector3
+     */
+    setPos(pos: Vector3): void;
+    /**
+     *  Set a new thickness
+     *  @param thickness The new thickness
+     */
+    setThickness(thickness: number): void;
+    /**
+     *  Set a both position and thickness
+     *  @param thickness The new thickness
+     *  @param pos A position in space, as a Vector3
+     */
+    setAll(pos: Vector3, thickness: number): void;
+    /**
+     *  Get the current position
+     *  @return Current position, as a Vector3
+     */
+    getPos(): Vector3;
+    /**
+     *  Get the current Thickness
+     *  @return {number} Current Thickness
+     */
+    getThickness(): number;
+    /**
+     *  Get the current AxisAlignedBoundingBox
+     *  @return The AABB of this vertex.
+     */
+    getAABB(): Box3;
+    /**
+     *  Compute the current AABB.
+     *  @protected
+     */
+    computeAABB(): void;
+    /**
+     *  Check equality between 2 vertices
+     */
+    equals(other: ScalisVertex): boolean;
+}
+
+/**
+ *  Bounding area for the triangle.
+ *  It is the same for DIST and CONVOL primitives since the support of the convolution
+ *  kernel is the same as the support for the distance field.
+ *
+ *  The Area must be able to return accuracy needed in a given zone (Sphere for now,
+ *  since box intersections with such a complex shape are not trivial), and also
+ *  propose an intersection test.
+ *
+ *  @extends {Area}
+ */
+declare class AreaScalisTri extends Area {
+    tmpVect: Vector3;
+    min_thick: number;
+    max_thick: number;
+    v: [ScalisVertex, ScalisVertex, ScalisVertex];
+    p0p1: Vector3;
+    p2p0: Vector3;
+    unit_normal: Vector3;
+    main_dir: Vector3;
+    equal_weights: boolean;
+    segParams: SegParam[];
+    segAttr: {
+        p0_to_p: Vector3;
+        p0_to_p_sqrnorm: number;
+        x_p_2D: number;
+        y_p_2D: number;
+        y_p_2DSq: number;
+        p_proj_x: number;
+    };
+    planeParams: {
+        orig: Vector3;
+        n: Vector3;
+    }[];
+    segAreas: AreaScalisSeg[];
+    /**
+     *  @param v Array or vertices
+     *  @param unit_normal Normal to the plane made by the 3 vertices, as a Vector3
+     *  @param main_dir Main direction depending on thicknesses
+     *  @param min_thick Minimum thickness in the Triangle
+     *  @param max_thick Maximum thickness in the triangle
+     */
+    constructor(v: [ScalisVertex, ScalisVertex, ScalisVertex], unit_normal: Vector3, main_dir: Vector3, segParams: SegParam[], min_thick: number, max_thick: number);
+    /**
+     *  Compute projection (used in other functions)
+     *  @param p Point to proj
+     *  @param segParams A seg param object
+     *
+     *  @protected
+     */
+    protected proj_computation(p: Vector3, segParams: SegParam): void;
+    /**
+     * @link Area.sphereIntersect for a complete description
+     * @todo Check the Maths (Ask Cedric Zanni?)
+     * @return true if the sphere and the area intersect
+     */
+    sphereIntersect(sphere: AreaSphereParam$2): boolean;
+    /**
+     *  Adapted from the segment sphere intersection. Could be factorised!
+     *  @return true if the sphere and the area intersect
+     *
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param segParams A segParams object containing data for a segment
+     *  @param KS Kernel Scale, ie ScalisMath.KS (Why is it a parameter, its global!?)
+     *
+     */
+    sphereIntersectSegment(sphere: AreaSphereParam$2, segParams: any, KS: number): boolean;
+    /**
+     * @link Area.contains for a complete description
+     * @param p
+     */
+    contains: (this: AreaScalisTri, p: Vector3) => boolean;
+    /**
+     *  Copied from AreaSeg.getAcc
+     *
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param segParams A segParams object containing data for a segment area
+     *
+     *  @return Object containing intersect (boolean) and currAcc (number) attributes
+     */
+    getAccSegment(sphere: AreaSphereParam$2, segParams: any): {
+        intersect: boolean;
+        currAcc: number;
+    };
+    /**
+     *  Get accuracy for the inner triangle (do not consider segment edges)
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     */
+    getAccTri(sphere: AreaSphereParam$2): number;
+    /**
+     *  @link Area.getAcc for a complete description
+     *
+     *  @return the accuracy needed in the intersection zone
+     *
+     *  @param sphere  A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param factor  the ratio to determine the wanted accuracy.
+     *
+     *  @todo Check the Maths
+     */
+    getAcc(sphere: AreaSphereParam$2, factor: number): number;
+    /**
+     *  @link Area.getNiceAcc for a complete description
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Nice accuracy needed in the intersection zone
+     */
+    getNiceAcc(sphere: AreaSphereParam$2): number;
+    /**
+     *  @link Area.getNiceAcc for a complete description
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Curr accuracy needed in the intersection zone
+     */
+    getCurrAcc(sphere: AreaSphereParam$2): number;
+    /**
+     *  @link Area.getRawAcc for a complete description
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The raw accuracy needed in the intersection zone
+     */
+    getRawAcc(sphere: AreaSphereParam$2): number;
+    /**
+     * @link Area.getMinAcc
+     */
+    getMinAcc(): number;
+    /**
+     * @link Area.getMinRawAcc
+     * @return number
+     */
+    getMinRawAcc: () => number;
+    /**
+     *  Return the minimum accuracy required at some point on the given axis.
+     *  The returned accuracy is the one you would need when stepping in the axis
+     *  direction when you are on the axis at coordinate t.
+     *  @param axis x, y or z
+     *  @param t Coordinate on the axis
+     *  @return The step you can safely do in axis direction
+     */
+    getAxisProjectionMinStep(axis: Coordinate, t: number): number;
+}
+
+/**
+ * Computed values will be stored here. Each values should exist and be allocated already.
+ * @property v Value, must be defined
+ * @property m Material, must be allocated and defined if wanted
+ * @property g Gradient, must be allocated and defined if wanted
+ * @property step ??? Not sure, probably a "safe" step for raymarching
+ * @property stepOrtho ??? Same as step but in orthogonal direction ?
+ */
+type ValueResultType = {
+    v: number;
+    m?: Material | null;
+    g?: Vector3 | null;
+    step?: number;
+    stepOrtho?: number;
+};
+type ElementType = "Element" | NodeType | PrimitiveType | SDFPrimitiveType;
+type ElementJSON = {
+    type: string;
+};
+/**
+ *  A superclass for Node and Primitive in the blobtree.
+ *  @class
+ *  @constructor
+ */
+declare abstract class Element {
+    static type: ElementType;
+    static fromJSON(_json: ElementJSON): void;
+    id: number;
+    aabb: Box3;
+    valid_aabb: boolean;
+    parentNode: Node | null;
+    constructor();
+    /**
+     *  Return a Javscript Object respecting JSON convention.
+     *  All classes must defined it.
+     */
+    toJSON(): ElementJSON;
+    /**
+     *  Clone the object.
+     */
+    clone(): Element;
+    /**
+     *  @return The parent node of this primitive.
+     */
+    getParentNode(): Node | null;
+    /**
+     *  @return Type of the element
+     */
+    getType(): ElementType;
+    /**
+     *  Perform precomputation that will help to reduce future processing time,
+     *  especially on calls to value.
+     *  @protected
+     */
+    computeHelpVariables(): void;
+    /**
+     *  @abstract
+     *  Compute the Axis Aligned Bounding Box (AABB) for the current primitive.
+     *  By default, the AABB returned is the unionns of all vertices AABB (This is
+     *  good for almost all basic primitives).
+     */
+    abstract computeAABB(): void;
+    /**
+     *  @return The AABB of this Element (primitive or node). WARNING : call
+     *  isValidAABB before to ensure the current AABB does correspond to the primitive
+     *  settings.
+     */
+    getAABB(): Box3;
+    /**
+     *  @return True if the current aabb is valid, ie it does
+     *  correspond to the internal primitive parameters.
+     */
+    isValidAABB(): boolean;
+    /**
+     *  Invalid the bounding boxes recursively up to the root
+     */
+    invalidAABB(): void;
+    /**
+     *  Note : This function was made for Node to recursively invalidate
+     *  children AABB. Default is to invalidate only this AABB.
+     */
+    invalidAll(): void;
+    /**
+     *  @abstract
+     *  Prepare the element for a call to value.
+     *  Important note: For now, a primitive is considered prepared for eval if and only
+     *                  if its bounding box is valid (valid_aabb is true).
+     */
+    abstract prepareForEval(): void;
+    /**
+     *  @abstract
+     *  Compute the value and/or gradient and/or material
+     *  of the element at position p in space. return computations in res (see below)
+     *
+     *  @param p Point where we want to evaluate the primitive field
+     */
+    abstract value(p: Vector3, res: ValueResultType): void;
+    /**
+     * @param p The point where we want the numerical gradient
+     * @param res The resulting gradient
+     * @param epsilon The step value for the numerical evaluation
+     */
+    numericalGradient: (this: Element, p: Vector3, res: Vector3, epsilon: number) => void;
+    /**
+     *  @abstract
+     *  Get the Area object.
+     *  Area objects do provide methods useful when rasterizing, raytracing or polygonizing
+     *  the area (intersections with other areas, minimum level of detail needed to
+     *  capture the feature nicely, etc etc...).
+     *  @returns The Areas object corresponding to the node/primitive, in an array
+     */
+    getAreas(): {
+        aabb: Box3;
+        bv: Area;
+        obj: Primitive;
+    }[];
+    /**
+     *  @abstract
+     *  This function is called when a point is outside of the potential influence of a primitive/node.
+     *  @param  _p
+     *  @return  The next step length to do with respect to this primitive/node
+     */
+    distanceTo(_p: Vector3): number;
+    /**
+     *  @abstract
+     *  This function is called when a point is within the potential influence of a primitive/node.
+     *  @return The next step length to do with respect to this primitive/node.
+     */
+    abstract heuristicStepWithin(): number;
+    /**
+     *  Trim the tree to keep only nodes influencing a given bounding box.
+     *  The tree must be prepared for eval for this process to be working.
+     *  Default behaviour is doing nothing, leaves cannot be sub-trimmed, only nodes.
+     *  Note : only the root can untrim
+     *
+     *  @param _aabb
+     *  @param _trimmed Array of trimmed Elements
+     *  @param _parents Array of fathers from which each trimmed element has been removed.
+     */
+    trim(_aabb: Box3, _trimmed: Element[], _parents: Node[]): void;
+    /**
+     *  count the number of elements of class cls in this node and subnodes
+     *  @param  _cls the class of the elements we want to count
+     *  @return  The number of element of class cls
+     */
+    count(_cls: Function): number;
+    abstract destroy(): void;
+}
+
+type NodeJSON = {
+    children: ElementJSON[];
+} & ElementJSON;
+type RicciNodeType = "RicciNode";
+type RootNodeType = "RootNode";
+type ScaleNodeType = "ScaleNode";
+type TwistNodeType = "TwistNode";
+type DifferenceNodeType = "DifferenceNode";
+type MaxNodeType = "MaxNode";
+type MinNodeType = "MinNode";
+type SDFNodeType = "SDFNode";
+type NodeType = "Node" | RicciNodeType | RootNodeType | ScaleNodeType | TwistNodeType | DifferenceNodeType | MaxNodeType | MinNodeType | SDFNodeType;
+/**
+ *  This class implements an abstract Node class for implicit blobtree.
+ *  @constructor
+ *  @extends {Element}
+ */
+declare abstract class Node extends Element {
+    children: Element[];
+    static type: NodeType;
+    static fromJSON(_json: NodeJSON): Node;
+    constructor();
+    getType(): NodeType;
+    toJSON(): NodeJSON;
+    /**
+     *  Clone current node and its hierarchy
+     */
+    clone(): this;
+    /**
+     *  @link Element.prepareForEval
+     */
+    abstract prepareForEval(): void;
+    /**
+     *  Invalid the bounding boxes recursively down for all children
+     */
+    invalidAll(): void;
+    /**
+     *  Destroy the node and its children. The node is removed from the blobtree
+     *  (basically clean up the links between blobtree elements).
+     */
+    destroy(): void;
+    /**
+     *  Only works with nary nodes, otherwise a set function would be more appropriate.
+     *  -> TODO : check that if we have something else than n-ary nodes one day...
+     *  If c already belongs to the tree, it is removed from its current parent
+     *  children list before anything (ie it is "moved").
+     *
+     *  @param c The child to add.
+     */
+    addChild(c: Element): this;
+    /**
+     *  Only works with n-ary nodes, otherwise order matters and we therefore
+     *  have to set "null" and node cannot be evaluated.
+     *  -> TODO : check that if we have something else than n-ary nodes one day...
+     *  WARNING:
+     *      Should only be called when a Primitive is deleted.
+     *      Otherwise :
+     *          To move a node to another parent : use addChild.
+     *  @param c The child to remove.
+     */
+    removeChild(c: Element): void;
+    /**
+     * @link Element.computeAABB for a complete description
+     */
+    computeAABB(): void;
+    /**
+     *  @link Element.getAreas for a complete description
+     *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
+     */
+    getAreas(): {
+        aabb: Box3;
+        bv: Area;
+        obj: Primitive;
+    }[];
+    /**
+     * @link Element.distanceTo for a complete description
+     */
+    distanceTo(p: Vector3): number;
+    /**
+     * @returns
+     */
+    heuristicStepWithin(): number;
+    /**
+     *  @link Element.trim for a complete description.
+     */
+    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
+    /**
+     *  @link Element.count for a complete description.
+     */
+    count(cls: Function): number;
+}
+
+type DifferenceNodeJSON = {
+    alpha: number;
+} & NodeJSON;
+/**
+ *  This class implement a difference blending node.
+ *  The scalar field of the second child of this node will be substracted to the first node field.
+ *  The result is clamped to 0 to always keep a positive field value.
+ *  @constructor
+ *  @extends Node
+ */
+declare class DifferenceNode extends Node {
+    alpha: number;
+    clamped: number;
+    tmp_res0: ValueResultType;
+    tmp_res1: ValueResultType;
+    g0: Vector3;
+    m0: Material;
+    g1: Vector3;
+    m1: Material;
+    tmp_v_arr: Float32Array;
+    tmp_m_arr: [Material | null, Material | null];
+    static type: DifferenceNodeType;
+    static fromJSON(json: DifferenceNodeJSON): DifferenceNode;
+    /**
+     *
+     *  @param node0 The first node
+     *  @param node1 The second node, its value will be substracted to the node 0 value.
+     *  @param alpha Power of the second field : the greater alpha the sharper the difference. Default is 1, must be > 1.
+     */
+    constructor(node0: Node, node1: Node, alpha: number);
+    getAlpha(): number;
+    setAlpha(alpha: number): void;
+    toJSON(): DifferenceNodeJSON;
+    /**
+     * @link Node.prepareForEval for a complete description
+     **/
+    prepareForEval(): void;
+    /**
+     *  Compute the value and/or gradient and/or material
+     *  of the element at position p in space. return computations in res (see below)
+     *
+     *  @param p Point where we want to evaluate the primitive field
+     *  @param res Computed values will be stored here. Each values should exist and
+     *                       be allocated already.
+     *  @param res.v Value, must be defined
+     *  @param res.m Material, must be allocated and defined if wanted
+     *  @param res.g Gradient, must be allocated and defined if wanted
+     *  @param res.step The next step we can safely walk without missing the iso (0). Mostly used for convergence function or ray marching.
+     *  @param res.stepOrtho
+     */
+    value(p: Vector3, res: ValueResultType): void;
+    /**
+     *  @link Element.trim for a complete description.
+     *
+     *  Trim must be redefined for DifferenceNode since in this node we cannot trim one of the 2 nodes without trimming the other.
+     */
+    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
+}
+
+type MaxNodeJSON = NodeJSON;
+/**
+ *  This class implement a Max node.
+ *  It will return the maximum value of the field of each primitive.
+ *  Return 0 in region were no primitive is present.
+ *  @class MaxNode
+ *  @extends Node
+ */
+declare class MaxNode extends Node {
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
+    static type: MaxNodeType;
+    static fromJSON(json: MaxNodeJSON): MaxNode;
+    /**
+     *  @constructor
+     *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+     */
+    constructor(children?: Node[]);
+    getType(): MaxNodeType;
+    /**
+     * @link Node.prepareForEval for a complete description
+     **/
+    prepareForEval(): void;
+    /**
+     *  @link Element.value for a complete description
+     */
+    value(p: Vector3, res: ValueResultType): void;
+}
+
+type MinNodeJSON = NodeJSON;
+/**
+ *  This class implement a Min node.
+ *  It will return the minimum value of the field of each primitive.
+ *  Return 0 in regioin were no primitive is present.
+ *  @constructor
+ *  @extends Node
+ */
+declare class MinNode extends Node {
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
+    static type: MinNodeType;
+    static fromJSON(json: MinNodeJSON): MinNode;
+    /**
+    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+    */
+    constructor(children?: Node[]);
+    getType(): MinNodeType;
+    /**
+     *  @link Element.prepareForEval for a complete description
+     */
+    prepareForEval(): void;
+    /**
+     *  @link Element.value for a complete description
+     */
+    value(p: Vector3, res: ValueResultType): void;
+    /**
+     *  @link Element.trim for a complete description.
+     */
+    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
+}
+
+type RicciNodeJSON = {
+    ricci_n: number;
+} & NodeJSON;
+/**
+ *  This class implement a n-ary blend node which use a Ricci Blend.
+ *  Ricci blend is : v = k-root( Sum(c.value^k) ) for all c in node children.
+ *  Return 0 in regioin were no primitive is present.
+ *  @constructor
+ *  @extends Node
+ */
+declare class RicciNode extends Node {
+    ricci_n: number;
+    tmp_v_arr: Float32Array;
+    tmp_m_arr: Material[];
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
+    static type: RicciNodeType | RootNodeType;
+    /**
+     *  @param ricci_n The value for ricci
+     *  @param children The children to add to this node. Just a convenient parameter, you can do it manually using addChild
+     */
+    constructor(ricci_n: number, children?: Node[]);
+    /**
+     * @link Node.getType
+     */
+    getType(): RicciNodeType | RootNodeType;
+    /**
+     * @link Node.toJSON
+     */
+    toJSON(): RicciNodeJSON;
+    /**
+     * @link Node.fromJSON
+     */
+    static fromJSON(json: RicciNodeJSON): RicciNode;
+    /**
+     * @link Node.prepareForEval
+     */
+    prepareForEval(): void;
+    /**
+     *  @link Element.value for a complete description
+     */
+    value(p: Vector3, res: ValueResultType): void;
+    setRicciN(n: number): void;
+    getRicciN(): number;
+}
+
+type RootNodeJSON = {
+    iso: number;
+} & RicciNodeJSON;
+interface IntersectionResult {
+    distance?: number;
+    point: Vector3;
+    g?: Vector3;
+}
+/**
+ *  The root of any implicit blobtree. Does behave computationaly like a RicciNode with n = 64.
+ *  The RootNode is the only node to be its own parent.
+ *  @constructor
+ *  @extends RicciNode
+ */
+declare class RootNode extends RicciNode {
+    iso_value: number;
+    trimmed: Element[];
+    trim_parents: Node[];
+    static type: RootNodeType;
+    static fromJSON(json: RootNodeJSON): RootNode;
+    constructor();
+    /**
+     * @link Node.getType
+     */
+    getType(): RootNodeType;
+    /**
+     * @link RicciNode.toJSON
+     */
+    toJSON(): RootNodeJSON;
+    getIsoValue(): number;
+    setIsoValue(v: number): void;
+    /**
+     *  @return The neutral value of this tree, ie the value of the field in empty region of space.
+     *                   This is an API for external use and future development. For now it is hard set to 0.
+     */
+    getNeutralValue(): number;
+    /**
+     * @link Node.invalidAABB for a complete description
+     */
+    invalidAABB(): void;
+    /**
+     *  Basically perform a trim but keep track of trimmed elements.
+     *  This is usefull if you want to trim, then untrim, then trim, etc...
+     *  For example, this is very useful for evaluation optimization.
+     */
+    internalTrim(aabb: Box3): void;
+    /**
+     *  Wrapper for trim, will help programmers to make the difference between
+     *  internal and external trim.
+     *  @param trimmed Array of trimmed Elements
+     *  @param parents Array of fathers from which each trimmed element has been removed.
+     */
+    externalTrim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
+    /**
+     *  Reset the full blobtree
+     */
+    internalUntrim(): void;
+    /**
+     *  Reset the full blobtree given previous trimming data.
+     *  Note : don't forget to recall prepareForEval if you want to perform evaluation.
+     *  @param trimmed Array of trimmed Elements
+     *  @param parents Array of fathers from which each trimmed element has been removed.
+     */
+    untrim(trimmed: Element[], parents: Node[]): void;
+    /**
+     *  Tell if the blobtree is empty
+     *  @return true if blobtree is empty
+     */
+    isEmpty(): boolean;
+    intersectRayBlob: (this: RootNode, ray: Ray, res: IntersectionResult, maxDistance: number, _precision: number) => boolean;
+    /**
+     *  Kaiser function for some intersection and raycasting...
+     *  Undocumented.
+     *  TODO : check, it is probably an optimized intersection for blob intersection
+     *         in X, Y or Z directions.
+     */
+    intersectOrthoRayBlob: (this: RootNode, wOffset: number, hOffset: number, res: IntersectionResult[], dim: {
+        axis: {
+            x: boolean;
+            y: boolean;
+            z: boolean;
+        };
+        get: (v: Vector3) => number;
+        add: (v: Vector3, s: number) => void;
+        divide: (v: Vector3, s: number) => void;
+    }) => void;
+}
+
+type ScaleNodeJSON = {
+    scale_x: number;
+    scale_y: number;
+    scale_z: number;
+} & NodeJSON;
+/**
+ *  This class implement a ScaleNode node.
+ *  It will return the minimum value of the field of each primitive.
+ *  Return 0 in regioin were no primitive is present.
+ *  @constructor
+ *  @extends Node
+ */
+declare class ScaleNode extends Node {
+    _scale: Vector3;
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
+    static type: ScaleNodeType;
+    /**
+    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+    */
+    constructor(children?: Node[]);
+    /**
+    * @link Node.toJSON
+    */
+    toJSON(): ScaleNodeJSON;
+    /**
+     * @link Node.fromJSON
+     */
+    static fromJSON(json: ScaleNodeJSON): ScaleNode;
+    /**
+     * @link ScaleNode.setScale
+     */
+    setScale(scale: Vector3): void;
+    /**
+     * @link Node.getType
+     */
+    getType(): ScaleNodeType;
+    /**
+     *  @link Element.prepareForEval for a complete description
+     */
+    prepareForEval(): void;
+    /**
+    * @link Element.computeAABB for a complete description
+    */
+    computeAABB(): void;
+    /**
+     *  @link Element.value for a complete description
+     */
+    value(p: Vector3, res: ValueResultType): void;
+    /**
+     *  @link Element.trim for a complete description.
+     */
+    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
+}
+
+type TwistNodeJSON = {
+    twist_amount: number;
+    axis_x: number;
+    axis_y: number;
+    axis_z: number;
+} & NodeJSON;
+/**
+ *  This class implement a TwistNode node.
+ *  It will return the minimum value of the field of each primitive.
+ *  Return 0 in regioin were no primitive is present.
+ *  @constructor
+ *  @extends Node
+ */
+declare class TwistNode extends Node {
+    _twist_amount: number;
+    _twist_axis: Vector3;
+    _twist_axis_mat: Matrix4;
+    _twist_axis_mat_inv: Matrix4;
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
+    static type: TwistNodeType;
+    /**
+    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+    */
+    constructor(children?: Node[]);
+    /**
+    * @link Node.toJSON
+    */
+    toJSON(): TwistNodeJSON;
+    /**
+     *@link Node.fromJSON
+     */
+    static fromJSON(json: TwistNodeJSON): TwistNode;
+    setTwistAmount(amount: number): void;
+    setTwistAxis(axis: Vector3): void;
+    _computeTransforms(): void;
+    getType(): TwistNodeType;
+    /**
+     *  @link Element.prepareForEval for a complete description
+     */
+    prepareForEval(): void;
+    /**
+     *  @link Element.value for a complete description
+     */
+    value(p: Vector3, res: ValueResultType): void;
+    /**
+     *  @link Element.trim for a complete description.
+     */
+    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
+}
+
+type Types = {
+    types: {
+        [key: string]: {
+            fromJSON: Function;
+        };
+    };
+    register(name: string, cls: {
+        fromJSON: Function;
+    }): void;
+    fromJSON(json: {
+        type: string;
+        [key: string]: any;
+    }): any;
+};
+/**
+ *  Keep track of all Types added to the Blobtree library.
+ *  For now just a list of strings registered by the classes.
+ */
+declare const Types: Types;
+
+/**
+ * Accuracies Contains the accuracies needed in Areas. Can be changed when importing blobtree.js.
+ * For classic segments and sphere, we setteled for a raw accuracy being proportional to
+ * the radii. 1/3 of the radius is considered nice, 1 radius is considered raw.
+ * For new primitives, feel free to create your own accuracies factors depending on the features.
+ */
+declare const Accuracies: {
+    /**
+     * Factor for the nice accuracy needed to represent the features nicely
+     * @type {number}
+     */
+    nice: number;
+    /**
+     * Factor for the raw accuracy needed to represent the features roughly
+     * @type {number}
+     */
+    raw: number;
+    /**
+     * Current accuracy factor, should be between Accuracies.nice and Accuracies.raw.
+     * It will be the one used by rendering algorithms to decide to stop even if nice accuracy has not been reached.
+     * @type {number}
+     *
+     */
+    curr: number;
+};
 
 /**
  * @typedef {0|1|2|3|4|5|6|7} EdgeIndex
@@ -3015,4 +3041,4 @@ declare const TriangleUtils: {
 
 declare const version = "1.0.0";
 
-export { Accuracies, Area, AreaCapsule, AreaScalisSeg, AreaScalisTri, AreaSphere, type AreaSphereParam$2 as AreaSphereParam, Convergence, type ConvergenceParams, type Coordinate, DifferenceNode, DistanceFunctor, type DistanceFunctorJSON, Element, type ElementJSON, Material, type MaterialJSON, MaxNode, MinNode, Node, type NodeJSON, Poly6DistanceFunctor, type Poly6DistanceFunctorJSON, Primitive, type PrimitiveJSON, type ResultingGeometry, RicciNode, type RicciNodeJSON, RootNode, SDFCapsule, type SDFCapsuleJSON, SDFNode, type SDFNodeJSON, SDFPoint, type SDFPointJSON, SDFPrimitive, type SDFPrimitiveJSON, SDFRootNode, type SDFRootNodeJSON, SDFSegment, type SDFSegmentJSON, SDFSphere, type SDFSphereJSON, type SMCParams, ScaleNode, ScalisMath, ScalisPoint, type ScalisPointJSON, ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType, ScalisSegment, type ScalisSegmentJSON, ScalisTriangle, type ScalisTriangleJSON, ScalisVertex, type ScalisVertexJSON, SlidingMarchingCubes, SplitMaxPolygonizer, type SplitMaxPolygonizerParams, SplitSMC, type SplitSMCParams, Tables, TriangleUtils, TwistNode, Types, type ValueResultType, type VertexData, version };
+export { Accuracies, Area, AreaCapsule, AreaScalisSeg, AreaScalisTri, AreaSphere, type AreaSphereParam$2 as AreaSphereParam, Convergence, type ConvergenceParams, type Coordinate, DifferenceNode, type DifferenceNodeType, DistanceFunctor, type DistanceFunctorJSON, Element, type ElementJSON, Material, type MaterialJSON, MaxNode, type MaxNodeType, MinNode, type MinNodeType, Node, type NodeJSON, type NodeType, Poly6DistanceFunctor, type Poly6DistanceFunctorJSON, type Poly6DistanceFunctorType, Primitive, type PrimitiveJSON, type PrimitiveType, type ResultingGeometry, RicciNode, type RicciNodeJSON, type RicciNodeType, RootNode, type RootNodeType, SDFCapsule, type SDFCapsuleJSON, type SDFCapsuleType, SDFNode, type SDFNodeJSON, type SDFNodeType, SDFPoint, type SDFPointJSON, type SDFPointType, SDFPrimitive, type SDFPrimitiveJSON, type SDFPrimitiveType, SDFRootNode, type SDFRootNodeJSON, type SDFRootNodeType, SDFSegment, type SDFSegmentJSON, type SDFSegmentType, SDFSphere, type SDFSphereJSON, type SDFSphereType, type SMCParams, ScaleNode, type ScaleNodeType, ScalisMath, ScalisPoint, type ScalisPointJSON, type ScalisPointType, ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveType, type ScalisPrimitiveVolType, ScalisSegment, type ScalisSegmentJSON, type ScalisSegmentType, ScalisTriangle, type ScalisTriangleJSON, type ScalisTriangleType, ScalisVertex, type ScalisVertexJSON, type SegParam, SlidingMarchingCubes, SplitMaxPolygonizer, type SplitMaxPolygonizerParams, SplitSMC, type SplitSMCParams, Tables, TriangleUtils, TwistNode, type TwistNodeType, Types, type ValueResultType, type VertexData, version };

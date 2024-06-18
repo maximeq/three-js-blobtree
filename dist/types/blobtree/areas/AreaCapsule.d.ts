@@ -56,7 +56,6 @@ export declare class AreaCapsule extends Area {
     sphereIntersect(sphere: AreaSphereParam): boolean;
     /**
      * @link Area.contains for a complete description
-     * @param p
      */
     contains(p: Vector3): boolean;
     /**

@@ -1,6 +1,6 @@
 import { Vector3, Line3, Box3 } from "three"
 import { Types } from "../Types.js";
-import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive.js";
+import { SDFPrimitive, type SDFPrimitiveJSON, type SDFSegmentType } from "./SDFPrimitive.js";
 import { AreaCapsule } from "../areas/AreaCapsule.js";
 import type { ValueResultType } from "../Element.js";
 
@@ -8,7 +8,7 @@ export type SDFSegmentJSON = { p1: { x: number, y: number, z: number }, p2: { x:
 
 export class SDFSegment extends SDFPrimitive {
 
-    static override type = "SDFSegment";
+    static override type: SDFSegmentType = "SDFSegment";
 
     static override fromJSON(json: SDFSegmentJSON): SDFSegment {
         return new SDFSegment(
@@ -39,7 +39,7 @@ export class SDFSegment extends SDFPrimitive {
         this.l = new Line3(this.p1, this.p2);
     }
 
-    override getType(): string {
+    override getType(): SDFSegmentType {
         return SDFSegment.type;
     };
 

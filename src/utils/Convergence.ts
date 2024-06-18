@@ -99,6 +99,28 @@ export const Convergence: Convergence = {
         res.copy(starting_point);
         return;
     }
+       /*
+    if(broken){
+
+        this.eval_res.g = null; // deactive gradient computation
+
+        // Check the point between last_moving_point and starting_point which is closest to the surface and return it.
+        pot.value(this.last_mov_pt,this.eval_res);
+        var ev_last_mov_pt = this.eval_res.v;
+        pot.value(starting_point,this.eval_res);
+        var ev_st_pt = this.eval_res.v;
+        if( Math.abs(ev_last_mov_pt-value) > Math.abs(starting_point-value) )
+        {
+            res.copy(starting_point);
+            return;
+        }
+        else
+        {
+            res.copy(this.last_mov_pt);
+            return;
+        }
+    }
+    */
     },
 
 /** This algorithm uses Newton convergence to find a point epsilon close to

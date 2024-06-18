@@ -2,8 +2,12 @@ import { Element, type ElementJSON } from './Element';
 import { Material, type MaterialJSON } from './Material';
 import { Types } from "./Types";
 import type { Area } from './areas';
+import type { ScalisPrimitiveType } from './scalis';
+import type { SDFRootNodeType } from './sdf';
 
 export type PrimitiveJSON = { materials: MaterialJSON[] } & ElementJSON
+
+export type PrimitiveType = "Primitive" | ScalisPrimitiveType | SDFRootNodeType;
 
 /**
  *  Represent a blobtree primitive.
@@ -13,7 +17,7 @@ export type PrimitiveJSON = { materials: MaterialJSON[] } & ElementJSON
  */
 export abstract class Primitive extends Element {
 
-    static override type = "Primitive";
+    static override type: PrimitiveType = "Primitive";
 
     static override fromJSON(_json: PrimitiveJSON) {
         throw new Error("Primitive.fromJSON should never be called as Primitive is abstract.");
@@ -83,13 +87,13 @@ export abstract class Primitive extends Element {
 
     /**
      * @abstract
-     * Compute constiables to help with value computation.
+     * Compute variables to help with value computation.
      */
     abstract override computeHelpVariables(): void;
 
     /**
      * @abstract
-     * Compute constiables to help with value computation.
+     * Compute variables to help with value computation.
      * @param cls The class to count. Primitives have no children so no complexty here.
      */
     override count(cls: Function) {
@@ -98,5 +102,5 @@ export abstract class Primitive extends Element {
 
 };
 
-Types.register(Primitive.type, {fromJSON: Primitive.fromJSON});
+Types.register(Primitive.type, Primitive);
 

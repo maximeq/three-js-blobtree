@@ -1,13 +1,12 @@
 import { Vector3, Box3 } from "three";
 import { Types } from "./Types";
-import { Node, type NodeJSON } from "./Node";
+import { Node, type NodeJSON, type DifferenceNodeType } from "./Node";
 import { Material } from "./Material";
 import { Element, type ValueResultType } from './Element';
 
 type DifferenceNodeJSON = {
   alpha: number;
 } & NodeJSON;
-
 
 /**
  *  This class implement a difference blending node.
@@ -29,7 +28,7 @@ export class DifferenceNode extends Node {
     tmp_v_arr: Float32Array;
     tmp_m_arr: [Material | null, Material | null];
 
-    static override type = "DifferenceNode";
+    static override type: DifferenceNodeType = "DifferenceNode";
 
     static override fromJSON(json: DifferenceNodeJSON): DifferenceNode {
         return new DifferenceNode(Types.fromJSON(json.children[0]), Types.fromJSON(json.children[1]), json.alpha);
@@ -204,4 +203,4 @@ export class DifferenceNode extends Node {
     };
 };
 
-Types.register(DifferenceNode.type,  {fromJSON: DifferenceNode.fromJSON});
+Types.register(DifferenceNode.type,  DifferenceNode);
