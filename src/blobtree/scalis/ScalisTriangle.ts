@@ -112,7 +112,7 @@ export class ScalisTriangle extends ScalisPrimitive {
         super();
 
         if (density !== 1.0) {
-            throw "Error in ScalisTriangle : cannot use a density different from 1.0, not implemented.";
+            throw "[ScalisTriangle] constructor : cannot use a density different from 1.0, not implemented.";
         }
 
         this.volType = volType;
@@ -208,7 +208,7 @@ export class ScalisTriangle extends ScalisPrimitive {
     // [Abstract] See Primitive.setVolType for more details
     override setVolType(vt: ScalisPrimitiveVolType): void {
         if (!(vt == ScalisPrimitive.CONVOL || vt == ScalisPrimitive.DIST)) {
-            throw "ERROR : volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST";
+            throw "[ScalisTriangle] setVolType : volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST";
         }
 
         if (this.volType != vt) {
@@ -297,7 +297,7 @@ export class ScalisTriangle extends ScalisPrimitive {
                 // for now rings are just evaluated as distance surface
                 return this.evalConvol(p, res);
             default:
-                throw "Unknown volType, use Orga";
+                throw "[ScalisTriangle] value : Unknown volType, use Orga";
         }
     }
 
@@ -506,7 +506,7 @@ export class ScalisTriangle extends ScalisPrimitive {
                             res.m.lerp(self.materials[0], self.res_gseg.t);
                             break;
                         default:
-                            throw "Error : seg_case unknown";
+                            throw "[ScalisTriangle] evalDist : seg_case unknown";
                     }
                 }
                 //////////////////////////////////////////////////////////////

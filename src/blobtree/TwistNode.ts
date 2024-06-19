@@ -197,12 +197,12 @@ export class TwistNode extends Node {
                 }
                 // within primitive potential
                 if (res.step || res.stepOrtho) {
-                    throw "Not implemented";
+                    throw "[TwistNode] value : res.step and res.stepOrtho not implemented";
                 }
             }
         }
         else if (res.step || res.stepOrtho) {
-            throw "Not implemented";
+            throw "[TwistNode] value : res.step and res.stepOrtho not implemented";
         }
     }
 

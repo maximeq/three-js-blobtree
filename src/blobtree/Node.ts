@@ -30,7 +30,7 @@ export abstract class Node extends Element {
     static override type: NodeType = "Node";
 
     static override fromJSON(_json: NodeJSON): Node {
-        throw new Error("Node.fromJSON should never be called as Node is abstract.");
+        throw "[Node] fromJSON should never be called as Node is abstract.";
     }
 
     constructor() {
@@ -88,13 +88,13 @@ export abstract class Node extends Element {
             arr_c[i].destroy();
         }
         if (this.children.length !== 0) {
-            throw "Error : children length should be 0";
+            throw "[Node] destroy : children length should be 0";
         }
         if (this.parentNode !== null) {
             this.parentNode.removeChild(this);
         }
         if (this.parentNode !== null) {
-            throw "Error : parent node should be null at this point";
+            throw "[Node] destroy : parent node should be null at this point";
         }
         this.children.length = 0;
     };
@@ -141,7 +141,7 @@ export abstract class Node extends Element {
             cdn[i] = cdn[cdn.length - 1];
             cdn.pop();
         } else {
-            throw "c does not belong to the children of this node";
+            throw "[Node] removeChild : c does not belong to the children of this node";
         }
 
         this.invalidAABB();
@@ -166,7 +166,7 @@ export abstract class Node extends Element {
      */
     override getAreas() {
         if (!this.valid_aabb) {
-            throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
+            throw "[Node] getAreas : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
         }
         const res: { aabb: Box3, bv: Area, obj: Primitive }[] = [];
         for (let i = 0; i < this.children.length; i++) {

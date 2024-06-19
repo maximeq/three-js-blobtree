@@ -20,7 +20,7 @@ export abstract class Primitive extends Element {
     static override type: PrimitiveType = "Primitive";
 
     static override fromJSON(_json: PrimitiveJSON) {
-        throw new Error("Primitive.fromJSON should never be called as Primitive is abstract.");
+        throw "[Primitive] fromJSON should never be called as Primitive is abstract.";
     }
 
     materials: Material[] = [];
@@ -42,7 +42,7 @@ export abstract class Primitive extends Element {
      */
     setMaterials(mats: Material[]) {
         if (mats.length !== this.materials.length) {
-            throw "Error : trying to set " + mats.length + " materials on a primitive with only " + this.materials.length;
+            throw "[Primitive] setMaterials : trying to set " + mats.length + " materials on a primitive with only " + this.materials.length;
         }
         for (let i = 0; i < mats.length; ++i) {
             if (!mats[i].equals(this.materials[i])) {
@@ -63,7 +63,7 @@ export abstract class Primitive extends Element {
      * @link Element.computeAABB for a complete description
      */
     computeAABB(): void {
-        throw "Primitive.computeAABB  Must be reimplemented in all inherited class.";
+        throw "[Primitive] computeAABB must be reimplemented in all inherited class.";
     };
 
     /**

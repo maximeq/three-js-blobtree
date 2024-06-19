@@ -227,7 +227,7 @@ export class SlidingMarchingCubes {
      */
     constructor(blobtree: RootNode, smcParams: SMCParams) {
         if (!smcParams) {
-            throw new Error("smcParams must be provided for SlidingMarchingCubes, to use all default values, please use {}");
+            throw "[SlidingMarchingCubes] constructor : smcParams must be provided for SlidingMarchingCubes, to use all default values, please use {}";
         }
 
         this.blobtree = blobtree;

@@ -172,7 +172,7 @@ export class SDFCapsule extends SDFPrimitive {
         obj: SDFCapsule
     }[] {
         if (!this.valid_aabb) {
-            throw "ERROR: Cannot get area of invalid primitive";
+            throw "[SDFCapsule] getDistanceAreas : Cannot get area of invalid primitive";
         } else {
             return [{
                 aabb: this.computeDistanceAABB(d),

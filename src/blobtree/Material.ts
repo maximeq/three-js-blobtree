@@ -92,7 +92,7 @@ export class Material {
         params = params || {};
 
         if (arguments[1] !== undefined) {
-            throw "Error : Blobtree Material now takes only 1 argument.";
+            throw "[Material] constructor : Blobtree Material now takes only 1 argument.";
         }
 
         this.color = new Color(params.color !== undefined ? params.color : 0xaaaaaa);

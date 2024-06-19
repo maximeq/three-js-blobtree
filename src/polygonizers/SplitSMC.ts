@@ -34,7 +34,7 @@ export class SplitSMC extends SlidingMarchingCubes {
             this.metaBlobtree = params.metaBlobtree;
             this.metaBlobtree.prepareForEval();
         } else {
-            throw "Error : SplitSMC needs a meta blobtree in params (from which normals will be computed).";
+            throw "[SplitSMC] constructor : SplitSMC needs a meta blobtree in params (from which normals will be computed).";
         }
     }
 

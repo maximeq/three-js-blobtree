@@ -101,14 +101,14 @@ export class MinNode extends Node {
                     }
                     // within primitive potential
                     if (res.step || res.stepOrtho) {
-                        throw "Not implemented";
+                        throw "[MinNode] value: res.step and res.stepOrtho not implemented";
                     }
                 }
                 res.v = Math.min(res.v, tmp.v);
             }
         }
         else if (res.step || res.stepOrtho) {
-            throw "Not implemented";
+            throw "[MinNode] value: res.step and res.stepOrtho not implemented";
         }
     }
 

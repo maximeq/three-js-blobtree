@@ -129,7 +129,7 @@ export class ScalisPoint extends ScalisPrimitive {
      */
     value(p: Vector3, res: ValueResultType): void {
         if (!this.valid_aabb) {
-            throw "Error: PrepareForEval should have been called";
+            throw "[ScalisPoint] value : PrepareForEval should have been called";
         }
 
         const thickness = this.v[0].getThickness();

@@ -14,7 +14,7 @@ const Types = {
      */
     register(name, cls) {
         if (this.types[name]) {
-            throw "Error : cannot register type " + name + ", this name is already registered.";
+            throw "[Types] register : cannot register type " + name + ", this name is already registered.";
         }
         this.types[name] = cls;
     },
@@ -25,7 +25,7 @@ const Types = {
     fromJSON(json) {
         const cls = this.types[json.type];
         if (!cls) {
-            throw "Error : type found in JSON (" + json.type + " is not registered in the Blobtree library.";
+            throw "[Types] fromJSON : type found in JSON (" + json.type + " is not registered in the Blobtree library.";
         }
         return cls.fromJSON(json);
     }
@@ -40,7 +40,7 @@ let elementIds = 0;
 class Element {
     static type = "Element";
     static fromJSON(_json) {
-        throw new Error("Element.fromJSON should never be called as Element is abstract.");
+        throw "[Element] fromJSON should never be called as Element is abstract.";
     }
     id;
     aabb = new Box3();
@@ -156,7 +156,7 @@ class Element {
      *  @return  The next step length to do with respect to this primitive/node
      */
     distanceTo(_p) {
-        throw new Error("ERROR : distanceTo is a virtual function, should be reimplemented in all classes extending Element. Concerned type: " + this.getType() + ".");
+        throw "[Element] distanceTo is a virtual function, should be reimplemented in all classes extending Element. Concerned type: " + this.getType() + ".";
     }
     /**
      *  Trim the tree to keep only nodes influencing a given bounding box.
@@ -257,7 +257,7 @@ class Material {
     constructor(params) {
         params = params || {};
         if (arguments[1] !== undefined) {
-            throw "Error : Blobtree Material now takes only 1 argument.";
+            throw "[Material] constructor : Blobtree Material now takes only 1 argument.";
         }
         this.color = new Color(params.color !== undefined ? params.color : 0xaaaaaa);
         this.roughness = params.roughness !== undefined ? params.roughness : 0;
@@ -424,7 +424,7 @@ class Material {
 class Primitive extends Element {
     static type = "Primitive";
     static fromJSON(_json) {
-        throw new Error("Primitive.fromJSON should never be called as Primitive is abstract.");
+        throw "[Primitive] fromJSON should never be called as Primitive is abstract.";
     }
     materials = [];
     constructor() {
@@ -444,7 +444,7 @@ class Primitive extends Element {
      */
     setMaterials(mats) {
         if (mats.length !== this.materials.length) {
-            throw "Error : trying to set " + mats.length + " materials on a primitive with only " + this.materials.length;
+            throw "[Primitive] setMaterials : trying to set " + mats.length + " materials on a primitive with only " + this.materials.length;
         }
         for (let i = 0; i < mats.length; ++i) {
             if (!mats[i].equals(this.materials[i])) {
@@ -465,7 +465,7 @@ class Primitive extends Element {
      * @link Element.computeAABB for a complete description
      */
     computeAABB() {
-        throw "Primitive.computeAABB  Must be reimplemented in all inherited class.";
+        throw "[Primitive] computeAABB must be reimplemented in all inherited class.";
     }
     ;
     /**
@@ -521,7 +521,7 @@ class Node extends Element {
     children;
     static type = "Node";
     static fromJSON(_json) {
-        throw new Error("Node.fromJSON should never be called as Node is abstract.");
+        throw "[Node] fromJSON should never be called as Node is abstract.";
     }
     constructor() {
         super();
@@ -569,13 +569,13 @@ class Node extends Element {
             arr_c[i].destroy();
         }
         if (this.children.length !== 0) {
-            throw "Error : children length should be 0";
+            throw "[Node] destroy : children length should be 0";
         }
         if (this.parentNode !== null) {
             this.parentNode.removeChild(this);
         }
         if (this.parentNode !== null) {
-            throw "Error : parent node should be null at this point";
+            throw "[Node] destroy : parent node should be null at this point";
         }
         this.children.length = 0;
     }
@@ -620,7 +620,7 @@ class Node extends Element {
             cdn.pop();
         }
         else {
-            throw "c does not belong to the children of this node";
+            throw "[Node] removeChild : c does not belong to the children of this node";
         }
         this.invalidAABB();
         c.parentNode = null;
@@ -641,7 +641,7 @@ class Node extends Element {
      */
     getAreas() {
         if (!this.valid_aabb) {
-            throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
+            throw "[Node] getAreas : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
         }
         const res = [];
         for (let i = 0; i < this.children.length; i++) {
@@ -982,14 +982,14 @@ class MaxNode extends Node {
                     }
                     // within primitive potential
                     if (res.step || res.stepOrtho) {
-                        throw "Not implemented";
+                        throw "[MaxNode] value : res.step and res.stepOrtho not implemented";
                     }
                 }
                 res.v = Math.max(res.v, tmp.v);
             }
         }
         else if (res.step || res.stepOrtho) {
-            throw "Not implemented";
+            throw "[MaxNode] value : res.step and res.stepOrtho not implemented";
         }
     }
 }
@@ -1081,14 +1081,14 @@ class MinNode extends Node {
                     }
                     // within primitive potential
                     if (res.step || res.stepOrtho) {
-                        throw "Not implemented";
+                        throw "[MinNode] value: res.step and res.stepOrtho not implemented";
                     }
                 }
                 res.v = Math.min(res.v, tmp.v);
             }
         }
         else if (res.step || res.stepOrtho) {
-            throw "Not implemented";
+            throw "[MinNode] value: res.step and res.stepOrtho not implemented";
         }
     }
     /**
@@ -1409,13 +1409,13 @@ const Convergence = {
     ) {
         this.eval_res.g = this.eval_res_g; // active gradient computation
         if (!(search_dir_unit.x !== 0.0 || search_dir_unit.y !== 0.0 || search_dir_unit.z !== 0.0)) {
-            throw "Error : search direction is null";
+            throw "[Convergence] safeNewton1D : search direction is null";
         }
         if (epsilon <= 0) {
-            throw "Error: epsilon <= 0, convergence will nuke your face or loop";
+            throw "[Convergence] safeNewton1D : epsilon <= 0, convergence will nuke your face or loop";
         }
         if (starting_point_absc < min_absc_inside || starting_point_absc > max_absc_outside) {
-            throw "Error : starting absc is not in boundaries";
+            throw "[Convergence] safeNewton1D : starting absc is not in boundaries";
         }
         let curr_point_absc = starting_point_absc;
         const eval_pt = new Vector3();
@@ -1587,7 +1587,7 @@ class RootNode extends RicciNode {
      */
     internalTrim(aabb) {
         if (!(this.trimmed.length === 0 && this.trim_parents.length === 0)) {
-            throw "Error : you should not call internal trim if you have not untrimmed before. Call untrim or use externalTrim";
+            throw "[RootNode] internalTrim : you should not call internal trim if you have not untrimmed before. Call untrim or use externalTrim";
         }
         this.trim(aabb, this.trimmed, this.trim_parents);
     }
@@ -1619,7 +1619,7 @@ class RootNode extends RicciNode {
      */
     untrim(trimmed, parents) {
         if (!(trimmed.length === parents.length)) {
-            throw "Error : trimmed and parents arrays should have the same length";
+            throw "[RootNode] untrim : trimmed and parents arrays should have the same length";
         }
         for (let i = 0; i < trimmed.length; ++i) {
             parents[i].addChild(trimmed[i]);
@@ -1940,12 +1940,12 @@ class ScaleNode extends Node {
                 }
                 // within primitive potential
                 if (res.step || res.stepOrtho) {
-                    throw "Not implemented";
+                    throw "[ScaleNode] value : res.step and res.stepOrtho not implemented";
                 }
             }
         }
         else if (res.step || res.stepOrtho) {
-            throw "Not implemented";
+            throw "[ScaleNode] value : res.step and res.stepOrtho not implemented";
         }
     }
     /**
@@ -2111,12 +2111,12 @@ class TwistNode extends Node {
                 }
                 // within primitive potential
                 if (res.step || res.stepOrtho) {
-                    throw "Not implemented";
+                    throw "[TwistNode] value : res.step and res.stepOrtho not implemented";
                 }
             }
         }
         else if (res.step || res.stepOrtho) {
-            throw "Not implemented";
+            throw "[TwistNode] value : res.step and res.stepOrtho not implemented";
         }
     }
     /**
@@ -2421,7 +2421,7 @@ let KIS2 = 1 / (KS * KS);
  */
 let GetIsoValueAtDistanceGeom0D = function (degree, scale, dist) {
     if (degree % 2 !== 0) {
-        throw "degree should be even";
+        throw "[ScalisMath] GetIsoValueAtDistanceGeom2D : degree should be even";
     }
     if (dist < scale) {
         var func_dist_scale = 1.0 - (dist * dist) / (scale * scale);
@@ -2442,7 +2442,7 @@ let GetIsoValueAtDistanceGeom0D = function (degree, scale, dist) {
  */
 let GetIsoValueAtDistanceGeom1D = function (degree, scale, dist) {
     if (degree % 2 !== 0) {
-        throw "degree should be even";
+        throw "[ScalisMath] GetIsoValueAtDistanceGeom1D : degree should be even";
     }
     if (dist < scale) {
         var func_dist_scale = 1.0 - (dist * dist) / (scale * scale);
@@ -4049,7 +4049,7 @@ class ScalisPoint extends ScalisPrimitive {
      */
     value(p, res) {
         if (!this.valid_aabb) {
-            throw "Error: PrepareForEval should have been called";
+            throw "[ScalisPoint] value : PrepareForEval should have been called";
         }
         const thickness = this.v[0].getThickness();
         // Eval itself
@@ -4741,7 +4741,7 @@ class ScalisTriangle extends ScalisPrimitive {
     constructor(v, volType, density, mats) {
         super();
         if (density !== 1.0) {
-            throw "Error in ScalisTriangle : cannot use a density different from 1.0, not implemented.";
+            throw "[ScalisTriangle] constructor : cannot use a density different from 1.0, not implemented.";
         }
         this.volType = volType;
         this.materials = mats !== null ? mats : [Material.defaultMaterial.clone(), Material.defaultMaterial.clone(), Material.defaultMaterial.clone()];
@@ -4819,7 +4819,7 @@ class ScalisTriangle extends ScalisPrimitive {
     // [Abstract] See Primitive.setVolType for more details
     setVolType(vt) {
         if (!(vt == ScalisPrimitive.CONVOL || vt == ScalisPrimitive.DIST)) {
-            throw "ERROR : volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST";
+            throw "[ScalisTriangle] setVolType : volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST";
         }
         if (this.volType != vt) {
             this.volType = vt;
@@ -4900,7 +4900,7 @@ class ScalisTriangle extends ScalisPrimitive {
                 // for now rings are just evaluated as distance surface
                 return this.evalConvol(p, res);
             default:
-                throw "Unknown volType, use Orga";
+                throw "[ScalisTriangle] value : Unknown volType, use Orga";
         }
     }
     /**
@@ -5063,7 +5063,7 @@ class ScalisTriangle extends ScalisPrimitive {
                             res.m.lerp(self.materials[0], self.res_gseg.t);
                             break;
                         default:
-                            throw "Error : seg_case unknown";
+                            throw "[ScalisTriangle] evalDist : seg_case unknown";
                     }
                 }
                 //////////////////////////////////////////////////////////////
@@ -5579,7 +5579,7 @@ class SDFPrimitive extends Element {
         // Nothing to do, SDF have infinite bounding box
     }
     getAreas() {
-        throw "No Areas for SDFPrimitive.";
+        throw "getAreas : No Areas for SDFPrimitive.";
     }
     /**
      * Since SDF Nodes are distance function, this function will return
@@ -5741,7 +5741,7 @@ class SDFCapsule extends SDFPrimitive {
      */
     getDistanceAreas(d) {
         if (!this.valid_aabb) {
-            throw "ERROR: Cannot get area of invalid primitive";
+            throw "[SDFCapsule] getDistanceAreas : Cannot get area of invalid primitive";
         }
         else {
             return [{
@@ -6052,7 +6052,7 @@ class SDFRootNode extends Primitive {
      */
     getAreas() {
         if (!this.valid_aabb) {
-            throw new Error("ERROR: Cannot get area of invalid node");
+            throw "[SDFRootNode] getAreas : Cannot get area of invalid node";
         }
         else {
             let distAreas = this.sdfRoot.getDistanceAreas(this.f.getSupport());
@@ -6213,7 +6213,7 @@ class SDFSegment extends SDFPrimitive {
      */
     getDistanceAreas(d) {
         if (!this.valid_aabb) {
-            throw "ERROR : Cannot get area of invalid primitive";
+            throw "[SDFSegment] getDistanceAreas : Cannot get area of invalid primitive";
         }
         else {
             return [{
@@ -6325,7 +6325,7 @@ class SDFSphere extends SDFPrimitive {
      */
     getDistanceAreas(d) {
         if (!this.valid_aabb) {
-            throw "ERROR : Cannot get area of invalid primitive";
+            throw "[SDFSphere] getDistanceAreas : Cannot get area of invalid primitive";
         }
         else {
             return [{
@@ -6350,7 +6350,7 @@ class SDFSphere extends SDFPrimitive {
             /** @type {SDFSphere} */
             let self = this;
             if (!self.valid_aabb) {
-                throw "Error : PrepareForEval should have been called";
+                throw "[SDFSphere] value : PrepareForEval should have been called";
             }
             v.subVectors(p, self.p);
             var l = v.length();
@@ -6531,7 +6531,7 @@ class SlidingMarchingCubes {
      */
     constructor(blobtree, smcParams) {
         if (!smcParams) {
-            throw new Error("smcParams must be provided for SlidingMarchingCubes, to use all default values, please use {}");
+            throw "[SlidingMarchingCubes] constructor : smcParams must be provided for SlidingMarchingCubes, to use all default values, please use {}";
         }
         this.blobtree = blobtree;
         this.uniformZ = smcParams.zResolution === "uniform" ? true : false;
@@ -7731,7 +7731,7 @@ class SplitSMC extends SlidingMarchingCubes {
             this.metaBlobtree.prepareForEval();
         }
         else {
-            throw "Error : SplitSMC needs a meta blobtree in params (from which normals will be computed).";
+            throw "[SplitSMC] constructor : SplitSMC needs a meta blobtree in params (from which normals will be computed).";
         }
     }
     /**

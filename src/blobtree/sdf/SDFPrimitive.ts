@@ -54,7 +54,7 @@ export abstract class SDFPrimitive extends Element {
     abstract computeDistanceAABB(d: number): Box3;
 
     override getAreas(): {aabb: Box3; bv: Area; obj: Primitive }[] {
-        throw "No Areas for SDFPrimitive.";
+        throw "getAreas : No Areas for SDFPrimitive.";
     }
 
     /**

@@ -100,14 +100,14 @@ export class MaxNode extends Node {
                     }
                     // within primitive potential
                     if (res.step || res.stepOrtho) {
-                        throw "Not implemented";
+                        throw "[MaxNode] value : res.step and res.stepOrtho not implemented";
                     }
                 }
                 res.v = Math.max(res.v, tmp.v);
             }
         }
         else if (res.step || res.stepOrtho) {
-            throw "Not implemented";
+            throw "[MaxNode] value : res.step and res.stepOrtho not implemented";
         }
     }
 

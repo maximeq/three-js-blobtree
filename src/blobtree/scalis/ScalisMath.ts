@@ -14,7 +14,7 @@ let KIS2 = 1 / (KS * KS);
  */
 let GetIsoValueAtDistanceGeom0D = function (degree: number, scale: number, dist: number): number {
     if (degree % 2 !== 0) {
-        throw "degree should be even";
+        throw "[ScalisMath] GetIsoValueAtDistanceGeom2D : degree should be even";
     }
 
     if (dist < scale) {
@@ -37,7 +37,7 @@ let GetIsoValueAtDistanceGeom0D = function (degree: number, scale: number, dist:
  */
 let GetIsoValueAtDistanceGeom1D = function (degree: number, scale: number, dist: number) {
     if (degree % 2 !== 0) {
-        throw "degree should be even";
+        throw "[ScalisMath] GetIsoValueAtDistanceGeom1D : degree should be even";
     }
 
     if (dist < scale) {

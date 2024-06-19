@@ -38,7 +38,7 @@ export abstract class Element {
     static type: ElementType = "Element";
 
     static fromJSON(_json: ElementJSON) {
-        throw new Error("Element.fromJSON should never be called as Element is abstract.");
+        throw "[Element] fromJSON should never be called as Element is abstract.";
     }
 
     id: number;
@@ -203,7 +203,7 @@ export abstract class Element {
      *  @return  The next step length to do with respect to this primitive/node
      */
     distanceTo(_p: Vector3): number {
-        throw new Error("ERROR : distanceTo is a virtual function, should be reimplemented in all classes extending Element. Concerned type: " + this.getType() + ".");
+        throw "[Element] distanceTo is a virtual function, should be reimplemented in all classes extending Element. Concerned type: " + this.getType() + ".";
     }
 
     /**

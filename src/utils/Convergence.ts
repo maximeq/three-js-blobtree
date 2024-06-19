@@ -158,13 +158,13 @@ export const Convergence: Convergence = {
     this.eval_res.g = this.eval_res_g; // active gradient computation
 
     if (!(search_dir_unit.x !== 0.0 || search_dir_unit.y !== 0.0 || search_dir_unit.z !== 0.0)) {
-        throw "Error : search direction is null";
+        throw "[Convergence] safeNewton1D : search direction is null";
     }
     if (epsilon <= 0) {
-        throw "Error: epsilon <= 0, convergence will nuke your face or loop";
+        throw "[Convergence] safeNewton1D : epsilon <= 0, convergence will nuke your face or loop";
     }
     if (starting_point_absc < min_absc_inside || starting_point_absc > max_absc_outside) {
-        throw "Error : starting absc is not in boundaries";
+        throw "[Convergence] safeNewton1D : starting absc is not in boundaries";
     }
 
     let curr_point_absc = starting_point_absc;

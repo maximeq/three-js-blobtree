@@ -101,7 +101,7 @@ export class RootNode extends RicciNode {
      */
     internalTrim(aabb: Box3) {
         if (!(this.trimmed.length === 0 && this.trim_parents.length === 0)) {
-            throw "Error : you should not call internal trim if you have not untrimmed before. Call untrim or use externalTrim";
+            throw "[RootNode] internalTrim : you should not call internal trim if you have not untrimmed before. Call untrim or use externalTrim";
         }
         this.trim(aabb, this.trimmed, this.trim_parents);
     };
@@ -133,7 +133,7 @@ export class RootNode extends RicciNode {
      */
     untrim(trimmed: Element[], parents: Node[]) {
         if (!(trimmed.length === parents.length)) {
-            throw "Error : trimmed and parents arrays should have the same length";
+            throw "[RootNode] untrim : trimmed and parents arrays should have the same length";
         }
         for (let i = 0; i < trimmed.length; ++i) {
             parents[i].addChild(trimmed[i]);

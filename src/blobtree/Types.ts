@@ -22,7 +22,7 @@ export const Types: Types = {
      */
     register(name: string, cls: { fromJSON: Function }): void {
         if (this.types[name]) {
-            throw "Error : cannot register type " + name + ", this name is already registered.";
+            throw "[Types] register : cannot register type " + name + ", this name is already registered.";
         }
         this.types[name] = cls;
     },
@@ -33,7 +33,7 @@ export const Types: Types = {
     fromJSON(json: {type: string, [key: string]: any}): any {
         const cls = this.types[json.type];
         if (!cls) {
-            throw "Error : type found in JSON (" + json.type + " is not registered in the Blobtree library.";
+            throw "[Types] fromJSON : type found in JSON (" + json.type + " is not registered in the Blobtree library.";
         }
         return cls.fromJSON(json);
     }

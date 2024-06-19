@@ -93,7 +93,7 @@ export class SDFRootNode extends Primitive {
      */
     override getAreas(): { aabb: Box3, bv: Area, obj: Primitive }[] {
         if (!this.valid_aabb) {
-            throw new Error("ERROR: Cannot get area of invalid node");
+            throw "[SDFRootNode] getAreas : Cannot get area of invalid node";
         } else {
             let distAreas = this.sdfRoot.getDistanceAreas(this.f.getSupport());
             return distAreas.map(area => ({

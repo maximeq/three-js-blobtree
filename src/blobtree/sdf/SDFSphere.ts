@@ -98,7 +98,7 @@ export class SDFSphere extends SDFPrimitive {
         obj: SDFSphere
     }[] {
         if (!this.valid_aabb) {
-            throw "ERROR : Cannot get area of invalid primitive";
+            throw "[SDFSphere] getDistanceAreas : Cannot get area of invalid primitive";
         } else {
             return [{
                 aabb: this.computeDistanceAABB(d),
@@ -126,7 +126,7 @@ export class SDFSphere extends SDFPrimitive {
             let self = this;
 
             if (!self.valid_aabb) {
-                throw "Error : PrepareForEval should have been called";
+                throw "[SDFSphere] value : PrepareForEval should have been called";
             }
 
             v.subVectors(p, self.p);

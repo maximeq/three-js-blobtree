@@ -132,7 +132,7 @@ export class SDFSegment extends SDFPrimitive {
         obj: SDFSegment
     }[] {
         if (!this.valid_aabb) {
-            throw "ERROR : Cannot get area of invalid primitive";
+            throw "[SDFSegment] getDistanceAreas : Cannot get area of invalid primitive";
         } else {
             return [{
                 aabb: this.computeDistanceAABB(d),
