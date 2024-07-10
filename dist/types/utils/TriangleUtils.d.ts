@@ -3,10 +3,10 @@ interface VertexLike {
     getPos: () => Vector3;
     getThickness: () => number;
 }
-interface TriangleLike extends TriangleComputedAttributes {
+export interface TriangleLike extends TriangleComputedAttributes {
     v: VertexLike[];
 }
-interface TriangleComputedAttributes {
+export interface TriangleComputedAttributes {
     p0p1?: Vector3;
     p1p2?: Vector3;
     p2p0?: Vector3;
