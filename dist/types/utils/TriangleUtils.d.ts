@@ -37,7 +37,7 @@ export interface TriangleComputedAttributes {
     max_seg_length?: number;
     unsigned_ortho_dir?: Vector3;
 }
-interface TriangleLikeDeprecated {
+export interface TriangleLikeDeprecated {
     v: VertexLike[];
     p0p1: Vector3;
     p1p2: Vector3;

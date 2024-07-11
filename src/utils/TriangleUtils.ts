@@ -42,7 +42,7 @@ export interface TriangleComputedAttributes {
     unsigned_ortho_dir?: Vector3; // This should be calculated in a method, not directly in the interface.
 }
 
-interface TriangleLikeDeprecated {
+export interface TriangleLikeDeprecated {
     v: VertexLike[];
     p0p1: Vector3;
     p1p2: Vector3;
