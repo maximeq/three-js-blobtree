@@ -17,6 +17,7 @@ export type RicciNodeJSON = {
  */
 export class RicciNode extends Node {
     ricci_n: number;
+    // temp vars to speed up evaluation by avoiding allocations
     tmp_v_arr: Float32Array = new Float32Array(0);
     tmp_m_arr: Material[] = [];
     tmp_res: ValueResultType = { v: 0, g: null, m: null };

@@ -14,6 +14,7 @@ type MinNodeJSON = NodeJSON;
  *  @extends Node
  */
 export class MinNode extends Node {
+    // temp vars to speed up evaluation by avoiding allocations
     tmp_res: ValueResultType = { v: 0, g: null, m: null };
     tmp_g: Vector3 = new Vector3();
     tmp_m: Material = new Material();

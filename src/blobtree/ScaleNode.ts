@@ -21,6 +21,8 @@ type ScaleNodeJSON = {
  */
 export class ScaleNode extends Node {
     _scale: Vector3 = new Vector3(1, 1, 1);
+
+    // temp vars to speed up evaluation by avoiding allocations
     tmp_res: ValueResultType = { v: 0, g: null, m: null };
     tmp_g: Vector3 = new Vector3();
     tmp_m: Material = new Material();

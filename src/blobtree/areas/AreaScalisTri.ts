@@ -27,7 +27,7 @@ export class AreaScalisTri extends Area {
     unit_normal: Vector3;
     main_dir: Vector3;
     equal_weights: boolean;
-    segParams: SegParam[]; // Define type for segParams as per your actual structure
+    segParams: SegParam[];
     segAttr: {
         p0_to_p: Vector3;
         p0_to_p_sqrnorm: number;
