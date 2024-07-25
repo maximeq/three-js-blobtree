@@ -903,6 +903,7 @@ Types.register(DifferenceNode.type, DifferenceNode);
  *  @extends Node
  */
 class MaxNode extends Node {
+    // temp vars to speed up evaluation by avoiding allocations
     tmp_res = { v: 0, g: null, m: null };
     tmp_g = new Vector3();
     tmp_m = new Material();
@@ -1002,6 +1003,7 @@ Types.register(MaxNode.type, MaxNode);
  *  @extends Node
  */
 class MinNode extends Node {
+    // temp vars to speed up evaluation by avoiding allocations
     tmp_res = { v: 0, g: null, m: null };
     tmp_g = new Vector3();
     tmp_m = new Material();
@@ -1112,6 +1114,7 @@ Types.register(MinNode.type, MinNode);
  */
 class RicciNode extends Node {
     ricci_n;
+    // temp vars to speed up evaluation by avoiding allocations
     tmp_v_arr = new Float32Array(0);
     tmp_m_arr = [];
     tmp_res = { v: 0, g: null, m: null };
@@ -1810,6 +1813,7 @@ Types.register(RootNode.type, RootNode);
  */
 class ScaleNode extends Node {
     _scale = new Vector3(1, 1, 1);
+    // temp vars to speed up evaluation by avoiding allocations
     tmp_res = { v: 0, g: null, m: null };
     tmp_g = new Vector3();
     tmp_m = new Material();
@@ -3410,7 +3414,7 @@ class AreaScalisTri extends Area {
     unit_normal;
     main_dir;
     equal_weights;
-    segParams; // Define type for segParams as per your actual structure
+    segParams;
     segAttr;
     planeParams;
     segAreas;
