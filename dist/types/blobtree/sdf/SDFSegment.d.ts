@@ -1,5 +1,5 @@
 import { Vector3, Line3, Box3 } from "three";
-import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive.js";
+import { SDFPrimitive, type SDFPrimitiveJSON, type SDFSegmentType } from "./SDFPrimitive.js";
 import { AreaCapsule } from "../areas/AreaCapsule.js";
 import type { ValueResultType } from "../Element.js";
 export type SDFSegmentJSON = {
@@ -16,7 +16,7 @@ export type SDFSegmentJSON = {
     acc: number;
 } & SDFPrimitiveJSON;
 export declare class SDFSegment extends SDFPrimitive {
-    static type: string;
+    static type: SDFSegmentType;
     static fromJSON(json: SDFSegmentJSON): SDFSegment;
     p1: Vector3;
     p2: Vector3;
@@ -28,7 +28,7 @@ export declare class SDFSegment extends SDFPrimitive {
     *  @param acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
     */
     constructor(p1: Vector3, p2: Vector3, acc: number);
-    getType(): string;
+    getType(): SDFSegmentType;
     toJSON(): SDFSegmentJSON;
     /**
      *  @param acc The new accuracy factor
@@ -47,18 +47,17 @@ export declare class SDFSegment extends SDFPrimitive {
      */
     setPosition2(p2: Vector3): void;
     /**
-     *  @return {Vector3} Current position of the first segment point
+     *  @return Current position of the first segment point
      */
     getPosition1(): Vector3;
     /**
-     *  @return {Vector3} Current position of the second segment point
+     *  @return Current position of the second segment point
      */
     getPosition2(): Vector3;
     computeDistanceAABB(d: number): Box3;
     prepareForEval(): void;
     /**
-     * @param {number} d
-     * @return {Object} The Areas object corresponding to the node/primitive, in an array
+     * @return The Areas object corresponding to the node/primitive, in an array
      */
     getDistanceAreas(d: number): {
         aabb: Box3;
@@ -68,6 +67,6 @@ export declare class SDFSegment extends SDFPrimitive {
     /**
      *  @link Element.value for a complete description
      */
-    value: (p: Vector3, res: ValueResultType) => void;
+    value: (this: SDFSegment, p: Vector3, res: ValueResultType) => void;
 }
 //# sourceMappingURL=SDFSegment.d.ts.map

@@ -1,19 +1,16 @@
-import { RicciNode } from "./RicciNode.js";
-/** @typedef {import('./Element')} Element */
-/** @typedef {import('./Node')} Node */
-/** @typedef {import('./Material')} Material */
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./RicciNode').RicciNodeJSON} RicciNodeJSON */
-/**
- * @typedef {{iso:number} & RicciNodeJSON} RootNodeJSON
- */
-/**
- * @typedef {Object} IntersectionResult The result of the intersection
- * @property {number=} distance distance from ray.origin to intersection point,
- * @property {Vector3} point: intersection point,
- * @property {Vector3} g: gradient at intersection, if required.
- */
+import { Box3, type Ray, Vector3 } from "three";
+import { RicciNode } from "./RicciNode";
+import type { Element } from './Element';
+import type { Node, RootNodeType } from './Node';
+import type { RicciNodeJSON } from './RicciNode';
+type RootNodeJSON = {
+    iso: number;
+} & RicciNodeJSON;
+interface IntersectionResult {
+    distance?: number;
+    point: Vector3;
+    g?: Vector3;
+}
 /**
  *  The root of any implicit blobtree. Does behave computationaly like a RicciNode with n = 64.
  *  The RootNode is the only node to be its own parent.
@@ -21,38 +18,24 @@ import { RicciNode } from "./RicciNode.js";
  *  @extends RicciNode
  */
 export declare class RootNode extends RicciNode {
-    static type: string;
-    /**
-     * @param {RootNodeJSON} json
-     * @returns {RootNode}
-     */
-    static fromJSON(json: any): RootNode;
+    iso_value: number;
+    trimmed: Element[];
+    trim_parents: Node[];
+    static type: RootNodeType;
+    static fromJSON(json: RootNodeJSON): RootNode;
     constructor();
     /**
      * @link Node.getType
-     * @returns {string}
      */
-    getType(): string;
+    getType(): RootNodeType;
     /**
      * @link RicciNode.toJSON
-     * @returns {RootNodeJSON}
      */
-    toJSON(): {
-        iso: any;
-        ricci_n: any;
-        children: never[];
-        type: string;
-    };
+    toJSON(): RootNodeJSON;
+    getIsoValue(): number;
+    setIsoValue(v: number): void;
     /**
-     * @returns {number}
-     */
-    getIsoValue(): any;
-    /**
-     * @param {number} v
-     */
-    setIsoValue(v: any): void;
-    /**
-     *  @return {number} The neutral value of this tree, ie the value of the field in empty region of space.
+     *  @return The neutral value of this tree, ie the value of the field in empty region of space.
      *                   This is an API for external use and future development. For now it is hard set to 0.
      */
     getNeutralValue(): number;
@@ -63,18 +46,16 @@ export declare class RootNode extends RicciNode {
     /**
      *  Basically perform a trim but keep track of trimmed elements.
      *  This is usefull if you want to trim, then untrim, then trim, etc...
-     *  For example, this is very useful for evaluation optim
-     *  @param {Box3} aabb
+     *  For example, this is very useful for evaluation optimization.
      */
-    internalTrim(aabb: any): void;
+    internalTrim(aabb: Box3): void;
     /**
      *  Wrapper for trim, will help programmers to make the difference between
      *  internal and external trim.
-     *  @param {Box3} aabb
-     *  @param {Array.<Element>} trimmed Array of trimmed Elements
-     *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
+     *  @param trimmed Array of trimmed Elements
+     *  @param parents Array of fathers from which each trimmed element has been removed.
      */
-    externalTrim(aabb: any, trimmed: any, parents: any): void;
+    externalTrim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
     /**
      *  Reset the full blobtree
      */
@@ -82,22 +63,32 @@ export declare class RootNode extends RicciNode {
     /**
      *  Reset the full blobtree given previous trimming data.
      *  Note : don't forget to recall prepareForEval if you want to perform evaluation.
-     *  @param {Array.<Element>} trimmed Array of trimmed Elements
-     *  @param {Array.<Node>} parents Array of fathers from which each trimmed element has been removed.
+     *  @param trimmed Array of trimmed Elements
+     *  @param parents Array of fathers from which each trimmed element has been removed.
      */
-    untrim(trimmed: any, parents: any): void;
+    untrim(trimmed: Element[], parents: Node[]): void;
     /**
      *  Tell if the blobtree is empty
      *  @return true if blobtree is empty
      */
-    isEmpty: () => boolean;
-    intersectRayBlob: (ray: any, res: any, maxDistance: any, _precision: any) => boolean;
+    isEmpty(): boolean;
+    intersectRayBlob: (this: RootNode, ray: Ray, res: IntersectionResult, maxDistance: number, _precision: number) => boolean;
     /**
      *  Kaiser function for some intersection and raycasting...
      *  Undocumented.
      *  TODO : check, it is probably an optimized intersection for blob intersection
      *         in X, Y or Z directions.
      */
-    intersectOrthoRayBlob: (wOffset: any, hOffset: any, res: any, dim: any) => void;
+    intersectOrthoRayBlob: (this: RootNode, wOffset: number, hOffset: number, res: IntersectionResult[], dim: {
+        axis: {
+            x: boolean;
+            y: boolean;
+            z: boolean;
+        };
+        get: (v: Vector3) => number;
+        add: (v: Vector3, s: number) => void;
+        divide: (v: Vector3, s: number) => void;
+    }) => void;
 }
+export {};
 //# sourceMappingURL=RootNode.d.ts.map

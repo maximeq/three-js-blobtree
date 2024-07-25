@@ -1,6 +1,6 @@
 import { Vector3, Box3 } from "three"
 import { Types } from "../Types.js";
-import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive.js";
+import { SDFPrimitive, type SDFPrimitiveJSON, type SDFSphereType } from "./SDFPrimitive.js";
 import { AreaSphere } from "../areas/AreaSphere.js";
 import type { ValueResultType } from "../Element.js";
 
@@ -8,9 +8,9 @@ export type SDFSphereJSON = { p: { x: number, y: number, z: number }, r: number 
 
 export class SDFSphere extends SDFPrimitive {
 
-    static type = "SDFSphere";
+    static override type: SDFSphereType = "SDFSphere";
 
-    static fromJSON(json: SDFSphereJSON): SDFSphere {
+    static override fromJSON(json: SDFSphereJSON): SDFSphere {
         return new SDFSphere(new Vector3(json.p.x, json.p.y, json.p.z), json.r);
     };
 
@@ -28,11 +28,11 @@ export class SDFSphere extends SDFPrimitive {
         this.r = r;
     }
 
-    getType() {
+    override getType(): SDFSphereType {
         return SDFSphere.type;
     };
 
-    toJSON(): SDFSphereJSON {
+    override toJSON(): SDFSphereJSON {
         return {
             ...super.toJSON(),
             p: {
@@ -47,7 +47,7 @@ export class SDFSphere extends SDFPrimitive {
     /**
      *  @param r The new radius
      */
-    setRadius(r: number) {
+    setRadius(r: number): void {
         this.r = r;
         this.invalidAABB();
     };
@@ -62,7 +62,7 @@ export class SDFSphere extends SDFPrimitive {
     /**
      *  @param p The new position (ie center)
      */
-    setPosition(p: Vector3) {
+    setPosition(p: Vector3): void {
         this.p.copy(p);
         this.invalidAABB();
     };
@@ -90,8 +90,7 @@ export class SDFSphere extends SDFPrimitive {
     };
 
     /**
-     * @param {number} d
-     * @return {Object} The Areas object corresponding to the node/primitive, in an array
+     * @return The Areas object corresponding to the node/primitive, in an array
      */
     getDistanceAreas(d: number): {
         aabb: Box3,
@@ -99,7 +98,7 @@ export class SDFSphere extends SDFPrimitive {
         obj: SDFSphere
     }[] {
         if (!this.valid_aabb) {
-            throw "ERROR : Cannot get area of invalid primitive";
+            throw "[SDFSphere] getDistanceAreas : Cannot get area of invalid primitive";
         } else {
             return [{
                 aabb: this.computeDistanceAABB(d),
@@ -122,12 +121,12 @@ export class SDFSphere extends SDFPrimitive {
          *  @param {Vector3} p
          *  @param {ValueResultType} res
          */
-        return function (p: Vector3, res: ValueResultType) {
+        return function (this: SDFSphere, p: Vector3, res: ValueResultType): void {
             /** @type {SDFSphere} */
             let self = this;
 
             if (!self.valid_aabb) {
-                throw "Error : PrepareForEval should have been called";
+                throw "[SDFSphere] value : PrepareForEval should have been called";
             }
 
             v.subVectors(p, self.p);

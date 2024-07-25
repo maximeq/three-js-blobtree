@@ -1,25 +1,20 @@
 import { Element, type ElementJSON } from './Element';
 import { Material, type MaterialJSON } from './Material';
 import type { Area } from './areas';
-/**
- * @typedef {import('./Material.js')} Material
- * @typedef {import('./Material.js').MaterialJSON} MaterialJSON
- * @typedef {import('./Element.js').ElementJSON} ElementJSON
- * @typedef {import('./Element.js').Json} Json
- *
- * @typedef {import('./areas/Area.js')} Area
- */
+import type { ScalisPrimitiveType } from './scalis';
+import type { SDFRootNodeType } from './sdf';
 export type PrimitiveJSON = {
-    materials: Array<MaterialJSON>;
+    materials: MaterialJSON[];
 } & ElementJSON;
+export type PrimitiveType = "Primitive" | ScalisPrimitiveType | SDFRootNodeType;
 /**
  *  Represent a blobtree primitive.
  *
  *  @constructor
  *  @extends {Element}
  */
-export declare class Primitive extends Element {
-    static type: string;
+export declare abstract class Primitive extends Element {
+    static type: PrimitiveType;
     static fromJSON(_json: PrimitiveJSON): void;
     materials: Material[];
     constructor();
@@ -54,7 +49,7 @@ export declare class Primitive extends Element {
      * @abstract
      * Compute variables to help with value computation.
      */
-    computeHelpVariables(): void;
+    abstract computeHelpVariables(): void;
     /**
      * @abstract
      * Compute variables to help with value computation.

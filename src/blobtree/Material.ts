@@ -1,43 +1,35 @@
 import { Color } from "three";
 
-export type MaterialJSON = Object;
+export type MaterialJSON = {
+    color: string,
+    roughness: number,
+    metalness: number,
+    emissive: string,
+};
 
-/**
- * @property {string} color
- * @property {number} roughness
- * @property {number} metalness
- * @property {string} emissive
- */
+interface MaterialParams {
+    color?: Color; // Base diffuse color for the material. Defaults to #aaaaaa
+    roughness?: number; // Roughness for the material. Defaults to 0.
+    metalness?: number; // Metalness aspect of the material, 1 for metalness, 0 for dielectric. Defaults to 0.
+    emissive?: Color; // Emissive color for the material.
+}
 
 /**
  *  Material object for blobtree. It is an internal material, that should especially
  *  be used in implicit elements. It is the internal representation of the material,
  *  not the openGL material that will be used for display.
- *  @constructor
- *
- *  @param {!Object} params Parameters for the material. As a dictionary to be easily extended later.
- *
- *  @param {Color?}   params.color        Base diffuse color for the material.
- *                                              Defaults to #aaaaaa
- *
- *  @param {number?}        params.roughness    Roughness for the material.
- *                                              Defaults to 0.
- *
- *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
- *                                              Defaults to 0.
- *
- *  @param {Color?} params.emissive       Emissive color for the material.
- *                                              Defaults to pitch black. (no light emission)
  */
 export class Material {
+    color: Color;
+    roughness: number;
+    metalness: number;
+    emissive: Color;
 
     static defaultMaterial = new Material();
 
     // Other static functions
     /**
-     *  Compare arrays of materials.
-     *
-     *  @deprecated
+     *  Compare arrays of materials 
      *
      *  @param {Array.<Material>} arr1
      *  @param {Array.<Material>} arr2
@@ -45,9 +37,10 @@ export class Material {
      *  @param {Array.<Material>=} arr4
      *  @param {Array.<Material>=} arr5
      *
-     *  @return {boolean} true if and only if all arguments are arrays of the same length and containing the same material values.
+     *  @return true if and only if all arguments are arrays of the same length and containing the same material values.
+     *  @deprecated
      */
-    static areEqualsArrays(arr1) {
+    static areEqualsArrays(arr1: Material[]): boolean {
 
         console.warn("Material.areEqualsArrays is deprecated, please use your own comparison function using Material.equals.");
 
@@ -73,33 +66,33 @@ export class Material {
         return res;
     };
 
-    static fromJSON(json) {
+    static fromJSON(json: MaterialJSON): Material {
         return new Material({
             color: new Color(json.color),
             roughness: json.roughness,
             metalness: json.metalness,
-            emissive: json.emissive, // If undefined, will default to pitch black. If not, will load the hex string.
+            emissive: new Color(json.emissive ? json.emissive : 0), // If undefined, will default to pitch black. If not, will load the hex string.
         });
     }
 
     /**
     *  @constructor
     *
-    *  @param { !Object } params Parameters for the material.As a dictionary to be easily extended later.
+    *  @param params Parameters for the material.As a dictionary to be easily extended later.
     *
-    *  @param { Color ?} params.color Base diffuse color for the material. Defaults to #aaaaaa
+    *  @param params.color Base diffuse color for the material. Defaults to #aaaaaa
     *
-    *  @param { number ?} params.roughness Roughness for the material. Defaults to 0.
+    *  @param params.roughness Roughness for the material. Defaults to 0.
     *
-    *  @param { number ?} params.metalness Metalness aspect of the material, 1 for metalness, 0 for dielectric. Defaults to 0.
+    *  @param params.metalness Metalness aspect of the material, 1 for metalness, 0 for dielectric. Defaults to 0.
     *
-    *  @param { Color ?} params.emissive Emissive color for the material. Defaults to pitch black. (no light emission)
+    *  @param params.emissive Emissive color for the material. Defaults to pitch black. (no light emission)
     */
-    constructor(params) {
+    constructor(params?: MaterialParams) {
         params = params || {};
 
         if (arguments[1] !== undefined) {
-            throw "Error : Blobtree Material now takes only 1 argument.";
+            throw "[Material] constructor : Blobtree Material now takes only 1 argument.";
         }
 
         this.color = new Color(params.color !== undefined ? params.color : 0xaaaaaa);
@@ -119,7 +112,7 @@ export class Material {
 
     /**
      *  Return a clone of the material
-     *  @return {!Material} The new material
+     *  @return The new material
      */
     clone() {
         return new Material({
@@ -132,9 +125,9 @@ export class Material {
 
     /**
      *  Copy the given material parameters
-     *  @param {!Material} mat Material to be copied
+     *  @param mat Material to be copied
      */
-    copy(mat) {
+    copy(mat: Material) {
         this.color.copy(mat.color);
         this.roughness = mat.roughness;
         this.metalness = mat.metalness;
@@ -144,11 +137,11 @@ export class Material {
     /**
      *  @deprecated Use setParams instead
      *  Set Material parameters at once. DEPRECATED. Use setParams
-     *  @param {Color!} c Color
-     *  @param {number!} r roughness
-     *  @param {number!} m Metalness
+     *  @param  c Color
+     *  @param r roughness
+     *  @param m Metalness
      */
-    set(c, r, m) {
+    set(c: Color, r: number, m: number) {
         this.color.copy(c);
         this.roughness = r;
         this.metalness = m;
@@ -157,33 +150,29 @@ export class Material {
     /**
      *  Set Material parameters (all or just some)
      *
-     *  @param {Object} params Parameters for the material. As a dictionary to be easily extended later.
-     *  @param {Color?}   params.color        Base diffuse color for the material.
-     *  @param {number?}        params.roughness    Roughness for the material.
-     *  @param {number?}        params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
-     *  @param {Color?} params.emissive       Emissive color for the material.
+     *  @param params Parameters for the material. As a dictionary to be easily extended later.
+     *  @param params.color        Base diffuse color for the material.
+     *  @param params.roughness    Roughness for the material.
+     *  @param params.metalness    Metalness aspect of the material, 1 for metalness, 0 for dielectric.
+     *  @param params.emissive       Emissive color for the material.
      */
-    setParams(params) {
+    setParams(params: MaterialParams) {
         this.color.copy(params.color ? params.color : this.color);
         this.roughness = params.roughness !== undefined ? params.roughness : this.roughness;
         this.metalness = params.metalness !== undefined ? params.metalness : this.metalness;
         this.emissive.copy(params.emissive !== undefined ? params.emissive : this.emissive);
     }
 
-    /** @return {Color} */
-    getColor() { return this.color; };
+    getColor(): Color { return this.color; };
 
-    /** @return {number} */
-    getRoughness() { return this.roughness; };
+    getRoughness(): number { return this.roughness; };
 
-    /** @return {number} */
-    getMetalness = function () { return this.metalness; };
+    getMetalness(): number { return this.metalness; };
 
-    /** @return {Color} */
-    getEmissive() { return this.emissive; }
+    getEmissive(): Color { return this.emissive; }
 
 
-    equals(m) {
+    equals(m: Material) {
         return this.color.equals(m.color) &&
             this.metalness === m.metalness &&
             this.roughness === m.roughness &&
@@ -193,10 +182,10 @@ export class Material {
     /**
      *  Perform a linear interpolation between this material and a given other.
      * (1-s)*this + s*m = this +(m1-this)*s
-     *  @param {!Material} m The material to interpolate with this
-     *  @param {number} s the interpolation coefficient
+     *  @param m The material to interpolate with this
+     *  @param s the interpolation coefficient
      */
-    lerp(m, s) {
+    lerp(m: Material, s: number) {
         this.color.lerp(m.color, s);
         this.roughness = (1 - s) * this.roughness + s * m.roughness;
         this.metalness = (1 - s) * this.metalness + s * m.metalness;
@@ -205,16 +194,16 @@ export class Material {
     /**
      *  Used in triangles (ok it's specific, still we need it :)
      *  Linear interpolation over a triangle? Store the result in this
-     *  @param {!Material} m1 The material of first corner
-     *  @param {!Material} m2 The material of second corner
-     *  @param {!Material} m3 The material of third corner
-     *  @param {number} a1 the interpolation coefficient 1
-     *  @param {number} a2 the interpolation coefficient 2
-     *  @param {number} a3 the interpolation coefficient 3
-     *  @param {number} denum Normalizing the result (division)
-     *  @return {Material} this
+     *  @param m1 The material of first corner
+     *  @param m2 The material of second corner
+     *  @param m3 The material of third corner
+     *  @param a1 the interpolation coefficient 1
+     *  @param a2 the interpolation coefficient 2
+     *  @param a3 the interpolation coefficient 3
+     *  @param denum Normalizing the result (division)
+     *  @return this
      */
-    triMean(m1, m2, m3, a1, a2, a3, denum) {
+    triMean(m1: Material, m2: Material, m3: Material, a1: number, a2: number, a3: number, denum: number): Material {
         this.color.r = (a1 * m1.color.r + a2 * m2.color.r + a3 * m3.color.r) / denum;
         this.color.g = (a1 * m1.color.g + a2 * m2.color.g + a3 * m3.color.g) / denum;
         this.color.b = (a1 * m1.color.b + a2 * m2.color.b + a3 * m3.color.b) / denum;
@@ -233,11 +222,11 @@ export class Material {
     /**
      *  Perform a weighted mean over several materials and set to this.
      *  Note that m_arr.length must equals v_arr.length
-     *  @param {Array.<!Material>} m_arr Array of materials
-     *  @param {Array.<number>|Float32Array} v_arr Array of values being the corresponding weights
-     *  @param {number=} n Can be set if you want to mean only the n first element of the arrays
+     *  @param m_arr Array of materials
+     *  @param v_arr Array of values being the corresponding weights
+     *  @param n Can be set if you want to mean only the n first element of the arrays
      */
-    weightedMean(m_arr, v_arr, n) {
+    weightedMean(m_arr: Material[], v_arr: (number[] | Float32Array), n?: number) {
         this.color.setRGB(0, 0, 0);
         this.roughness = 0;
         this.metalness = 0;

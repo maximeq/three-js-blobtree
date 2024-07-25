@@ -1,40 +1,36 @@
-import { Types } from "../Types"
+import { Types } from "../Types";
 
-/** @typedef {*} Json */
+export type DistanceFunctorJSON = { type: string };
 
-/**
- * @typedef {{type:string}} DistanceFunctorJSON
- */
+export type Poly6DistanceFunctorType = "Poly6DistanceFunctor";
+type DistanceFunctorType = "DistanceFunctor" | Poly6DistanceFunctorType;
 
 /**
  *  A superclass for Node and Primitive in the blobtree.
- *  @constructor
  */
-export class DistanceFunctor {
-
-    static type = "DistanceFunctor";
+export abstract class DistanceFunctor {
+    static type: DistanceFunctorType = "DistanceFunctor";
 
     /**
      *  @abstract
-     *  @param {DistanceFunctorJSON} json Json description of the object
+     *  @param json Json description of the object
      */
-    static fromJSON(json) {
+    static fromJSON(json: DistanceFunctorJSON): DistanceFunctor {
         return Types.fromJSON(json);
-    };
+    }
 
     /**
-     *  @return {string} Type of the element
+     *  @return Type of the element
      */
-    getType() {
+    getType(): DistanceFunctorType {
         return DistanceFunctor.type;
-    };
+    }
 
     /**
      *  @abstract
      *  Return a Javscript Object respecting JSON convention and can be used to serialize the functor.
-     *  @returns {DistanceFunctorJSON}
      */
-    toJSON() {
+    toJSON(): DistanceFunctorJSON {
         return {
             type: this.getType()
         };
@@ -42,41 +38,35 @@ export class DistanceFunctor {
 
     /**
      *  @abstract
-     *  @param {number} _d The distance to be considered.
-     *  @return {number} Scalar field value according to given distance d.
+     *  @param d The distance to be considered.
+     *  @return Scalar field value according to given distance d.
      */
-    value(_d) {
-        throw "Error : not implemented. Must be reimplemented in children classes.";
-    };
+    abstract value(d: number): number;
 
     /**
      *  Perform a numerical approximation of the gradient according to epsilon.
-     *  @param {number} d The distance to be considered.
-     *  @param {number} epsilon The numerica step for this gradient computation. Default to 0.00001.
+     *  @param d The distance to be considered.
+     *  @param epsilon The numerical step for this gradient computation. Default to 0.00001.
      */
-    numericalGradient(d, epsilon) {
-        var eps = epsilon ? epsilon : 0.00001;
-        return (this.value(d + eps) - this.value(d - eps)) / (2 * eps);
-    };
+    numericalGradient(d: number, epsilon: number = 0.00001): number {
+        return (this.value(d + epsilon) - this.value(d - epsilon)) / (2 * epsilon);
+    }
 
     /**
      *  Compute the gradient. Should be reimplemented in most cases.
-     *  By default, this function return a numerical gradient with epsilon at 0.00001.
-     *  @return {number} One dimensional gradient at d.
+     *  By default, this function returns a numerical gradient with epsilon at 0.00001.
+     *  @return One-dimensional gradient at d.
      */
-    gradient(d) {
+    gradient(d: number): number {
         return this.numericalGradient(d, 0.00001);
-    };
+    }
 
     /**
-     *  @returns {number} Distance above which all values will be 0. Should be reimplemented and default to infinity.
+     *  @returns Distance above which all values will be 0. Should be reimplemented and defaults to infinity.
      */
-    getSupport() {
+    getSupport(): number {
         return Infinity;
-    };
-
-
-};
+    }
+}
 
 Types.register(DistanceFunctor.type, DistanceFunctor);
-

@@ -1,17 +1,17 @@
-import { Vector3, Box3 } from "three"
+import { Vector3, Box3 } from "three";
 import { Types } from "../Types.js";
-import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive.js";
+import { SDFPrimitive, type SDFPrimitiveJSON, type SDFPointType } from "./SDFPrimitive.js";
 import { AreaSphere } from "../areas/AreaSphere.js";
 import type { Area } from "../areas/Area.js";
 import type { ValueResultType } from "../Element.js";
 
-export type SDFPointJSON = { p: { x: number, y: number, z: number }, acc: number } & SDFPrimitiveJSON
+export type SDFPointJSON = { p: { x: number, y: number, z: number }, acc: number } & SDFPrimitiveJSON;
 
 export class SDFPoint extends SDFPrimitive {
 
-    static type = "SDFPoint";
+    static override type: SDFPointType = "SDFPoint";
 
-    static fromJSON(json: SDFPointJSON): SDFPoint {
+    static override fromJSON(json: SDFPointJSON): SDFPoint {
         return new SDFPoint(new Vector3(json.p.x, json.p.y, json.p.z), json.acc);
     };
 
@@ -22,19 +22,17 @@ export class SDFPoint extends SDFPrimitive {
      *  @param p Position (ie center) of the point
      *  @param acc Accuracy factor for this primitive. Default is 1.0 which will lead to the side of the support.
      */
-    constructor(p: Vector3, acc?: number) {
+    constructor(p: Vector3, acc: number = 1.0) {
         super();
-
         this.p = p.clone();
-        this.acc = acc || 1.0;
+        this.acc = acc;
     }
 
-
-    getType() {
+    override getType(): SDFPointType {
         return SDFPoint.type;
     };
 
-    toJSON(): SDFPointJSON {
+    override toJSON(): SDFPointJSON {
         return {
             ...super.toJSON(),
             p: {
@@ -49,7 +47,7 @@ export class SDFPoint extends SDFPrimitive {
     /**
      *  @param acc The new accuracy factor
      */
-    setAccuracy(acc: number) {
+    setAccuracy(acc: number): void {
         this.acc = acc;
         this.invalidAABB();
     };
@@ -64,7 +62,7 @@ export class SDFPoint extends SDFPrimitive {
     /**
      *  @param p The new position (ie center)
      */
-    setPosition(p: Vector3) {
+    setPosition(p: Vector3): void {
         this.p.copy(p);
         this.invalidAABB();
     };
@@ -76,14 +74,16 @@ export class SDFPoint extends SDFPrimitive {
         return this.p;
     };
 
-    // [Abstract]
-    computeDistanceAABB(d: number) {
+    /**
+     *  @param d Distance
+     */
+    computeDistanceAABB(d: number): Box3 {
         return new Box3(
             this.p.clone().add(new Vector3(-d, -d, -d)),
             this.p.clone().add(new Vector3(d, d, d))
         );
-    };
-    // [Abstract]
+    }
+
     prepareForEval(): void {
         if (!this.valid_aabb) {
             this.valid_aabb = true;
@@ -93,19 +93,14 @@ export class SDFPoint extends SDFPrimitive {
     /**
      * @link SDFPrimitive.getDistanceAreas
      * @param d Distance to consider for the area computation.
-     * @returns {Array.<>}
      */
     getDistanceAreas(d: number): { aabb: Box3, bv: Area, obj: SDFPoint }[] {
         if (!this.valid_aabb) {
-            throw "ERROR : Cannot get area of invalid primitive";
+            throw "[SDFPoint] getDistanceAreas : Cannot get area of invalid primitive";
         } else {
             return [{
                 aabb: this.computeDistanceAABB(d),
-                bv: new AreaSphere(
-                    this.p,
-                    d,
-                    this.acc
-                ),
+                bv: new AreaSphere(this.p, d, this.acc),
                 obj: this
             }];
         }
@@ -115,24 +110,21 @@ export class SDFPoint extends SDFPrimitive {
      *  @link Element.value for a complete description
      */
     value = (function () {
-        var v = new Vector3();
+        const v = new Vector3();
 
-        return function (p: Vector3, res: ValueResultType) {
+        return function (this: SDFPoint, p: Vector3, res: ValueResultType): void {
             if (!this.valid_aabb) {
-                throw "Error : PrepareForEval should have been called";
+                throw "[SDFPoint] value : PrepareForEval should have been called";
             }
 
             v.subVectors(p, this.p);
-            var l = v.length();
+            const l = v.length();
             res.v = l;
             if (res.g) {
                 res.g.copy(v).multiplyScalar(1 / l);
             }
         };
     })();
-
-
-};
-
+}
 
 Types.register(SDFPoint.type, SDFPoint);

@@ -1,25 +1,23 @@
-import { Vector3, Box3, MathUtils } from "three"
+import { Vector3, Box3, MathUtils } from "three";
 import { Types } from "../Types";
-import { SDFPrimitive, type SDFPrimitiveJSON } from "./SDFPrimitive";
+import { SDFPrimitive, type SDFPrimitiveJSON, type SDFCapsuleType } from "./SDFPrimitive";
 import { AreaCapsule } from "../areas/AreaCapsule";
 import type { ValueResultType } from "../Element";
 
-export type SDFCapsuleJSON = { p1: { x: number, y: number, z: number }, r1: number, p2: { x: number, y: number, z: number }, r2: number } & SDFPrimitiveJSON
+export type SDFCapsuleJSON = { p1: { x: number, y: number, z: number }, r1: number, p2: { x: number, y: number, z: number }, r2: number } & SDFPrimitiveJSON;
 
 /**
- *  This primitive implements a distance field to an extanded "capsule geometry", which is actually a weighted segment.
+ *  This primitive implements a distance field to an extended "capsule geometry", which is actually a weighted segment.
  *  You can find more on Capsule geometry here https://github.com/maximeq/three-js-capsule-geometry
  *
  *  @constructor
  *  @extends SDFPrimitive
- *
  */
 export class SDFCapsule extends SDFPrimitive {
 
-    static type = "SDFCapsule" as const;
+    static override type: SDFCapsuleType = "SDFCapsule" as const;
 
-    static fromJSON(json: SDFCapsuleJSON): SDFCapsule {
-        //var v = ScalisVertex.fromJSON(json.v[0]);
+    fromJSON(json: SDFCapsuleJSON): SDFCapsule {
         return new SDFCapsule(
             new Vector3(json.p1.x, json.p1.y, json.p1.z),
             new Vector3(json.p2.x, json.p2.y, json.p2.z),
@@ -28,21 +26,20 @@ export class SDFCapsule extends SDFPrimitive {
         );
     }
 
-    p1: Vector3
-    p2: Vector3
-    r1: number
-    r2: number
-    rdiff: number
-    unit_dir: Vector3
-    lengthSq: number
-    length: number
+    p1: Vector3;
+    p2: Vector3;
+    r1: number;
+    r2: number;
+    rdiff: number;
+    unit_dir: Vector3;
+    lengthSq: number;
+    length: number;
 
     /**
-     *
-     *  @param {Vector3} p1 Position of the first segment extremity
-     *  @param {Vector3} p2 Position of the second segment extremity
-     *  @param {number} r1 Radius of the sphere centered in p1
-     *  @param {number} r2 Radius of the sphere centered in p2
+     *  @param p1 Position of the first segment extremity
+     *  @param p2 Position of the second segment extremity
+     *  @param r1 Radius of the sphere centered in p1
+     *  @param r2 Radius of the sphere centered in p2
      */
     constructor(p1: Vector3, p2: Vector3, r1: number, r2: number) {
         super();
@@ -61,13 +58,13 @@ export class SDFCapsule extends SDFPrimitive {
     }
 
     /**
-     *  @return  Type of the element
+     *  @return Type of the element
      */
-    getType() {
+    override getType(): SDFCapsuleType {
         return SDFCapsule.type;
     }
 
-    toJSON(): SDFCapsuleJSON {
+    override toJSON(): SDFCapsuleJSON {
         return {
             ...super.toJSON(),
             p1: {
@@ -88,7 +85,7 @@ export class SDFCapsule extends SDFPrimitive {
     /**
      *  @param r1 The new radius at p1
      */
-    setRadius1(r1: number) {
+    setRadius1(r1: number): void {
         this.r1 = r1;
         this.invalidAABB();
     }
@@ -96,66 +93,66 @@ export class SDFCapsule extends SDFPrimitive {
     /**
      *  @param r2 The new radius at p2
      */
-    setRadius2(r2: number) {
+    setRadius2(r2: number): void {
         this.r2 = r2;
         this.invalidAABB();
-    };
+    }
 
     /**
      *  @return Current radius at p1
      */
     getRadius1(): number {
         return this.r1;
-    };
+    }
 
     /**
      *  @return Current radius at p2
      */
     getRadius2(): number {
         return this.r2;
-    };
+    }
 
     /**
      *  @param p1 The new position of the first segment point.
      */
-    setPosition1(p1: Vector3) {
+    setPosition1(p1: Vector3): void {
         this.p1.copy(p1);
         this.invalidAABB();
-    };
+    }
 
     /**
      *  @param p2 The new position of the second segment point
      */
-    setPosition2(p2: Vector3) {
+    setPosition2(p2: Vector3): void {
         this.p2.copy(p2);
         this.invalidAABB();
-    };
+    }
 
     /**
      *  @return Current position of the first segment point
      */
     getPosition1(): Vector3 {
         return this.p1;
-    };
+    }
 
     /**
      *  @return Current position of the second segment point
      */
     getPosition2(): Vector3 {
         return this.p2;
-    };
+    }
 
-    computeDistanceAABB(d: number): Box3 {
-        var b1 = new Box3(
+    override computeDistanceAABB(d: number): Box3 {
+        const b1 = new Box3(
             this.p1.clone().add(new Vector3(-this.r1 - d, -this.r1 - d, -this.r1 - d)),
             this.p1.clone().add(new Vector3(this.r1 + d, this.r1 + d, this.r1 + d))
         );
-        var b2 = new Box3(
+        const b2 = new Box3(
             this.p2.clone().add(new Vector3(-this.r2 - d, -this.r2 - d, -this.r2 - d)),
             this.p2.clone().add(new Vector3(this.r2 + d, this.r2 + d, this.r2 + d))
         );
         return b1.union(b2);
-    };
+    }
 
     /**
      * @link Element.prepareForEval for a complete description
@@ -164,19 +161,18 @@ export class SDFCapsule extends SDFPrimitive {
         if (!this.valid_aabb) {
             this.valid_aabb = true;
         }
-    };
+    }
 
     /**
-     * @param  d
      * @return The Areas object corresponding to the node/primitive, in an array
      */
-    getDistanceAreas(d: number): {
+    override getDistanceAreas(d: number): {
         aabb: Box3,
         bv: AreaCapsule,
         obj: SDFCapsule
     }[] {
         if (!this.valid_aabb) {
-            throw "ERROR : Cannot get area of invalid primitive";
+            throw "[SDFCapsule] getDistanceAreas : Cannot get area of invalid primitive";
         } else {
             return [{
                 aabb: this.computeDistanceAABB(d),
@@ -185,55 +181,54 @@ export class SDFCapsule extends SDFPrimitive {
                     this.p2,
                     this.r1 + d,
                     this.r2 + d,
-                    this.r1 / (this.r1 + d), // Adjust accuray factor according to the radius and not only to the required d
+                    this.r1 / (this.r1 + d), // Adjust accuracy factor according to the radius and not only to the required d
                     this.r2 / (this.r2 + d)
                 ),
                 obj: this
             }];
         }
-    };
+    }
 
     /**
      *  @link Element.value for a complete description
      */
     value = (function () {
-        var v = new Vector3();
-        var proj = new Vector3();
+        const v = new Vector3();
+        const proj = new Vector3();
         /**
-         *  @param {Vector3} p
-         *  @param {ValueResultType} res
+         *  @param p
+         *  @param res
          */
-        return function (p: Vector3, res: ValueResultType) {
-            /** @type {SDFCapsule} */
-            let self = this;
+        return function (this: SDFCapsule, p: Vector3, res: ValueResultType): void {
+            const self = this as SDFCapsule;
             v.subVectors(p, self.p1);
-            var p1p_sqrl = v.lengthSq();
+            const p1p_sqrl = v.lengthSq();
 
             // In unit_dir basis, vector (this.r1-this.r2, this.length) is normal to the "weight line"
             // We need a projection in this direction up to the segment line to know in which case we fall.
 
-            var x_p_2D = v.dot(self.unit_dir);
+            const x_p_2D = v.dot(self.unit_dir);
             // pythagore inc.
-            var y_p_2D = Math.sqrt(
+            const y_p_2D = Math.sqrt(
                 Math.max( // Necessary because of rounded errors, pyth result can be <0 and this causes sqrt to return NaN...
                     0.0, p1p_sqrl - x_p_2D * x_p_2D // =  y_p_2D² by pythagore
                 )
             );
-            var t = -y_p_2D / self.length;
+            const t = -y_p_2D / self.length;
 
-            var proj_x = x_p_2D + t * (self.r1 - self.r2);
+            const proj_x = x_p_2D + t * (self.r1 - self.r2);
             // var proj_y = 0.0; // by construction
 
-            // Easy way to compute the distance now that we ave the projection on the segment
-            var a = MathUtils.clamp(proj_x / self.length, 0, 1.0);
+            // Easy way to compute the distance now that we have the projection on the segment
+            const a = MathUtils.clamp(proj_x / self.length, 0, 1.0);
             proj.copy(self.p1).lerp(self.p2, a); // compute the actual 3D projection
-            var l = v.subVectors(p, proj).length();
+            const l = v.subVectors(p, proj).length();
             res.v = l - (a * self.r2 + (1.0 - a) * self.r1);
             if (res.g) {
                 res.g.copy(v).divideScalar(l);
             }
         };
     })();
-};
+}
 
 Types.register(SDFCapsule.type, SDFCapsule);

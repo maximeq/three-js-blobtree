@@ -1,79 +1,77 @@
-import { Element } from './Element';
+import { Element, type ElementJSON } from './Element';
 import { Types } from "./Types";
+import type { Box3, Vector3 } from 'three';
+import { Primitive } from './Primitive';
+import { Area } from './areas/Area';
 
-// Types
-/**
- * @typedef {import('./Element.js').Json} Json
- * @typedef {import('./Element.js').ElementJSON} ElementJSON
- * @typedef {import('./Primitive.js')} Primitive
- * @typedef {import('./areas/Area')} Area
- */
+export type NodeJSON = {
+    children: ElementJSON[];
+} & ElementJSON;
 
-/** @typedef {{children:Array<{ElementJSON}>} & ElementJSON} NodeJSON*/
+export type RicciNodeType = "RicciNode";
+export type RootNodeType = "RootNode";
+export type ScaleNodeType = "ScaleNode";
+export type TwistNodeType = "TwistNode";
+export type DifferenceNodeType = "DifferenceNode";
+export type MaxNodeType = "MaxNode";
+export type MinNodeType = "MinNode";
+export type SDFNodeType = "SDFNode";
+
+export type NodeType = "Node" | RicciNodeType | RootNodeType | ScaleNodeType | TwistNodeType | DifferenceNodeType | MaxNodeType | MinNodeType | SDFNodeType;
 
 /**
  *  This class implements an abstract Node class for implicit blobtree.
  *  @constructor
  *  @extends {Element}
  */
-export class Node extends Element {
+export abstract class Node extends Element {
+    children: Element[];
 
-    static type = "Node";
+    static override type: NodeType = "Node";
 
-    /**
-     * @param {NodeJSON} _json
-     */
-    static fromJSON(_json) {
-        throw new Error("Node.fromJSON should never be called as Node is abstract.");
+    static override fromJSON(_json: NodeJSON): Node {
+        throw "[Node] fromJSON should never be called as Node is abstract.";
     }
 
     constructor() {
         super();
-
-        /** @type {Array.<!Element>} */
         this.children = [];
     }
 
-    getType() {
+    override getType(): NodeType {
         return Node.type;
     }
 
-    /**
-     * @return {NodeJSON}
-     */
-    toJSON() {
-        var res = {
+    override toJSON(): NodeJSON {
+        const res: NodeJSON = {
             ...super.toJSON(),
             children: []
         };
-        for (var i = 0; i < this.children.length; ++i) {
+        for (let i = 0; i < this.children.length; ++i) {
             res.children.push(this.children[i].toJSON());
         }
         return res;
     }
 
     /**
-     *  Clone current node and itss hierarchy
+     *  Clone current node and its hierarchy
      */
-    clone() {
+    override clone(): this {
         return Types.fromJSON(this.toJSON());
     }
 
     /**
      *  @link Element.prepareForEval
      */
-    prepareForEval() {
-        console.error("Blobtree.Node: prepareForEval is a pure abstract function, should be reimplemented in every node class.");
-        return super.prepareForEval();
-    }
+    abstract override prepareForEval(): void;
 
     /**
      *  Invalid the bounding boxes recursively down for all children
      */
-    invalidAll() {
+    override invalidAll(): void {
         this.invalidAABB();
         if (this.children) {
-            for (var i = 0; i < this.children.length; i++) {
+            for (let i = 0; i < this.children.length; i++) {
                 this.children[i].invalidAll();
             }
         }
@@ -83,20 +81,20 @@ export class Node extends Element {
      *  Destroy the node and its children. The node is removed from the blobtree
      *  (basically clean up the links between blobtree elements).
      */
-    destroy() {
+    destroy(): void {
         // need to Copy the array since indices will change.
-        var arr_c = this.children.slice(0, this.children.length);
-        for (var i = 0; i < arr_c.length; i++) {
+        const arr_c = this.children.slice(0, this.children.length);
+        for (let i = 0; i < arr_c.length; i++) {
             arr_c[i].destroy();
         }
         if (this.children.length !== 0) {
-            throw "Error : children length should be 0";
+            throw "[Node] destroy : children length should be 0";
         }
         if (this.parentNode !== null) {
             this.parentNode.removeChild(this);
         }
         if (this.parentNode !== null) {
-            throw "Error : parent node should be null at this point";
+            throw "[Node] destroy : parent node should be null at this point";
         }
         this.children.length = 0;
     };
@@ -107,9 +105,9 @@ export class Node extends Element {
      *  If c already belongs to the tree, it is removed from its current parent
      *  children list before anything (ie it is "moved").
      *
-     *  @param {Element} c The child to add.
+     *  @param c The child to add.
      */
-    addChild(c) {
+    addChild(c: Element) {
         if (c.parentNode !== null) {
             c.parentNode.removeChild(c);
         }
@@ -130,11 +128,11 @@ export class Node extends Element {
      *      Should only be called when a Primitive is deleted.
      *      Otherwise :
      *          To move a node to another parent : use addChild.
-     *  @param {Element} c The child to remove.
+     *  @param c The child to remove.
      */
-    removeChild(c) {
-        var i = 0;
-        var cdn = this.children; // minimize the code
+    removeChild(c: Element) {
+        let i = 0;
+        const cdn = this.children; // minimize the code
 
         // Note : if this becomes too long, sort this.children using ids
         while (cdn[i] !== c && i < cdn.length) ++i;
@@ -143,7 +141,7 @@ export class Node extends Element {
             cdn[i] = cdn[cdn.length - 1];
             cdn.pop();
         } else {
-            throw "c does not belong to the children of this node";
+            throw "[Node] removeChild : c does not belong to the children of this node";
         }
 
         this.invalidAABB();
@@ -154,9 +152,9 @@ export class Node extends Element {
     /**
      * @link Element.computeAABB for a complete description
      */
-    computeAABB() {
+    override computeAABB() {
         this.aabb.makeEmpty();
-        for (var i = 0; i < this.children.length; i++) {
+        for (let i = 0; i < this.children.length; i++) {
             this.children[i].computeAABB();
             this.aabb.union(this.children[i].getAABB());
         }
@@ -166,12 +164,12 @@ export class Node extends Element {
      *  @link Element.getAreas for a complete description
      *  @returns {Array.<{aabb: THREE.Box3, bv:Area, obj:Primitive}>}
      */
-    getAreas() {
+    override getAreas() {
         if (!this.valid_aabb) {
-            throw "Error : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
+            throw "[Node] getAreas : cannot call getAreas on a not prepared for eval nod, please call PrepareForEval first. Node concerned is a " + this.getType();
         }
-        var res = [];
-        for (var i = 0; i < this.children.length; i++) {
+        const res: { aabb: Box3, bv: Area, obj: Primitive }[] = [];
+        for (let i = 0; i < this.children.length; i++) {
             res.push.apply(res, this.children[i].getAreas());
         }
         return res;
@@ -179,12 +177,10 @@ export class Node extends Element {
 
     /**
      * @link Element.distanceTo for a complete description
-     * @param {THREE.Vector3} p
-     * @returns {number}
      */
-    distanceTo(p) {
-        var res = 10000000;
-        for (var i = 0; i < this.children.length; i++) {
+    override distanceTo(p: Vector3): number {
+        let res = 10000000;
+        for (let i = 0; i < this.children.length; i++) {
             res = Math.min(res, this.children[i].distanceTo(p));
         }
         return res;
@@ -193,9 +189,9 @@ export class Node extends Element {
     /**
      * @returns
      */
-    heuristicStepWithin() {
-        var res = 10000000;
-        for (var i = 0; i < this.children.length; i++) {
+    heuristicStepWithin(): number {
+        let res = 10000000;
+        for (let i = 0; i < this.children.length; i++) {
             res = Math.min(res, this.children[i].heuristicStepWithin());
         }
         return res;
@@ -203,12 +199,8 @@ export class Node extends Element {
 
     /**
      *  @link Element.trim for a complete description.
-     *
-     *  @param {THREE.Box3} aabb
-     *  @param {Array.<Element>} trimmed
-     *  @param {Array.<Node>} parents
      */
-    trim(aabb, trimmed, parents) {
+    override trim(aabb: Box3, trimmed: Element[], parents: Node[]) {
         let idx = trimmed.length;
         for (let i = 0; i < this.children.length; i++) {
             if (!this.children[i].getAABB().intersectsBox(aabb)) {
@@ -228,18 +220,15 @@ export class Node extends Element {
 
     /**
      *  @link Element.count for a complete description.
-     *
-     *  @param {Function} cls
-     *  @return {number}
      */
-    count(cls) {
-        var count = 0;
+    override count(cls: Function): number {
+        let count = 0;
 
         if (this instanceof cls) {
             count++;
         }
 
-        for (var i = 0; i < this.children.length; i++) {
+        for (let i = 0; i < this.children.length; i++) {
             count += this.children[i].count(cls);
         }
 

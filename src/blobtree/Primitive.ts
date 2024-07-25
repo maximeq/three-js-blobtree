@@ -2,17 +2,12 @@ import { Element, type ElementJSON } from './Element';
 import { Material, type MaterialJSON } from './Material';
 import { Types } from "./Types";
 import type { Area } from './areas';
+import type { ScalisPrimitiveType } from './scalis';
+import type { SDFRootNodeType } from './sdf';
 
-/**
- * @typedef {import('./Material.js')} Material
- * @typedef {import('./Material.js').MaterialJSON} MaterialJSON
- * @typedef {import('./Element.js').ElementJSON} ElementJSON
- * @typedef {import('./Element.js').Json} Json
- *
- * @typedef {import('./areas/Area.js')} Area
- */
+export type PrimitiveJSON = { materials: MaterialJSON[] } & ElementJSON
 
-export type PrimitiveJSON = { materials: Array<MaterialJSON> } & ElementJSON
+export type PrimitiveType = "Primitive" | ScalisPrimitiveType | SDFRootNodeType;
 
 /**
  *  Represent a blobtree primitive.
@@ -20,12 +15,12 @@ export type PrimitiveJSON = { materials: Array<MaterialJSON> } & ElementJSON
  *  @constructor
  *  @extends {Element}
  */
-export class Primitive extends Element {
+export abstract class Primitive extends Element {
 
-    static type = "Primitive";
+    static override type: PrimitiveType = "Primitive";
 
-    static fromJSON(_json: PrimitiveJSON) {
-        throw new Error("Primitibe.fromJSON should never be called as Primitibe is abstract.");
+    static override fromJSON(_json: PrimitiveJSON) {
+        throw "[Primitive] fromJSON should never be called as Primitive is abstract.";
     }
 
     materials: Material[] = [];
@@ -33,10 +28,10 @@ export class Primitive extends Element {
         super();
     }
 
-    toJSON(): PrimitiveJSON {
-        var res = { ...super.toJSON(), materials: [] as Object[] };
+    override toJSON(): PrimitiveJSON {
+        const res = { ...super.toJSON(), materials: [] as MaterialJSON[] };
         res.materials = [];
-        for (var i = 0; i < this.materials.length; ++i) {
+        for (let i = 0; i < this.materials.length; ++i) {
             res.materials.push(this.materials[i].toJSON());
         }
         return res;
@@ -47,9 +42,9 @@ export class Primitive extends Element {
      */
     setMaterials(mats: Material[]) {
         if (mats.length !== this.materials.length) {
-            throw "Error : trying to set " + mats.length + " materials on a primitive with only " + this.materials.length;
+            throw "[Primitive] setMaterials : trying to set " + mats.length + " materials on a primitive with only " + this.materials.length;
         }
-        for (var i = 0; i < mats.length; ++i) {
+        for (let i = 0; i < mats.length; ++i) {
             if (!mats[i].equals(this.materials[i])) {
                 this.materials[i].copy(mats[i]);
                 this.invalidAABB();
@@ -68,7 +63,7 @@ export class Primitive extends Element {
      * @link Element.computeAABB for a complete description
      */
     computeAABB(): void {
-        throw "Primitive.computeAABB  Must be reimplemented in all inherited class.";
+        throw "[Primitive] computeAABB must be reimplemented in all inherited class.";
     };
 
     /**
@@ -76,7 +71,7 @@ export class Primitive extends Element {
      *  Destroy the current primitive and remove it from the blobtree (basically
      *  clean up the links between blobtree elements).
      */
-    destroy(): void {
+    override destroy(): void {
         if (this.parentNode !== null) {
             this.parentNode.removeChild(this);
         }
@@ -85,7 +80,7 @@ export class Primitive extends Element {
     /**
      * @abstract
      */
-    getAreas(): { aabb: THREE.Box3, bv: Area, obj: Primitive }[] {
+    override getAreas(): { aabb: THREE.Box3, bv: Area, obj: Primitive }[] {
         console.error("ERROR : getAreas is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");
         return [];
     };
@@ -94,16 +89,14 @@ export class Primitive extends Element {
      * @abstract
      * Compute variables to help with value computation.
      */
-    computeHelpVariables() {
-        throw "ERROR : computeHelpVariables is a virtual function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)";
-    };
+    abstract override computeHelpVariables(): void;
 
     /**
      * @abstract
      * Compute variables to help with value computation.
      * @param cls The class to count. Primitives have no children so no complexty here.
      */
-    count(cls: Function) {
+    override count(cls: Function) {
         return this instanceof cls ? 1 : 0;
     };
 

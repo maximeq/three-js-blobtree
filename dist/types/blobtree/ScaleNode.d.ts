@@ -1,11 +1,13 @@
+import { Vector3, Box3 } from "three";
 import { Node } from "./Node";
-/** @typedef {import('./Element.js')} Element */
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-/**
- * @typedef { {scale_x:number} & {scale_y:number} & {scale_z:number} & NodeJSON} ScaleNodeJSON
- */
+import { Material } from "./Material";
+import type { ValueResultType, Element } from './Element';
+import type { NodeJSON, ScaleNodeType } from './Node';
+type ScaleNodeJSON = {
+    scale_x: number;
+    scale_y: number;
+    scale_z: number;
+} & NodeJSON;
 /**
  *  This class implement a ScaleNode node.
  *  It will return the minimum value of the field of each primitive.
@@ -14,38 +16,31 @@ import { Node } from "./Node";
  *  @extends Node
  */
 export declare class ScaleNode extends Node {
-    static type: string;
+    _scale: Vector3;
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
+    static type: ScaleNodeType;
     /**
-    *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
-    constructor(children: any);
+    constructor(children?: Node[]);
     /**
     * @link Node.toJSON
-    * @returns {ScaleNodeJSON}
     */
-    toJSON(): {
-        scale_x: any;
-        scale_y: any;
-        scale_z: any;
-        children: never[];
-        type: string;
-    };
+    toJSON(): ScaleNodeJSON;
     /**
      * @link Node.fromJSON
-     *
-     * @param {ScaleNodeJSON} json
-     * @returns {ScaleNode}
      */
-    static fromJSON(json: any): ScaleNode;
+    static fromJSON(json: ScaleNodeJSON): ScaleNode;
     /**
      * @link ScaleNode.setScale
-     * @param {Vector3} scale
      */
-    setScale(scale: any): void;
+    setScale(scale: Vector3): void;
     /**
      * @link Node.getType
      */
-    getType(): string;
+    getType(): ScaleNodeType;
     /**
      *  @link Element.prepareForEval for a complete description
      */
@@ -56,18 +51,12 @@ export declare class ScaleNode extends Node {
     computeAABB(): void;
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
-    value(p: any, res: any): void;
+    value(p: Vector3, res: ValueResultType): void;
     /**
      *  @link Element.trim for a complete description.
-     *
-     *  @param {Box3} aabb
-     *  @param {Array<Element>} trimmed
-     *  @param {Array<Node>} parents
      */
-    trim(aabb: any, trimmed: any, parents: any): void;
+    trim(aabb: Box3, trimmed: Element[], parents: Node[]): void;
 }
+export {};
 //# sourceMappingURL=ScaleNode.d.ts.map

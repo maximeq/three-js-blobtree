@@ -1,159 +1,114 @@
-import { Vector3, Box3 } from "three"
+import { Vector3, Box3 } from "three";
 import { Types } from "../Types.js";
-import { SDFNode } from "./SDFNode.js";
-import { Primitive } from "../Primitive.js";
+import { SDFNode, type SDFNodeJSON } from "./SDFNode.js";
+import { Primitive, type PrimitiveJSON } from "../Primitive.js";
 import { Material } from "../Material.js";
-import { DistanceFunctor } from './DistanceFunctor.js';
+import { DistanceFunctor, type DistanceFunctorJSON } from './DistanceFunctor.js';
 import { SDFPrimitive } from './SDFPrimitive.js';
+import { Area } from '../areas/Area.js';
+import { type ValueResultType } from "../Element.js";
 
-/** @typedef {import('../areas/Area')} Area */
-/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('../Primitive.js').PrimitiveJSON} PrimitiveJSON */
+export type SDFRootNodeJSON = { f: DistanceFunctorJSON, sdfRoot: SDFNodeJSON } & PrimitiveJSON;
 
-/** @typedef {import('./SDFNode').SDFNodeJSON} SDFNodeJSON */
-/** @typedef {import('./DistanceFunctor').DistanceFunctorJSON} DistanceFunctorJSON */
-
-
-/** @typedef {{f:DistanceFunctorJSON, sdfRoot:SDFNodeJSON} & PrimitiveJSON} SDFRootNodeJSON */
+export type SDFRootNodeType = "SDFRootNode";
 
 /**
  *  This class implements a SDF Root Node, which is basically a Signed Distance Field
- *  made of some noe combination, on which is applied a compact support function.
+ *  made of some node combination, on which is applied a compact support function.
  *  For now SDF nodes do not have materials. A unique material is defined in the SDFRootNode.
- *
  */
 export class SDFRootNode extends Primitive {
+    static override type: SDFRootNodeType = "SDFRootNode";
 
-    static type = "SDFRootNode";
+    f: DistanceFunctor;
+    sdfRoot: SDFNode;
 
-    /**
-     *
-     * @param {SDFRootNodeJSON} json
-     * @returns
-     */
-    static fromJSON(json) {
-        let f = Types.fromJSON(json.f);
-        let material = Material.fromJSON(json.materials[0]);
-        let sdfRoot = Types.fromJSON(json.sdfRoot);
-        if (!(f instanceof DistanceFunctor)) {
-            throw new Error("SDFRootNode parsing resulted in the wrong type of object for parameter f.");
-        }
-        if (!(material instanceof Material)) {
-            console.error("SDFRootNode parsing resulted in the wrong type of object for parameter material, using default.");
-            material = null;
-        }
-        if (!(sdfRoot instanceof SDFNode || sdfRoot instanceof SDFPrimitive)) {
-            console.error("SDFRootNode parsing resulted in the wrong type of object for parameter sdfRoot, using default.");
-            sdfRoot = null;
-        }
-        var res = new SDFRootNode(f, material, sdfRoot);
-        return res;
+    // Tmp vars to speed up computation (no reallocations)
+    // TODO : should be pushed in the function static variables since there can be no SDFRoot below the SDFRoot.
+    tmp_res: ValueResultType = { v: 0, g: null };
+    tmp_g: Vector3 = new Vector3(0, 0, 0);
+
+    static override fromJSON(json: SDFRootNodeJSON): SDFRootNode {
+        const f: DistanceFunctor = Types.fromJSON(json.f);
+        let material: Material = Material.fromJSON(json.materials[0]);
+        let sdfRoot: SDFNode | SDFPrimitive = Types.fromJSON(json.sdfRoot);
+
+        return new SDFRootNode(f, material, sdfRoot);
     }
 
     /**
-     *
-     * @param {DistanceFunctor} f The distance function to be applied to the distance field.
+     * @param f The distance function to be applied to the distance field.
      * It must respect the Blobtree convention, which is : positive everywhere, with a finite support.
-     * @param {Material} material
-     * @param {SDFNode | SDFPrimitive=} sdfRoot The child containng the complete SDF. SDFRootNode can have only one child.
+     * @param material The material for this node.
+     * @param sdfRoot The child containing the complete SDF. SDFRootNode can have only one child.
      */
-    constructor(f, material, sdfRoot) {
+    constructor(f: DistanceFunctor, material?: Material, sdfRoot?: SDFNode | SDFPrimitive) {
         super();
 
         this.f = f;
-
         this.materials.push(material ? material.clone() : new Material());
-
-        this.sdfRoot = sdfRoot ?
-            (sdfRoot instanceof SDFNode ? sdfRoot : new SDFNode().addChild(sdfRoot)) : new SDFNode();
-
-        // Tmp vars to speed up computation (no reallocations)
-        // TODO : should be pushed in the function static variables since there can be no SDFRoot below the SDFRoot.
-        this.tmp_res = { v: 0, g: null };
-        this.tmp_g = new Vector3(0, 0, 0);
+        this.sdfRoot = sdfRoot ? (sdfRoot instanceof SDFNode ? sdfRoot : new SDFNode().addChild(sdfRoot)) : new SDFNode();
     }
 
-    getType() {
+    override getType(): SDFRootNodeType {
         return SDFRootNode.type;
-    };
+    }
 
-    /**
-     * @param {SDFNode | SDFPrimitive} c
-     */
-    addChild(c) {
+    addChild(c: SDFNode | SDFPrimitive): void {
         if (this.sdfRoot.children.length === 0) {
             this.sdfRoot.addChild.call(this, c);
         } else {
-            throw "Error : SDFRootNode can have only one child.";
+            throw new Error("[SDFRootNode] addChild : SDFRootNode can have only one child.");
         }
-    };
+    }
 
-    /**
-     * @param {SDFNode | SDFPrimitive} c
-     */
-    removeChild(c) {
+    removeChild(c: SDFNode | SDFPrimitive): void {
         this.sdfRoot.removeChild(c);
     }
 
-    /**
-     * @returns {SDFRootNodeJSON}
-     */
-    toJSON() {
-        var res = {
+    override toJSON(): SDFRootNodeJSON {
+        return {
             ...super.toJSON(),
             f: this.f.toJSON(),
             sdfRoot: this.sdfRoot.toJSON()
         };
-        return res;
-    };
+    }
 
-    prepareForEval() {
+    prepareForEval(): void {
         if (!this.valid_aabb) {
-            this.aabb = new Box3();  // Create empty BBox
+            this.aabb = new Box3(); // Create empty BBox
             for (let i = 0; i < this.sdfRoot.children.length; ++i) {
                 let c = this.sdfRoot.children[i];
                 c.prepareForEval();
-                this.aabb.union(
-                    c.computeDistanceAABB(this.f.getSupport())
-                );     // new aabb is computed according to remaining children aabb
+                this.aabb.union(c.computeDistanceAABB(this.f.getSupport()));
             }
-
             this.valid_aabb = true;
         }
-    };
+    }
 
     /**
      *  @link Element.getAreas for a complete description
      *
      *  This function is an attempt to have SDFRootNode behave like a Primitive in the normal Blobtree.
-     *
-     *  @returns {Array.<{aabb: Box3, bv:Area, obj:Primitive}>}
      */
-    getAreas() {
+    override getAreas(): { aabb: Box3, bv: Area, obj: Primitive }[] {
         if (!this.valid_aabb) {
-            throw "ERROR : Cannot get area of invalid node";
+            throw "[SDFRootNode] getAreas : Cannot get area of invalid node";
         } else {
             let distAreas = this.sdfRoot.getDistanceAreas(this.f.getSupport());
-            let res = [];
-            distAreas.forEach((area) => {
-                res.push({
-                    aabb: area.aabb,
-                    bv: area.bv,
-                    obj: this
-                });
-            });
-            return res;
+            return distAreas.map(area => ({
+                aabb: area.aabb,
+                bv: area.bv,
+                obj: this
+            }));
         }
-    };
+    }
 
     /**
      *  @link Node.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
-    value(p, res) {
-        var tmp = this.tmp_res;
+    value(p: Vector3, res: ValueResultType): void {
+        const tmp = this.tmp_res;
         tmp.g = res.g ? this.tmp_g : null;
 
         // Init res
@@ -173,17 +128,24 @@ export class SDFRootNode extends Primitive {
 
             res.v = this.f.value(tmp.v);
             if (res.g) {
-                res.g.copy(tmp.g).multiplyScalar(this.f.gradient(res.v))
+                res.g.copy(tmp.g!).multiplyScalar(this.f.gradient(res.v));
             }
             if (res.m) {
                 res.m.copy(this.materials[0]);
             }
-        }
-        else if (res.step !== undefined) {
+        } else if (res.step !== undefined) {
             // return distance to aabb such that next time we'll hit from within the aabbb
             res.step = this.aabb.distanceToPoint(p) + 0.3;
         }
-    };
-};
+    }
+
+    computeHelpVariables(): void {
+        throw "computeHelpVariables is not implemented for SDFRootNode.";
+    }
+
+    heuristicStepWithin(): number {
+        throw "heuristicStepWithin is not implemented for SDFRootNode.";
+    }
+}
 
 Types.register(SDFRootNode.type, SDFRootNode);

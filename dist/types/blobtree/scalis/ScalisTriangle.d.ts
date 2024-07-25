@@ -1,11 +1,16 @@
 import { Box3, Vector3 } from "three";
-import { Material } from "../Material.js";
-import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType } from "./ScalisPrimitive.js";
-import { ScalisVertex } from "./ScalisVertex.js";
-import { AreaScalisTri } from "../areas/AreaScalisTri.js";
-import type { ValueResultType } from "../Element.js";
-/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./ScalisPrimitive').ScalisPrimitiveJSON} ScalisPrimitiveJSON */
+import { Material } from "../Material";
+import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType, type ScalisTriangleType } from "./ScalisPrimitive";
+import { ScalisVertex } from "./ScalisVertex";
+import { AreaScalisTri } from "../areas/AreaScalisTri";
+import type { ValueResultType } from "../Element";
+type ProjResultType = {
+    proj_to_p: Vector3;
+    weight_proj: number;
+    t: number;
+    sqrdist?: number;
+    ratio?: number;
+};
 export type ScalisTriangleJSON = ScalisPrimitiveJSON;
 /**
  * This class implements a ScalisTriangle primitive.
@@ -15,12 +20,13 @@ export type ScalisTriangleJSON = ScalisPrimitiveJSON;
  *  @extends ScalisPrimitive
  */
 export declare class ScalisTriangle extends ScalisPrimitive {
-    static type: "ScalisTriangle";
+    static type: ScalisTriangleType;
     static fromJSON(json: ScalisTriangleJSON): ScalisTriangle;
+    v: [ScalisVertex, ScalisVertex, ScalisVertex];
     min_thick: number;
     max_thick: number;
-    res_gseg: {};
-    tmp_res_gseg: {};
+    res_gseg: ProjResultType;
+    tmp_res_gseg: ProjResultType;
     p0p1: Vector3;
     p1p2: Vector3;
     p2p0: Vector3;
@@ -32,8 +38,7 @@ export declare class ScalisTriangle extends ScalisPrimitive {
     length_p1p2: number;
     length_p2p0: number;
     diffThick_p0p1: number;
-    diffThick_p0p1: number;
-    diffThick_p0p1: number;
+    diffThick_p0p2: number;
     diffThick_p1p2: number;
     diffThick_p2p0: number;
     main_dir: Vector3;
@@ -64,8 +69,8 @@ export declare class ScalisTriangle extends ScalisPrimitive {
      *                                  Use [Material.defaultMaterial.clone(), Material.defaultMaterial.clone()] by default.
      *
      */
-    constructor(v: ScalisVertex[], volType: ScalisPrimitiveVolType, density: number, mats: Material[]);
-    getType(): "ScalisTriangle";
+    constructor(v: [ScalisVertex, ScalisVertex, ScalisVertex], volType: ScalisPrimitiveVolType, density: number, mats: Material[]);
+    getType(): ScalisTriangleType;
     toJSON(): ScalisTriangleJSON;
     prepareForEval(): void;
     getAreas(): {
@@ -85,7 +90,7 @@ export declare class ScalisTriangle extends ScalisPrimitive {
      *  http://www.softhis.com
      */
     clamp(a: number, b: number, c: number): number;
-    distanceTo: (p: Vector3) => number;
+    distanceTo: (this: ScalisTriangle, p: Vector3) => number;
     heuristicStepWithin(): number;
     /**
      *  @link Element.value for a complete description
@@ -94,7 +99,7 @@ export declare class ScalisTriangle extends ScalisPrimitive {
     /**
      *  value function for Distance volume type (distance field).
      */
-    evalDist: (p: Vector3, res: ValueResultType) => void;
+    evalDist: (this: ScalisTriangle, p: Vector3, res: ValueResultType) => void;
     /**
      *
      *  Segment computations used in Distance triangle evaluation.
@@ -109,7 +114,7 @@ export declare class ScalisTriangle extends ScalisPrimitive {
      *  @param  res {proj_to_p, weight_proj}
      *
      */
-    GenericSegmentComputation(point: Vector3, p1: Vector3, p1p2: Vector3, length: number, sqr_length: number, weight_1: number, delta_weight: number, // = weight_2-weight_1
+    GenericSegmentComputation(point: Vector3, p1: Vector3, p1p2: Vector3, sqr_length: number, weight_1: number, delta_weight: number, // = weight_2-weight_1
     res: {
         proj_to_p: Vector3;
         weight_proj: number;
@@ -125,7 +130,7 @@ export declare class ScalisTriangle extends ScalisPrimitive {
      *  @param {Vector3} p
      *  @param {ValueResultType} res
      */
-    evalConvol: (p: Vector3, res: ValueResultType) => void;
+    evalConvol: (this: ScalisTriangle, p: Vector3, res: ValueResultType) => void;
     /**
      *  @return Warped value
      */
@@ -140,7 +145,7 @@ export declare class ScalisTriangle extends ScalisPrimitive {
      *  @param  res result containing the wanted elements like res.v for the value, res.g for the gradient, res.m for the material.
      *  @return the res parameter, filled with proper values
      */
-    computeLineIntegral(t: number, p: Vector3, res: Object): Object;
+    computeLineIntegral(t: number, p: Vector3, res: ValueResultType): ValueResultType;
     /**
      * "Select" the part of a segment that is inside (in the homothetic space) of a clipping "sphere".
      *          This function use precomputed values given as parameter (prevent redundant computation during convolution
@@ -157,26 +162,32 @@ export declare class ScalisTriangle extends ScalisPrimitive {
      *
      *  @protected
      */
-    homotheticClippingSpecial(w: Vector3, length: number, clipped: Object): boolean;
+    homotheticClippingSpecial(w: Vector3, length: number, clipped: {
+        l1: number;
+        l2: number;
+    }): boolean;
     /**
-     *  @param {!Vector3} point
+     *  @param point
      *  @return Object defining v attribute with the computed value
      *
      *  @protected
      */
-    consWeightEvalForSeg(p_1: Vector3, w_1: number, unit_dir: Vector3, length: number, point: Vector3, res: Object): Object;
+    consWeightEvalForSeg(p_1: Vector3, w_1: number, unit_dir: Vector3, length: number, point: Vector3, res: ValueResultType): ValueResultType | 0;
     /**
      *  @return  Object defining v attribute with the computed value
      *  @protected
      */
-    consWeightEvalGradForSeg(p_1: Vector3, w_1: number, unit_dir: Vector3, length: number, point: Vector3, res: Object): Object;
+    consWeightEvalGradForSeg(p_1: Vector3, w_1: number, unit_dir: Vector3, length: number, point: Vector3, res: ValueResultType): ValueResultType;
     /**
      *  @param  point the point of evaluation, as a Vector3
      *  @param  clipped Result if clipping occured, in l1 and l2, returned
      *                           values are between 0.0 and length/weight_min
      *  @return  true if clipping occured
      */
-    ComputeTParam(point: Vector3, clipped: Object): boolean;
+    ComputeTParam(point: Vector3, clipped: {
+        l1: number;
+        l2: number;
+    }): boolean;
     /**
      *  Sub-function for optimized convolution value computation (Homothetic Compact Polynomial).*
      *  Function designed by Cedric Zanni, optimized for C++ using matlab.
@@ -195,4 +206,5 @@ export declare class ScalisTriangle extends ScalisPrimitive {
      */
     homotheticCompactPolynomial_segment_FGradF_i6_cste(l: number, w: Vector3, res: Vector3): void;
 }
+export {};
 //# sourceMappingURL=ScalisTriangle.d.ts.map

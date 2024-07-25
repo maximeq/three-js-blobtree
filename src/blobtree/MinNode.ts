@@ -1,16 +1,10 @@
 import { Vector3, Box3 } from "three"
 import { Types } from "./Types";
-import { Node } from "./Node";
+import { Node, type NodeJSON, type MinNodeType } from "./Node";
 import { Material } from "./Material";
+import { type ValueResultType, Element } from './Element';
 
-/** @typedef {import('./Element.js')} Element */
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-
-/**
- * @typedef {NodeJSON} MinNodeJSON
- */
+type MinNodeJSON = NodeJSON;
 
 /**
  *  This class implement a Min node.
@@ -20,58 +14,48 @@ import { Material } from "./Material";
  *  @extends Node
  */
 export class MinNode extends Node {
+    // temp vars to speed up evaluation by avoiding allocations
+    tmp_res: ValueResultType = { v: 0, g: null, m: null };
+    tmp_g: Vector3 = new Vector3();
+    tmp_m: Material = new Material();
 
-    static type = "MinNode";
+    static override type: MinNodeType = "MinNode";
 
-    /**
-     *
-     * @param {MinNodeJSON} json
-     * @returns {MinNode}
-     */
-    static fromJSON(json) {
-        var res = new MinNode();
-        for (var i = 0; i < json.children.length; ++i) {
+    static override fromJSON(json: MinNodeJSON): MinNode {
+        const res = new MinNode();
+        for (let i = 0; i < json.children.length; ++i) {
             res.addChild(Types.fromJSON(json.children[i]));
         }
         return res;
     }
 
     /**
-    *  @param {Array.<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+    *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
     */
-    constructor(children) {
+    constructor(children?: Node[]) {
 
         super();
 
         if (children) {
-            var self = this;
+            const self = this;
             children.forEach(function (c) {
                 self.addChild(c);
             });
         }
-
-        // temp vars to speed up evaluation by avoiding allocations
-        /** @type {{v:number, g:Vector3, m:Material}} */
-        this.tmp_res = { v: 0, g: null, m: null };
-        /** @type {Vector3} */
-        this.tmp_g = new Vector3();
-        /** @type {Material} */
-        this.tmp_m = new Material();
-
     }
 
-    getType() {
+    override getType(): MinNodeType {
         return MinNode.type;
     }
 
     /**
      *  @link Element.prepareForEval for a complete description
      */
-    prepareForEval() {
+    prepareForEval(): void {
         if (!this.valid_aabb) {
             this.aabb = new Box3();  // Create empty BBox
-            for (var i = 0; i < this.children.length; ++i) {
-                var c = this.children[i];
+            for (let i = 0; i < this.children.length; ++i) {
+                const c = this.children[i];
                 c.prepareForEval();
                 this.aabb.union(c.getAABB());     // new aabb is computed according to remaining children aabb
             }
@@ -82,16 +66,13 @@ export class MinNode extends Node {
 
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
-    value(p, res) {
+    value(p: Vector3, res: ValueResultType): void {
         // TODO : check that all bounding box of all children and subchildrens are valid
         //        This enable not to do it in prim and limit the number of assert call (and string built)
 
-        var l = this.children.length;
-        var tmp = this.tmp_res;
+        const l = this.children.length;
+        const tmp = this.tmp_res;
         tmp.g = res.g ? this.tmp_g : null;
         tmp.m = res.m ? this.tmp_m : null;
 
@@ -109,39 +90,35 @@ export class MinNode extends Node {
 
         if (this.aabb.containsPoint(p) && l !== 0) {
             res.v = Number.MAX_VALUE;
-            for (var i = 0; i < l; ++i) {
+            for (let i = 0; i < l; ++i) {
                 this.children[i].value(p, tmp);
                 if (tmp.v < res.v) {
                     res.v = tmp.v;
-                    if (res.g) {
+                    if (res.g && tmp.g) {
                         res.g.copy(tmp.g);
                     }
-                    if (res.m) {
+                    if (res.m && tmp.m) {
                         res.m.copy(tmp.m);
                     }
                     // within primitive potential
                     if (res.step || res.stepOrtho) {
-                        throw "Not implemented";
+                        throw "[MinNode] value: res.step and res.stepOrtho not implemented";
                     }
                 }
                 res.v = Math.min(res.v, tmp.v);
             }
         }
         else if (res.step || res.stepOrtho) {
-            throw "Not implemented";
+            throw "[MinNode] value: res.step and res.stepOrtho not implemented";
         }
     }
 
     /**
      *  @link Element.trim for a complete description.
-     *
-     *  @param {Box3} aabb
-     *  @param {Array<Element>} trimmed
-     *  @param {Array<Node>} parents
      */
-    trim(aabb, trimmed, parents) {
+    override trim(aabb: Box3, trimmed: Element[], parents: Node[]) {
         // Trim remaining nodes
-        for (var i = 0; i < this.children.length; i++) {
+        for (let i = 0; i < this.children.length; i++) {
             this.children[i].trim(aabb, trimmed, parents);
         }
     };

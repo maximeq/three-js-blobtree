@@ -1,13 +1,13 @@
 import { SlidingMarchingCubes } from "./SlidingMarchingCubes.js";
-/**
- * @typedef {import('../blobtree/RootNode')} RootNode
- * @typedef {import('./SlidingMarchingCubes')} SMCParams
- */
+import type { RootNode } from "../exports.js";
+import type { SMCParams } from './SlidingMarchingCubes';
 /**
  * metaBlobtree is The blobtree from which normals will be computed.
  * Usually a blobtree containing blobtree.
- * @typedef {{metaBlobtree: RootNode} & SMCParams} SplitSMCParams
  */
+export interface SplitSMCParams extends SMCParams {
+    metaBlobtree: RootNode;
+}
 /**
  *  A special SlidingMarchingCubes with a different function
  *  to compute vertex normal in a cell.
@@ -16,15 +16,12 @@ import { SlidingMarchingCubes } from "./SlidingMarchingCubes.js";
  *  the complete blobtree.
  */
 export declare class SplitSMC extends SlidingMarchingCubes {
-    /**
-     *  @param {RootNode} blobtree
-     *  @param {SplitSMCParams} params
-     */
-    constructor(blobtree: any, params: any);
+    metaBlobtree: RootNode;
+    constructor(blobtree: RootNode, params: SplitSMCParams);
     /**
      *  Compute the vertex in the current cube.
      *  Use this.x, this.y, this.z
      */
-    computeVertex: () => void;
+    computeVertex: (this: SlidingMarchingCubes) => void;
 }
 //# sourceMappingURL=SplitSMC.d.ts.map

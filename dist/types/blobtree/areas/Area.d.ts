@@ -1,8 +1,9 @@
-/**
- * @typedef {Object} AreaSphereParam
- * @property {number} radius
- * @property {Vector3} center
- */
+import type { Vector3 } from 'three';
+export type AreaSphereParam = {
+    radius: number;
+    center: Vector3;
+};
+export type Coordinate = 'x' | 'y' | 'z';
 /**
  *  Bounding area for a primitive
  *  It is the same for DIST and CONVOL primitives since the support of the convolution
@@ -13,78 +14,78 @@
  *  propose an intersection test.
  *
  */
-export declare class Area {
+export declare abstract class Area {
     /**
      *  @abstract
      *  Test intersection of the shape with a sphere
-     *  @param {AreaSphereParam} _sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {boolean} true if the sphere and the area intersect
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return true if the sphere and the area intersect
      */
-    sphereIntersect(_sphere: any): void;
+    abstract sphereIntersect(sphere: AreaSphereParam): boolean;
     /**
      * @abstract
      * Test if p is in the area.
-     * @param {!Vector3} _p A point in space
-     * @return {boolean} true if p is in the area, false otherwise.
+     * @param p A point in space
+     * @return true if p is in the area, false otherwise.
      */
-    contains(_p: any): void;
+    abstract contains(p: Vector3): boolean;
     /**
      *  @abstract
      *  Return the minimum accuracy needed in the intersection of the sphere and the area.
      *  This function is a generic function used in both getNiceAcc and getRawAcc.
      *
-     *  @param {AreaSphereParam}  _sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param {number}  _factor  the ratio to determine the wanted accuracy.
-     *                   Example : for an AreaScalisSeg, if thick0 is 1 and thick1 is 2, a sphere
+     *  @param sphere  A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param factor  the ratio to determine the wanted accuracy.
+     *                   Example: for an AreaScalisSeg, if thick0 is 1 and thick1 is 2, a sphere
      *                      centered at (p0+p1)/2 and of radius 0.2
      *                      will show its minimum accuracy at p0+0.3*unit_dir.
      *                      The linear interpolation of weights at this position
      *                      will give a wanted radius of 1.3
      *                      This function will return factor*1.3
-     *  @return {number} the accuracy needed in the intersection zone, as a ratio of the linear variation
+     *  @return the accuracy needed in the intersection zone, as a ratio of the linear variation
      *         of the radius along (this.p0,this.p1)
      */
-    getAcc(_sphere: any, _factor: any): void;
+    abstract getAcc(sphere: AreaSphereParam, factor: number): number;
     /**
      *  @abstract
      *  Convenience function, just call getAcc with Nice Accuracy parameters.
-     *  @param {AreaSphereParam} _sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Nice accuracy needed in the intersection zone
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Nice accuracy needed in the intersection zone
      */
-    getNiceAcc(_sphere: any): void;
+    abstract getNiceAcc(sphere: AreaSphereParam): number;
     /**
      *  @abstract
      *  Convenience function, just call getAcc with Current Accuracy parameters.
-     *  @param {AreaSphereParam} _sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Current accuracy needed in the intersection zone
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Current accuracy needed in the intersection zone
      */
-    getCurrAcc(_sphere: any): void;
+    abstract getCurrAcc(sphere: AreaSphereParam): number;
     /**
      *  @abstract
      *  Convenience function, just call getAcc with Raw Accuracy parameters.
-     *  @param {AreaSphereParam} _sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The raw accuracy needed in the intersection zone
+     *  @param _sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The raw accuracy needed in the intersection zone
      */
-    getRawAcc(_sphere: any): void;
+    abstract getRawAcc(sphere: AreaSphereParam): number;
     /**
      *  @abstract
-     *  @return {number} the minimum accuracy needed in the whole area
+     *  @return the minimum accuracy needed in the whole area
      */
-    getMinAcc(): void;
+    abstract getMinAcc(): number;
     /**
      *  @abstract
-     *  @return {number} the minimum raw accuracy needed in the whole area
+     *  @return the minimum raw accuracy needed in the whole area
      */
-    getMinRawAcc(): void;
+    abstract getMinRawAcc(): number;
     /**
      *  @abstract
      *  Return the minimum accuracy required at some point on the given axis, according to Accuracies.curr
      *  The returned accuracy is the one you would need when stepping in the axis
      *  direction when you are on the axis at coordinate t.
-     *  @param {string} _axis x, y or z
-     *  @param {number} _t Coordinate on the axis
-     *  @return {number} The step you can safely do in axis direction
+     *  @param axis x, y or z
+     *  @param t Coordinate on the axis
+     *  @return The step you can safely do in axis direction
      */
-    getAxisProjectionMinStep(_axis: any, _t: any): number;
+    abstract getAxisProjectionMinStep(axis: string, t: number): number;
 }
 //# sourceMappingURL=Area.d.ts.map

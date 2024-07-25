@@ -2,49 +2,89 @@ import { Box2, Vector2, Vector3, Box3, BufferGeometry, BufferAttribute } from "t
 import { Material } from "../blobtree/Material.js"
 import { Convergence } from "../utils/Convergence.js"
 import { Tables } from "./MCTables.js"
+import { RootNode } from '../blobtree/RootNode';
+import { Area, type Coordinate } from '../blobtree/areas/Area';
+import { Element } from "../blobtree/Element";
+import { Node } from "../blobtree/Node";
+import { Primitive } from "../blobtree/Primitive";
 
-/**
- * @typedef {import('../blobtree/RootNode')} RootNode
- */
+export interface SMCParams {
+    /**
+     * Defines how the stepping in z occurs. Options are :
+     * "adaptive" (default) steps are computed according to local minimum accuracy.
+     * "uniform" steps are uniform along z, according to the global minimum accuracy.
+     */
+    zResolution?: string;
+  
+    /**
+     * The blobtree defines some needed accuracies for polygonizing.
+     * However, if you want more details, you can set this to less than 1.
+     * Note that this is limited to 0.01, which will already increase your model complexity by a 10 000 factor.
+     */
+    detailRatio?: number;
+  
+    /**
+     * Progress callback, taking a percentage as parameter.
+     */
+    progress?: (percent: number) => void;
+  
+    /**
+     * Add newton convergence steps to position each vertex.
+     */
+    convergence?: ConvergenceParams;
+  
+    /**
+     * NOT YET IMPLEMENTED Add dichotomy steps to position each vertex. Usually using convergence is better,
+     * except if the implicit field is such that converging is not possible (for example, null gradients on large areas)
+     */
+    dichotomy?: number;
+  }
+export interface ConvergenceParams {
+  /**
+   * A ratio of a the marching cube grid size defining the wanted geometrical accuracy.
+   * Must be lower than 1, default is 0.01.
+   */
+  ratio: number;
 
-/**
- * @typedef {Object} ConvergenceParams
- * @property {number=} ratio A ratio of a the marching cube grid size defining the wanted geometrical accuracy.
- *                           Must be lower than 1, default is 0.01 The maximum number of newton steps, default is 10.
- * @property {number=} step The newton process will stop either when the threshold of ratio*cube_size is matched, or the number of steps allowed has been reached.
- */
+  /**
+   * The newton process will stop either when the threshold of ratio*cube_size is matched,
+   * or the number of steps allowed has been reached. Default is 10.
+   */
+  step: number;
+}
 
-/**
- * @typedef {Object} VertexData
- * @property {Object} p
- * @property {number} p.x
- * @property {number} p.y
- * @property {number} p.z
- * @property {Object} n
- * @property {number} n.x
- * @property {number} n.y
- * @property {number} n.z
- * @property {Object} c
- * @property {number} c.r
- * @property {number} c.g
- * @property {number} c.b
- * @property {number} r
- * @property {number} m
- */
+export interface VertexData {
+  p: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  n: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  c: {
+    r: number;
+    g: number;
+    b: number;
+  };
+  r: number;
+  m: number;
+}
 
-/**
- * @typedef {Object} ResultingGeometry
- * @property {Array<number>} position,
- * @property {Array<number>} normal
- * @property {Array<number>} color
- * @property {Array<number>} metalness
- * @property {Array<number>} roughness
- * @property {number} nVertices
- * @property {Array<number>} faces
- * @property {number} nFaces
- * @property {(data:VertexData) => void} addVertex
- * @property {(a:number, b:number, c:number) => void} addFace
- */
+export interface ResultingGeometry {
+  position: number[];
+  normal: number[];
+  color: number[];
+  metalness: number[];
+  roughness: number[];
+  nVertices: number;
+  faces: number[];
+  nFaces: number;
+  addVertex: (data: VertexData) => void;
+  addFace: (a: number, b: number, c: number) => void;
+}
 
 /**
  *  Axis Aligned Bounding Box in 2D carrying accuracy data
@@ -54,14 +94,16 @@ import { Tables } from "./MCTables.js"
 
 
 class Box2Acc extends Box2 {
+    nice_acc: number | null;
+    raw_acc: number | null;
 
     /**
-     *  @param {Vector2=} min Minimum x,y coordinate of the box
-     *  @param {Vector2=} max Maximum x,y coordinate of the box
-     *  @param {number=} nice_acc Nice accuracy in this box
-     *  @param {number=} raw_acc Raw accuracy in this box
+     *  @param min Minimum x,y coordinate of the box
+     *  @param max Maximum x,y coordinate of the box
+     *  @param nice_acc Nice accuracy in this box
+     *  @param raw_acc Raw accuracy in this box
      */
-    constructor(min, max, nice_acc, raw_acc) {
+    constructor(min?: Vector2, max?: Vector2, nice_acc?: number | null, raw_acc?: number | null) {
         super(min, max);
 
         var s = Math.max(this.max.x - this.min.x, this.max.y - this.min.y);
@@ -75,37 +117,38 @@ class Box2Acc extends Box2 {
         } else {
             this.nice_acc = nice_acc;
         }
-        this.raw_acc = this.raw_acc ? this.nice_acc : raw_acc;
+        this.raw_acc = raw_acc ?? this.nice_acc;
 
     }
-    /**
-     *
-     * @param {Box2Acc} box
-     */
-    unionWithAcc(box) {
+
+    unionWithAcc(box: Box2Acc) {
+        if (box.nice_acc === null || box.raw_acc === null)
+            throw "[SlidingMarchingCubes] unionWithAcc : box has no accuracy data";
+        if (this.raw_acc === null || this.nice_acc === null)
+            throw "[SlidingMarchingCubes] unionWithAcc : this has no accuracy data";
         super.union(box);
         // Union of 2 boxes get the min acc for both
         this.raw_acc = Math.min(box.raw_acc, this.raw_acc);
         this.nice_acc = Math.min(box.nice_acc, this.nice_acc);
     }
 
-    getRawAcc() {
+    getRawAcc(): number | null {
         return this.raw_acc;
     };
 
-    getNiceAcc() {
+    getNiceAcc(): number | null {
         return this.nice_acc;
     };
 
-    setRawAcc(raw_acc) {
+    setRawAcc(raw_acc: number): void {
         this.raw_acc = Math.max(0, raw_acc);
     };
 
-    setNiceAcc(nice_acc) {
+    setNiceAcc(nice_acc: number): void {
         this.nice_acc = Math.max(0, nice_acc);
     };
 
-    toString() {
+    override toString(): string {
         return (
             "(" +
             this.min.x.toFixed(2) +
@@ -119,15 +162,7 @@ class Box2Acc extends Box2 {
         );
     };
 
-    /**
-     *  @param {number} min_x
-     *  @param {number} min_y
-     *  @param {number} max_x
-     *  @param {number} max_y
-     *  @param {number=} nice_acc
-     *  @param {number=} raw_acc
-     */
-    setWithAcc(min_x, min_y, max_x, max_y, nice_acc, raw_acc) {
+    setWithAcc(min_x: number, min_y: number, max_x: number, max_y: number, nice_acc: number, raw_acc: number) {
         this.min.set(min_x, min_y);
         this.max.set(max_x, max_y);
         if (nice_acc !== undefined) {
@@ -140,26 +175,11 @@ class Box2Acc extends Box2 {
 
     /**
      *  Get corner with the minimum coordinates
-     *  @return {Vector2}
      */
     getMinCorner() {
         return this.min;
     };
 }
-
-/**
-*  @typedef {Object} SMCParams Parameters and option for this polygonizer.
-*  @property {string=} zResolution Defines how the stepping in z occurs. Options are :
-*                                  "adaptive" (default) steps are computed according to local minimum accuracy.
-*                                  "uniform" steps are uniform along z, according to the global minimum accuracy.
-*  @property {number=} detailRatio The blobtree defines some needed accuracies for polygonizing.
-*                                  However, if you want more details, you can set this to less than 1.
-*                                  Note that this is limited to 0.01, which will already increase your model complexity by a 10 000 factor.
-*  @property {(percent:number) => void=} progress Progress callback, taling a percentage as parameter.
-*  @property {ConvergenceParams=} convergence Add newton convergence steps to position each vertex.
-*  @property {number=} dichotomy NOT YET IMPLEMENTED Add dichotomy steps to position each vertex. Usually using convergence is better, except if the implicit
-*                                field is such that congerging is not possible (for example, null gradients on large areas)
-*/
 
 /**
  *  Class for a dual marching cube using 2 sliding arrays.
@@ -168,21 +188,50 @@ class Box2Acc extends Box2 {
  */
 
 export class SlidingMarchingCubes {
+    blobtree: RootNode;
+    uniformZ: boolean;
+    detail_ratio: number;
+    convergence: ConvergenceParams | null;
+    progress: (percent: number) => void;
+    reso: Int32Array;
+    steps: { x: Float32Array | null; y: Float32Array| null; z: Float32Array| null; };
+    curr_steps: { x: number; y: number; z: number; };
+    curr_step_vol: number;
+    values_xy: [Float32Array | null, Float32Array | null];
+    vertices_xy: [Int32Array | null, Int32Array | null];
+    areas: {
+        aabb: Box3;
+        bv: Area;
+        obj: Primitive;
+    }[];
+    min_acc: number;
+    values: number[];
+    x: number;
+    y: number;
+    z: number;
+    mask: number;
+    edge_cross: boolean[];
+    vertex: Vector3;
+    vertex_n: Vector3;
+    vertex_m: Material;
+    extended: boolean;
+    dis_o_aabb: Box3;
+    ext_p: Vector3;
+    geometry: ResultingGeometry | null;
+    minCurvOrient: boolean;
+    _isMinCurvatureTriangulation: (v1: number, v2: number, v3: number, v4: number) => boolean;
+
     /**
-     *  @param {RootNode} blobtree A blobtree to polygonize.
-     *  @param {SMCParams} smcParams Parameters and option for this polygonizer
+     *  @param blobtree A blobtree to polygonize.
+     *  @param smcParams Parameters and option for this polygonizer
      */
-    constructor(blobtree, smcParams) {
+    constructor(blobtree: RootNode, smcParams: SMCParams) {
         if (!smcParams) {
-            throw new Error("smcParams must be provided for SlidingMarchingCubes, to use all default values, please use {}");
+            throw "[SlidingMarchingCubes] constructor : smcParams must be provided for SlidingMarchingCubes, to use all default values, please use {}";
         }
 
-        /**
-         * @type {RootNode}
-         */
         this.blobtree = blobtree;
 
-        /** @type {boolean} */
         this.uniformZ = smcParams.zResolution === "uniform" ? true : false;
 
         this.detail_ratio = smcParams.detailRatio
@@ -197,54 +246,47 @@ export class SlidingMarchingCubes {
             this.convergence = null;
         }
 
-        /** @type {(percent:number) => void} */
         this.progress = smcParams.progress
             ? smcParams.progress
             : function (_percent) {
                 //console.log(percent);
             };
 
-        /** @type {Int32Array} */
         this.reso = new Int32Array(3);
-        /**
-         * @type {{x:Float32Array, y:Float32Array, z:Float32Array}}
-         */
         this.steps = {
             x: null,
             y: null,
             z: null
         };
-        /** @type {!{x:number,y:number,z:number}} */
+
         this.curr_steps = {
             x: 0,
             y: 0,
             z: 0
         };
+
         // = this.curr_steps.x*this.curr_steps.y*this.curr_steps.z
-        /** @type {number} */
         this.curr_step_vol = 0;
 
         /**
          *  Sliding values array
-         *  @type {[Float32Array, Float32Array]}
          */
         this.values_xy = [null, null];
         /**
          *  Sliding values array
-         *  @type {!Array.<Int32Array>}
          */
         this.vertices_xy = [null, null];
         this.areas = [];
         this.min_acc = 1;
 
         // Processing vars
-        /** @type {Array<number>} */
         this.values = new Array(8);
+
         this.x = 0;
         this.y = 0;
         this.z = 0;
         this.mask = 0;
-        /** @type {Array<boolean>} */
+
         this.edge_cross = [
             false, // Tables.EdgeVMap[0], x=1
             false,
@@ -260,19 +302,15 @@ export class SlidingMarchingCubes {
             false
         ];
 
-        /** @type {Vector3} */
         this.vertex = new Vector3(0, 0, 0); // vertex associated to the cell if any
-        /** @type {Vector3} */
+
         this.vertex_n = new Vector3(0, 0, 0); // vertex normal
-        /** @type {Material} */
+
         this.vertex_m = new Material(); // vertex material
 
         // Vars and tmp vars for extension checks
-        /** @type {boolean} */
         this.extended = false;
-        /** @type {Box3} */
         this.dis_o_aabb = new Box3();
-        /** @type {Vector3} */
         this.ext_p = new Vector3();
 
 
@@ -280,55 +318,42 @@ export class SlidingMarchingCubes {
 
         /**
          * Resulting mesh data
-         * @type {ResultingGeometry}
          */
         this.geometry = null;
 
 
         // Ensure triangulation along min curvature edge
-        /** @type {boolean} */
         this.minCurvOrient = true;
 
 
         // Returns true if 123/143 split is along min curvature
-        /** @type {(v1:number,v2:number,v3:number,v4:number) => boolean} */
         this._isMinCurvatureTriangulation =
             (function () {
                 //Var and tmp var pre allocated and Scoped
                 //for optimization of triangulation criteria
                 //assuming a v1v2v3v4 quad
-                /** @type {Vector3} */
                 let p1 = new Vector3(); //v1 position
-                /** @type {Vector3} */
                 let p2 = new Vector3(); //v2 position
-                /** @type {Vector3} */
                 let p3 = new Vector3(); //v3 position
-                /** @type {Vector3} */
                 let p4 = new Vector3(); //v4 position
                 //Edges from v2
-                /** @type {Vector3} */
                 let pp_2_1 = new Vector3(); //v2v1 edge
-                /** @type {Vector3} */
                 let pp_2_3 = new Vector3(); //v2v3 edge
-                /** @type {Vector3} */
                 let pp_2_4 = new Vector3(); //v2v4 edge
                 //Edges from v4
-                /** @type {Vector3} */
                 let pp_4_1 = new Vector3(); //v4v1 edge
-                /** @type {Vector3} */
                 let pp_4_3 = new Vector3(); //v3v1 edge
-                /** @type {Vector3} */
+
                 let n_2 = new Vector3(); //123 normal
-                /** @type {Vector3} */
                 let n_4 = new Vector3(); //341 normal
-                /** @type {Vector3} */
                 let n_23 = new Vector3(); //234 normal
-                /** @type {Vector3} */
                 let n_42 = new Vector3(); //412 normal
 
-                return function (v1, v2, v3, v4) {
+                return function (this: SlidingMarchingCubes, v1: number, v2: number, v3: number, v4: number) {
                     //Quad opposes v1 and v3 and v2 and v4
                     //check min curvature
+                    if (this.geometry === null) 
+                        throw "[SlidingMarchingCubes] _isMinCurvatureTriangulation : Geometry not initialized";
                     p1.x = this.geometry.position[v1 * 3];
                     p1.y = this.geometry.position[v1 * 3 + 1]
                     p1.z = this.geometry.position[v1 * 3 + 2];
@@ -413,6 +438,9 @@ export class SlidingMarchingCubes {
      *  @private
      */
     buildResultingBufferGeometry() {
+        if (this.geometry === null)
+            throw "[SlidingMarchingCubes] buildResultingBufferGeometry : Geometry not initialized";
+
         var res = new BufferGeometry();
         res.setAttribute(
             "position",
@@ -452,6 +480,8 @@ export class SlidingMarchingCubes {
      *  @private
      */
     setFrontToZero() {
+        if (this.values_xy[1] === null)
+            throw "[SlidingMarchingCubes] setFrontToZero : values_xy[1] is null when it should not be";
         // init to 0, can be omptim later
         for (let i = 0; i < this.values_xy[1].length; ++i) {
             this.values_xy[1][i] = 0;
@@ -464,6 +494,8 @@ export class SlidingMarchingCubes {
      *  @private
      */
     setFrontToMinus() {
+        if (this.values_xy[1] === null)
+            throw "[SlidingMarchingCubes] setFrontToMinus : values_xy[1] is null when it should not be";
         // init to 0, can be omptim later
         for (let i = 0; i < this.values_xy[1].length; ++i) {
             this.values_xy[1][i] = -1;
@@ -475,6 +507,8 @@ export class SlidingMarchingCubes {
      *  @private
      */
     setFrontToZeroIfMinus() {
+        if (this.values_xy[1] === null)
+            throw "[SlidingMarchingCubes] setFrontToZeroIfMinus : values_xy[1] is null when it should not be";
         // init to 0, can be omptim later
         for (let i = 0; i < this.values_xy[1].length; ++i) {
             if (this.values_xy[1][i] === -1) {
@@ -486,26 +520,29 @@ export class SlidingMarchingCubes {
     /**
      *  Perform bilinear interpolation in a given 2D box to set values in front array
      *
-     *  @param {number} cx Coordinate x of bottom left corner of the front array
-     *  @param {number} cy Coordinate x of bottom left corner of the front array
-     *  @param {number} cz Coordinate x of bottom left corner of the front array
+     *  @param cx Coordinate x of bottom left corner of the front array
+     *  @param cy Coordinate x of bottom left corner of the front array
+     *  @param cz Coordinate x of bottom left corner of the front array
      *
-     *  @param {number} x0 Lower x box osition in the array
-     *  @param {number} x1 Upper x box position in the array
-     *  @param {number} y0 Lower y box position in the array
-     *  @param {number} y1 Upper y box position in the array
+     *  @param x0 Lower x box osition in the array
+     *  @param x1 Upper x box position in the array
+     *  @param y0 Lower y box position in the array
+     *  @param y1 Upper y box position in the array
      *
      *  @private
      */
     interpolateInBox(
-        cx,
-        cy,
-        cz,
-        x0,
-        x1,
-        y0,
-        y1
-    ) {
+        _cx: number,
+        _cy: number,
+        _cz: number,
+        x0: number,
+        x1: number,
+        y0: number,
+        y1: number
+    ): void {
+        if (this.values_xy[1] === null) {
+            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling interpolateInBox";
+        }
         let varr = this.values_xy[1];
 
         let nx = x1 - x0;
@@ -524,7 +561,7 @@ export class SlidingMarchingCubes {
             let line = y0 * this.reso[0];
             let val0 = varr[line + x0];
             let v_step = (varr[line + x1] - val0) / nx;
-            for (var i = 1; i < nx; ++i) {
+            for (let i = 1; i < nx; ++i) {
                 if (varr[line + x0 + i] === -1) {
                     varr[line + x0 + i] = val0 + i * v_step;
                     //this.computeFrontValAt(cx,cy,cz,x0+i,y0);
@@ -547,7 +584,7 @@ export class SlidingMarchingCubes {
             for (let i = 0; i <= nx; ++i) {
                 val0 = varr[y0 * this.reso[0] + x0 + i];
                 v_step = (varr[y1 * this.reso[0] + x0 + i] - val0) / ny;
-                for (var k = 1; k < ny; ++k) {
+                for (let k = 1; k < ny; ++k) {
                     if (varr[(y0 + k) * this.reso[0] + x0 + i] === -1) {
                         varr[(y0 + k) * this.reso[0] + x0 + i] = val0 + k * v_step;
                         //if(i===0 || i==nx){
@@ -562,16 +599,16 @@ export class SlidingMarchingCubes {
     /**
      *  Compute blobtree value at a given position in the front sliding array.
      *
-     *  @param {number} cx Coordinate x of bottom left corner of the front array
-     *  @param {number} cy Coordinate x of bottom left corner of the front array
-     *  @param {number} cz Coordinate x of bottom left corner of the front array
+     *  @param cx Coordinate x of bottom left corner of the front array
+     *  @param cy Coordinate x of bottom left corner of the front array
+     *  @param cz Coordinate x of bottom left corner of the front array
      *
-     *  @param {number} x X position in the array
-     *  @param {number} y Y position in the array
+     *  @param x X position in the array
+     *  @param y Y position in the array
      *
      *  @private
      */
-    computeFrontValAt(cx, cy, cz, x, y) {
+    computeFrontValAt(cx: number, cy: number, cz: number, x: number, y: number): void {
         this.computeFrontValAtClosure(cx, cy, cz, x, y);
     };
 
@@ -582,9 +619,10 @@ export class SlidingMarchingCubes {
     computeFrontValAtClosure = (function () {
         var eval_res = { v: 0 };
         var p = new Vector3();
-        return function (cx, cy, cz, x, y) {
-            /** @type {SlidingMarchingCubes} */
+        return function (this: SlidingMarchingCubes, cx: number, cy: number, cz: number, x: number, y: number) {
             let self = this;
+            if (self.values_xy[1] === null)
+                throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling computeFrontValAt";
             var index = y * self.reso[0] + x;
             eval_res.v = self.blobtree.getNeutralValue();
             if (self.values_xy[1][index] === -1) {
@@ -597,18 +635,18 @@ export class SlidingMarchingCubes {
 
     /**
      *  Compute corner values in the front buffer in 2D box defined by min,max
-     *  @param {number} cx X coordinate of the front buffer corner
-     *  @param {number} cy Y coordinate of the front buffer corner
-     *  @param {number} cz Z coordinate of the front buffer corner
-     *  @param {!Vector2} min 2D box min
-     *  @param {!Vector2} max 2D box max
+     *  @param cx X coordinate of the front buffer corner
+     *  @param cy Y coordinate of the front buffer corner
+     *  @param cz Z coordinate of the front buffer corner
+     *  @param min 2D box min
+     *  @param max 2D box max
      */
     computeFrontValAtBoxCorners(
-        cx,
-        cy,
-        cz,
-        min,
-        max
+        cx: number,
+        cy: number,
+        cz: number,
+        min: Vector2,
+        max: Vector2
     ) {
         this.computeFrontValAt(cx, cy, cz, min.x, min.y);
         this.computeFrontValAt(cx, cy, cz, min.x, max.y);
@@ -618,21 +656,21 @@ export class SlidingMarchingCubes {
 
     /**
      *  Compute all values in the front buffer in 2D box defined by min,max
-     *  @param {number} cx X coordinate of the front buffer corner
-     *  @param {number} cy Y coordinate of the front buffer corner
-     *  @param {number} cz Z coordinate of the front buffer corner
-     *  @param {!Vector2} min 2D box min
-     *  @param {!Vector2} max 2D box max
+     *  @param cx X coordinate of the front buffer corner
+     *  @param cy Y coordinate of the front buffer corner
+     *  @param cz Z coordinate of the front buffer corner
+     *  @param min 2D box min
+     *  @param max 2D box max
      */
     computeFrontValInBox(
-        cx,
-        cy,
-        cz,
-        min,
-        max
+        cx: number,
+        cy: number,
+        cz: number,
+        min: Vector2,
+        max: Vector2
     ) {
-        for (var xx = min.x; xx <= max.x; ++xx) {
-            for (var yy = min.y; yy <= max.y; ++yy) {
+        for (let xx = min.x; xx <= max.x; ++xx) {
+            for (let yy = min.y; yy <= max.y; ++yy) {
                 this.computeFrontValAt(cx, cy, cz, xx, yy);
             }
         }
@@ -640,12 +678,14 @@ export class SlidingMarchingCubes {
 
     /**
      *  Set all values in 2D box min,max at 0.
-     *  @param {!Vector2} min 2D box min
-     *  @param {!Vector2} max 2D box max
+     *  @param min 2D box min
+     *  @param max 2D box max
      */
-    setFrontValZeroInBox(min, max) {
-        for (var ix = min.x; ix <= max.x; ++ix) {
-            for (var iy = min.y; iy <= max.y; ++iy) {
+    setFrontValZeroInBox(min: Vector2, max: Vector2) {
+        if (this.values_xy[1] === null)
+            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling setFrontValZeroInBox";
+        for (let ix = min.x; ix <= max.x; ++ix) {
+            for (let iy = min.y; iy <= max.y; ++iy) {
                 this.values_xy[1][iy * this.reso[0] + ix] = 0;
             }
         }
@@ -654,12 +694,14 @@ export class SlidingMarchingCubes {
     /**
      *  Compute 2D mask of a given 2D box. Mask is an hex integer unique for each
      *  combination of iso value crossing (like in 3D marching cubes, but in 2D).
-     *  @param {!Vector2} min 2D box min
-     *  @param {!Vector2} max 2D box max
-     *  @return {number} The mask
+     *  @param min 2D box min
+     *  @param max 2D box max
+     *  @return The mask
      */
-    computeBoxMask(min, max) {
-        var mask = 0;
+    computeBoxMask(min: Vector2, max: Vector2): number {
+        if (this.values_xy[1] === null)
+            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling computeBoxMask";
+        let mask = 0;
         mask |=
             this.values_xy[1][min.y * this.reso[0] + min.x] >
                 this.blobtree.getIsoValue()
@@ -685,11 +727,12 @@ export class SlidingMarchingCubes {
 
     /**
      *  Return 0 if and only if all coners value of 2D box min,max are 0
-     *  @param {!Vector2} min 2D box min
-     *  @param {!Vector2} max 2D box max
-     *  @return {number}
+     *  @param min 2D box min
+     *  @param max 2D box max
      */
-    checkZeroBox(min, max) {
+    checkZeroBox(min: Vector2, max: Vector2): number {
+        if (this.values_xy[1] === null)
+            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling checkZeroBox";
         return (
             this.values_xy[1][min.y * this.reso[0] + min.x] +
             this.values_xy[1][min.y * this.reso[0] + max.x] +
@@ -704,18 +747,18 @@ export class SlidingMarchingCubes {
      *  "smart", since computed boxes are buid with their scalar field accuracy.
      *  Depending on the accuracy, scalar field values may be computed from the
      *  blobtree or interpolated (linear).
-     *  @param {number} cx X coordinate of the front buffer corner
-     *  @param {number} cy Y coordinate of the front buffer corner
-     *  @param {number} cz Z coordinate of the front buffer corner
-     *  @param {!Array.<!Box2Acc>} boxes2D 2D boxes intersecting box. Used to compute accuracy for split boxes.
-     *  @param {!Box2Acc} box The 2D box in which we compute values
+     *  @param cx X coordinate of the front buffer corner
+     *  @param cy Y coordinate of the front buffer corner
+     *  @param cz Z coordinate of the front buffer corner
+     *  @param boxes2D 2D boxes intersecting box. Used to compute accuracy for split boxes.
+     *  @param box The 2D box in which we compute values
      */
     recursiveBoxComputation(
-        cx,
-        cy,
-        cz,
-        box,
-        boxes2D
+        cx: number,
+        cy: number,
+        cz: number,
+        box: Box2Acc,
+        boxes2D: Box2Acc[]
     ) {
         // split the current box in 2 boxes in the largest dimension
 
@@ -744,8 +787,6 @@ export class SlidingMarchingCubes {
             ];
             this.computeFrontValAt(cx, cy, cz, x_cut, box.min.y);
             this.computeFrontValAt(cx, cy, cz, x_cut, box.max.y);
-            //this.computeFrontValAt(cx,cy,cz, x_cut+1, box.min.y);
-            //this.computeFrontValAt(cx,cy,cz, x_cut+1, box.max.y);
         } else {
             // cut in y
             if (diff.y > 1) {
@@ -766,29 +807,31 @@ export class SlidingMarchingCubes {
                 ];
                 this.computeFrontValAt(cx, cy, cz, box.min.x, y_cut);
                 this.computeFrontValAt(cx, cy, cz, box.max.x, y_cut);
-                //this.computeFrontValAt(cx,cy,cz, box.min.x, y_cut+1);
-                //this.computeFrontValAt(cx,cy,cz, box.max.x, y_cut+1);
             } else {
                 // the box is 1 in size, so we stop
                 return;
             }
         }
-        /*
-        if(new_boxes[0].intersectsBox(new_boxes[1])){
-            console.log("Fucking shit");
-        }
-        */
 
         // Compute accuracies for each box
-        var boxes2D_rec = [[], []];
-        for (var i = 0; i < boxes2D.length; ++i) {
-            for (var k = 0; k < new_boxes.length; ++k) {
+        var boxes2D_rec: [Box2Acc[], Box2Acc[]] = [[], []];
+        for (let i = 0; i < boxes2D.length; ++i) {
+            for (let k = 0; k < new_boxes.length; ++k) {
+                const newBoxRawAcc = new_boxes[k].getRawAcc();
+                const newBoxNiceAcc = new_boxes[k].getNiceAcc();
+                if (newBoxRawAcc === null || newBoxNiceAcc === null)
+                    throw "[SlidingMarchingCubes] recursiveBoxComputation : new_boxes["+ k + "] has no accuracy data";
+
+                const boxRawAcc = boxes2D[i].getRawAcc();
+                const boxNiceAcc = boxes2D[i].getNiceAcc();
+                if (boxRawAcc === null || boxNiceAcc === null)
+                    throw "[SlidingMarchingCubes] recursiveBoxComputation : box has no accuracy data";
                 if (new_boxes[k].intersectsBox(boxes2D[i])) {
                     new_boxes[k].setRawAcc(
-                        Math.min(new_boxes[k].getRawAcc(), boxes2D[i].getRawAcc())
+                        Math.min(newBoxRawAcc, boxRawAcc)
                     );
                     new_boxes[k].setNiceAcc(
-                        Math.min(new_boxes[k].getNiceAcc(), boxes2D[i].getNiceAcc())
+                        Math.min(newBoxNiceAcc, boxNiceAcc)
                     );
                     boxes2D_rec[k].push(boxes2D[i]);
                 }
@@ -803,7 +846,11 @@ export class SlidingMarchingCubes {
             if (boxes2D_rec[k].length === 0) {
                 this.setFrontValZeroInBox(b.min, b.max);
             } else {
-                if (bsize.x <= b.getRawAcc() && bsize.y <= b.getRawAcc()) {
+                const bRawAcc = b.getRawAcc();
+                const bNiceAcc = b.getNiceAcc();
+                if (bRawAcc === null || bNiceAcc === null)
+                    throw "[SlidingMarchingCubes] recursiveBoxComputation : b has no accuracy data";
+                if (bsize.x <= bRawAcc && bsize.y <= bRawAcc) {
                     // We reach the raw level
                     let mask = this.computeBoxMask(b.min, b.max);
                     if (mask === 0xf || mask === 0x0) {
@@ -824,8 +871,8 @@ export class SlidingMarchingCubes {
                     } else {
                         //Surface is crossed, must go down to the nice
                         if (
-                            bsize.x <= b.getNiceAcc() &&
-                            bsize.y <= b.getNiceAcc()
+                            bsize.x <= bNiceAcc &&
+                            bsize.y <= bNiceAcc
                         ) {
                             // We are under nice acc, just interpolate
                             this.interpolateInBox(
@@ -861,18 +908,18 @@ export class SlidingMarchingCubes {
 
     /**
      *  Compute all values in the front buffer.
-     *  @param {number} cx X coordinate of the front buffer corner
-     *  @param {number} cy Y coordinate of the front buffer corner
-     *  @param {number} cz Z coordinate of the front buffer corner
+     *  @param cx X coordinate of the front buffer corner
+     *  @param cy Y coordinate of the front buffer corner
+     *  @param cz Z coordinate of the front buffer corner
      */
-    computeFrontValues(cx, cy, cz) {
+    computeFrontValues(cx: number, cy: number, cz: number) {
         this.setFrontToMinus();
 
         var areas = this.blobtree.getAreas();
         var bigbox = new Box2Acc();
         bigbox.makeEmpty();
         var boxes2D = [];
-        for (var i = 0; i < areas.length; ++i) {
+        for (let i = 0; i < areas.length; ++i) {
             var raw_acc = Math.round(
                 (areas[i].bv.getMinRawAcc() * this.detail_ratio) / this.min_acc
             );
@@ -923,14 +970,14 @@ export class SlidingMarchingCubes {
 
     /**
      *   get the min accuracy needed for this zone
-     *   @param {Box3} bbox the zone for which we want the minAcc
-     *   @return {number} the min acc for this zone
+     *   @param bbox the zone for which we want the minAcc
+     *   @return the min acc for this zone
      */
-    getMinAcc(bbox) {
+    getMinAcc(bbox: Box3): number {
         var areas = this.blobtree.getAreas();
         var minAcc = Number.MAX_VALUE;
 
-        for (var i = 0; i < areas.length; i++) {
+        for (let i = 0; i < areas.length; i++) {
             var area = areas[i];
             if (area.aabb.intersectsBox(bbox)) {
                 if (area.bv) {
@@ -947,14 +994,14 @@ export class SlidingMarchingCubes {
 
     /**
      *   get the max accuracy needed for this zone
-     *   @param {Box3} bbox the zone for which we want the minAcc
-     *   @return {number} the max acc for this zone
+     *   @param bbox the zone for which we want the minAcc
+     *   @return the max acc for this zone
      */
-    getMaxAcc(bbox) {
+    getMaxAcc(bbox: Box3): number {
         var areas = this.blobtree.getAreas();
         var maxAcc = 0;
 
-        for (var i = 0; i < areas.length; i++) {
+        for (let i = 0; i < areas.length; i++) {
             var area = areas[i];
             if (area.aabb.intersectsBox(bbox)) {
                 if (area.bv) {
@@ -972,18 +1019,18 @@ export class SlidingMarchingCubes {
     /**
      *  Note : returned mesh data will be accurate only if extened AABB difference
      *  with o_aabb is small. compared to o_aabb size.
-     *  @param {Box3} o_aabb The aabb where to compute the surface, if null, the blobtree AABB will be used
-     *  @param {boolean=} extended True if we want the agorithm to extend the computation zone
+     *  @param o_aabb The aabb where to compute the surface, if null, the blobtree AABB will be used
+     *  @param extended True if we want the agorithm to extend the computation zone
      *                            to ensure overlap with a mesh resulting from a computation
      *                            in a neighbouring aabb (Especially usefull for parallelism).
      */
-    compute(o_aabb, extended) {
+    compute(o_aabb?: Box3, extended?: boolean): BufferGeometry {
         this.initGeometry();
 
-        var timer_begin = new Date().getTime();
+        const timer_begin = new Date().getTime();
 
         this.blobtree.prepareForEval();
-        var aabb = null;
+        let aabb = null;
         if (o_aabb) {
             aabb = o_aabb.clone();
         } else {
@@ -993,14 +1040,14 @@ export class SlidingMarchingCubes {
         this.extended = extended !== undefined ? extended : false;
 
         if (this.extended) {
-            let adims = aabb.getSize(new Vector3());
+            let adims: Vector3 = aabb.getSize(new Vector3());
             let minAcc = Math.min(
-                Math.min(this.getMinAcc(aabb), adims[0]),
-                Math.min(adims[1], adims[2])
+                Math.min(this.getMinAcc(aabb), adims.x),
+                Math.min(adims.y, adims.z)
             );
             let acc_box = aabb.clone();
             let final_bbox = aabb.clone();
-            let axis = ["x", "y", "z"];
+            let axis: Coordinate[] = ["x", "y", "z"];
             for (let k = 0; k < axis.length; ++k) {
                 acc_box.max[axis[k]] = aabb.min[axis[k]] + minAcc;
                 let slice_max = this.getMaxAcc(acc_box);
@@ -1016,8 +1063,8 @@ export class SlidingMarchingCubes {
             aabb.copy(final_bbox);
         }
 
-        var aabb_trim = [];
-        var aabb_trim_parents = [];
+        var aabb_trim: Element[] = [];
+        var aabb_trim_parents: Node[] = [];
         if (o_aabb) {
             this.blobtree.externalTrim(aabb, aabb_trim, aabb_trim_parents);
             this.blobtree.prepareForEval();
@@ -1080,7 +1127,7 @@ export class SlidingMarchingCubes {
                 new Vector3(-1, -1, -1)
             );
             while (i < this.reso[2] && this.dis_o_aabb.min.z === -1) {
-                if (this.steps.z[i] >= o_aabb.min.z) {
+                if (this.steps.z[i] >= aabb.min.z) {
                     this.dis_o_aabb.min.z = i;
                 }
                 i++;
@@ -1091,7 +1138,7 @@ export class SlidingMarchingCubes {
 
             i = this.reso[2] - 1;
             while (i >= 0 && this.dis_o_aabb.max.z === -1) {
-                if (this.steps.z[i] < o_aabb.max.z) {
+                if (this.steps.z[i] < aabb.max.z) {
                     this.dis_o_aabb.max.z = i;
                 }
                 i--;
@@ -1101,19 +1148,19 @@ export class SlidingMarchingCubes {
             } // should never happen
 
             this.dis_o_aabb.min.x = Math.round(
-                (o_aabb.min.x - aabb.min.x) / this.min_acc
+                (aabb.min.x - aabb.min.x) / this.min_acc
             );
             this.dis_o_aabb.min.y = Math.round(
-                (o_aabb.min.y - aabb.min.y) / this.min_acc
+                (aabb.min.y - aabb.min.y) / this.min_acc
             );
             this.dis_o_aabb.max.x =
                 this.reso[0] -
                 2 -
-                Math.round((aabb.max.x - o_aabb.max.x) / this.min_acc);
+                Math.round((aabb.max.x - aabb.max.x) / this.min_acc);
             this.dis_o_aabb.max.y =
                 this.reso[1] -
                 2 -
-                Math.round((aabb.max.y - o_aabb.max.y) / this.min_acc);
+                Math.round((aabb.max.y - aabb.max.y) / this.min_acc);
         }
         // Back values
         this.values_xy[0] = new Float32Array(this.reso[0] * this.reso[1]);
@@ -1129,12 +1176,12 @@ export class SlidingMarchingCubes {
 
         var percent = 0;
 
-        for (var iz = 0; iz < this.reso[2] - 1; ++iz) {
+        for (let iz = 0; iz < this.reso[2] - 1; ++iz) {
             // Switch the 2 arrays, and fill the one in front
-            let valuesSwitcher = this.values_xy[0];
+            let valuesSwitcher: Float32Array | null = this.values_xy[0];
             this.values_xy[0] = this.values_xy[1];
             this.values_xy[1] = valuesSwitcher;
-            let verticesSwitcher = this.vertices_xy[0];
+            let verticesSwitcher : Int32Array | null = this.vertices_xy[0];
             this.vertices_xy[0] = this.vertices_xy[1];
             this.vertices_xy[1] = verticesSwitcher;
 
@@ -1161,8 +1208,8 @@ export class SlidingMarchingCubes {
             this.curr_step_vol =
                 this.curr_steps.x * this.curr_steps.y * this.curr_steps.z;
 
-            for (var iy = 0; iy < this.reso[1] - 1; ++iy) {
-                for (var ix = 0; ix < this.reso[0] - 1; ++ix) {
+            for (let iy = 0; iy < this.reso[1] - 1; ++iy) {
+                for (let ix = 0; ix < this.reso[0] - 1; ++ix) {
                     this.y = corner.y + iy * this.min_acc;
                     this.fetchAndTriangulate(ix, iy, iz, corner);
                 }
@@ -1198,13 +1245,21 @@ export class SlidingMarchingCubes {
     /**
      *  Check values for cube at x, y. Ie get values front front and back arrays,
      *  compute marching cube mask, build the resulting vertex and faces if necessary.
-     *  @param {number} x
-     *  @param {number} y
-     *  @param {Vector3} corner Bottom left corner of front array.
+     *  @param x
+     *  @param y
+     *  @param corner Bottom left corner of front array.
      */
-    fetchAndTriangulate(x, y, z, corner) {
-        var idx_y_0 = y * this.reso[0] + x;
-        var idx_y_1 = (y + 1) * this.reso[0] + x;
+    fetchAndTriangulate(x: number, y: number, z: number, corner: Vector3) {
+        if (this.values_xy[1] === null)
+            throw "[SlidingMarchingCubes] values_xy[1] must be initialized before calling fetchAndTriangulate";
+        if (this.values_xy[0] === null)
+            throw "[SlidingMarchingCubes] values_xy[0] must be initialized before calling fetchAndTriangulate";
+        if (this.vertices_xy[1] === null)
+            throw "[SlidingMarchingCubes] vertices_xy[1] must be initialized before calling fetchAndTriangulate";
+        if (this.geometry === null)
+            throw "[SlidingMarchingCubes] geometry must be initialized before calling fetchAndTriangulate";
+        const idx_y_0 = y * this.reso[0] + x;
+        const idx_y_1 = (y + 1) * this.reso[0] + x;
         this.values[0] = this.values_xy[0][idx_y_0]; //v_000;
         this.values[1] = this.values_xy[1][idx_y_0]; //v_001;
         this.values[2] = this.values_xy[0][idx_y_1]; //v_010;
@@ -1234,23 +1289,27 @@ export class SlidingMarchingCubes {
 
     /**
      *  Push 2 faces in direct order (right handed).
-     *  @param {number} v1 Index of vertex 1 in this.geometry
-     *  @param {number} v2 Index of vertex 2 in this.geometry
-     *  @param {number} v3 Index of vertex 3 in this.geometry
-     *  @param {number} v4 Index of vertex 4 in this.geometry
+     *  @param v1 Index of vertex 1 in this.geometry
+     *  @param v2 Index of vertex 2 in this.geometry
+     *  @param v3 Index of vertex 3 in this.geometry
+     *  @param v4 Index of vertex 4 in this.geometry
      */
-    pushDirectFaces(v1, v2, v3, v4) {
+    pushDirectFaces(v1: number, v2: number, v3: number, v4: number): void {
+        if (this.geometry === null)
+            throw "[SlidingMarchingCubes] geometry must be initialized before calling pushDirectFaces";
         this.geometry.addFace(v1, v2, v3);
         this.geometry.addFace(v3, v4, v1);
     };
     /**
      *  Push 2 faces in undirect order (left handed).
-     *  @param {number} v1 Index of vertex 1 in this.geometry
-     *  @param {number} v2 Index of vertex 2 in this.geometry
-     *  @param {number} v3 Index of vertex 3 in this.geometry
-     *  @param {number} v4 Index of vertex 4 in this.geometry
+     *  @param v1 Index of vertex 1 in this.geometry
+     *  @param v2 Index of vertex 2 in this.geometry
+     *  @param v3 Index of vertex 3 in this.geometry
+     *  @param v4 Index of vertex 4 in this.geometry
      */
-    pushUndirectFaces(v1, v2, v3, v4) {
+    pushUndirectFaces(v1: number, v2: number, v3: number, v4: number): void {
+        if (this.geometry === null)
+            throw "[SlidingMarchingCubes] geometry must be initialized before calling pushUndirectFaces";
         this.geometry.addFace(v3, v2, v1);
         this.geometry.addFace(v1, v4, v3);
     };
@@ -1258,11 +1317,15 @@ export class SlidingMarchingCubes {
 
     /**
      *  Compute and add faces depending on current cell crossing mask
-     *  @param {number} x Current cell x coordinate in the grid (integer)
-     *  @param {number} y Current cell y coordinate in the grid (integer)
-     *  @param {number} z Current cell z coordinate in the grid (integer)
+     *  @param x Current cell x coordinate in the grid (integer)
+     *  @param y Current cell y coordinate in the grid (integer)
+     *  @param z Current cell z coordinate in the grid (integer)
      */
-    triangulate(x, y, z) {
+    triangulate(x: number, y: number, z: number) {
+        if (this.vertices_xy[1] === null)
+            throw "[SlidingMarchingCubes] vertices_xy[1] must be initialized before calling triangulate";
+        if (this.vertices_xy[0] === null)
+            throw "[SlidingMarchingCubes] vertices_xy[0] must be initialized before calling triangulate";
         let idx_y_0 = y * this.reso[0] + x;
         if (this.edge_cross[0] && y !== 0 && z !== 0) {
             // x edge is crossed
@@ -1347,13 +1410,13 @@ export class SlidingMarchingCubes {
     computeVertex = (function () {
         // Function static variable
         var eval_res = {
-            v: null,
+            v: 0,
             g: new Vector3(0, 0, 0),
             m: new Material()
         };
         var conv_res = new Vector3();
 
-        return function () {
+        return function (this: SlidingMarchingCubes) {
             eval_res.v = this.blobtree.getNeutralValue();
 
             // Optimization note :
@@ -1366,7 +1429,7 @@ export class SlidingMarchingCubes {
             this.vertex.set(0, 0, 0);
 
             //For every edge of the cube...
-            for (var i = 0; i < 12; ++i) {
+            for (let i = 0; i < 12; ++i) {
                 // --> the following code does not seem to work. Tables.EdgeCross may be broken
                 //Use edge mask to check if it is crossed
                 // if(!(edge_mask & (1<<i))) {
@@ -1440,7 +1503,7 @@ export class SlidingMarchingCubes {
         this.mask = 0;
 
         //For each this, compute cube mask
-        for (var i = 0; i < 8; ++i) {
+        for (let i = 0; i < 8; ++i) {
             var s = this.values[i];
             this.mask |= s > this.blobtree.getIsoValue() ? 1 << i : 0;
         }

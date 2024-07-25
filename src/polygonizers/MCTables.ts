@@ -5,19 +5,23 @@
  * @typedef {[TopoValue, TopoValue, TopoValue]} TopoTriple
  */
 
+type EdgeIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type EdgeIndexPair = [EdgeIndex, EdgeIndex];
+type TopoValue = 0 | 1;
+type TopoTriple = [TopoValue, TopoValue, TopoValue];
+
+type MarchinCubeTables = {
+    EdgeVMap: EdgeIndexPair[];
+    VertexTopo: TopoTriple[];
+}
+
 /**
  * Tables for Marching Cube
  */
-export const Tables = {
-    //
+export const Tables: MarchinCubeTables = {
     /**
      * edgevmap[i][0] = first vertex index of the ith edge of a cube
      * edgevmap[i][0] = second vertex index of the ith edge of a cube
-     * @type {[
-    *   EdgeIndexPair, EdgeIndexPair, EdgeIndexPair, EdgeIndexPair,
-    *   EdgeIndexPair, EdgeIndexPair, EdgeIndexPair, EdgeIndexPair,
-    *   EdgeIndexPair, EdgeIndexPair, EdgeIndexPair, EdgeIndexPair
-     * ]}
      */
     EdgeVMap: [
         [0, 4],
@@ -37,7 +41,7 @@ export const Tables = {
     ],
 
     /**
-     * @type {[TopoTriple,TopoTriple,TopoTriple,TopoTriple,TopoTriple,TopoTriple,TopoTriple,TopoTriple]}
+     * Vertex topology for Marching Cubes
      */
     VertexTopo: [
         [0, 0, 0], //0 (MC = 0)

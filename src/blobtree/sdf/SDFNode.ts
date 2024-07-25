@@ -1,89 +1,79 @@
-import { Vector3, Box3 } from "three"
+import { Vector3, Box3 } from "three";
 import { Types } from "../Types";
-import { Node } from '../Node';
+import { Node, type NodeJSON, type SDFNodeType } from '../Node';
+import type { Area } from '../areas/Area';
+import type { SDFPrimitive } from './SDFPrimitive';
+import type { Primitive } from '../Primitive';
+import type { ValueResultType } from '../Element';
 
-/** @typedef {import('../areas/Area')} Area */
-/** @typedef {import('./SDFPrimitive')} SDFPrimitive */
-
-/** @typedef {import('../Node').NodeJSON} NodeJSON */
-
-/** @typedef {NodeJSON} SDFNodeJSON */
-
+export type SDFNodeJSON = NodeJSON;
 
 /**
  *  This class implements an abstract Node class for Signed Distance Field.
- *  The considered primtive is at distance = 0.
+ *  The considered primitive is at distance = 0.
  *  Convention is : negative value inside the surface, positive value outside.
  *  @constructor
  *  @extends {Node}
  */
 export class SDFNode extends Node {
 
-    static type = "SDFNode";
+    static override type: SDFNodeType = "SDFNode";
+
+    override children: (SDFNode | SDFPrimitive)[];
 
     constructor() {
         super();
 
         // Default bounding box for a SDF is infinite.
         this.aabb.set(
-            new Vector3(- Infinity, - Infinity, - Infinity),
-            new Vector3(+ Infinity, + Infinity, + Infinity)
+            new Vector3(-Infinity, -Infinity, -Infinity),
+            new Vector3(+Infinity, +Infinity, +Infinity)
         );
 
-        /** @type {Array<SDFNode|SDFPrimitive>} */
-        this.children;
+        this.children = [];
     }
 
-    getType() {
+    override getType(): SDFNodeType {
         return SDFNode.type;
-    };
+    }
 
-    // Abstract
-    computeAABB() {
+    override computeAABB(): void{
         // Nothing to do, SDF have infinite bounding box
-    };
+    }
 
     /**
      *  Return the bounding box of the node for a given maximum distance.
      *  Ie, the distance field is greater than d everywhere outside the returned box.
      *  @abstract
-     *  @param {number} d Distance
-     *  @return {Box3}
-     *
+     *  @param d Distance
      */
-    computeDistanceAABB(d) {
+    computeDistanceAABB(d: number): Box3 {
         let res = new Box3();
         for (let i = 0; i < this.children.length; ++i) {
             res.union(this.children[i].computeDistanceAABB(d));
         }
         return res;
-    };
+    }
 
-    /**
-     *
-     * @param {SDFNode | SDFPrimitive} c
-     */
-    addChild(c) {
+    override addChild(c: SDFNode | SDFPrimitive): this{
         return super.addChild(c);
     }
 
     /**
-     *  SDF Field are infinite, so Areas do not make sens except for the SDFRoot, which will
+     *  SDF Field are infinite, so Areas do not make sense except for the SDFRoot, which will
      *  usually apply a compact kernel to the distance field.
      *  @abstract
-     *  @return {Object}
      */
-    getAreas() {
-        throw "No Areas for SDFNode, except for the SDFRootNode.";
-    };
+    override getAreas(): { aabb: Box3; bv: Area; obj: Primitive; }[] {
+        throw "[SDFNode] getAreas : No Areas for SDFNode, except for the SDFRootNode.";
+    }
 
     /**
-     * @param {number} d Distance to consider for the area computation.
-     * @returns {Array.<{aabb: Box3, bv:Area, obj:SDFPrimitive}>}
+     * @param d Distance to consider for the area computation.
      */
-    getDistanceAreas(d) {
+    getDistanceAreas(d: number): { aabb: Box3, bv: Area, obj: SDFPrimitive }[] {
         // By default return areas of all children
-        let res = [];
+        let res: Array<{ aabb: Box3, bv: Area, obj: SDFPrimitive }> = [];
         for (let i = 0; i < this.children.length; ++i) {
             let c = this.children[i];
             res.push(...c.getDistanceAreas(d));
@@ -95,22 +85,23 @@ export class SDFNode extends Node {
      * Since SDF Nodes are distance function, this function will return
      * an accurate distance to the surface.
      * @abstract
-     * @param {Vector3} _p Point
-     * @return {number}
+     * @param _p Point
      */
-    distanceTo(_p) {
-        throw "distanceTo should be reimplemented in every children classes of SDFNode.";
+    override distanceTo(_p: Vector3): number {
+        throw "[SDFNode] distanceTo should be reimplemented in every children classes of SDFNode.";
     };
 
-    // Abstract
-    /**
-     * @abstract
-     * @return {number}
-     */
-    heuristicStepWithin() {
-        throw "heuristicStepWithin may not make sens for all SDFNode, except for the SDFRootNode.";
+    override heuristicStepWithin(): number {
+        throw "[SDFNode] heuristicStepWithin may not make sens for all SDFNode, except for the SDFRootNode.";
     };
+
+    prepareForEval(): void {
+        throw "prepareForEval is not implemented for SDFNode.";
+    }
+
+    value(_p: Vector3, _res: ValueResultType): void {
+        throw "value is not implemented for SDFNode.";
+    }
 };
 
 Types.register(SDFNode.type, SDFNode);
-

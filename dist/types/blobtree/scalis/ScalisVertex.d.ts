@@ -1,5 +1,13 @@
 import { Vector3, Box3 } from "three";
-import type { ScalisPrimitive } from "./ScalisPrimitive.js";
+import type { ScalisPrimitive } from "./ScalisPrimitive";
+export type SegParam = {
+    norm: number;
+    diffThick: number;
+    dir: Vector3;
+    v: [ScalisVertex, ScalisVertex];
+    ortho_vec_x: number;
+    ortho_vec_y: number;
+};
 export type ScalisVertexJSON = {
     position: {
         x: number;

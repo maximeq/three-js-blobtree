@@ -1,13 +1,17 @@
-import { Area } from "./Area.js";
-/** @typedef {import('./Area.js').AreaSphereParam} AreaSphereParam */
+import { Vector3 } from "three";
+import { Area } from "./Area";
+interface AreaSphereParam {
+    radius: number;
+    center: Vector3;
+}
 /**
  *  Bounding area for the segment.
  *  It is the same for DIST and CONVOL primitives since the support of the convolution
  *  kernel is the same as the support for the distance field.
- *  The resulting volume is a clipped cone with spherical extremities, wich is
+ *  The resulting volume is a clipped cone with spherical extremities, which is
  *  actually the support of the primitive.
  *
- *  The Area must be able to return accuracy needed in a given zone (Sphere fr now,
+ *  The Area must be able to return accuracy needed in a given zone (Sphere for now,
  *  since box intersections with such a complex shape are not trivial), and also
  *  propose an intersection test.
  *
@@ -16,79 +20,92 @@ import { Area } from "./Area.js";
  *
  */
 export declare class AreaScalisSeg extends Area {
+    p0: Vector3;
+    p1: Vector3;
+    thick0: number;
+    thick1: number;
+    unit_dir: Vector3;
+    length: number;
+    vector: Vector3;
+    p0_to_p: Vector3;
+    p0_to_p_sqrnorm: number;
+    x_p_2D: number;
+    y_p_2D: number;
+    y_p_2DSq: number;
+    ortho_vec_x: number;
+    ortho_vec_y: number;
+    p_proj_x: number;
+    p_proj_y: number;
+    abs_diff_thick: number;
     /**
-     * @param {!Vector3} p0 first point of the shape
-     * @param {!Vector3} p1 second point of the shape
-     * @param {number} thick0 radius at p0
-     * @param {number} thick1 radius at p1
+     * @param p0 first point of the shape
+     * @param p1 second point of the shape
+     * @param thick0 radius at p0
+     * @param thick1 radius at p1
      */
-    constructor(p0: any, p1: any, thick0: any, thick1: any);
+    constructor(p0: Vector3, p1: Vector3, thick0: number, thick1: number);
     /**
     * Compute some of the tmp variables.Used to factorized other functions code.
-    * @param { !Vector3 } p A point as a Vector3
+    * @param p A point as a Vector3
     *
     * @protected
     */
-    proj_computation(p: any): void;
+    protected proj_computation(p: Vector3): void;
     /**
      * @link Area.sphereIntersect for a complete description
      * @todo Check the Maths (Ask Cedric Zanni?)
-     * @param {AreaSphereParam} sphere
-     * @return {boolean} true if the sphere and the area intersect
+     * @return true if the sphere and the area intersect
      */
-    sphereIntersect(sphere: any): boolean;
+    sphereIntersect(sphere: AreaSphereParam): boolean;
     /**
      * @link Area.contains for a complete description
-     * @param {Vector3} p
      */
-    contains(p: any): boolean;
+    contains(p: Vector3): boolean;
     /**
      *  @link Area.getAcc for a complete description
      *
-     *  @return {number} the accuracy needed in the intersection zone
+     *  @param sphere  A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param factor  the ratio to determine the wanted accuracy.
      *
-     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param {number}  factor  the ratio to determine the wanted accuracy.
-     *
+     *  @return the accuracy needed in the intersection zone
      *  @todo Check the Maths
      */
-    getAcc(sphere: any, factor: any): number;
+    getAcc(sphere: AreaSphereParam, factor: number): number;
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Nice accuracy needed in the intersection zone
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Nice accuracy needed in the intersection zone
      */
-    getNiceAcc(sphere: any): number;
+    getNiceAcc(sphere: AreaSphereParam): number;
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Curr accuracy needed in the intersection zone
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Curr accuracy needed in the intersection zone
      */
-    getCurrAcc: (sphere: any) => any;
+    getCurrAcc(sphere: AreaSphereParam): number;
     /**
      *  @link Area.getRawAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The raw accuracy needed in the intersection zone
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The raw accuracy needed in the intersection zone
      */
-    getRawAcc(sphere: any): number;
+    getRawAcc(sphere: AreaSphereParam): number;
     /**
      * @link Area.getMinAcc
-     * @return {number}
      */
     getMinAcc(): number;
     /**
      * @link Area.getMinRawAcc
-     * @return {number}
      */
     getMinRawAcc(): number;
     /**
      *  Return the minimum accuracy required at some point on the given axis, according to Accuracies.curr
      *  The returned accuracy is the one you would need when stepping in the axis
      *  direction when you are on the axis at coordinate t.
-     *  @param {string} axis x, y or z
-     *  @param {number} t Coordinate on the axis
-     *  @return {number} The step you can safely do in axis direction
+     *  @param axis x, y or z
+     *  @param t Coordinate on the axis
+     *  @return The step you can safely do in axis direction
      */
-    getAxisProjectionMinStep(axis: any, t: any): number;
+    getAxisProjectionMinStep(axis: 'x' | 'y' | 'z', t: number): number;
 }
+export {};
 //# sourceMappingURL=AreaScalisSeg.d.ts.map

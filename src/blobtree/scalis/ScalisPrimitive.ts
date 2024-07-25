@@ -1,19 +1,25 @@
-import { Types } from "../Types.js";
-import { Primitive, type PrimitiveJSON } from "../Primitive.js";
-import type { ScalisVertex, ScalisVertexJSON } from "./ScalisVertex.js";
+import { Types } from "../Types";
+import { Primitive, type PrimitiveJSON } from "../Primitive";
+import type { ScalisVertex, ScalisVertexJSON } from "./ScalisVertex";
 
-export type ScalisPrimitiveVolType = "dist" | "convol"
-export type ScalisPrimitiveJSON = { v: Array<ScalisVertexJSON>, volType: ScalisPrimitiveVolType } & PrimitiveJSON
+export type ScalisPrimitiveVolType = "dist" | "convol";
+export type ScalisPrimitiveJSON = { v: Array<ScalisVertexJSON>, volType: ScalisPrimitiveVolType } & PrimitiveJSON;
+
+export type ScalisPointType = "ScalisPoint";
+export type ScalisSegmentType = "ScalisSegment";
+export type ScalisTriangleType = "ScalisTriangle";
+ 
+export type ScalisPrimitiveType = "ScalisPrimitive" | ScalisPointType | ScalisSegmentType | ScalisTriangleType;
 
 /**
- *  Represent an implicit primitive respecting the SCALIS model developped by Cedrric Zanni
+ *  Represent an implicit primitive respecting the SCALIS model developed by Cedric Zanni
  *
  *  @constructor
  *  @extends {Primitive}
  */
-export class ScalisPrimitive extends Primitive {
+export abstract class ScalisPrimitive extends Primitive {
 
-    static type = "ScalisPrimitive";
+    static override type: ScalisPrimitiveType = "ScalisPrimitive";
     static DIST = "dist" as const;
     static CONVOL = "convol" as const;
 
@@ -23,29 +29,27 @@ export class ScalisPrimitive extends Primitive {
     constructor() {
         super();
 
-        // Type of volume (convolution or distance funtion)
+        // Type of volume (convolution or distance function)
         this.volType = ScalisPrimitive.DIST;
     }
 
     /**
      *  @return Type of the element
      */
-    getType(): string {
+    override getType(): ScalisPrimitiveType {
         return ScalisPrimitive.type;
     }
 
     /**
      *  @return {ScalisPrimitiveJSON}
      */
-    toJSON(): ScalisPrimitiveJSON {
-        var res = {
+    override toJSON(): ScalisPrimitiveJSON {
+        const res: ScalisPrimitiveJSON = {
             ...super.toJSON(),
-            v: [] as ScalisVertexJSON[],
+            v: [],
             volType: this.volType
         };
-        res.v = [];
-        res.volType = this.volType;
-        for (var i = 0; i < this.v.length; ++i) {
+        for (let i = 0; i < this.v.length; ++i) {
             res.v.push(this.v[i].toJSON());
         }
         return res;
@@ -62,7 +66,7 @@ export class ScalisPrimitive extends Primitive {
     /**
      *  @param vt New VolType to set (Only for SCALIS primitives)
      */
-    setVolType(vt: "dist" | "convol") {
+    setVolType(vt: "dist" | "convol"): void {
         if (vt !== this.volType) {
             this.volType = vt;
             this.invalidAABB();
@@ -72,22 +76,19 @@ export class ScalisPrimitive extends Primitive {
     /**
      *  @return  Current volType
      */
-    getVolType(): string {
+    getVolType(): ScalisPrimitiveVolType {
         return this.volType;
     }
 
     /**
      * @link Element.computeAABB for a complete description
      */
-    computeAABB(): void {
+    override computeAABB(): void {
         this.aabb.makeEmpty();
-        for (var i = 0; i < this.v.length; i++) {
+        for (let i = 0; i < this.v.length; i++) {
             this.aabb.union(this.v[i].getAABB());
         }
     }
-};
+}
 
 Types.register(ScalisPrimitive.type, ScalisPrimitive);
-
-
-

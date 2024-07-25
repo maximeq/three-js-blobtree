@@ -1,121 +1,142 @@
-import { Area } from "./Area.js";
-/** @typedef {import('./Area.js').AreaSphereParam} AreaSphereParam */
-/** @typedef {import('../scalis/ScalisVertex')} ScalisVertex */
+import { Vector3 } from "three";
+import { Area, type AreaSphereParam, type Coordinate } from "./Area";
+import { AreaScalisSeg } from "./AreaScalisSeg";
+import { ScalisVertex, type SegParam } from "../scalis/ScalisVertex";
 /**
  *  Bounding area for the triangle.
  *  It is the same for DIST and CONVOL primitives since the support of the convolution
  *  kernel is the same as the support for the distance field.
  *
- *  The Area must be able to return accuracy needed in a given zone (Sphere fr now,
+ *  The Area must be able to return accuracy needed in a given zone (Sphere for now,
  *  since box intersections with such a complex shape are not trivial), and also
  *  propose an intersection test.
  *
  *  @extends {Area}
  */
 export declare class AreaScalisTri extends Area {
+    tmpVect: Vector3;
+    min_thick: number;
+    max_thick: number;
+    v: [ScalisVertex, ScalisVertex, ScalisVertex];
+    p0p1: Vector3;
+    p2p0: Vector3;
+    unit_normal: Vector3;
+    main_dir: Vector3;
+    equal_weights: boolean;
+    segParams: SegParam[];
+    segAttr: {
+        p0_to_p: Vector3;
+        p0_to_p_sqrnorm: number;
+        x_p_2D: number;
+        y_p_2D: number;
+        y_p_2DSq: number;
+        p_proj_x: number;
+    };
+    planeParams: {
+        orig: Vector3;
+        n: Vector3;
+    }[];
+    segAreas: AreaScalisSeg[];
     /**
-     *  @param { Array.< !ScalisVertex >} v Array or vertices
-     *  @param {!Vector3} unit_normal Normal to the plane made by the 3 vertices, as a Vector3
-     *  @param {!Vector3} main_dir Main direction dependeing on thicknesses
-     * @param {!Object}  segParams
-     *  @param {number}  min_thick Minimum thickness in the Triangle
-     *  @param {number} max_thick Maximum thickness in the triangle
+     *  @param v Array or vertices
+     *  @param unit_normal Normal to the plane made by the 3 vertices, as a Vector3
+     *  @param main_dir Main direction depending on thicknesses
+     *  @param min_thick Minimum thickness in the Triangle
+     *  @param max_thick Maximum thickness in the triangle
      */
-    constructor(v: any, unit_normal: any, main_dir: any, segParams: any, min_thick: any, max_thick: any);
+    constructor(v: [ScalisVertex, ScalisVertex, ScalisVertex], unit_normal: Vector3, main_dir: Vector3, segParams: SegParam[], min_thick: number, max_thick: number);
     /**
      *  Compute projection (used in other functions)
-     *  @param {!Vector3} p Point to proj
-     *  @param {!Object} segParams A seg param object @todo clarify this parameter
+     *  @param p Point to proj
+     *  @param segParams A seg param object
      *
      *  @protected
      */
-    proj_computation(p: any, segParams: any): void;
+    protected proj_computation(p: Vector3, segParams: SegParam): void;
     /**
      * @link Area.sphereIntersect for a complete description
      * @todo Check the Maths (Ask Cedric Zanni?)
-     * @param {AreaSphereParam} sphere
-     * @return {boolean} true if the sphere and the area intersect
+     * @return true if the sphere and the area intersect
      */
-    sphereIntersect(sphere: any): boolean;
+    sphereIntersect(sphere: AreaSphereParam): boolean;
     /**
      *  Adapted from the segment sphere intersection. Could be factorised!
-     *  @return {boolean} true if the sphere and the area intersect
+     *  @return true if the sphere and the area intersect
      *
-     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param {!Object} segParams A segParams object containing data for a segment
-     *  @param {number} KS Kernel Scale, ie ScalisMath.KS (Why is it a parameter, its global!?)
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param segParams A segParams object containing data for a segment
+     *  @param KS Kernel Scale, ie ScalisMath.KS (Why is it a parameter, its global!?)
      *
      */
-    sphereIntersectSegment(sphere: any, segParams: any, KS: any): boolean;
+    sphereIntersectSegment(sphere: AreaSphereParam, segParams: any, KS: number): boolean;
     /**
      * @link Area.contains for a complete description
-     * @param {Vector3} p
+     * @param p
      */
-    contains: (p: any) => any;
+    contains: (this: AreaScalisTri, p: Vector3) => boolean;
     /**
      *  Copied from AreaSeg.getAcc
      *
-     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param {!Object} segParams A segParams object containing data for a segment area
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param segParams A segParams object containing data for a segment area
      *
-     *  @return {!Object} Object containing intersect (boolean) and currAcc (number) attributes
+     *  @return Object containing intersect (boolean) and currAcc (number) attributes
      */
-    getAccSegment(sphere: any, segParams: any): {
+    getAccSegment(sphere: AreaSphereParam, segParams: any): {
         intersect: boolean;
         currAcc: number;
     };
     /**
      *  Get accuracy for the inner triangle (do not consider segment edges)
-     *  @param {AreaSphereParam} sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
      */
-    getAccTri(sphere: any): any;
+    getAccTri(sphere: AreaSphereParam): number;
     /**
      *  @link Area.getAcc for a complete description
      *
-     *  @return {number} the accuracy needed in the intersection zone
+     *  @return the accuracy needed in the intersection zone
      *
-     *  @param {AreaSphereParam} sphere  A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @param {number}  factor  the ratio to determine the wanted accuracy.
+     *  @param sphere  A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @param factor  the ratio to determine the wanted accuracy.
      *
      *  @todo Check the Maths
      */
-    getAcc(sphere: any, factor: any): number;
+    getAcc(sphere: AreaSphereParam, factor: number): number;
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Nice accuracy needed in the intersection zone
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Nice accuracy needed in the intersection zone
      */
-    getNiceAcc(sphere: any): number;
+    getNiceAcc(sphere: AreaSphereParam): number;
     /**
      *  @link Area.getNiceAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The Curr accuracy needed in the intersection zone
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The Curr accuracy needed in the intersection zone
      */
-    getCurrAcc(sphere: any): number;
+    getCurrAcc(sphere: AreaSphereParam): number;
     /**
      *  @link Area.getRawAcc for a complete description
-     *  @param {AreaSphereParam}  sphere A aphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
-     *  @return {number} The raw accuracy needed in the intersection zone
+     *  @param sphere A sphere object, must define sphere.radius (radius) and sphere.center (center, as a Vector3)
+     *  @return The raw accuracy needed in the intersection zone
      */
-    getRawAcc(sphere: any): number;
+    getRawAcc(sphere: AreaSphereParam): number;
     /**
      * @link Area.getMinAcc
-     * @return {number}
      */
     getMinAcc(): number;
     /**
      * @link Area.getMinRawAcc
-     * @return {number}
+     * @return number
      */
     getMinRawAcc: () => number;
     /**
      *  Return the minimum accuracy required at some point on the given axis.
      *  The returned accuracy is the one you would need when stepping in the axis
      *  direction when you are on the axis at coordinate t.
-     *  @param {string} axis x, y or z
-     *  @param {number} t Coordinate on the axis
-     *  @return {number} The step you can safely do in axis direction
+     *  @param axis x, y or z
+     *  @param t Coordinate on the axis
+     *  @return The step you can safely do in axis direction
      */
-    getAxisProjectionMinStep(axis: any, t: any): number;
+    getAxisProjectionMinStep(axis: Coordinate, t: number): number;
 }
 //# sourceMappingURL=AreaScalisTri.d.ts.map

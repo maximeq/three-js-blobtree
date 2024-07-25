@@ -1,18 +1,23 @@
 import { Box3, Vector3 } from "three"
-import { Types } from "../Types.js";
-import { Material } from "../Material.js";
-import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType } from "./ScalisPrimitive.js";
-import { ScalisVertex } from "./ScalisVertex.js";
-import { ScalisMath } from "./ScalisMath.js";
-import { AreaScalisTri } from "../areas/AreaScalisTri.js";
-import { TriangleUtils } from "../../utils/TriangleUtils.js";
-import type { ValueResultType } from "../Element.js";
+import { Types } from "../Types";
+import { Material } from "../Material";
+import { ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveVolType, type ScalisTriangleType } from "./ScalisPrimitive";
+import { ScalisVertex, type SegParam } from "./ScalisVertex";
+import { ScalisMath } from "./ScalisMath";
+import { AreaScalisTri } from "../areas/AreaScalisTri";
+import { TriangleUtils } from "../../utils/TriangleUtils";
+import type { ValueResultType } from "../Element";
 
 // Number of sample in the Simpsons integration.
-var sampleNumber = 10;
+const sampleNumber = 10;
 
-/** @typedef {import('../Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./ScalisPrimitive').ScalisPrimitiveJSON} ScalisPrimitiveJSON */
+type ProjResultType = {
+    proj_to_p: Vector3,
+    weight_proj: number,
+    t: number,
+    sqrdist?: number,
+    ratio?: number
+}
 
 export type ScalisTriangleJSON = ScalisPrimitiveJSON
 
@@ -26,29 +31,37 @@ export type ScalisTriangleJSON = ScalisPrimitiveJSON
  */
 export class ScalisTriangle extends ScalisPrimitive {
 
-    static type = "ScalisTriangle" as const;
+    static override type: ScalisTriangleType = "ScalisTriangle" as const;
 
-    static fromJSON(json: ScalisTriangleJSON) {
-        var v = [
+    static override fromJSON(json: ScalisTriangleJSON) {
+        const v: [ScalisVertex, ScalisVertex, ScalisVertex] = [
             ScalisVertex.fromJSON(json.v[0]),
             ScalisVertex.fromJSON(json.v[1]),
             ScalisVertex.fromJSON(json.v[2])
         ];
-        var m = [
+        const m: [Material, Material, Material] = [
             Material.fromJSON(json.materials[0]),
             Material.fromJSON(json.materials[1]),
             Material.fromJSON(json.materials[2])
         ];
         return new ScalisTriangle(v, json.volType, 1.0, m);
     };
-
+    override v: [ScalisVertex, ScalisVertex, ScalisVertex];
     min_thick: number
     max_thick: number
 
     // Temporary for eval
     // TODO : should be wrapped in the eval function scope if possible (ie not precomputed)
-    res_gseg = {};
-    tmp_res_gseg = {};
+    res_gseg: ProjResultType = {
+        proj_to_p: new Vector3(),
+        weight_proj: 0,
+        t: 0
+    };
+    tmp_res_gseg: ProjResultType = {
+        proj_to_p: new Vector3(),
+        weight_proj: 0,
+        t: 0
+    };
 
     p0p1 = new Vector3();
     p1p2 = new Vector3();
@@ -61,8 +74,7 @@ export class ScalisTriangle extends ScalisPrimitive {
     length_p1p2 = 0;
     length_p2p0 = 0;
     diffThick_p0p1 = 0;
-    diffThick_p0p1 = 0;
-    diffThick_p0p1 = 0;
+    diffThick_p0p2 = 0;
     diffThick_p1p2 = 0;
     diffThick_p2p0 = 0;
     main_dir = new Vector3();
@@ -83,7 +95,7 @@ export class ScalisTriangle extends ScalisPrimitive {
     point_min = new Vector3();
     weight_min = 0;
 
-    valid_aabb = false;
+    override valid_aabb = false;
 
     /**
      *  @param v the 3 vertices for the triangle
@@ -96,11 +108,11 @@ export class ScalisTriangle extends ScalisPrimitive {
      *                                  Use [Material.defaultMaterial.clone(), Material.defaultMaterial.clone()] by default.
      *
      */
-    constructor(v: ScalisVertex[], volType: ScalisPrimitiveVolType, density: number, mats: Material[]) {
+    constructor(v: [ScalisVertex, ScalisVertex, ScalisVertex], volType: ScalisPrimitiveVolType, density: number, mats: Material[]) {
         super();
 
         if (density !== 1.0) {
-            throw "Error in ScalisTriangle : cannot use a density different from 1.0, not implemented.";
+            throw "[ScalisTriangle] constructor : cannot use a density different from 1.0, not implemented.";
         }
 
         this.volType = volType;
@@ -114,11 +126,11 @@ export class ScalisTriangle extends ScalisPrimitive {
         this.max_thick = Math.max(this.v[0].getThickness(), this.v[1].getThickness(), this.v[2].getThickness());
     }
 
-    getType() {
+    override getType(): ScalisTriangleType {
         return ScalisTriangle.type;
     }
 
-    toJSON(): ScalisTriangleJSON {
+    override toJSON(): ScalisTriangleJSON {
         return {
             ...super.toJSON()
         };
@@ -134,7 +146,7 @@ export class ScalisTriangle extends ScalisPrimitive {
 
 
     // [Abstract] See Primtive.getArea for more details
-    getAreas(): {
+    override getAreas(): {
         aabb: Box3,
         bv: AreaScalisTri,
         obj: ScalisTriangle
@@ -143,7 +155,7 @@ export class ScalisTriangle extends ScalisPrimitive {
             console.log("ERROR : Cannot get area of invalid primitive");
             return [];
         } else {
-            var segParams = [];
+            const segParams: SegParam[] = [];
             segParams.push({
                 "norm": this.length_p0p1,
                 "diffThick": this.diffThick_p0p1,
@@ -182,21 +194,21 @@ export class ScalisTriangle extends ScalisPrimitive {
     }
 
     // [Abstract] See Primitive.computeHelpVariables for more details
-    computeHelpVariables() {
-        TriangleUtils.computeVectorsDirs(this);
+    computeHelpVariables(): void {
+        TriangleUtils.updateComputedAttributes(this);
         // Compute the AABB from the union of the BBox of the vertices
         this.computeAABB();
     }
 
     // [Abstract] See ScalisPrimitive.mutableVolType for more details
-    mutableVolType() {
+    override mutableVolType(): boolean {
         return true;
     }
 
     // [Abstract] See Primitive.setVolType for more details
-    setVolType(vt: ScalisPrimitiveVolType) {
+    override setVolType(vt: ScalisPrimitiveVolType): void {
         if (!(vt == ScalisPrimitive.CONVOL || vt == ScalisPrimitive.DIST)) {
-            throw "ERROR : volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST";
+            throw "[ScalisTriangle] setVolType : volType must be set to ScalisPrimitive.CONVOL or ScalisPrimitive.DIST";
         }
 
         if (this.volType != vt) {
@@ -206,7 +218,7 @@ export class ScalisTriangle extends ScalisPrimitive {
     }
 
     // [Abstract] See Primitive.getVolType for more details
-    getVolType() {
+    override getVolType(): ScalisPrimitiveVolType {
         return this.volType;
     }
 
@@ -222,12 +234,12 @@ export class ScalisTriangle extends ScalisPrimitive {
     }
 
     // [Abstract] See Primitive.distanceTo for more details
-    distanceTo = (function () {
-        var p0p = new Vector3();
-        var p1p = new Vector3();
-        var p2p = new Vector3();
-        var tmp = new Vector3();
-        return function (p: Vector3) {
+    override distanceTo = (function () {
+        const p0p = new Vector3();
+        const p1p = new Vector3();
+        const p2p = new Vector3();
+        const tmp = new Vector3();
+        return function (this: ScalisTriangle, p: Vector3) {
 
             /** @type {ScalisTriangle} */
             let self = this;
@@ -241,7 +253,7 @@ export class ScalisTriangle extends ScalisPrimitive {
                 // p is in the triangle
                 return Math.abs(p0p.dot(self.unit_normal));
             } else {
-                var t0 = p0p.dot(self.p0p1) / self.length_p0p1;
+                let t0 = p0p.dot(self.p0p1) / self.length_p0p1;
                 // clamp is our own function declared there
                 t0 = self.clamp(t0, 0, 1);
                 tmp.copy(self.p0p1)
@@ -249,7 +261,7 @@ export class ScalisTriangle extends ScalisPrimitive {
                     .add(self.v[0].getPos());
                 t0 = p.distanceToSquared(tmp);
 
-                var t1 = p1p.dot(self.p1p2) / self.length_p1p2;
+                let t1 = p1p.dot(self.p1p2) / self.length_p1p2;
                 // clamp is our own function declared there
                 t1 = self.clamp(t1, 0, 1);
                 tmp.copy(self.p1p2)
@@ -257,7 +269,7 @@ export class ScalisTriangle extends ScalisPrimitive {
                     .add(self.v[1].getPos());
                 t1 = p.distanceToSquared(tmp);
 
-                var t2 = p2p.dot(self.p2p0) / self.length_p2p0;
+                let t2 = p2p.dot(self.p2p0) / self.length_p2p0;
                 // clamp is our own function declared there
                 t2 = self.clamp(t2, 0, 1);
                 tmp.copy(self.p2p0)
@@ -285,7 +297,7 @@ export class ScalisTriangle extends ScalisPrimitive {
                 // for now rings are just evaluated as distance surface
                 return this.evalConvol(p, res);
             default:
-                throw "Unknown volType, use Orga";
+                throw "[ScalisTriangle] value : Unknown volType, use Orga";
         }
     }
 
@@ -294,15 +306,15 @@ export class ScalisTriangle extends ScalisPrimitive {
      */
     evalDist = (function () {
 
-        var ev_eps = { v: 0 };
-        var p_eps = new Vector3();
+        const ev_eps = { v: 0 };
+        const p_eps = new Vector3();
         /**
          *  value function for Distance volume type (distance field).
          *
          *  @param {Vector3} p
          *  @param {ValueResultType} res
          */
-        return function (p: Vector3, res: ValueResultType) {
+        return function (this: ScalisTriangle, p: Vector3, res: ValueResultType) {
             /** @type {ScalisTriangle} */
             let self = this;
             /*
@@ -315,9 +327,9 @@ export class ScalisTriangle extends ScalisPrimitive {
             */
             // First compute the distance to the triangle and find the nearest point
             // Code taken from EuclideanDistance functor, can be optimized.
-            var p0_to_p = new Vector3();
+            const p0_to_p = new Vector3();
             p0_to_p.subVectors(p, self.v[0].getPos());
-            var normal_inv = self.unit_normal.clone().multiplyScalar(-1);
+            const normal_inv = self.unit_normal.clone().multiplyScalar(-1);
             ///////////////////////////////////////////////////////////////////////
             // We must generalize the principle used for the segment
             if (!self.equal_weights) {
@@ -333,31 +345,31 @@ export class ScalisTriangle extends ScalisPrimitive {
                 // TODO : this formula can probably be optimized :
                 //        - some elements can be stored
                 //        - some assertion are verified and may help to simplify the computation, for example : n3 = n2%n1
-                var n1 = normal_inv;
-                var n2 = self.unsigned_ortho_dir;
-                var n3 = self.main_dir.clone().multiplyScalar(-1);
-                var d1 = -self.v[0].getPos().dot(n1);
-                var d2 = -p.dot(n2);
-                var d3 = -self.point_iso_zero.dot(n3);
+                const n1 = normal_inv;
+                const n2 = self.unsigned_ortho_dir;
+                const n3 = self.main_dir.clone().multiplyScalar(-1);
+                const d1 = -self.v[0].getPos().dot(n1);
+                const d2 = -p.dot(n2);
+                const d3 = -self.point_iso_zero.dot(n3);
 
-                var d1n2n3 = new Vector3();
+                const d1n2n3 = new Vector3();
                 d1n2n3.crossVectors(n2, n3);
                 d1n2n3.multiplyScalar(-d1);
-                var d2n3n1 = new Vector3();
+                const d2n3n1 = new Vector3();
                 d2n3n1.crossVectors(n3, n1);
                 d2n3n1.multiplyScalar(-d2);
-                var d3n1n2 = new Vector3();
+                const d3n1n2 = new Vector3();
                 d3n1n2.crossVectors(n1, n2);
                 d3n1n2.multiplyScalar(-d3);
-                var n2cn3 = new Vector3();
+                const n2cn3 = new Vector3();
                 n2cn3.crossVectors(n2, n3);
-                var Z = new Vector3(d1n2n3.x + d2n3n1.x + d3n1n2.x,
+                const Z = new Vector3(d1n2n3.x + d2n3n1.x + d3n1n2.x,
                     d1n2n3.y + d2n3n1.y + d3n1n2.y,
                     d1n2n3.z + d2n3n1.z + d3n1n2.z);
                 Z.divideScalar(n1.dot(n2cn3));
 
                 // Now we want to project in the direction orthogonal to (pZ) and ortho_dir
-                var pz = new Vector3(Z.x - p.x, Z.y - p.y, Z.z - p.z);
+                const pz = new Vector3(Z.x - p.x, Z.y - p.y, Z.z - p.z);
 
                 // set proj_dir
                 self.proj_dir = new Vector3();
@@ -366,15 +378,15 @@ export class ScalisTriangle extends ScalisPrimitive {
             }
 
             // Project along the given direction
-            var non_ortho_proj = new Vector3();
+            const non_ortho_proj = new Vector3();
             non_ortho_proj.copy(self.proj_dir);
             non_ortho_proj.multiplyScalar(-p0_to_p.dot(normal_inv) / self.proj_dir.dot(normal_inv));
             non_ortho_proj.add(p);
 
-            var tmp_vec = new Vector3();
-            var tmp_vec0 = new Vector3();
-            var tmp_vec1 = new Vector3();
-            var tmp_vec2 = new Vector3();
+            const tmp_vec = new Vector3();
+            const tmp_vec0 = new Vector3();
+            const tmp_vec1 = new Vector3();
+            const tmp_vec2 = new Vector3();
             tmp_vec0.subVectors(non_ortho_proj, self.v[0].getPos());
             tmp_vec1.subVectors(non_ortho_proj, self.v[1].getPos());
             tmp_vec2.subVectors(non_ortho_proj, self.v[2].getPos());
@@ -386,31 +398,31 @@ export class ScalisTriangle extends ScalisPrimitive {
                 res.v = tmp_vec.lengthSq();
 
                 // get barycentric coordinates of nearest_point (which is necessarily in the triangle
-                var p0 = self.v[0].getPos();
-                var p1 = self.v[1].getPos();
-                var p2 = self.v[2].getPos();
+                const p0 = self.v[0].getPos();
+                const p1 = self.v[1].getPos();
+                const p2 = self.v[2].getPos();
 
-                var tmp_vec_bis = new Vector3();
+                const tmp_vec_bis = new Vector3();
                 tmp_vec.subVectors(p1, p0);
                 tmp_vec_bis.subVectors(p2, p0);
-                var n = new Vector3();
+                const n = new Vector3();
                 n.crossVectors(tmp_vec, tmp_vec_bis);
                 tmp_vec.subVectors(p2, p1);
-                var nv1 = new Vector3();
+                const nv1 = new Vector3();
                 nv1.crossVectors(tmp_vec, tmp_vec1);
                 tmp_vec.subVectors(p0, p2);
-                var nv2 = new Vector3();
+                const nv2 = new Vector3();
                 nv2.crossVectors(tmp_vec, tmp_vec2);
                 tmp_vec.subVectors(p1, p0);
-                var nv3 = new Vector3();
+                const nv3 = new Vector3();
                 nv3.crossVectors(tmp_vec, tmp_vec0);
 
-                var nsq = n.lengthSq();
-                var a1 = n.dot(nv1);
-                var a2 = n.dot(nv2);
-                var a3 = n.dot(nv3);
+                const nsq = n.lengthSq();
+                const a1 = n.dot(nv1);
+                const a2 = n.dot(nv2);
+                const a3 = n.dot(nv3);
 
-                var inter_weight = (a1 * self.v[0].getThickness() + a2 * self.v[1].getThickness() + a3 * self.v[2].getThickness()) / nsq;
+                const inter_weight = (a1 * self.v[0].getThickness() + a2 * self.v[1].getThickness() + a3 * self.v[2].getThickness()) / nsq;
 
                 res.v = ScalisMath.Poly6Eval(Math.sqrt(res.v) / inter_weight) * ScalisMath.Poly6NF0D;
 
@@ -420,13 +432,12 @@ export class ScalisTriangle extends ScalisPrimitive {
             }
             else {
                 // Use to keep the case selected in case we need to compute the material
-                var seg_case = 0;
+                let seg_case = 0;
                 // do the same as for a segment on all triangle sides
                 self.GenericSegmentComputation(
                     p,
                     self.v[0].getPos(),
                     self.p0p1,
-                    self.length_p0p1,
                     self.length_p0p1 * self.length_p0p1,
                     self.v[0].getThickness(),
                     self.v[1].getThickness() - self.v[0].getThickness(),
@@ -440,7 +451,6 @@ export class ScalisTriangle extends ScalisPrimitive {
                     p,
                     self.v[1].getPos(),
                     self.p1p2,
-                    self.length_p1p2,
                     self.length_p1p2 * self.length_p1p2,
                     self.v[1].getThickness(),
                     self.v[2].getThickness() - self.v[1].getThickness(),
@@ -461,7 +471,6 @@ export class ScalisTriangle extends ScalisPrimitive {
                     p,
                     self.v[2].getPos(),
                     self.p2p0,
-                    self.length_p2p0,
                     self.length_p2p0 * self.length_p2p0,
                     self.v[2].getThickness(),
                     self.v[0].getThickness() - self.v[2].getThickness(),
@@ -497,7 +506,7 @@ export class ScalisTriangle extends ScalisPrimitive {
                             res.m.lerp(self.materials[0], self.res_gseg.t);
                             break;
                         default:
-                            throw "Error : seg_case unknown";
+                            throw "[ScalisTriangle] evalDist : seg_case unknown";
                     }
                 }
                 //////////////////////////////////////////////////////////////
@@ -506,7 +515,7 @@ export class ScalisTriangle extends ScalisPrimitive {
             // We should use an analytical gradient here. It should be possible to
             // compute.
             if (res.g) {
-                var epsilon = 0.00001;
+                const epsilon = 0.00001;
                 p_eps.copy(p);
                 p_eps.x += epsilon;
                 self.evalDist(p_eps, ev_eps);
@@ -549,7 +558,6 @@ export class ScalisTriangle extends ScalisPrimitive {
         point: Vector3,
         p1: Vector3,
         p1p2: Vector3,
-        length: number,
         sqr_length: number,
         weight_1: number,
         delta_weight: number, // = weight_2-weight_1
@@ -562,14 +570,14 @@ export class ScalisTriangle extends ScalisPrimitive {
             weight_proj: number,
             t: number
         } {
-        var origin_to_p = new Vector3();
+        const origin_to_p = new Vector3();
         origin_to_p.subVectors(point, p1);
 
-        var orig_p_scal_dir = origin_to_p.dot(p1p2);
-        var orig_p_sqr = origin_to_p.lengthSq();
+        const orig_p_scal_dir = origin_to_p.dot(p1p2);
+        const orig_p_sqr = origin_to_p.lengthSq();
 
-        var denum = sqr_length * weight_1 + orig_p_scal_dir * delta_weight;
-        var t = (delta_weight < 0.0) ? 0.0 : 1.0;
+        const denum = sqr_length * weight_1 + orig_p_scal_dir * delta_weight;
+        let t = (delta_weight < 0.0) ? 0.0 : 1.0;
         if (denum > 0.0) {
             t = (orig_p_scal_dir * weight_1 + orig_p_sqr * delta_weight) / denum;
             t = (t < 0.0) ? 0.0 : ((t > 1.0) ? 1.0 : t); // clipping (nearest point on segment not line)
@@ -596,14 +604,14 @@ export class ScalisTriangle extends ScalisPrimitive {
      */
     evalConvol = (function () {
 
-        var g = new Vector3();
-        var m = new Material();
-        var tmpRes = { v: 0, g: null, m: null };
-        var g2 = new Vector3();
-        var m2 = new Material();
-        var tmpRes2 = { v: 0, g: null, m: null };
+        const g = new Vector3();
+        const m = new Material();
+        const tmpRes: ValueResultType = { v: 0, g: null, m: null };
+        const g2 = new Vector3();
+        const m2 = new Material();
+        const tmpRes2: ValueResultType = { v: 0, g: null, m: null };
 
-        return function (p: Vector3, res: ValueResultType) {
+        return function (this: ScalisTriangle, p: Vector3, res: ValueResultType) {
 
             /** @type {ScalisTriangle} */
             let self = this;
@@ -612,40 +620,44 @@ export class ScalisTriangle extends ScalisPrimitive {
             tmpRes.m = res.m ? m : null;
 
             // Compute closest point (t parameter) on the triangle in "warped space" as well as clipping
-            var clipped = { l1: 0, l2: 0 };
+            const clipped = { l1: 0, l2: 0 };
             if (self.ComputeTParam(p, clipped)) {
-                var t_low = clipped.l1;
-                var t_high = clipped.l2;
+                const t_low = clipped.l1;
+                const t_high = clipped.l2;
                 // Compute local warp coordinates
-                var w_local = self.weight_min + t_low * self.unit_delta_weight;
-                var local_t_max = self.warpAbscissa((t_high - t_low) / w_local);
+                const w_local = self.weight_min + t_low * self.unit_delta_weight;
+                const local_t_max = self.warpAbscissa((t_high - t_low) / w_local);
 
                 // Compute the required number of sample
-                var nb_samples = 2 * (0.5 * sampleNumber * local_t_max + 1.0);
-                var d_step_size = local_t_max / nb_samples;
+                const nb_samples = 2 * (0.5 * sampleNumber * local_t_max + 1.0);
+                let d_step_size = local_t_max / nb_samples;
 
                 // Perform Simpson scheme
-                var t = d_step_size;
+                let t = d_step_size;
                 d_step_size *= 2.0;
-                var res_odd = 0.0;
-                var grad_odd = new Vector3();
+                let res_odd = 0.0;
+                const grad_odd = new Vector3();
 
-                for (var i = 1; i < nb_samples; i += 2) {
+                for (let i = 1; i < nb_samples; i += 2) {
                     self.computeLineIntegral(self.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
                     res_odd += tmpRes.v;
                     if (res.g) {
+                        if (tmpRes.g === null)
+                            throw "[ScalisTriangle] equalConvol : gradient is null";
                         grad_odd.addVectors(grad_odd, tmpRes.g);
                     }
                     t += d_step_size;
                 }
 
-                var res_even = 0.0;
-                var grad_even = new Vector3();
+                let res_even = 0.0;
+                let grad_even = new Vector3();
                 t = 0.0;
-                for (var j = 2; j < nb_samples; j += 2) {
+                for (let j = 2; j < nb_samples; j += 2) {
                     t += d_step_size;
                     self.computeLineIntegral(self.unwarpAbscissa(t) * w_local + t_low, p, tmpRes);
                     if (res.g) {
+                        if (tmpRes.g === null)
+                            throw "[ScalisTriangle] equalConvol : gradient is null";
                         grad_even.addVectors(grad_even, tmpRes.g);
                     }
                     res_even += tmpRes.v;
@@ -654,14 +666,16 @@ export class ScalisTriangle extends ScalisPrimitive {
                 tmpRes2.g = res.g ? g2 : null;
                 tmpRes2.m = res.m ? m2 : null;
 
-                var res_low = self.computeLineIntegral(t_low, p, tmpRes);
-                var res_high = self.computeLineIntegral(t_high, p, tmpRes2);
+                const res_low = self.computeLineIntegral(t_low, p, tmpRes);
+                const res_high = self.computeLineIntegral(t_high, p, tmpRes2);
 
                 res.v = res_low.v + 4.0 * res_odd + 2.0 * res_even + res_low.v;
-                var factor = (local_t_max / (3.0 * (nb_samples))) * ScalisMath.Poly6NF2D;
+                const factor = (local_t_max / (3.0 * (nb_samples))) * ScalisMath.Poly6NF2D;
                 res.v *= factor;
                 if (res.g) {
-                    var grad_res = new Vector3();
+                    const grad_res = new Vector3();
+                    if (!res_low.g || !res_high.g)
+                        throw "[ScalisTriangle] equalConvol : gradient is not defined here.";
                     grad_res.addVectors(grad_res, res_low.g);
                     grad_res.addVectors(grad_res, grad_odd.multiplyScalar(4.0));
                     grad_res.addVectors(grad_res, grad_even.multiplyScalar(2.0));
@@ -673,6 +687,8 @@ export class ScalisTriangle extends ScalisPrimitive {
                 res.g = new Vector3();
             }
             if (res.m) {
+                if (tmpRes.m === null)
+                    throw "[ScalisTriangle] equalConvol : material is null";
                 tmpRes.g = null;
                 self.evalDist(p, tmpRes);
                 res.m.copy(tmpRes.m);
@@ -684,11 +700,11 @@ export class ScalisTriangle extends ScalisPrimitive {
      */
     warpAbscissa(t: number): number {
         // Compute approx of ln(d*l+1)/d
-        var dt = t * this.unit_delta_weight;
-        var inv_dtp2 = 1.0 / (dt + 2.0);
-        var sqr_dt_divdlp2 = dt * inv_dtp2;
+        const dt = t * this.unit_delta_weight;
+        const inv_dtp2 = 1.0 / (dt + 2.0);
+        let sqr_dt_divdlp2 = dt * inv_dtp2;
         sqr_dt_divdlp2 *= sqr_dt_divdlp2;
-        var serie_approx = 1.0 + sqr_dt_divdlp2 * (
+        const serie_approx = 1.0 + sqr_dt_divdlp2 * (
             (1.0 / 3.0) + sqr_dt_divdlp2 * (
                 (1.0 / 5.0) + sqr_dt_divdlp2 * (
                     (1.0 / 7.0) + sqr_dt_divdlp2 * (
@@ -702,7 +718,7 @@ export class ScalisTriangle extends ScalisPrimitive {
      */
     unwarpAbscissa(t: number): number {
         // Compute approx of (exp(d*l)-1)/d
-        var dt = t * this.unit_delta_weight;
+        const dt = t * this.unit_delta_weight;
         return t * (1.0 + dt * (1.0 / 2.0 + dt * (1.0 / 6.0 + dt * (1.0 / 24.0 + dt * (1.0 / 120.0 + dt * 1.0 / 720.0)))));
     }
 
@@ -712,13 +728,13 @@ export class ScalisTriangle extends ScalisPrimitive {
      *  @param  res result containing the wanted elements like res.v for the value, res.g for the gradient, res.m for the material.
      *  @return the res parameter, filled with proper values
      */
-    computeLineIntegral(t: number, p: Vector3, res: Object) {
+    computeLineIntegral(t: number, p: Vector3, res: ValueResultType): ValueResultType {
 
-        var weight = this.weight_min + t * this.unit_delta_weight;
-        var p_1 = new Vector3();
+        const weight = this.weight_min + t * this.unit_delta_weight;
+        const p_1 = new Vector3();
         p_1.addVectors(this.point_min, this.longest_dir_special.clone().multiplyScalar(t));
 
-        var length = (t < this.coord_middle) ? (t / this.coord_middle) * this.max_seg_length
+        const length = (t < this.coord_middle) ? (t / this.coord_middle) * this.max_seg_length
             : ((this.coord_max - t) / (this.coord_max - this.coord_middle)) * this.max_seg_length;
         if (res.g) {
             this.consWeightEvalGradForSeg(p_1, weight, this.ortho_dir, length, p, res);
@@ -746,22 +762,22 @@ export class ScalisTriangle extends ScalisPrimitive {
      *
      *  @protected
      */
-    homotheticClippingSpecial(w: Vector3, length: number, clipped: Object): boolean {
+    homotheticClippingSpecial(w: Vector3, length: number, clipped: {l1: number, l2: number}): boolean {
         // we search solution t \in [0,1] such that at^2-2bt+c<=0
-        var a = -w.z;
-        var b = -w.y;
-        var c = -w.x;
+        const a = -w.z;
+        const b = -w.y;
+        const c = -w.x;
 
-        var delta = b * b - a * c;
+        const delta = b * b - a * c;
         if (delta >= 0.0) {
-            var b_p_sqrt_delta = b + Math.sqrt(delta);
+            const b_p_sqrt_delta = b + Math.sqrt(delta);
             if ((b_p_sqrt_delta < 0.0) || (length * b_p_sqrt_delta < c)) {
                 return false;
             }
             else {
-                var main_root = c / b_p_sqrt_delta;
+                const main_root = c / b_p_sqrt_delta;
                 clipped.l1 = (main_root < 0.0) ? 0.0 : main_root;
-                var a_r = a * main_root;
+                const a_r = a * main_root;
                 clipped.l2 = (2.0 * b < a_r + a * length) ? c / (a_r) : length;
                 return true;
             }
@@ -770,31 +786,31 @@ export class ScalisTriangle extends ScalisPrimitive {
     }
 
     /**
-     *  @param {!Vector3} point
+     *  @param point
      *  @return Object defining v attribute with the computed value
      *
      *  @protected
      */
-    consWeightEvalForSeg(p_1: Vector3, w_1: number, unit_dir: Vector3, length: number, point: Vector3, res: Object): Object {
-        var p_min_to_point = new Vector3();
+    consWeightEvalForSeg(p_1: Vector3, w_1: number, unit_dir: Vector3, length: number, point: Vector3, res: ValueResultType): ValueResultType | 0 {
+        const p_min_to_point = new Vector3();
         p_min_to_point.subVectors(point, p_1);
-        var uv = unit_dir.dot(p_min_to_point);
-        var d2 = p_min_to_point.lengthSq();
+        const uv = unit_dir.dot(p_min_to_point);
+        const d2 = p_min_to_point.lengthSq();
 
-        var special_coeff = new Vector3();
+        const special_coeff = new Vector3();
         special_coeff.set(w_1 * w_1 - ScalisMath.KIS2 * d2,
             - ScalisMath.KIS2 * uv,
             - ScalisMath.KIS2);
-        var clipped = { l1: 0, l2: 0 };
+        const clipped = { l1: 0, l2: 0 };
         if (this.homotheticClippingSpecial(special_coeff, length, clipped)) {
-            var inv_local_min_weight = 1.0 / w_1;
+            const inv_local_min_weight = 1.0 / w_1;
             special_coeff.x = 1.0 - ScalisMath.KIS2 * (clipped.l1 * (clipped.l1 - 2.0 * uv) + d2) * inv_local_min_weight * inv_local_min_weight;
             special_coeff.y = - ScalisMath.KIS2 * (uv - clipped.l1) * inv_local_min_weight;
 
             res.v = this.homotheticCompactPolynomial_segment_F_i6_cste((clipped.l2 - clipped.l1) * inv_local_min_weight,
                 special_coeff);
         } else {
-            res = 0;
+            return 0;
         }
 
         return res;
@@ -804,35 +820,37 @@ export class ScalisTriangle extends ScalisPrimitive {
      *  @return  Object defining v attribute with the computed value
      *  @protected
      */
-    consWeightEvalGradForSeg(p_1: Vector3, w_1: number, unit_dir: Vector3, length: number, point: Vector3, res: Object): Object {
+    consWeightEvalGradForSeg(p_1: Vector3, w_1: number, unit_dir: Vector3, length: number, point: Vector3, res: ValueResultType): ValueResultType {
 
-        var p_min_to_point = new Vector3();
+        const p_min_to_point = new Vector3();
         p_min_to_point.subVectors(point, p_1);
-        var uv = unit_dir.dot(p_min_to_point);
-        var d2 = p_min_to_point.lengthSq();
+        const uv = unit_dir.dot(p_min_to_point);
+        const d2 = p_min_to_point.lengthSq();
 
-        var special_coeff = new Vector3();
+        const special_coeff = new Vector3();
         special_coeff.set(w_1 * w_1 - ScalisMath.KIS2 * d2,
             - ScalisMath.KIS2 * uv,
             - ScalisMath.KIS2);
-        var clipped = { l1: 0, l2: 0 };
+        const clipped = { l1: 0, l2: 0 };
         if (this.homotheticClippingSpecial(special_coeff, length, clipped)) {
-            var inv_local_min_weight = 1.0 / w_1;
+            const inv_local_min_weight = 1.0 / w_1;
             special_coeff.x = 1.0 - ScalisMath.KIS2 * (clipped.l1 * (clipped.l1 - 2.0 * uv) + d2) * inv_local_min_weight * inv_local_min_weight;
             special_coeff.y = - ScalisMath.KIS2 * (uv - clipped.l1) * inv_local_min_weight;
 
-            var F0F1F2 = new Vector3();
+            const F0F1F2 = new Vector3();
             this.homotheticCompactPolynomial_segment_FGradF_i6_cste((clipped.l2 - clipped.l1) * inv_local_min_weight,
                 special_coeff, F0F1F2);
             res.v = F0F1F2.x;
             F0F1F2.y *= inv_local_min_weight;
-            var vect = unit_dir.clone();
+            const vect = unit_dir.clone();
             vect.multiplyScalar(F0F1F2.z + clipped.l1 * F0F1F2.y);
             p_min_to_point.multiplyScalar(- F0F1F2.y);
             p_min_to_point.addVectors(p_min_to_point, vect);
             res.g = p_min_to_point.multiplyScalar(6.0 * ScalisMath.KIS2 * inv_local_min_weight);
         } else {
             res.v = 0;
+            if (!res.g)
+                throw "[ScalisTriangle] consWeightEvalGradForSeg : gradient is null";
             res.g.set(0, 0, 0);
         }
 
@@ -845,17 +863,17 @@ export class ScalisTriangle extends ScalisPrimitive {
      *                           values are between 0.0 and length/weight_min
      *  @return  true if clipping occured
      */
-    ComputeTParam(point: Vector3, clipped: Object): boolean {
-        var p_min_to_point = new Vector3();
+    ComputeTParam(point: Vector3, clipped: {l1: number, l2: number}): boolean {
+        const p_min_to_point = new Vector3();
         p_min_to_point.subVectors(point, this.point_min);
 
-        var coord_main_dir = p_min_to_point.dot(this.main_dir);
-        var coord_normal = p_min_to_point.dot(this.unit_normal);
+        const coord_main_dir = p_min_to_point.dot(this.main_dir);
+        const coord_normal = p_min_to_point.dot(this.unit_normal);
 
         //WARNING : Assume that the compact support is defined in the same way as HomotheticCompactPolynomial kernels
-        var dist_sqr = coord_main_dir * coord_main_dir + coord_normal * coord_normal;
+        const dist_sqr = coord_main_dir * coord_main_dir + coord_normal * coord_normal;
 
-        var special_coeff = new Vector3();
+        const special_coeff = new Vector3();
         special_coeff.set(this.weight_min * this.weight_min - ScalisMath.KIS2 * dist_sqr,
             -this.unit_delta_weight * this.weight_min - ScalisMath.KIS2 * coord_main_dir,
             this.unit_delta_weight * this.unit_delta_weight - ScalisMath.KIS2);
@@ -870,20 +888,20 @@ export class ScalisTriangle extends ScalisPrimitive {
      *  @return  the value
      */
     homotheticCompactPolynomial_segment_F_i6_cste(l: number, w: Vector3): number {
-        var t7068 = w.z;
-        var t7078 = t7068 * l;
-        var t7069 = w.y;
-        var t7070 = w.x;
-        var t2 = t7069 * t7069;
-        var t7065 = t7068 * t7070 - t2;
-        var t7067 = 0.1e1 / t7068;
-        var t7077 = t7065 * t7067;
-        var t7064 = t7070 + (-0.2e1 * t7069 + t7078) * l;
-        var t7066 = t7078 - t7069;
-        var t6 = t7064 * t7064;
-        var t7076 = t7066 * t6;
-        var t7 = t7070 * t7070;
-        var t7075 = t7069 * t7;
+        const t7068 = w.z;
+        const t7078 = t7068 * l;
+        const t7069 = w.y;
+        const t7070 = w.x;
+        const t2 = t7069 * t7069;
+        const t7065 = t7068 * t7070 - t2;
+        const t7067 = 0.1e1 / t7068;
+        const t7077 = t7065 * t7067;
+        const t7064 = t7070 + (-0.2e1 * t7069 + t7078) * l;
+        const t7066 = t7078 - t7069;
+        const t6 = t7064 * t7064;
+        const t7076 = t7066 * t6;
+        const t7 = t7070 * t7070;
+        const t7075 = t7069 * t7;
         return (0.6e1 / 0.5e1 * (0.4e1 / 0.3e1 * (0.2e1 * t7065 * l + t7066 * t7064 + t7069 * t7070) * t7077 + t7076 + t7075) * t7077 + t7064 * t7076 + t7070 * t7075) * t7067 / 0.7e1;
     }
 
@@ -899,22 +917,22 @@ export class ScalisTriangle extends ScalisPrimitive {
      *
      */
     homotheticCompactPolynomial_segment_FGradF_i6_cste(l: number, w: Vector3, res: Vector3) {
-        var t7086 = w.z;
-        var t7095 = t7086 * l;
-        var t7087 = w.y;
-        var t7088 = w.x;
-        var t2 = t7087 * t7087;
-        var t7082 = t7086 * t7088 - t2;
-        var t7084 = 0.1e1 / t7086;
-        var t7094 = t7082 * t7084;
-        var t7081 = t7088 + (-0.2e1 * t7087 + t7095) * l;
-        var t7083 = t7095 - t7087;
-        var t7089 = t7081 * t7081;
-        var t7091 = t7088 * t7088;
-        var t7079 = 0.4e1 / 0.3e1 * (0.2e1 * t7082 * l + t7083 * t7081 + t7087 * t7088) * t7094 + t7083 * t7089 + t7087 * t7091;
-        var t7093 = t7079 * t7084 / 0.5e1;
-        var t7085 = t7088 * t7091;
-        var t7080 = t7081 * t7089;
+        const t7086 = w.z;
+        const t7095 = t7086 * l;
+        const t7087 = w.y;
+        const t7088 = w.x;
+        const t2 = t7087 * t7087;
+        const t7082 = t7086 * t7088 - t2;
+        const t7084 = 0.1e1 / t7086;
+        const t7094 = t7082 * t7084;
+        const t7081 = t7088 + (-0.2e1 * t7087 + t7095) * l;
+        const t7083 = t7095 - t7087;
+        const t7089 = t7081 * t7081;
+        const t7091 = t7088 * t7088;
+        const t7079 = 0.4e1 / 0.3e1 * (0.2e1 * t7082 * l + t7083 * t7081 + t7087 * t7088) * t7094 + t7083 * t7089 + t7087 * t7091;
+        const t7093 = t7079 * t7084 / 0.5e1;
+        const t7085 = t7088 * t7091;
+        const t7080 = t7081 * t7089;
         res.x = (0.6e1 / 0.5e1 * t7079 * t7094 + t7083 * t7080 + t7087 * t7085) * t7084 / 0.7e1;
         res.y = t7093;
         res.z = (t7087 * t7093 + t7080 / 0.6e1 - t7085 / 0.6e1) * t7084;

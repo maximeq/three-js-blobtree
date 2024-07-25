@@ -1,10 +1,8 @@
-import { Node } from "./Node";
-/** @typedef {import('./Element.js').Json} Json */
-/** @typedef {import('./Element.js').ValueResultType} ValueResultType */
-/** @typedef {import('./Node.js').NodeJSON} NodeJSON */
-/**
- * @typedef {NodeJSON} MaxNodeJSON
- */
+import { Vector3 } from "three";
+import { Node, type NodeJSON, type MaxNodeType } from "./Node";
+import { Material } from "./Material";
+import { type ValueResultType } from './Element';
+type MaxNodeJSON = NodeJSON;
 /**
  *  This class implement a Max node.
  *  It will return the maximum value of the field of each primitive.
@@ -13,32 +11,25 @@ import { Node } from "./Node";
  *  @extends Node
  */
 export declare class MaxNode extends Node {
-    static type: string;
-    /**
-     *
-     * @param {Json} json
-     * @returns
-     */
-    static fromJSON(json: any): MaxNode;
+    tmp_res: ValueResultType;
+    tmp_g: Vector3;
+    tmp_m: Material;
+    static type: MaxNodeType;
+    static fromJSON(json: MaxNodeJSON): MaxNode;
     /**
      *  @constructor
-     *  @param {Array<Node>=} children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
+     *  @param children The children to add to this node.Just a convenient parameter, you can do it manually using addChild.
      */
-    constructor(children: any);
-    /**
-     * @returns {string}
-     */
-    getType: () => string;
+    constructor(children?: Node[]);
+    getType(): MaxNodeType;
     /**
      * @link Node.prepareForEval for a complete description
      **/
     prepareForEval(): void;
     /**
      *  @link Element.value for a complete description
-     *
-     *  @param {Vector3} p
-     *  @param {ValueResultType} res
      */
-    value(p: any, res: any): void;
+    value(p: Vector3, res: ValueResultType): void;
 }
+export {};
 //# sourceMappingURL=MaxNode.d.ts.map

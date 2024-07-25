@@ -1,6 +1,6 @@
 {
     "name": "@dioxygen-software/three-js-blobtree",
-    "version": "3.130.0",
+    "version": "4.130.0",
     "description": "Library to handle implicit surfaces in THREE.JS using a blobtree.",
     "main": "dist/three-js-blobtree.module.js",
     "module": "dist/three-js-blobtree.module.js",
