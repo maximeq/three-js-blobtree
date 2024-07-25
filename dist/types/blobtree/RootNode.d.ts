@@ -1,4 +1,4 @@
-import { Box3, Ray, Vector3 } from "three";
+import { Box3, type Ray, Vector3 } from "three";
 import { RicciNode } from "./RicciNode";
 import type { Element } from './Element';
 import type { Node, RootNodeType } from './Node';
