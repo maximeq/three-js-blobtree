@@ -6426,7 +6426,6 @@ class Box2Acc extends Box2 {
     constructor(min, max, nice_acc, raw_acc) {
         super(min, max);
         var s = Math.max(this.max.x - this.min.x, this.max.y - this.min.y);
-        /** @type {number} */
         this.nice_acc = 10000000;
         // Can nice_acc be 0 ? if yes we can simplify the next line
         if (nice_acc === undefined || nice_acc === null && s > 0) {
@@ -6542,9 +6541,10 @@ class SlidingMarchingCubes {
             ? Math.max(0.01, smcParams.detailRatio)
             : 1.0;
         if (smcParams.convergence) {
-            this.convergence = smcParams.convergence;
-            this.convergence.ratio = this.convergence.ratio || 0.01;
-            this.convergence.step = this.convergence.step || 10;
+            this.convergence = {
+                ratio: smcParams.convergence.ratio ?? 0.01,
+                step: smcParams.convergence.step ?? 10
+            };
         }
         else {
             this.convergence = null;

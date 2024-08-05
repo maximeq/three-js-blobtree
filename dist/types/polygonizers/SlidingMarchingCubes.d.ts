@@ -35,12 +35,12 @@ export interface ConvergenceParams {
      * A ratio of a the marching cube grid size defining the wanted geometrical accuracy.
      * Must be lower than 1, default is 0.01.
      */
-    ratio: number;
+    ratio?: number;
     /**
      * The newton process will stop either when the threshold of ratio*cube_size is matched,
      * or the number of steps allowed has been reached. Default is 10.
      */
-    step: number;
+    step?: number;
 }
 export interface VertexData {
     p: {
@@ -109,7 +109,10 @@ export declare class SlidingMarchingCubes {
     blobtree: RootNode;
     uniformZ: boolean;
     detail_ratio: number;
-    convergence: ConvergenceParams | null;
+    convergence: {
+        ratio: number;
+        step: number;
+    } | null;
     progress: (percent: number) => void;
     reso: Int32Array;
     steps: {
