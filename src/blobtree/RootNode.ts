@@ -14,7 +14,7 @@ type RootNodeJSON = {
 
 interface IntersectionResult {
     distance?: number; // distance from ray.origin to intersection point
-    point: Vector3; // intersection point
+    point: Vector3 | null; // intersection point
     g?: Vector3; // gradient at intersection, if required
   }
 

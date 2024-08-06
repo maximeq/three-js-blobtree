@@ -8,7 +8,7 @@ type RootNodeJSON = {
 } & RicciNodeJSON;
 interface IntersectionResult {
     distance?: number;
-    point: Vector3;
+    point: Vector3 | null;
     g?: Vector3;
 }
 /**
