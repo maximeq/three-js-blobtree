@@ -34,7 +34,7 @@ export declare class Material {
      *  @return true if and only if all arguments are arrays of the same length and containing the same material values.
      *  @deprecated
      */
-    static areEqualsArrays(arr1: Material[]): boolean;
+    static areEqualsArrays(arr1: Material[], _arr2: Material[]): boolean;
     static fromJSON(json: MaterialJSON): Material;
     /**
     *  @constructor

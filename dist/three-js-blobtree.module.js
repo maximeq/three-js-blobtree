@@ -206,7 +206,7 @@ class Material {
      *  @return true if and only if all arguments are arrays of the same length and containing the same material values.
      *  @deprecated
      */
-    static areEqualsArrays(arr1) {
+    static areEqualsArrays(arr1, _arr2) {
         console.warn("Material.areEqualsArrays is deprecated, please use your own comparison function using Material.equals.");
         let res = true;
         // check for nullity
