@@ -40,7 +40,7 @@ export class Material {
      *  @return true if and only if all arguments are arrays of the same length and containing the same material values.
      *  @deprecated
      */
-    static areEqualsArrays(arr1: Material[]): boolean {
+    static areEqualsArrays(arr1: Material[], _arr2: Material[]): boolean {
 
         console.warn("Material.areEqualsArrays is deprecated, please use your own comparison function using Material.equals.");
 
