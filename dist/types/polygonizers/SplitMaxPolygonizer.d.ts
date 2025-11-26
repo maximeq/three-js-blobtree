@@ -33,7 +33,7 @@ export declare class SplitMaxPolygonizer {
     private totalCoeff;
     constructor(blobtree: RootNode, smpParams: SplitMaxPolygonizerParams);
     setBlobtree(blobtree: RootNode): void;
-    compute(): import("three").BufferGeometry;
+    compute(): import("three").BufferGeometry<import("three").NormalBufferAttributes>;
 }
 export {};
 //# sourceMappingURL=SplitMaxPolygonizer.d.ts.map

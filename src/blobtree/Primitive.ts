@@ -4,6 +4,7 @@ import { Types } from "./Types";
 import type { Area } from './areas';
 import type { ScalisPrimitiveType } from './scalis';
 import type { SDFRootNodeType } from './sdf';
+import type { Box3 } from 'three';
 
 export type PrimitiveJSON = { materials: MaterialJSON[] } & ElementJSON
 
@@ -80,7 +81,7 @@ export abstract class Primitive extends Element {
     /**
      * @abstract
      */
-    override getAreas(): { aabb: THREE.Box3, bv: Area, obj: Primitive }[] {
+    override getAreas(): { aabb: Box3, bv: Area, obj: Primitive }[] {
         console.error("ERROR : getAreas is an abstract function, should be re-implemented in all primitives(error occured in " + this.getType() + " primitive)");
         return [];
     };

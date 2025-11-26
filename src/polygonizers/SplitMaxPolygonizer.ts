@@ -1,4 +1,4 @@
-import { BufferGeometryUtils } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 // Does not work yet, so just suppose that Blobtree is defined externally
 // const Blobtree = require('three-js-blobtree");
@@ -22,7 +22,7 @@ type SubPolygonizerParams = {
     smcParams: SMCParams,
     // mcParams: MCParams // We only have 1 polygonizer class available for now
 };
-  
+
 
 export type SplitMaxPolygonizerParams = {
     subPolygonizer?: SubPolygonizerParams,
@@ -213,7 +213,7 @@ export class SplitMaxPolygonizer {
             prog += this.progCoeff[i];
         }
 
-        const res = BufferGeometryUtils.mergeBufferGeometries(geometries);
+        const res = BufferGeometryUtils.mergeGeometries(geometries);
 
         this.progress(100);
 

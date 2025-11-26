@@ -3,6 +3,7 @@ import { Material, type MaterialJSON } from './Material';
 import type { Area } from './areas';
 import type { ScalisPrimitiveType } from './scalis';
 import type { SDFRootNodeType } from './sdf';
+import type { Box3 } from 'three';
 export type PrimitiveJSON = {
     materials: MaterialJSON[];
 } & ElementJSON;
@@ -41,7 +42,7 @@ export declare abstract class Primitive extends Element {
      * @abstract
      */
     getAreas(): {
-        aabb: THREE.Box3;
+        aabb: Box3;
         bv: Area;
         obj: Primitive;
     }[];

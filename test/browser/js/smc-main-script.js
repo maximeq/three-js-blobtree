@@ -9,7 +9,7 @@ import {
     DirectionalLight, AmbientLight, Vector3
 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
-import { BufferGeometryUtils } from "three/examples/jsm/utils/BufferGeometryUtils.js"
+import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js"
 
 var camera, controls, scene, renderer, shadow;
 
@@ -94,7 +94,7 @@ function updateShadow() {
             if (obj.geometry.boundingBox === null) {
                 obj.geometry.computeBoundingBox();
             }
-            shadow.geometry = shadow.geometry ? BufferGeometryUtils.mergeBufferGeometries([shadow.geometry, obj.geometry]) : obj.geometry;
+            shadow.geometry = shadow.geometry ? BufferGeometryUtils.mergeGeometries([shadow.geometry, obj.geometry]) : obj.geometry;
         }
     });
     if (!shadow.geometry.boundingBox) {

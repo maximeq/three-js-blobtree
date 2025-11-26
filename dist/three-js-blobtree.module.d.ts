@@ -1550,7 +1550,7 @@ declare abstract class Primitive extends Element {
      * @abstract
      */
     getAreas(): {
-        aabb: THREE.Box3;
+        aabb: Box3;
         bv: Area;
         obj: Primitive;
     }[];
@@ -2667,7 +2667,7 @@ declare class SlidingMarchingCubes {
      *  used in compute function.
      *  @private
      */
-    buildResultingBufferGeometry(): BufferGeometry;
+    buildResultingBufferGeometry(): BufferGeometry<three.NormalBufferAttributes>;
     /**
      *  Set values in this.values_xy[1] to 0
      *  @private
@@ -2872,7 +2872,7 @@ declare class SplitMaxPolygonizer {
     private totalCoeff;
     constructor(blobtree: RootNode, smpParams: SplitMaxPolygonizerParams);
     setBlobtree(blobtree: RootNode): void;
-    compute(): three.BufferGeometry;
+    compute(): three.BufferGeometry<three.NormalBufferAttributes>;
 }
 
 /**
@@ -3044,4 +3044,5 @@ declare const TriangleUtils: {
 
 declare const version = "1.0.0";
 
-export { Accuracies, Area, AreaCapsule, AreaScalisSeg, AreaScalisTri, AreaSphere, type AreaSphereParam$2 as AreaSphereParam, Convergence, type ConvergenceParams, type Coordinate, DifferenceNode, type DifferenceNodeType, DistanceFunctor, type DistanceFunctorJSON, Element, type ElementJSON, Material, type MaterialJSON, MaxNode, type MaxNodeType, MinNode, type MinNodeType, Node, type NodeJSON, type NodeType, Poly6DistanceFunctor, type Poly6DistanceFunctorJSON, type Poly6DistanceFunctorType, Primitive, type PrimitiveJSON, type PrimitiveType, type ResultingGeometry, RicciNode, type RicciNodeJSON, type RicciNodeType, RootNode, type RootNodeType, SDFCapsule, type SDFCapsuleJSON, type SDFCapsuleType, SDFNode, type SDFNodeJSON, type SDFNodeType, SDFPoint, type SDFPointJSON, type SDFPointType, SDFPrimitive, type SDFPrimitiveJSON, type SDFPrimitiveType, SDFRootNode, type SDFRootNodeJSON, type SDFRootNodeType, SDFSegment, type SDFSegmentJSON, type SDFSegmentType, SDFSphere, type SDFSphereJSON, type SDFSphereType, type SMCParams, ScaleNode, type ScaleNodeType, ScalisMath, ScalisPoint, type ScalisPointJSON, type ScalisPointType, ScalisPrimitive, type ScalisPrimitiveJSON, type ScalisPrimitiveType, type ScalisPrimitiveVolType, ScalisSegment, type ScalisSegmentJSON, type ScalisSegmentType, ScalisTriangle, type ScalisTriangleJSON, type ScalisTriangleType, ScalisVertex, type ScalisVertexJSON, type SegParam, SlidingMarchingCubes, SplitMaxPolygonizer, type SplitMaxPolygonizerParams, SplitSMC, type SplitSMCParams, Tables, type TriangleComputedAttributes, type TriangleLike, type TriangleLikeDeprecated, TriangleUtils, TwistNode, type TwistNodeType, Types, type ValueResultType, type VertexData, version };
+export { Accuracies, Area, AreaCapsule, AreaScalisSeg, AreaScalisTri, AreaSphere, Convergence, DifferenceNode, DistanceFunctor, Element, Material, MaxNode, MinNode, Node, Poly6DistanceFunctor, Primitive, RicciNode, RootNode, SDFCapsule, SDFNode, SDFPoint, SDFPrimitive, SDFRootNode, SDFSegment, SDFSphere, ScaleNode, ScalisMath, ScalisPoint, ScalisPrimitive, ScalisSegment, ScalisTriangle, ScalisVertex, SlidingMarchingCubes, SplitMaxPolygonizer, SplitSMC, Tables, TriangleUtils, TwistNode, Types, version };
+export type { AreaSphereParam$2 as AreaSphereParam, ConvergenceParams, Coordinate, DifferenceNodeType, DistanceFunctorJSON, ElementJSON, MaterialJSON, MaxNodeType, MinNodeType, NodeJSON, NodeType, Poly6DistanceFunctorJSON, Poly6DistanceFunctorType, PrimitiveJSON, PrimitiveType, ResultingGeometry, RicciNodeJSON, RicciNodeType, RootNodeType, SDFCapsuleJSON, SDFCapsuleType, SDFNodeJSON, SDFNodeType, SDFPointJSON, SDFPointType, SDFPrimitiveJSON, SDFPrimitiveType, SDFRootNodeJSON, SDFRootNodeType, SDFSegmentJSON, SDFSegmentType, SDFSphereJSON, SDFSphereType, SMCParams, ScaleNodeType, ScalisPointJSON, ScalisPointType, ScalisPrimitiveJSON, ScalisPrimitiveType, ScalisPrimitiveVolType, ScalisSegmentJSON, ScalisSegmentType, ScalisTriangleJSON, ScalisTriangleType, ScalisVertexJSON, SegParam, SplitMaxPolygonizerParams, SplitSMCParams, TriangleComputedAttributes, TriangleLike, TriangleLikeDeprecated, TwistNodeType, ValueResultType, VertexData };

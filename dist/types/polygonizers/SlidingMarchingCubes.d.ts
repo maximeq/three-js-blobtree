@@ -164,7 +164,7 @@ export declare class SlidingMarchingCubes {
      *  used in compute function.
      *  @private
      */
-    buildResultingBufferGeometry(): BufferGeometry;
+    buildResultingBufferGeometry(): BufferGeometry<import("three").NormalBufferAttributes>;
     /**
      *  Set values in this.values_xy[1] to 0
      *  @private
